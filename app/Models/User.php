@@ -38,6 +38,8 @@ class User extends Authenticatable
         'whatsapp_opt_in',
         'status',
         'blacklist_reason',
+        'google_id',
+        'avatar',
     ];
 
     /**

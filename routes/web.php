@@ -44,6 +44,8 @@ Route::post('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::clas
 Route::get('/signup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister'])->name('register');
 Route::get('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister']);
 Route::post('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeRegister'])->middleware('throttle:auth')->name('register.store');
+Route::get('/auth/google', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 Route::get('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('admin.login');
 Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])->middleware('throttle:auth')->name('admin.login.store');
 Route::match(['get', 'post'], '/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('logout');

@@ -11,6 +11,7 @@
         "inertiajs/inertia-laravel": "^3.3",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.0",
+        "laravel/socialite": "^5.31",
         "laravel/tinker": "^2.9",
         "spatie/laravel-backup": "^9.3",
         "spatie/laravel-permission": "^6.25"
