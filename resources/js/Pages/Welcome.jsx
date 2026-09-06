@@ -667,156 +667,202 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 ========================================================================== */}
                 <Box id="fleet" sx={{ mb: 10 }}>
                     <Grid container spacing={3.5}>
-                        {filteredBikes.map((bike) => (
-                            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={bike.id}>
-                                <Card
-                                    sx={{
-                                        height: '100%',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                        borderRadius: 3.5,
-                                        transition: 'transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
-                                        '&:hover': {
-                                            transform: 'translateY(-6px)',
-                                            borderColor: 'rgba(245, 158, 11, 0.4)',
-                                            boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.5)',
-                                        },
-                                    }}
-                                >
-                                    {/* Bike Image */}
-                                    <Box sx={{ position: 'relative', bgcolor: isDark ? '#0B1120' : '#F1F5F9', pt: 2, pb: 1, px: 2, textAlign: 'center' }}>
+                        {filteredBikes.map((bike) => {
+                            // Resolve real bike image from database
+                            const bikeImage = bike.primary_image_url
+                                || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null)
+                                || bike.images?.[0]?.image_path
+                                || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80';
+
+                            const isElectric = (bike.fuel_type || '').toLowerCase() === 'electric';
+                            const dailyRateNum = Number(bike.daily_rate || bike.base_daily_rate || 0);
+                            const depositNum = Number(bike.deposit_amount || 1500);
+
+                            return (
+                                <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={bike.id}>
+                                    <Card
+                                        sx={{
+                                            height: '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                            borderRadius: 3.5,
+                                            overflow: 'hidden',
+                                            transition: 'transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
+                                            '&:hover': {
+                                                transform: 'translateY(-6px)',
+                                                borderColor: 'rgba(245, 158, 11, 0.5)',
+                                                boxShadow: isDark
+                                                    ? '0 20px 35px -10px rgba(0, 0, 0, 0.6)'
+                                                    : '0 16px 30px -10px rgba(15, 23, 42, 0.12)',
+                                            },
+                                        }}
+                                    >
+                                        {/* Bike Real Photo Header */}
                                         <Box
-                                            component="img"
-                                            src={bike.images?.[0]?.image_path || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80'}
-                                            alt={`${bike.brand} ${bike.model_name} — Rental Bikes in Honnavar`}
                                             sx={{
+                                                position: 'relative',
+                                                height: 220,
                                                 width: '100%',
-                                                height: 190,
-                                                objectFit: 'contain',
-                                                borderRadius: 2,
+                                                bgcolor: isDark ? '#0B1120' : '#F1F5F9',
+                                                overflow: 'hidden',
                                             }}
-                                        />
-                                        <Chip
-                                            label={bike.category?.name || 'Two Wheeler'}
-                                            size="small"
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 14,
-                                                left: 14,
-                                                bgcolor: 'rgba(15, 23, 42, 0.85)',
-                                                backdropFilter: 'blur(8px)',
-                                                color: '#F59E0B',
-                                                fontWeight: 700,
-                                                border: '1px solid rgba(245, 158, 11, 0.3)',
-                                            }}
-                                        />
-                                        <Chip
-                                            icon={<LocationOnIcon sx={{ fontSize: 14, color: '#38BDF8 !important' }} />}
-                                            label={bike.current_store?.name || 'Honnavar Hub'}
-                                            size="small"
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 14,
-                                                right: 14,
-                                                bgcolor: 'rgba(15, 23, 42, 0.85)',
-                                                backdropFilter: 'blur(8px)',
-                                                color: '#E2E8F0',
-                                                fontWeight: 600,
-                                                fontSize: '0.72rem',
-                                            }}
-                                        />
-                                    </Box>
+                                        >
+                                            <Box
+                                                component="img"
+                                                src={bikeImage}
+                                                alt={`${bike.brand} ${bike.model_name} — Rental Bikes in Honnavar`}
+                                                loading="lazy"
+                                                sx={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    objectPosition: 'center',
+                                                    transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'scale(1.06)',
+                                                    },
+                                                }}
+                                            />
 
-                                    <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 0.5 }}>
-                                            {bike.brand} {bike.model_name}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 2, textTransform: 'uppercase' }}>
-                                            Reg: {bike.registration_number} • Honnavar
-                                        </Typography>
+                                            {/* Category Tag */}
+                                            <Chip
+                                                label={bike.category?.name || 'Two Wheeler'}
+                                                size="small"
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 14,
+                                                    left: 14,
+                                                    bgcolor: 'rgba(15, 23, 42, 0.88)',
+                                                    backdropFilter: 'blur(8px)',
+                                                    color: '#F59E0B',
+                                                    fontWeight: 800,
+                                                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                                                }}
+                                            />
 
-                                        {/* Specs Pills */}
-                                        <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'rgba(255, 255, 255, 0.05)', px: 1, py: 0.4, borderRadius: 1.5 }}>
-                                                <LocalGasStationIcon sx={{ fontSize: 14, color: '#94A3B8' }} />
-                                                <Typography variant="caption" sx={{ color: '#CBD5E1', fontWeight: 600 }}>
-                                                    {bike.fuel_type || 'Petrol'}
-                                                </Typography>
-                                            </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'rgba(255, 255, 255, 0.05)', px: 1, py: 0.4, borderRadius: 1.5 }}>
-                                                <SpeedIcon sx={{ fontSize: 14, color: '#94A3B8' }} />
-                                                <Typography variant="caption" sx={{ color: '#CBD5E1', fontWeight: 600 }}>
-                                                    {bike.engine_capacity_cc ? `${bike.engine_capacity_cc}cc` : 'Electric'}
-                                                </Typography>
-                                            </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'rgba(255, 255, 255, 0.05)', px: 1, py: 0.4, borderRadius: 1.5 }}>
-                                                <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
-                                                <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600 }}>
-                                                    Insured
-                                                </Typography>
-                                            </Box>
-                                        </Stack>
-
-                                        <Box sx={{ mt: 'auto' }}>
-                                            <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', mb: 2 }} />
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2.5 }}>
-                                                <Box>
-                                                    <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
-                                                        Honnavar Daily Rate
-                                                    </Typography>
-                                                    <Typography variant="h5" sx={{ color: '#F59E0B', fontWeight: 900, lineHeight: 1.1 }}>
-                                                        ₹{bike.daily_rate}
-                                                        <Typography component="span" variant="caption" sx={{ color: '#94A3B8', ml: 0.5 }}>
-                                                            / day
-                                                        </Typography>
-                                                    </Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: 'right' }}>
-                                                    <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                                        Refundable Deposit
-                                                    </Typography>
-                                                    <Typography variant="body2" sx={{ color: '#E2E8F0', fontWeight: 700 }}>
-                                                        ₹{bike.deposit_amount || 1500}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-
-                                            <Stack direction="row" spacing={1.5}>
-                                                <Button
-                                                    fullWidth
-                                                    variant="contained"
-                                                    color="secondary"
-                                                    component={Link}
-                                                    href={`/bikes/${bike.id}`}
-                                                    sx={{
-                                                        fontWeight: 800,
-                                                        py: 1,
-                                                        borderRadius: 2,
-                                                    }}
-                                                >
-                                                    Book Now
-                                                </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    component={Link}
-                                                    href={`/bikes/${bike.id}`}
-                                                    sx={{
-                                                        borderColor: 'rgba(255, 255, 255, 0.15)',
-                                                        color: '#E2E8F0',
-                                                        px: 2,
-                                                        '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.05)' },
-                                                    }}
-                                                >
-                                                    Details
-                                                </Button>
-                                            </Stack>
+                                            {/* Store Location Tag */}
+                                            <Chip
+                                                icon={<LocationOnIcon sx={{ fontSize: 14, color: '#38BDF8 !important' }} />}
+                                                label={bike.current_store?.name || 'Honnavar Hub'}
+                                                size="small"
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 14,
+                                                    right: 14,
+                                                    bgcolor: 'rgba(15, 23, 42, 0.88)',
+                                                    backdropFilter: 'blur(8px)',
+                                                    color: '#FFFFFF',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.72rem',
+                                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                }}
+                                            />
                                         </Box>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        ))}
+
+                                        <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                            <Typography variant="h5" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 0.5 }}>
+                                                {bike.brand} {bike.model_name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700, mb: 2, display: 'block', letterSpacing: '0.04em' }}>
+                                                REG: {bike.registration_number} • HONNAVAR
+                                            </Typography>
+
+                                            {/* Accurate Specs Pills from DB */}
+                                            <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9', px: 1.2, py: 0.5, borderRadius: 1.5 }}>
+                                                    {isElectric ? (
+                                                        <ElectricBoltIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
+                                                    ) : (
+                                                        <LocalGasStationIcon sx={{ fontSize: 15, color: isDark ? '#94A3B8' : '#64748B' }} />
+                                                    )}
+                                                    <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#334155', fontWeight: 700, textTransform: 'capitalize' }}>
+                                                        {bike.fuel_type || 'Petrol'}
+                                                    </Typography>
+                                                </Box>
+
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9', px: 1.2, py: 0.5, borderRadius: 1.5 }}>
+                                                    <SpeedIcon sx={{ fontSize: 15, color: isDark ? '#94A3B8' : '#64748B' }} />
+                                                    <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#334155', fontWeight: 700, textTransform: 'capitalize' }}>
+                                                        {bike.transmission || 'Automatic'}
+                                                    </Typography>
+                                                </Box>
+
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'rgba(16, 185, 129, 0.12)', px: 1.2, py: 0.5, borderRadius: 1.5 }}>
+                                                    <VerifiedUserIcon sx={{ fontSize: 15, color: '#10B981' }} />
+                                                    <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700 }}>
+                                                        Insured
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
+
+                                            <Box sx={{ mt: 'auto' }}>
+                                                <Divider sx={{ borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0', mb: 2 }} />
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2.5 }}>
+                                                    <Box>
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600, display: 'block' }}>
+                                                            Honnavar Daily Rate
+                                                        </Typography>
+                                                        <Typography variant="h5" sx={{ color: '#F59E0B', fontWeight: 900, lineHeight: 1.1 }}>
+                                                            ₹{dailyRateNum.toLocaleString('en-IN')}
+                                                            <Typography component="span" variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', ml: 0.5, fontWeight: 600 }}>
+                                                                / day
+                                                            </Typography>
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ textAlign: 'right' }}>
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
+                                                            Refundable Deposit
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#0F172A', fontWeight: 800 }}>
+                                                            ₹{depositNum.toLocaleString('en-IN')}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+
+                                                <Stack direction="row" spacing={1.5}>
+                                                    <Button
+                                                        fullWidth
+                                                        variant="contained"
+                                                        color="secondary"
+                                                        component={Link}
+                                                        href={`/bikes/${bike.id}`}
+                                                        sx={{
+                                                            fontWeight: 800,
+                                                            py: 1.1,
+                                                            borderRadius: 2,
+                                                            fontSize: '0.925rem',
+                                                        }}
+                                                    >
+                                                        Book Now
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        component={Link}
+                                                        href={`/bikes/${bike.id}`}
+                                                        sx={{
+                                                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                                                            color: isDark ? '#E2E8F0' : '#0F172A',
+                                                            fontWeight: 700,
+                                                            px: 2.5,
+                                                            borderRadius: 2,
+                                                            '&:hover': {
+                                                                borderColor: '#F59E0B',
+                                                                bgcolor: 'rgba(245, 158, 11, 0.08)',
+                                                            },
+                                                        }}
+                                                    >
+                                                        Details
+                                                    </Button>
+                                                </Stack>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            );
+                        })}
                     </Grid>
 
                     {/* View All Fleet Action */}

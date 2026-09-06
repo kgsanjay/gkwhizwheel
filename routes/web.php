@@ -8,8 +8,7 @@ use Inertia\Inertia;
 Route::get('/', function () {
     $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
         ->where('status', \App\Enums\BikeStatus::AVAILABLE)
-        ->latest()
-        ->take(6)
+        ->orderBy('id')
         ->get();
 
     $categories = \App\Models\BikeCategory::withCount(['bikes' => function ($query) {

@@ -292,21 +292,31 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         },
                                     }}
                                 >
-                                    {/* Bike Card Header / Image Area */}
+                                    {/* Bike Real Photo Header */}
                                     <Box
                                         sx={{
-                                            height: 180,
-                                            background: isElectric
-                                                ? 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)'
-                                                : 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
+                                            height: 200,
+                                            width: '100%',
                                             position: 'relative',
-                                            p: 2,
+                                            bgcolor: isDark ? '#0B1120' : '#F1F5F9',
+                                            overflow: 'hidden',
                                         }}
                                     >
-                                        <TwoWheelerIcon sx={{ fontSize: 90, color: 'rgba(255, 255, 255, 0.25)' }} />
+                                        <Box
+                                            component="img"
+                                            src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
+                                            alt={`${bike.brand} ${bike.model_name}`}
+                                            sx={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                objectPosition: 'center',
+                                                transition: 'transform 0.4s ease',
+                                                '&:hover': {
+                                                    transform: 'scale(1.06)',
+                                                },
+                                            }}
+                                        />
 
                                         {/* Electric or Fuel Badge */}
                                         <Chip
@@ -314,7 +324,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                 isElectric ? (
                                                     <ElectricBoltIcon sx={{ color: '#F59E0B !important' }} />
                                                 ) : (
-                                                    <LocalGasStationIcon sx={{ color: '#E2E8F0 !important' }} />
+                                                    <LocalGasStationIcon sx={{ color: '#FFFFFF !important' }} />
                                                 )
                                             }
                                             label={isElectric ? 'Electric EV' : 'Petrol'}
@@ -323,10 +333,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                 position: 'absolute',
                                                 top: 12,
                                                 right: 12,
-                                                bgcolor: isElectric ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.15)',
+                                                bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                backdropFilter: 'blur(8px)',
                                                 color: isElectric ? '#F59E0B' : '#FFFFFF',
-                                                fontWeight: 700,
-                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                fontWeight: 800,
+                                                border: '1px solid rgba(255, 255, 255, 0.2)',
                                             }}
                                         />
 
@@ -338,11 +349,12 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                 position: 'absolute',
                                                 bottom: 12,
                                                 left: 12,
-                                                bgcolor: 'rgba(15, 23, 42, 0.8)',
+                                                bgcolor: 'rgba(15, 23, 42, 0.88)',
+                                                backdropFilter: 'blur(8px)',
                                                 color: '#E2E8F0',
                                                 fontSize: '0.75rem',
                                                 fontFamily: 'monospace',
-                                                fontWeight: 700,
+                                                fontWeight: 800,
                                                 letterSpacing: '0.05em',
                                             }}
                                         />

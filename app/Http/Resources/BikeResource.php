@@ -39,6 +39,11 @@ class BikeResource extends JsonResource
             'daily_rate' => $dailyRate,
             'deposit_amount' => $depositAmount,
             'primary_image_path' => $this->primary_image_path,
+            'primary_image_url' => $this->primary_image_path
+                ? (str_starts_with($this->primary_image_path, 'http')
+                    ? $this->primary_image_path
+                    : \Illuminate\Support\Facades\Storage::disk('public')->url($this->primary_image_path))
+                : null,
             'odometer_reading' => $this->odometer_reading,
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,

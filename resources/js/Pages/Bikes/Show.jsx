@@ -141,18 +141,27 @@ export default function BikeShow({ bike, stores = [] }) {
                     <Card sx={{ mb: 4, overflow: 'hidden', bgcolor: isDark ? '#131D2F' : '#FFFFFF', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
                         <Box
                             sx={{
-                                height: 260,
-                                background: isElectric
-                                    ? 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)'
-                                    : 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
+                                height: 280,
+                                width: '100%',
+                                position: 'relative',
+                                bgcolor: isDark ? '#0B1120' : '#F1F5F9',
+                                overflow: 'hidden',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                position: 'relative',
-                                p: 3,
                             }}
                         >
-                            <TwoWheelerIcon sx={{ fontSize: 130, color: 'rgba(255, 255, 255, 0.25)' }} />
+                            <Box
+                                component="img"
+                                src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
+                                alt={`${bike.brand} ${bike.model_name}`}
+                                sx={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center',
+                                }}
+                            />
 
                             {/* Electric/Petrol chip */}
                             <Chip
@@ -168,9 +177,11 @@ export default function BikeShow({ bike, stores = [] }) {
                                     position: 'absolute',
                                     top: 16,
                                     right: 16,
-                                    bgcolor: isElectric ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.15)',
+                                    bgcolor: 'rgba(15, 23, 42, 0.88)',
+                                    backdropFilter: 'blur(8px)',
                                     color: isElectric ? '#F59E0B' : '#FFFFFF',
-                                    fontWeight: 700,
+                                    fontWeight: 800,
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
                                 }}
                             />
 
@@ -181,11 +192,13 @@ export default function BikeShow({ bike, stores = [] }) {
                                     position: 'absolute',
                                     bottom: 16,
                                     left: 16,
-                                    bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                    bgcolor: 'rgba(15, 23, 42, 0.88)',
+                                    backdropFilter: 'blur(8px)',
                                     color: '#FFFFFF',
                                     fontFamily: 'monospace',
-                                    fontWeight: 700,
+                                    fontWeight: 800,
                                     letterSpacing: '0.08em',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
                                 }}
                             />
                         </Box>
