@@ -38,7 +38,8 @@ Route::get('/account', [\App\Http\Controllers\Web\CustomerAccountWebController::
 Route::get('/account/bookings/{id}', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'show'])->name('account.bookings.show');
 Route::get('/account/kyc', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'kyc'])->name('account.kyc');
 
-// Admin & Staff Authentication
+// Authentication
+Route::redirect('/login', '/admin/login')->name('login');
 Route::get('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('admin.login');
 Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])
     ->middleware('throttle:auth')

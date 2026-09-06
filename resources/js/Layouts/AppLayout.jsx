@@ -25,6 +25,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DirectionsIcon from '@mui/icons-material/Directions';
+import LoginIcon from '@mui/icons-material/Login';
 import { useColorMode } from '../theme/ColorModeContext';
 
 export default function AppLayout({ children, fullWidth = false }) {
@@ -380,6 +381,30 @@ export default function AppLayout({ children, fullWidth = false }) {
                                         }}
                                     >
                                         Call Now
+                                    </Button>
+                                    <Button
+                                        component={Link}
+                                        href="/admin/login"
+                                        variant="outlined"
+                                        size="medium"
+                                        startIcon={<LoginIcon sx={{ fontSize: 18 }} />}
+                                        sx={{
+                                            color: isDark ? '#F1F5F9' : '#0F172A',
+                                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                                            fontWeight: 700,
+                                            fontSize: '0.85rem',
+                                            px: { xs: 1.5, sm: 2 },
+                                            py: 0.8,
+                                            borderRadius: 2,
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                borderColor: '#F59E0B',
+                                                color: '#F59E0B',
+                                                bgcolor: 'rgba(245, 158, 11, 0.08)',
+                                            },
+                                        }}
+                                    >
+                                        Sign In
                                     </Button>
                                     <Button
                                         variant="contained"
