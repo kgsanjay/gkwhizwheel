@@ -1,0 +1,24 @@
+# React Native & Android .gitignore
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android intermediate build outputs & gradle caches
+android/.gradle/
+android/app/build/
+android/build/
+android/*.iml
+android/app/*.iml
+android/local.properties
+android/.cxx/
+
+# General build artifacts
+build/
+*.apk
+*.aab
+!release/*.apk
+
+# OS files
+.DS_Store
+Thumbs.db
