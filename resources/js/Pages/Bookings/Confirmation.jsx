@@ -1,6 +1,8 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
+import { useColorMode } from '../../theme/ColorModeContext';
+import DirectionsIcon from '@mui/icons-material/Directions';
 import {
     Box,
     Typography,
@@ -31,6 +33,8 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
 
 export default function BookingConfirmation({ booking }) {
+    const { mode } = useColorMode();
+    const isDark = mode === 'dark';
     const bike = booking.bike || {};
     const pickupStore = booking.pickup_store || {};
     const returnStore = booking.return_store || {};
@@ -48,13 +52,14 @@ export default function BookingConfirmation({ booking }) {
     return (
         <AppLayout>
             <Head title={`Booking Confirmed - ${booking.booking_reference} - GK WhizWheel`} />
+            <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
 
             {/* Back to fleet bar */}
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Button component={Link} href="/bikes" startIcon={<ArrowBackIcon />} sx={{ color: '#64748B' }}>
                     Browse More Fleet
                 </Button>
-                <Button variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint} sx={{ color: '#0F172A', borderColor: '#CBD5E1' }}>
+                <Button variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint} sx={{ color: isDark ? '#FFFFFF' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1' }}>
                     Print Receipt
                 </Button>
             </Box>
@@ -65,8 +70,8 @@ export default function BookingConfirmation({ booking }) {
                 sx={{
                     p: { xs: 3, md: 4 },
                     mb: 4,
-                    bgcolor: '#FFFFFF',
-                    border: '1px solid #E2E8F0',
+                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     borderRadius: 4,
                     textAlign: 'center',
                 }}
@@ -88,7 +93,7 @@ export default function BookingConfirmation({ booking }) {
                     <CheckCircleIcon sx={{ fontSize: 44 }} />
                 </Box>
 
-                <Typography variant="h3" component="h1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
+                <Typography variant="h3" component="h1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1 }}>
                     Booking Confirmed!
                 </Typography>
                 <Typography variant="subtitle1" sx={{ color: '#64748B', maxWidth: 600, mx: 'auto', mb: 2 }}>
@@ -124,9 +129,9 @@ export default function BookingConfirmation({ booking }) {
 
             <Grid container spacing={4}>
                 {/* Left Column: Trip & Vehicle Overview */}
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                     {/* Vehicle Card */}
-                    <Card sx={{ mb: 3, borderRadius: 3, overflow: 'hidden' }}>
+                    <Card sx={{ mb: 3, borderRadius: 3, overflow: 'hidden', bgcolor: isDark ? '#131D2F' : '#FFFFFF', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
                         <Box
                             sx={{
                                 p: 2.5,
@@ -161,17 +166,17 @@ export default function BookingConfirmation({ booking }) {
 
                         <CardContent sx={{ p: 3 }}>
                             {/* Rental Schedule & Store Hubs */}
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: '#0F172A' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                 Trip Schedule & Hub Locations
                             </Typography>
 
                             <Grid container spacing={2}>
                                 {/* Pickup Store */}
-                                <Grid item xs={12} sm={6}>
-                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: '#F8FAFC' }}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                             <LocationOnIcon sx={{ color: '#10B981', fontSize: 20 }} />
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                                 Pick-up Store
                                             </Typography>
                                         </Box>
@@ -195,15 +200,26 @@ export default function BookingConfirmation({ booking }) {
                                                 </Typography>
                                             </Box>
                                         )}
+                                        <Box
+                                            component="a"
+                                            href={pickupStore.name && pickupStore.name.toLowerCase().includes('railway')
+                                                ? 'https://www.google.com/maps/dir/?api=1&destination=Honnavar+Railway+Station,+Karnataka'
+                                                : 'https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334'}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, color: '#38BDF8', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none', mt: 1, '&:hover': { textDecoration: 'underline' } }}
+                                        >
+                                            <DirectionsIcon sx={{ fontSize: 14 }} /> Get Directions to Hub ↗
+                                        </Box>
                                     </Paper>
                                 </Grid>
 
                                 {/* Return Store */}
-                                <Grid item xs={12} sm={6}>
-                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: '#F8FAFC' }}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                             <LocationOnIcon sx={{ color: '#EA580C', fontSize: 20 }} />
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                                 Drop-off Store {isOneWay && '(One-Way)'}
                                             </Typography>
                                         </Box>
@@ -234,10 +250,10 @@ export default function BookingConfirmation({ booking }) {
                     </Card>
 
                     {/* KYC Handover Instructions */}
-                    <Paper elevation={0} sx={{ p: 3, border: '1px solid #E2E8F0', borderRadius: 3, bgcolor: '#FFFFFF', mb: 3 }}>
+                    <Paper elevation={0} sx={{ p: 3, border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0', borderRadius: 3, bgcolor: isDark ? '#131D2F' : '#FFFFFF', mb: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                             <BadgeIcon color="primary" />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                 Required for Handover at Store
                             </Typography>
                         </Box>
@@ -260,7 +276,7 @@ export default function BookingConfirmation({ booking }) {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <DescriptionIcon color="secondary" sx={{ fontSize: 32 }} />
                                 <Box>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         Digital Bike Documents
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: '#64748B' }}>
@@ -285,7 +301,7 @@ export default function BookingConfirmation({ booking }) {
                 </Grid>
 
                 {/* Right Column: Payment & Receipt Summary */}
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                     <Card sx={{ borderRadius: 3, border: '1px solid #E2E8F0' }}>
                         <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 1 }}>
                             <ReceiptLongIcon color="primary" />
@@ -388,6 +404,7 @@ export default function BookingConfirmation({ booking }) {
                     </Card>
                 </Grid>
             </Grid>
+                    </Box>
         </AppLayout>
     );
 }

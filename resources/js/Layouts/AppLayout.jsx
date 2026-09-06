@@ -11,6 +11,8 @@ import {
     Grid,
     Divider,
     Stack,
+    IconButton,
+    Tooltip,
 } from '@mui/material';
 import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import PersonIcon from '@mui/icons-material/Person';
@@ -20,12 +22,18 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DirectionsIcon from '@mui/icons-material/Directions';
+import { useColorMode } from '../theme/ColorModeContext';
 
 export default function AppLayout({ children, fullWidth = false }) {
     const { auth, flash } = usePage().props;
+    const { mode, toggleColorMode } = useColorMode();
+    const isDark = mode === 'dark';
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#0B1120', color: '#F8FAFC', width: '100%', overflowX: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: isDark ? '#0B1120' : '#F8FAFC', color: isDark ? '#F8FAFC' : '#0F172A', width: '100%', overflowX: 'hidden' }}>
             {/* Top Announcement Bar (1920px Container-Fluid) */}
             <Box
                 sx={{
@@ -37,12 +45,31 @@ export default function AppLayout({ children, fullWidth = false }) {
                 }}
             >
                 <Box sx={{ maxWidth: '1920px', mx: 'auto', px: { xs: 2, sm: 4, md: 6 }, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Stack direction="row" spacing={3} alignItems="center">
+                    <Stack direction="row" spacing={2.5} alignItems="center">
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                Palya Main Rd, Honnavar, Karnataka 581334 • Railway Station Pickup Available
+                                Palya Main Rd, Honnavar, Karnataka 581334
                             </Typography>
+                            <Box
+                                component="a"
+                                href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"
+                                target="_blank"
+                                rel="noreferrer"
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 0.4,
+                                    color: '#38BDF8',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    textDecoration: 'none',
+                                    ml: 0.5,
+                                    '&:hover': { textDecoration: 'underline' },
+                                }}
+                            >
+                                <DirectionsIcon sx={{ fontSize: 13 }} /> Get Directions
+                            </Box>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
@@ -145,10 +172,11 @@ export default function AppLayout({ children, fullWidth = false }) {
                 position="sticky"
                 elevation={0}
                 sx={{
-                    bgcolor: 'rgba(15, 23, 42, 0.95)',
+                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                     backdropFilter: 'blur(16px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     width: '100%',
+                    color: isDark ? '#F8FAFC' : '#0F172A',
                 }}
             >
                 <Box sx={{ maxWidth: '1920px', width: '100%', mx: 'auto', px: { xs: 2, sm: 4, md: 6 } }}>
@@ -174,7 +202,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                     width: 'auto',
                                     objectFit: 'contain',
                                     borderRadius: 1.5,
-                                    filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))',
+                                    filter: isDark ? 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.1))',
                                     transition: 'transform 0.2s ease',
                                     '&:hover': { transform: 'scale(1.04)' },
                                 }}
@@ -187,14 +215,14 @@ export default function AppLayout({ children, fullWidth = false }) {
                                         fontWeight: 900,
                                         letterSpacing: '-0.02em',
                                         lineHeight: 1.1,
-                                        color: '#FFFFFF',
+                                        color: isDark ? '#FFFFFF' : '#0F172A',
                                     }}
                                 >
                                     GK WhizWheels
                                 </Typography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
                                     <ElectricBoltIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                    <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600, letterSpacing: '0.02em' }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600, letterSpacing: '0.02em' }}>
                                         Bike Rental in Honnavar, Karnataka
                                     </Typography>
                                 </Box>
@@ -207,7 +235,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                 component={Link}
                                 href="/bikes"
                                 sx={{
-                                    color: '#E2E8F0',
+                                    color: isDark ? '#E2E8F0' : '#1E293B',
                                     fontWeight: 600,
                                     fontSize: '0.9rem',
                                     px: 1.5,
@@ -220,7 +248,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                 component={Link}
                                 href="/#pricing"
                                 sx={{
-                                    color: '#E2E8F0',
+                                    color: isDark ? '#E2E8F0' : '#1E293B',
                                     fontWeight: 600,
                                     fontSize: '0.9rem',
                                     px: 1.5,
@@ -234,7 +262,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                 component={Link}
                                 href="/#hubs"
                                 sx={{
-                                    color: '#E2E8F0',
+                                    color: isDark ? '#E2E8F0' : '#1E293B',
                                     fontWeight: 600,
                                     fontSize: '0.9rem',
                                     px: 1.5,
@@ -248,7 +276,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                 component={Link}
                                 href="/#routes"
                                 sx={{
-                                    color: '#E2E8F0',
+                                    color: isDark ? '#E2E8F0' : '#1E293B',
                                     fontWeight: 600,
                                     fontSize: '0.9rem',
                                     px: 1.5,
@@ -262,7 +290,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                 component={Link}
                                 href="/#faq"
                                 sx={{
-                                    color: '#E2E8F0',
+                                    color: isDark ? '#E2E8F0' : '#1E293B',
                                     fontWeight: 600,
                                     fontSize: '0.9rem',
                                     px: 1.5,
@@ -273,13 +301,36 @@ export default function AppLayout({ children, fullWidth = false }) {
                                 FAQs
                             </Button>
 
+                            {/* Dark / Light Theme Toggle Switch */}
+                            <Tooltip title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+                                <IconButton
+                                    onClick={toggleColorMode}
+                                    aria-label="Toggle dark or light theme"
+                                    size="small"
+                                    sx={{
+                                        p: 0.9,
+                                        borderRadius: 2,
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid #CBD5E1',
+                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
+                                        color: isDark ? '#FBBF24' : '#0F172A',
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0',
+                                            transform: 'scale(1.06)',
+                                        },
+                                    }}
+                                >
+                                    {isDark ? <LightModeIcon sx={{ fontSize: 20 }} /> : <DarkModeIcon sx={{ fontSize: 20 }} />}
+                                </IconButton>
+                            </Tooltip>
+
                             {auth?.user ? (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Button
                                         component={Link}
                                         href="/account"
                                         size="small"
-                                        sx={{ color: '#E2E8F0', fontWeight: 600 }}
+                                        sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600 }}
                                     >
                                         My Bookings
                                     </Button>
@@ -287,7 +338,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                         component={Link}
                                         href="/account/kyc"
                                         size="small"
-                                        sx={{ color: '#E2E8F0', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+                                        sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
                                     >
                                         KYC Docs
                                     </Button>
@@ -300,7 +351,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                         color="secondary"
                                         size="small"
                                         variant="outlined"
-                                        sx={{ color: '#FFFFFF', borderColor: '#F59E0B', fontWeight: 600 }}
+                                        sx={{ color: isDark ? '#FFFFFF' : '#0F172A', borderColor: '#F59E0B', fontWeight: 600 }}
                                     />
                                     <Button
                                         component={Link}
@@ -309,7 +360,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                         as="button"
                                         size="small"
                                         variant="text"
-                                        sx={{ color: '#94A3B8' }}
+                                        sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
                                     >
                                         Logout
                                     </Button>
@@ -322,7 +373,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                         size="small"
                                         startIcon={<PhoneIcon />}
                                         sx={{
-                                            color: '#FBBF24',
+                                            color: isDark ? '#FBBF24' : '#D97706',
                                             fontWeight: 700,
                                             fontSize: '0.85rem',
                                             display: { xs: 'none', md: 'inline-flex' },
@@ -390,7 +441,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                 <Box sx={{ maxWidth: '1920px', width: '100%', mx: 'auto', px: { xs: 2, sm: 4, md: 6 } }}>
                     <Grid container spacing={4} sx={{ mb: 6 }}>
                         {/* Brand & Office Details */}
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                                 <Box
                                     component="img"
@@ -417,6 +468,26 @@ export default function AppLayout({ children, fullWidth = false }) {
                                     <Typography variant="body2" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
                                         Palya Main Rd, Honnavar, Karnataka 581334
                                     </Typography>
+                                </Box>
+                                <Box sx={{ pl: 3.25 }}>
+                                    <Box
+                                        component="a"
+                                        href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            color: '#38BDF8',
+                                            fontSize: '0.78rem',
+                                            fontWeight: 700,
+                                            textDecoration: 'none',
+                                            '&:hover': { textDecoration: 'underline' },
+                                        }}
+                                    >
+                                        <DirectionsIcon sx={{ fontSize: 14 }} /> Get Directions on Google Maps ↗
+                                    </Box>
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <PhoneIcon sx={{ color: '#10B981', fontSize: 18 }} />
@@ -485,7 +556,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                         </Grid>
 
                         {/* Rental Bikes in Honnavar */}
-                        <Grid item xs={6} sm={4} md={2.5}>
+                        <Grid size={{ xs: 6, sm: 4, md: 2.5 }}>
                             <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Rental Bikes in Honnavar
                             </Typography>
@@ -512,7 +583,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                         </Grid>
 
                         {/* Popular Honnavar Destinations */}
-                        <Grid item xs={6} sm={4} md={2.5}>
+                        <Grid size={{ xs: 6, sm: 4, md: 2.5 }}>
                             <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Honnavar Attractions
                             </Typography>
@@ -539,7 +610,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                         </Grid>
 
                         {/* Customer & Staff Portal */}
-                        <Grid item xs={12} sm={4} md={3}>
+                        <Grid size={{ xs: 12, sm: 4, md: 3 }}>
                             <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Hub Locations & Support
                             </Typography>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import {
@@ -46,8 +47,12 @@ import DirectionsBoatIcon from '@mui/icons-material/DirectionsBoat';
 import BeachAccessIcon from '@mui/icons-material/BeachAccess';
 import LandscapeIcon from '@mui/icons-material/Landscape';
 import CastleIcon from '@mui/icons-material/Castle';
+import DirectionsIcon from '@mui/icons-material/Directions';
 
 export default function Welcome({ featuredBikes = [], categories = [], stores = [] }) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     // Quick search form state
     const today = new Date().toISOString().split('T')[0];
     const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
@@ -201,9 +206,9 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         py: { xs: 5, md: 8 },
                         px: { xs: 2.5, sm: 4, md: 6 },
                         borderRadius: { xs: 3, md: 4 },
-                        background: 'radial-gradient(130% 120% at 90% 10%, #1E293B 0%, #0F172A 60%, #090E17 100%)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        background: isDark ? 'radial-gradient(130% 120% at 90% 10%, #1E293B 0%, #0F172A 60%, #090E17 100%)' : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #EFF6FF 100%)',
+                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                        boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 20px 40px -15px rgba(15, 23, 42, 0.08)',
                         overflow: 'hidden',
                     }}
                 >
@@ -235,7 +240,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                     <Grid container spacing={5} alignItems="center">
                         {/* Left Hero Content & Quick Booking Form */}
-                        <Grid item xs={12} lg={7}>
+                        <Grid size={{ xs: 12, lg: 7 }}>
                             <Chip
                                 icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 16 }} />}
                                 label="G.K. WhizWheel • 5.0 ★ (324 Google Reviews) • Honnavar, Karnataka"
@@ -254,7 +259,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 variant="h1"
                                 component="h1"
                                 sx={{
-                                    color: '#FFFFFF',
+                                    color: isDark ? '#FFFFFF' : '#0F172A',
                                     fontSize: { xs: '2.25rem', sm: '3rem', md: '3.6rem' },
                                     fontWeight: 900,
                                     lineHeight: 1.12,
@@ -278,7 +283,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             <Typography
                                 variant="subtitle1"
                                 sx={{
-                                    color: '#FBBF24',
+                                    color: isDark ? '#FBBF24' : '#D97706',
                                     fontWeight: 700,
                                     fontStyle: 'italic',
                                     mb: 1.5,
@@ -291,7 +296,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             <Typography
                                 variant="body1"
                                 sx={{
-                                    color: '#94A3B8',
+                                    color: isDark ? '#94A3B8' : '#475569',
                                     fontSize: { xs: '1rem', md: '1.1rem' },
                                     lineHeight: 1.65,
                                     mb: 4,
@@ -308,16 +313,16 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 onSubmit={handleSearch}
                                 sx={{
                                     p: { xs: 2, sm: 2.5 },
-                                    bgcolor: 'rgba(15, 23, 42, 0.9)',
+                                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.9)' : '#FFFFFF',
                                     backdropFilter: 'blur(14px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #CBD5E1',
                                     borderRadius: 3,
-                                    boxShadow: '0 12px 30px -5px rgba(0, 0, 0, 0.4)',
+                                    boxShadow: isDark ? '0 12px 30px -5px rgba(0, 0, 0, 0.4)' : '0 10px 30px -5px rgba(15, 23, 42, 0.08)',
                                     mb: 3,
                                 }}
                             >
                                 <Grid container spacing={2} alignItems="center">
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             select
                                             fullWidth
@@ -325,13 +330,13 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             label="Pickup & Return Hub"
                                             value={searchStore}
                                             onChange={(e) => setSearchStore(e.target.value)}
-                                            InputLabelProps={{ sx: { color: '#94A3B8' } }}
+                                            InputLabelProps={{ sx: { color: isDark ? '#94A3B8' : '#64748B' } }}
                                             sx={{
-                                                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
                                                 borderRadius: 1.5,
                                                 '& .MuiOutlinedInput-root': {
-                                                    color: '#FFFFFF',
-                                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.15)' },
+                                                    color: isDark ? '#FFFFFF' : '#0F172A',
+                                                    '& fieldset': { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1' },
                                                     '&:hover fieldset': { borderColor: '#F59E0B' },
                                                 },
                                             }}
@@ -345,7 +350,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         </TextField>
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             select
                                             fullWidth
@@ -353,13 +358,13 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             label="Bike Category"
                                             value={searchCategory}
                                             onChange={(e) => setSearchCategory(e.target.value)}
-                                            InputLabelProps={{ sx: { color: '#94A3B8' } }}
+                                            InputLabelProps={{ sx: { color: isDark ? '#94A3B8' : '#64748B' } }}
                                             sx={{
-                                                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
                                                 borderRadius: 1.5,
                                                 '& .MuiOutlinedInput-root': {
-                                                    color: '#FFFFFF',
-                                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.15)' },
+                                                    color: isDark ? '#FFFFFF' : '#0F172A',
+                                                    '& fieldset': { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1' },
                                                     '&:hover fieldset': { borderColor: '#F59E0B' },
                                                 },
                                             }}
@@ -373,7 +378,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         </TextField>
                                     </Grid>
 
-                                    <Grid item xs={12} sm={4.5}>
+                                    <Grid size={{ xs: 12, sm: 4.5 }}>
                                         <TextField
                                             fullWidth
                                             type="date"
@@ -381,20 +386,20 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             label="Pickup Date"
                                             value={startDate}
                                             onChange={(e) => setStartDate(e.target.value)}
-                                            InputLabelProps={{ shrink: true, sx: { color: '#94A3B8' } }}
+                                            InputLabelProps={{ shrink: true, sx: { color: isDark ? '#94A3B8' : '#64748B' } }}
                                             sx={{
-                                                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
                                                 borderRadius: 1.5,
                                                 '& .MuiOutlinedInput-root': {
-                                                    color: '#FFFFFF',
-                                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.15)' },
+                                                    color: isDark ? '#FFFFFF' : '#0F172A',
+                                                    '& fieldset': { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1' },
                                                     '&:hover fieldset': { borderColor: '#F59E0B' },
                                                 },
                                             }}
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} sm={4.5}>
+                                    <Grid size={{ xs: 12, sm: 4.5 }}>
                                         <TextField
                                             fullWidth
                                             type="date"
@@ -402,20 +407,20 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             label="Drop-off Date"
                                             value={endDate}
                                             onChange={(e) => setEndDate(e.target.value)}
-                                            InputLabelProps={{ shrink: true, sx: { color: '#94A3B8' } }}
+                                            InputLabelProps={{ shrink: true, sx: { color: isDark ? '#94A3B8' : '#64748B' } }}
                                             sx={{
-                                                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC',
                                                 borderRadius: 1.5,
                                                 '& .MuiOutlinedInput-root': {
-                                                    color: '#FFFFFF',
-                                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.15)' },
+                                                    color: isDark ? '#FFFFFF' : '#0F172A',
+                                                    '& fieldset': { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1' },
                                                     '&:hover fieldset': { borderColor: '#F59E0B' },
                                                 },
                                             }}
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} sm={3}>
+                                    <Grid size={{ xs: 12, sm: 3 }}>
                                         <Button
                                             fullWidth
                                             type="submit"
@@ -441,25 +446,25 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <CheckCircleIcon sx={{ color: '#10B981', fontSize: 18 }} />
-                                    <Typography variant="caption" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#334155', fontWeight: 600 }}>
                                         Free Sanitized ISI Helmets
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <CheckCircleIcon sx={{ color: '#10B981', fontSize: 18 }} />
-                                    <Typography variant="caption" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#334155', fontWeight: 600 }}>
                                         Instant Deposit Refund
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <CheckCircleIcon sx={{ color: '#10B981', fontSize: 18 }} />
-                                    <Typography variant="caption" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#334155', fontWeight: 600 }}>
                                         Railway Station Delivery
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <CheckCircleIcon sx={{ color: '#10B981', fontSize: 18 }} />
-                                    <Typography variant="caption" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#334155', fontWeight: 600 }}>
                                         24/7 Roadside Support
                                     </Typography>
                                 </Box>
@@ -467,14 +472,15 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         </Grid>
 
                         {/* Right Hero Showcase — Logo Emblem & Key Value Metrics */}
-                        <Grid item xs={12} lg={5}>
+                        <Grid size={{ xs: 12, lg: 5 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: { xs: 3, sm: 4 },
-                                    bgcolor: 'rgba(255, 255, 255, 0.03)',
+                                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
                                     backdropFilter: 'blur(16px)',
-                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                                    boxShadow: isDark ? 'none' : '0 12px 35px -5px rgba(15, 23, 42, 0.08)',
                                     borderRadius: 4,
                                     textAlign: 'center',
                                     position: 'relative',
@@ -504,20 +510,20 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     ))}
                                 </Stack>
 
-                                <Typography variant="h5" sx={{ color: '#FFFFFF', fontWeight: 900, letterSpacing: '-0.01em' }}>
+                                <Typography variant="h5" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 900, letterSpacing: '-0.01em' }}>
                                     5.0 ★★★★★
                                 </Typography>
-                                <Typography variant="subtitle2" sx={{ color: '#FBBF24', fontWeight: 800, mb: 0.5 }}>
+                                <Typography variant="subtitle2" sx={{ color: isDark ? '#FBBF24' : '#D97706', fontWeight: 800, mb: 0.5 }}>
                                     324+ Verified Google Reviews
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mb: 2.5 }}>
+                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', mb: 2.5 }}>
                                     Two wheeler rental agency in Honnavar, Karnataka • Open 24 Hours
                                 </Typography>
 
                                 <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', mb: 2.5 }} />
 
                                 <Grid container spacing={2}>
-                                    <Grid item xs={4}>
+                                    <Grid size={{ xs: 4 }}>
                                         <Typography variant="h5" sx={{ color: '#F59E0B', fontWeight: 900 }}>
                                             ₹300
                                         </Typography>
@@ -525,7 +531,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             Starts From/Day
                                         </Typography>
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid size={{ xs: 4 }}>
                                         <Typography variant="h5" sx={{ color: '#38BDF8', fontWeight: 900 }}>
                                             2 Hubs
                                         </Typography>
@@ -533,7 +539,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             Palya Rd & Station
                                         </Typography>
                                     </Grid>
-                                    <Grid item xs={4}>
+                                    <Grid size={{ xs: 4 }}>
                                         <Typography variant="h5" sx={{ color: '#10B981', fontWeight: 900 }}>
                                             24/7
                                         </Typography>
@@ -545,16 +551,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                                 <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', my: 2.5 }} />
 
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, textAlign: 'left', bgcolor: 'rgba(15, 23, 42, 0.6)', p: 2, borderRadius: 2 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, textAlign: 'left', bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', border: isDark ? 'none' : '1px solid #E2E8F0', p: 2, borderRadius: 2 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18 }} />
-                                        <Typography variant="caption" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
+                                        <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#0F172A', fontWeight: 600 }}>
                                             Palya Main Rd, Honnavar, Karnataka 581334
                                         </Typography>
+                                        <Box component="a" href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334" target="_blank" rel="noreferrer" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: '#38BDF8', fontSize: '0.72rem', fontWeight: 700, textDecoration: 'none', ml: 'auto', '&:hover': { textDecoration: 'underline' } }}>
+                                            <DirectionsIcon sx={{ fontSize: 13 }} /> Directions ↗
+                                        </Box>
                                     </Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <PhoneIcon sx={{ color: '#10B981', fontSize: 16 }} />
-                                        <Typography variant="caption" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
+                                        <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#0F172A', fontWeight: 600 }}>
                                             +91 8660989586 • 097316 99125
                                         </Typography>
                                     </Box>
@@ -599,7 +608,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 label="Browse Rental Bikes in Honnavar"
                                 sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', fontWeight: 700, mb: 1 }}
                             />
-                            <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+                            <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em' }}>
                                 Choose Your Ride Style in Honnavar
                             </Typography>
                             <Typography variant="body1" sx={{ color: '#94A3B8', mt: 0.5 }}>
@@ -659,14 +668,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 <Box id="fleet" sx={{ mb: 10 }}>
                     <Grid container spacing={3.5}>
                         {filteredBikes.map((bike) => (
-                            <Grid item xs={12} sm={6} lg={4} key={bike.id}>
+                            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={bike.id}>
                                 <Card
                                     sx={{
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        bgcolor: '#131D2F',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                         borderRadius: 3.5,
                                         transition: 'transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
                                         '&:hover': {
@@ -677,7 +686,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     }}
                                 >
                                     {/* Bike Image */}
-                                    <Box sx={{ position: 'relative', bgcolor: '#0B1120', pt: 2, pb: 1, px: 2, textAlign: 'center' }}>
+                                    <Box sx={{ position: 'relative', bgcolor: isDark ? '#0B1120' : '#F1F5F9', pt: 2, pb: 1, px: 2, textAlign: 'center' }}>
                                         <Box
                                             component="img"
                                             src={bike.images?.[0]?.image_path || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80'}
@@ -721,7 +730,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     </Box>
 
                                     <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 0.5 }}>
+                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 0.5 }}>
                                             {bike.brand} {bike.model_name}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 2, textTransform: 'uppercase' }}>
@@ -849,7 +858,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             label="Transparent Tariff • Honnavar Bike Rental Price"
                             sx={{ bgcolor: 'rgba(56, 189, 248, 0.12)', color: '#38BDF8', fontWeight: 700, mb: 1.5 }}
                         />
-                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em', mb: 1 }}>
+                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 1 }}>
                             Honnavar Bike Rental Price & Transparent Rates
                         </Typography>
                         <Typography variant="body1" sx={{ color: '#94A3B8', maxWidth: 680, mx: 'auto' }}>
@@ -862,8 +871,8 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         elevation={0}
                         sx={{
                             mb: 4,
-                            bgcolor: '#131D2F',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                             borderRadius: 3,
                             overflow: 'hidden',
                         }}
@@ -944,14 +953,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                     {/* Duration Discount Tiers */}
                     <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3.5,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -960,7 +969,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 <Typography variant="subtitle2" sx={{ color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
                                     Daily Rental
                                 </Typography>
-                                <Typography variant="h4" sx={{ color: '#FFFFFF', fontWeight: 900, my: 1 }}>
+                                <Typography variant="h4" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 900, my: 1 }}>
                                     1 – 2 Days
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
@@ -986,7 +995,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
@@ -1009,7 +1018,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 <Typography variant="subtitle2" sx={{ color: '#F59E0B', fontWeight: 700, textTransform: 'uppercase' }}>
                                     Coastal Getaway
                                 </Typography>
-                                <Typography variant="h4" sx={{ color: '#FFFFFF', fontWeight: 900, my: 1 }}>
+                                <Typography variant="h4" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 900, my: 1 }}>
                                     3 – 6 Days
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#94A3B8', mb: 3 }}>
@@ -1035,14 +1044,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3.5,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -1051,7 +1060,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 <Typography variant="subtitle2" sx={{ color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
                                     Weekly Explorer
                                 </Typography>
-                                <Typography variant="h4" sx={{ color: '#FFFFFF', fontWeight: 900, my: 1 }}>
+                                <Typography variant="h4" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 900, my: 1 }}>
                                     7 – 29 Days
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
@@ -1077,14 +1086,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3.5,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -1093,7 +1102,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 <Typography variant="subtitle2" sx={{ color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>
                                     Monthly Lease
                                 </Typography>
-                                <Typography variant="h4" sx={{ color: '#FFFFFF', fontWeight: 900, my: 1 }}>
+                                <Typography variant="h4" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 900, my: 1 }}>
                                     30+ Days
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
@@ -1130,7 +1139,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             label="Must-Visit Coastal Destinations"
                             sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', fontWeight: 700, mb: 1.5 }}
                         />
-                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em', mb: 1 }}>
+                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 1 }}>
                             Top Places to Visit with Honnavar Bike Rentals
                         </Typography>
                         <Typography variant="body1" sx={{ color: '#94A3B8', maxWidth: 680, mx: 'auto' }}>
@@ -1139,14 +1148,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                     </Box>
 
                     <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     transition: 'transform 0.2s',
                                     '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(245, 158, 11, 0.4)' },
@@ -1157,7 +1166,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <DirectionsBoatIcon />
                                     </Box>
                                     <Box>
-                                        <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2 }}>
+                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
                                             Sharavathi Backwaters & Boating
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
@@ -1171,14 +1180,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     transition: 'transform 0.2s',
                                     '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(245, 158, 11, 0.4)' },
@@ -1189,7 +1198,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <BeachAccessIcon />
                                     </Box>
                                     <Box>
-                                        <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2 }}>
+                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
                                             Honnavar Eco Beach & Boardwalk
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
@@ -1203,14 +1212,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     transition: 'transform 0.2s',
                                     '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(245, 158, 11, 0.4)' },
@@ -1221,7 +1230,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <LandscapeIcon />
                                     </Box>
                                     <Box>
-                                        <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2 }}>
+                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
                                             Apsarakonda Waterfalls & Hill
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
@@ -1235,14 +1244,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     transition: 'transform 0.2s',
                                     '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(245, 158, 11, 0.4)' },
@@ -1253,7 +1262,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <CastleIcon />
                                     </Box>
                                     <Box>
-                                        <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2 }}>
+                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
                                             Mirjan Fort Historical Ride
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
@@ -1267,14 +1276,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     transition: 'transform 0.2s',
                                     '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(245, 158, 11, 0.4)' },
@@ -1285,7 +1294,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <ExploreIcon />
                                     </Box>
                                     <Box>
-                                        <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2 }}>
+                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
                                             Murudeshwar Shiva Temple
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
@@ -1299,14 +1308,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                     transition: 'transform 0.2s',
                                     '&:hover': { transform: 'translateY(-4px)', borderColor: 'rgba(245, 158, 11, 0.4)' },
@@ -1317,7 +1326,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <TwoWheelerIcon />
                                     </Box>
                                     <Box>
-                                        <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2 }}>
+                                        <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
                                             Gokarna & Om Beach Highway
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
@@ -1342,30 +1351,30 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             label="Simple 4-Step Process"
                             sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: '#10B981', fontWeight: 700, mb: 1.5 }}
                         />
-                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em', mb: 1 }}>
+                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 1 }}>
                             How Honnavar Bike Rent Works
                         </Typography>
-                        <Typography variant="body1" sx={{ color: '#94A3B8', maxWidth: 640, mx: 'auto' }}>
+                        <Typography variant="body1" sx={{ color: isDark ? '#94A3B8' : '#64748B', maxWidth: 640, mx: 'auto' }}>
                             Renting a bike in Honnavar has never been simpler. Book online in 2 minutes and pick up smoothly.
                         </Typography>
                     </Box>
 
                     <Grid container spacing={3}>
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                 }}
                             >
                                 <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F59E0B', fontWeight: 900, mb: 2 }}>
                                     01
                                 </Box>
-                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 1 }}>
+                                <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 1 }}>
                                     Choose Bike & Hub
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.6 }}>
@@ -1374,21 +1383,21 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                 }}
                             >
                                 <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38BDF8', fontWeight: 900, mb: 2 }}>
                                     02
                                 </Box>
-                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 1 }}>
+                                <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 1 }}>
                                     Hold & Book Online
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.6 }}>
@@ -1397,21 +1406,21 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                 }}
                             >
                                 <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', fontWeight: 900, mb: 2 }}>
                                     03
                                 </Box>
-                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 1 }}>
+                                <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 1 }}>
                                     Digital KYC Handover
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.6 }}>
@@ -1420,21 +1429,21 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             </Paper>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Paper
                                 elevation={0}
                                 sx={{
                                     p: 3,
                                     height: '100%',
-                                    bgcolor: '#131D2F',
-                                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                                     borderRadius: 3,
                                 }}
                             >
                                 <Box sx={{ width: 44, height: 44, borderRadius: 2, bgcolor: 'rgba(168, 85, 247, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C084FC', fontWeight: 900, mb: 2 }}>
                                     04
                                 </Box>
-                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 1 }}>
+                                <Typography variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 1 }}>
                                     Return & Refund
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.6 }}>
@@ -1455,7 +1464,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 label="Convenient Pickup & Return Points"
                                 sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', fontWeight: 700, mb: 1 }}
                             />
-                            <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+                            <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em' }}>
                                 Pick Up Your Honnavar Rental Bikes
                             </Typography>
                         </Box>
@@ -1463,14 +1472,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                     <Grid container spacing={4}>
                         {stores.map((store) => (
-                            <Grid item xs={12} md={6} key={store.id}>
+                            <Grid size={{ xs: 12, md: 6 }} key={store.id}>
                                 <Paper
                                     elevation={0}
                                     sx={{
                                         p: 4,
                                         height: '100%',
-                                        bgcolor: '#131D2F',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
                                         borderRadius: 3.5,
                                         display: 'flex',
                                         flexDirection: 'column',
@@ -1480,7 +1489,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     <Box>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                             <Box>
-                                                <Typography variant="h5" sx={{ color: '#FFFFFF', fontWeight: 800 }}>
+                                                <Typography variant="h5" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800 }}>
                                                     {store.name}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700 }}>
@@ -1529,11 +1538,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <Button
                                             variant="outlined"
                                             component="a"
-                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + ' ' + (store.address || 'Honnavar Karnataka'))}`}
+                                            href={store.name && store.name.toLowerCase().includes("railway")
+                                                ? "https://www.google.com/maps/dir/?api=1&destination=Honnavar+Railway+Station,+Karnataka"
+                                                : "https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"}
                                             target="_blank"
                                             rel="noreferrer"
+                                            startIcon={<DirectionsIcon />}
                                             fullWidth
-                                            sx={{ borderColor: 'rgba(255, 255, 255, 0.15)', color: '#FFFFFF' }}
+                                            sx={{
+                                                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                                                color: isDark ? '#FFFFFF' : '#0F172A',
+                                                fontWeight: 700,
+                                                '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' }
+                                            }}
                                         >
                                             Get Directions
                                         </Button>
@@ -1553,7 +1570,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             label="Got Questions? We Have Answers"
                             sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', fontWeight: 700, mb: 1 }}
                         />
-                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: '#FFFFFF', letterSpacing: '-0.02em', mb: 1 }}>
+                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 1 }}>
                             Honnavar Rental Bikes — FAQs
                         </Typography>
                         <Typography variant="body1" sx={{ color: '#94A3B8' }}>
@@ -1565,11 +1582,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         <Accordion
                             defaultExpanded
                             sx={{
-                                bgcolor: '#131D2F',
+                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
                                 color: '#FFFFFF',
                                 mb: 2,
                                 borderRadius: '12px !important',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                 '&:before': { display: 'none' },
                             }}
                         >
@@ -1587,11 +1604,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                         <Accordion
                             sx={{
-                                bgcolor: '#131D2F',
+                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
                                 color: '#FFFFFF',
                                 mb: 2,
                                 borderRadius: '12px !important',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                 '&:before': { display: 'none' },
                             }}
                         >
@@ -1609,11 +1626,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                         <Accordion
                             sx={{
-                                bgcolor: '#131D2F',
+                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
                                 color: '#FFFFFF',
                                 mb: 2,
                                 borderRadius: '12px !important',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                 '&:before': { display: 'none' },
                             }}
                         >
@@ -1631,11 +1648,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                         <Accordion
                             sx={{
-                                bgcolor: '#131D2F',
+                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
                                 color: '#FFFFFF',
                                 mb: 2,
                                 borderRadius: '12px !important',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                 '&:before': { display: 'none' },
                             }}
                         >
@@ -1653,11 +1670,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                         <Accordion
                             sx={{
-                                bgcolor: '#131D2F',
+                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
                                 color: '#FFFFFF',
                                 mb: 2,
                                 borderRadius: '12px !important',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                 '&:before': { display: 'none' },
                             }}
                         >
@@ -1675,11 +1692,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                         <Accordion
                             sx={{
-                                bgcolor: '#131D2F',
+                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
                                 color: '#FFFFFF',
                                 mb: 2,
                                 borderRadius: '12px !important',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                 '&:before': { display: 'none' },
                             }}
                         >
@@ -1729,7 +1746,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             p: 2,
                             borderRadius: 3,
                             bgcolor: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
                             mb: 4,
                         }}
                     >
@@ -1787,6 +1804,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 sx={{ color: '#38BDF8', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                             >
                                 5.0★ (324 Reviews on Google)
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                            <DirectionsIcon sx={{ color: '#38BDF8', fontSize: 18 }} />
+                            <Typography
+                                component="a"
+                                href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"
+                                target="_blank"
+                                rel="noreferrer"
+                                variant="body2"
+                                sx={{ color: '#38BDF8', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                            >
+                                Get Directions ↗
                             </Typography>
                         </Box>
                     </Box>

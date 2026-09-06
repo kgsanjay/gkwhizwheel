@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
+import { useColorMode } from '../../theme/ColorModeContext';
 import apiClient from '../../api/client';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -29,6 +30,8 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 
 export default function BikesIndex({ categories = [], stores = [], initialFilters = {} }) {
+    const { mode } = useColorMode();
+    const isDark = mode === 'dark';
     const [filters, setFilters] = useState({
         category_id: initialFilters.category_id || '',
         store_id: initialFilters.store_id || '',
@@ -82,10 +85,10 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
             <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
                 {/* Page Header */}
                 <Box sx={{ mb: 4 }}>
-                    <Typography variant="h2" component="h1" sx={{ fontWeight: 800, mb: 1, color: '#FFFFFF' }}>
+                    <Typography variant="h2" component="h1" sx={{ fontWeight: 800, mb: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                         Rental Bikes in Honnavar
                     </Typography>
-                    <Typography variant="subtitle1" sx={{ color: '#94A3B8' }}>
+                    <Typography variant="subtitle1" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                         Select your pickup dates, preferred Honnavar hub (Palya Main Rd or Railway Station), or vehicle category.
                     </Typography>
                 </Box>
@@ -96,7 +99,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                 sx={{
                     p: 3,
                     mb: 4,
-                    bgcolor: '#FFFFFF',
+                    bgcolor: isDark ? '#FFFFFF' : '#0F172A',
                     border: '1px solid #E2E8F0',
                     borderRadius: 3,
                 }}
@@ -110,7 +113,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                 <Grid container spacing={2}>
                     {/* Category Filter */}
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <TextField
                             select
                             fullWidth
@@ -128,7 +131,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     </Grid>
 
                     {/* Store Filter */}
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <TextField
                             select
                             fullWidth
@@ -146,7 +149,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     </Grid>
 
                     {/* Start Date */}
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <TextField
                             fullWidth
                             type="date"
@@ -158,7 +161,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     </Grid>
 
                     {/* End Date */}
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <TextField
                             fullWidth
                             type="date"
@@ -170,7 +173,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     </Grid>
 
                     {/* Min Price */}
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <TextField
                             fullWidth
                             type="number"
@@ -185,7 +188,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     </Grid>
 
                     {/* Max Price */}
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <TextField
                             fullWidth
                             type="number"
@@ -200,7 +203,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     </Grid>
 
                     {/* Filter Actions */}
-                    <Grid item xs={12} md={6} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Button
                             variant="outlined"
                             startIcon={<RestartAltIcon />}
@@ -242,10 +245,10 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         textAlign: 'center',
                         border: '1px dashed #CBD5E1',
                         borderRadius: 3,
-                        bgcolor: '#FFFFFF',
+                        bgcolor: isDark ? '#FFFFFF' : '#0F172A',
                     }}
                 >
-                    <TwoWheelerIcon sx={{ fontSize: 60, color: '#94A3B8', mb: 2 }} />
+                    <TwoWheelerIcon sx={{ fontSize: 60, color: isDark ? '#94A3B8' : '#64748B', mb: 2 }} />
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
                         No bikes found matching your criteria
                     </Typography>
@@ -274,12 +277,14 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         const detailUrl = `/bikes/${bike.id}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
                         return (
-                            <Grid item key={bike.id} xs={12} sm={6} md={4}>
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={bike.id}>
                                 <Card
                                     sx={{
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
+                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                         transition: 'transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out',
                                         '&:hover': {
                                             transform: 'translateY(-4px)',
@@ -349,14 +354,14 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             {bike.category?.name || 'Two-Wheeler'} • {bike.transmission || 'Automatic'}
                                         </Typography>
 
-                                        <Typography variant="h5" component="h2" sx={{ fontWeight: 700, mt: 0.5, mb: 1 }}>
+                                        <Typography variant="h5" component="h2" sx={{ fontWeight: 700, mt: 0.5, mb: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                             {bike.brand} {bike.model_name}
                                         </Typography>
 
                                         {/* Hub Location */}
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
                                             <LocationOnIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
-                                            <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
+                                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#475569', fontWeight: 500 }}>
                                                 {bike.current_store?.name || 'Honnavar Hub'}
                                             </Typography>
                                         </Box>
@@ -381,7 +386,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                 <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
                                                     Refundable Deposit
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#E2E8F0' : '#334155' }}>
                                                     ₹{Number(deposit).toLocaleString('en-IN')}
                                                 </Typography>
                                             </Box>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
+import { useColorMode } from '../../theme/ColorModeContext';
+import DirectionsIcon from '@mui/icons-material/Directions';
 import apiClient from '../../api/client';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -36,6 +38,8 @@ import AuthModal from '../../Components/Auth/AuthModal';
 import CheckoutModal from '../../Components/Booking/CheckoutModal';
 
 export default function BikeShow({ bike, stores = [] }) {
+    const { mode } = useColorMode();
+    const isDark = mode === 'dark';
     const { auth } = usePage().props;
     const [currentUser, setCurrentUser] = useState(auth?.user || null);
 
@@ -132,9 +136,9 @@ export default function BikeShow({ bike, stores = [] }) {
             {/* Main Details Grid */}
             <Grid container spacing={4}>
                 {/* Left Column: Vehicle Overview, Specifications & Add-ons */}
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                     {/* Vehicle Hero Card */}
-                    <Card sx={{ mb: 4, overflow: 'hidden' }}>
+                    <Card sx={{ mb: 4, overflow: 'hidden', bgcolor: isDark ? '#131D2F' : '#FFFFFF', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
                         <Box
                             sx={{
                                 height: 260,
@@ -190,13 +194,13 @@ export default function BikeShow({ bike, stores = [] }) {
                             <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
                                 {bike.category?.name || 'Two-Wheeler'} • {bike.transmission || 'Automatic'}
                             </Typography>
-                            <Typography variant="h3" component="h1" sx={{ fontWeight: 800, mt: 0.5, mb: 1 }}>
+                            <Typography variant="h3" component="h1" sx={{ fontWeight: 800, mt: 0.5, mb: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                 {bike.brand} {bike.model_name}
                             </Typography>
 
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                 <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 20 }} />
-                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                                <Typography variant="body1" sx={{ fontWeight: 600, color: isDark ? '#CBD5E1' : '#334155' }}>
                                     Current Store: {bike.current_store?.name || 'Honnavar Hub'} ({bike.current_store?.address_line})
                                 </Typography>
                             </Box>
@@ -233,7 +237,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                     </TableRow>
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Security Deposit</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: '#334155' }}>
+                                        <TableCell sx={{ fontWeight: 700, color: isDark ? '#CBD5E1' : '#334155' }}>
                                              ₹{Number(bike.deposit_amount_override || bike.category?.default_deposit_amount || 0).toLocaleString('en-IN')} (Refundable)
                                         </TableCell>
                                     </TableRow>
@@ -249,7 +253,7 @@ export default function BikeShow({ bike, stores = [] }) {
                     />
 
                     {/* Rental Policies Card */}
-                    <Paper elevation={0} sx={{ p: 3, border: '1px solid #E2E8F0', borderRadius: 3, bgcolor: '#FFFFFF' }}>
+                    <Paper elevation={0} sx={{ p: 3, border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0', borderRadius: 3, bgcolor: isDark ? '#131D2F' : '#FFFFFF' }}>
                         <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <SecurityIcon color="primary" fontSize="small" />
                             Rental & Compliance Guarantees
@@ -279,11 +283,12 @@ export default function BikeShow({ bike, stores = [] }) {
                 </Grid>
 
                 {/* Right Column: Live Booking Dates & Price-Quote Calculator */}
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                     <Card
                         elevation={0}
                         sx={{
-                            border: '2px solid #0F172A',
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                            bgcolor: isDark ? '#131D2F' : '#FFFFFF',
                             borderRadius: 3,
                             position: 'sticky',
                             top: 80,
@@ -305,7 +310,7 @@ export default function BikeShow({ bike, stores = [] }) {
                         <CardContent sx={{ p: 3 }}>
                             {/* Date Selection */}
                             <Grid container spacing={2} sx={{ mb: 2 }}>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth
                                         type="date"
@@ -315,7 +320,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                         onChange={(e) => setStartDate(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth
                                         type="date"
@@ -329,7 +334,7 @@ export default function BikeShow({ bike, stores = [] }) {
 
                             {/* Store Selection */}
                             <Grid container spacing={2} sx={{ mb: 2 }}>
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         select
                                         fullWidth
@@ -345,7 +350,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                     </TextField>
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         select
                                         fullWidth
@@ -384,7 +389,7 @@ export default function BikeShow({ bike, stores = [] }) {
 
                             {/* Live Price Quote Breakdown Display */}
                             {!canFetchQuote && (
-                                <Box sx={{ py: 3, textAlign: 'center', bgcolor: '#F8FAFC', borderRadius: 2, border: '1px dashed #CBD5E1' }}>
+                                <Box sx={{ py: 3, textAlign: 'center', bgcolor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#F8FAFC', borderRadius: 2, border: isDark ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed #CBD5E1' }}>
                                     <Typography variant="body2" color="text.secondary">
                                         Select both <strong>Pickup Date</strong> and <strong>Return Date</strong> to calculate your live quote.
                                     </Typography>
@@ -407,8 +412,8 @@ export default function BikeShow({ bike, stores = [] }) {
                             )}
 
                             {canFetchQuote && !isQuoteLoading && !isQuoteError && quote && (
-                                <Box sx={{ bgcolor: '#F8FAFC', p: 2.5, borderRadius: 2, border: '1px solid #E2E8F0', mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#0F172A' }}>
+                                <Box sx={{ bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', p: 2.5, borderRadius: 2, border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0', mb: 3 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         Price Breakdown
                                     </Typography>
 
@@ -480,14 +485,14 @@ export default function BikeShow({ bike, stores = [] }) {
                                         {/* Total Amount Due */}
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', pt: 0.5 }}>
                                             <Box>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                                     Total Advance + Deposit
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: '#64748B' }}>
                                                     Combined checkout charge
                                                 </Typography>
                                             </Box>
-                                            <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                            <Typography variant="h5" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                                 ₹{Number(quote.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </Typography>
                                         </Box>
