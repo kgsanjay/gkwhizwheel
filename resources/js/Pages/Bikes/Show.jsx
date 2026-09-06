@@ -156,10 +156,12 @@ export default function BikeShow({ bike, stores = [] }) {
                                 src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
                                 alt={`${bike.brand} ${bike.model_name}`}
                                 sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    objectPosition: 'center',
+                                    maxWidth: '100%',
+                                    maxHeight: '100%',
+                                    width: 'auto',
+                                    height: 'auto',
+                                    objectFit: 'contain',
+                                    p: 2,
                                 }}
                             />
 
@@ -222,7 +224,7 @@ export default function BikeShow({ bike, stores = [] }) {
 
                             {/* Specifications Table */}
                             <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                                Vehicle Specifications
+                                Vehicle Specifications & Official Tariff
                             </Typography>
                             <Table size="small">
                                 <TableBody>
@@ -243,15 +245,21 @@ export default function BikeShow({ bike, stores = [] }) {
                                         <TableCell sx={{ fontWeight: 600 }}>{bike.odometer_reading?.toLocaleString('en-IN') || 0} km</TableCell>
                                     </TableRow>
                                     <TableRow>
-                                        <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Base Daily Rate</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                             ₹{Number(bike.base_daily_rate_override || bike.category?.base_daily_rate || 0).toLocaleString('en-IN')} / day
+                                        <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Mon – Thu (Weekday Rate)</TableCell>
+                                        <TableCell sx={{ fontWeight: 800, color: '#F59E0B' }}>
+                                             ₹{Number(bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || 350).toLocaleString('en-IN')} / day
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Fri – Sun (Weekend Rate)</TableCell>
+                                        <TableCell sx={{ fontWeight: 800, color: isDark ? '#38BDF8' : '#0284C7' }}>
+                                             ₹{Number(bike.weekend_rate || (Number(bike.daily_rate || 350) + 100)).toLocaleString('en-IN')} / day
                                         </TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Security Deposit</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: isDark ? '#CBD5E1' : '#334155' }}>
-                                             ₹{Number(bike.deposit_amount_override || bike.category?.default_deposit_amount || 0).toLocaleString('en-IN')} (Refundable)
+                                        <TableCell sx={{ fontWeight: 700, color: '#10B981' }}>
+                                             Zero Deposit Option (₹0)
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>

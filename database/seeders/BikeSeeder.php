@@ -22,212 +22,220 @@ class BikeSeeder extends Seeder
      */
     public function run(): void
     {
-        $koramangala = Store::where('name', 'Koramangala Hub')->firstOrFail();
-        $indiranagar = Store::where('name', 'Indiranagar Station')->firstOrFail();
+        $mainOffice = Store::where('name', 'GK WhizWheels Main Office')->first() ?? Store::firstOrFail();
+        $stationHub = Store::where('name', 'Honnavar Railway Station Hub')->first() ?? $mainOffice;
 
-        $scooter = BikeCategory::where('name', 'Scooter')->firstOrFail();
-        $cruiser = BikeCategory::where('name', 'Cruiser')->firstOrFail();
-        $sports = BikeCategory::where('name', 'Sports')->firstOrFail();
+        $scooter = BikeCategory::firstOrCreate(['name' => 'Scooter'], ['base_daily_rate' => 450.00, 'default_deposit_amount' => 0.00]);
+        $cruiser = BikeCategory::firstOrCreate(['name' => 'Cruiser'], ['base_daily_rate' => 1100.00, 'default_deposit_amount' => 0.00]);
+        $electric = BikeCategory::firstOrCreate(['name' => 'Electric'], ['base_daily_rate' => 500.00, 'default_deposit_amount' => 0.00]);
 
-        $uploader = User::where('email', 'admin@whizwheel.com')->first()
-            ?? User::first();
+        $uploader = User::where('email', 'admin@whizwheel.com')->first() ?? User::first();
 
+        // The 9 official bikes matching the GK WhizWheel rate card
         $bikesData = [
-            // Store 1: Koramangala Hub (5 bikes)
+            // 1. Honda Dio DLX: Mon-Thu 350, Fri-Sun 450
             [
                 'category_id' => $scooter->id,
-                'current_store_id' => $koramangala->id,
-                'home_store_id' => $koramangala->id,
+                'current_store_id' => $mainOffice->id,
+                'home_store_id' => $mainOffice->id,
                 'brand' => 'Honda',
-                'model_name' => 'Activa 6G',
-                'registration_number' => 'KA-01-AB-1001',
+                'model_name' => 'Dio DLX',
+                'registration_number' => 'KA-47-E-1001',
                 'fuel_type' => FuelType::PETROL,
                 'transmission' => Transmission::AUTOMATIC,
-                'odometer_reading' => 4500,
+                'odometer_reading' => 4200,
+                'base_daily_rate_override' => 350.00,
+                'weekend_daily_rate_override' => 450.00,
+                'deposit_amount_override' => 0.00,
                 'status' => BikeStatus::AVAILABLE,
                 'next_service_due_date' => '2026-12-15',
-                'primary_image_path' => 'bikes/activa-6g-yellow.jpg',
+                'primary_image_path' => 'bikes/honda-dio-dlx.jpg',
             ],
-            [
-                'category_id' => $scooter->id,
-                'current_store_id' => $koramangala->id,
-                'home_store_id' => $koramangala->id,
-                'brand' => 'TVS',
-                'model_name' => 'Jupiter 125',
-                'registration_number' => 'KA-01-AB-1002',
-                'fuel_type' => FuelType::PETROL,
-                'transmission' => Transmission::AUTOMATIC,
-                'odometer_reading' => 6200,
-                'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2026-11-20',
-                'primary_image_path' => 'bikes/jupiter-125-blue.jpg',
-            ],
-            [
-                'category_id' => $scooter->id,
-                'current_store_id' => $koramangala->id,
-                'home_store_id' => $koramangala->id,
-                'brand' => 'Ather',
-                'model_name' => '450X',
-                'registration_number' => 'KA-01-AB-1003',
-                'fuel_type' => FuelType::ELECTRIC,
-                'transmission' => Transmission::AUTOMATIC,
-                'odometer_reading' => 3100,
-                'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2027-01-10',
-                'primary_image_path' => 'bikes/ather-450x-grey.jpg',
-            ],
+            // 2. Honda H'ness CB350: Mon-Thu 1200, Fri-Sun 1500
             [
                 'category_id' => $cruiser->id,
-                'current_store_id' => $koramangala->id,
-                'home_store_id' => $koramangala->id,
-                'brand' => 'Royal Enfield',
-                'model_name' => 'Classic 350',
-                'registration_number' => 'KA-01-AB-1004',
-                'fuel_type' => FuelType::PETROL,
-                'transmission' => Transmission::MANUAL,
-                'odometer_reading' => 12000,
-                'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2026-10-30',
-                'primary_image_path' => 'bikes/classic-350-stealth.jpg',
-            ],
-            [
-                'category_id' => $sports->id,
-                'current_store_id' => $koramangala->id,
-                'home_store_id' => $koramangala->id,
-                'brand' => 'Yamaha',
-                'model_name' => 'YZF-R15 V4',
-                'registration_number' => 'KA-01-AB-1005',
-                'fuel_type' => FuelType::PETROL,
-                'transmission' => Transmission::MANUAL,
-                'odometer_reading' => 8500,
-                'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2026-11-05',
-                'primary_image_path' => 'bikes/r15-racing-blue.jpg',
-            ],
-
-            // Store 2: Indiranagar Station (5 bikes)
-            [
-                'category_id' => $scooter->id,
-                'current_store_id' => $indiranagar->id,
-                'home_store_id' => $indiranagar->id,
-                'brand' => 'Suzuki',
-                'model_name' => 'Access 125',
-                'registration_number' => 'KA-03-XY-2001',
-                'fuel_type' => FuelType::PETROL,
-                'transmission' => Transmission::AUTOMATIC,
-                'odometer_reading' => 5400,
-                'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2026-12-01',
-                'primary_image_path' => 'bikes/access-125-white.jpg',
-            ],
-            [
-                'category_id' => $scooter->id,
-                'current_store_id' => $indiranagar->id,
-                'home_store_id' => $indiranagar->id,
-                'brand' => 'Ola',
-                'model_name' => 'S1 Pro',
-                'registration_number' => 'KA-03-XY-2002',
-                'fuel_type' => FuelType::ELECTRIC,
-                'transmission' => Transmission::AUTOMATIC,
-                'odometer_reading' => 2900,
-                'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2027-02-15',
-                'primary_image_path' => 'bikes/ola-s1-black.jpg',
-            ],
-            [
-                'category_id' => $cruiser->id,
-                'current_store_id' => $indiranagar->id,
-                'home_store_id' => $indiranagar->id,
-                'brand' => 'Royal Enfield',
-                'model_name' => 'Meteor 350',
-                'registration_number' => 'KA-03-XY-2003',
-                'fuel_type' => FuelType::PETROL,
-                'transmission' => Transmission::MANUAL,
-                'odometer_reading' => 9800,
-                'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2026-11-25',
-                'primary_image_path' => 'bikes/meteor-fireball-yellow.jpg',
-            ],
-            [
-                'category_id' => $cruiser->id,
-                'current_store_id' => $indiranagar->id,
-                'home_store_id' => $indiranagar->id,
+                'current_store_id' => $mainOffice->id,
+                'home_store_id' => $mainOffice->id,
                 'brand' => 'Honda',
                 'model_name' => "H'ness CB350",
-                'registration_number' => 'KA-03-XY-2004',
+                'registration_number' => 'KA-47-E-1002',
                 'fuel_type' => FuelType::PETROL,
                 'transmission' => Transmission::MANUAL,
                 'odometer_reading' => 7400,
+                'base_daily_rate_override' => 1200.00,
+                'weekend_daily_rate_override' => 1500.00,
+                'deposit_amount_override' => 0.00,
                 'status' => BikeStatus::AVAILABLE,
                 'next_service_due_date' => '2026-12-10',
-                'primary_image_path' => 'bikes/cb350-red.jpg',
+                'primary_image_path' => 'bikes/honda-hness.jpg',
             ],
+            // 3. Royal Enfield Classic 350: Mon-Thu 1000, Fri-Sun 1200
             [
-                'category_id' => $sports->id,
-                'current_store_id' => $indiranagar->id,
-                'home_store_id' => $indiranagar->id,
-                'brand' => 'KTM',
-                'model_name' => 'Duke 250',
-                'registration_number' => 'KA-03-XY-2005',
+                'category_id' => $cruiser->id,
+                'current_store_id' => $mainOffice->id,
+                'home_store_id' => $mainOffice->id,
+                'brand' => 'Royal Enfield',
+                'model_name' => 'Classic 350',
+                'registration_number' => 'KA-47-E-1003',
                 'fuel_type' => FuelType::PETROL,
                 'transmission' => Transmission::MANUAL,
-                'odometer_reading' => 11200,
+                'odometer_reading' => 11000,
+                'base_daily_rate_override' => 1000.00,
+                'weekend_daily_rate_override' => 1200.00,
+                'deposit_amount_override' => 0.00,
                 'status' => BikeStatus::AVAILABLE,
-                'next_service_due_date' => '2026-10-20',
-                'primary_image_path' => 'bikes/duke-250-orange.jpg',
+                'next_service_due_date' => '2026-10-30',
+                'primary_image_path' => 'bikes/royal-enfield-classic.jpg',
+            ],
+            // 4. TVS Ntorq 125: Mon-Thu 500, Fri-Sun 600
+            [
+                'category_id' => $scooter->id,
+                'current_store_id' => $mainOffice->id,
+                'home_store_id' => $mainOffice->id,
+                'brand' => 'TVS',
+                'model_name' => 'Ntorq 125',
+                'registration_number' => 'KA-47-E-1004',
+                'fuel_type' => FuelType::PETROL,
+                'transmission' => Transmission::AUTOMATIC,
+                'odometer_reading' => 5100,
+                'base_daily_rate_override' => 500.00,
+                'weekend_daily_rate_override' => 600.00,
+                'deposit_amount_override' => 0.00,
+                'status' => BikeStatus::AVAILABLE,
+                'next_service_due_date' => '2026-11-20',
+                'primary_image_path' => 'bikes/tvs-ntorq-125.jpg',
+            ],
+            // 5. Yamaha Fascino 125: Mon-Thu 450, Fri-Sun 500
+            [
+                'category_id' => $scooter->id,
+                'current_store_id' => $mainOffice->id,
+                'home_store_id' => $mainOffice->id,
+                'brand' => 'Yamaha',
+                'model_name' => 'Fascino 125',
+                'registration_number' => 'KA-47-E-1005',
+                'fuel_type' => FuelType::PETROL,
+                'transmission' => Transmission::AUTOMATIC,
+                'odometer_reading' => 4800,
+                'base_daily_rate_override' => 450.00,
+                'weekend_daily_rate_override' => 500.00,
+                'deposit_amount_override' => 0.00,
+                'status' => BikeStatus::AVAILABLE,
+                'next_service_due_date' => '2026-11-05',
+                'primary_image_path' => 'bikes/yamaha-fascino-125.jpg',
+            ],
+            // 6. Suzuki Access 125: Mon-Thu 450, Fri-Sun 500
+            [
+                'category_id' => $scooter->id,
+                'current_store_id' => $stationHub->id,
+                'home_store_id' => $stationHub->id,
+                'brand' => 'Suzuki',
+                'model_name' => 'Access 125',
+                'registration_number' => 'KA-47-E-2001',
+                'fuel_type' => FuelType::PETROL,
+                'transmission' => Transmission::AUTOMATIC,
+                'odometer_reading' => 5400,
+                'base_daily_rate_override' => 450.00,
+                'weekend_daily_rate_override' => 500.00,
+                'deposit_amount_override' => 0.00,
+                'status' => BikeStatus::AVAILABLE,
+                'next_service_due_date' => '2026-12-01',
+                'primary_image_path' => 'bikes/suzuki-access-125.jpg',
+            ],
+            // 7. Honda Activa: Mon-Thu 400, Fri-Sun 500
+            [
+                'category_id' => $scooter->id,
+                'current_store_id' => $stationHub->id,
+                'home_store_id' => $stationHub->id,
+                'brand' => 'Honda',
+                'model_name' => 'Activa 6G',
+                'registration_number' => 'KA-47-E-2002',
+                'fuel_type' => FuelType::PETROL,
+                'transmission' => Transmission::AUTOMATIC,
+                'odometer_reading' => 6100,
+                'base_daily_rate_override' => 400.00,
+                'weekend_daily_rate_override' => 500.00,
+                'deposit_amount_override' => 0.00,
+                'status' => BikeStatus::AVAILABLE,
+                'next_service_due_date' => '2026-12-25',
+                'primary_image_path' => 'bikes/honda-activa.jpg',
+            ],
+            // 8. Suzuki Burgman: Mon-Thu 500, Fri-Sun 600
+            [
+                'category_id' => $scooter->id,
+                'current_store_id' => $stationHub->id,
+                'home_store_id' => $stationHub->id,
+                'brand' => 'Suzuki',
+                'model_name' => 'Burgman Street 125',
+                'registration_number' => 'KA-47-E-2003',
+                'fuel_type' => FuelType::PETROL,
+                'transmission' => Transmission::AUTOMATIC,
+                'odometer_reading' => 4900,
+                'base_daily_rate_override' => 500.00,
+                'weekend_daily_rate_override' => 600.00,
+                'deposit_amount_override' => 0.00,
+                'status' => BikeStatus::AVAILABLE,
+                'next_service_due_date' => '2026-11-15',
+                'primary_image_path' => 'bikes/suzuki-burgman.jpg',
+            ],
+            // 9. TVS Orbiter: Mon-Thu 500, Fri-Sun 600
+            [
+                'category_id' => $electric->id,
+                'current_store_id' => $stationHub->id,
+                'home_store_id' => $stationHub->id,
+                'brand' => 'TVS',
+                'model_name' => 'Orbiter EV',
+                'registration_number' => 'KA-47-E-2004',
+                'fuel_type' => FuelType::ELECTRIC,
+                'transmission' => Transmission::AUTOMATIC,
+                'odometer_reading' => 2800,
+                'base_daily_rate_override' => 500.00,
+                'weekend_daily_rate_override' => 600.00,
+                'deposit_amount_override' => 0.00,
+                'status' => BikeStatus::AVAILABLE,
+                'next_service_due_date' => '2027-01-10',
+                'primary_image_path' => 'bikes/tvs-orbiter.jpg',
             ],
         ];
 
-        foreach ($bikesData as $data) {
-            $bike = Bike::firstOrCreate(
-                ['registration_number' => $data['registration_number']],
-                $data
-            );
+        // Clean out any old dummy bikes without bookings
+        BikeDocument::truncate();
+        Bike::query()->forceDelete();
 
-            // Document placeholders: RC, Insurance, Emission Certificate
+        foreach ($bikesData as $data) {
+            $bike = Bike::create($data);
+
+            // Document placeholders
             $regClean = strtolower(str_replace('-', '_', $bike->registration_number));
 
-            BikeDocument::firstOrCreate(
-                [
-                    'bike_id' => $bike->id,
-                    'document_type' => BikeDocumentType::RC,
-                ],
-                [
-                    'file_path' => "documents/bikes/{$regClean}_rc.pdf",
-                    'issue_date' => '2024-01-15',
-                    'expiry_date' => '2039-01-14',
-                    'uploaded_by' => $uploader?->id,
-                    'verified' => true,
-                ]
-            );
+            BikeDocument::create([
+                'bike_id' => $bike->id,
+                'document_type' => BikeDocumentType::RC,
+                'file_path' => "documents/bikes/{$regClean}_rc.pdf",
+                'issue_date' => '2024-01-15',
+                'expiry_date' => '2039-01-14',
+                'uploaded_by' => $uploader?->id,
+                'verified' => true,
+            ]);
 
-            BikeDocument::firstOrCreate(
-                [
-                    'bike_id' => $bike->id,
-                    'document_type' => BikeDocumentType::INSURANCE,
-                ],
-                [
-                    'file_path' => "documents/bikes/{$regClean}_insurance.pdf",
-                    'issue_date' => '2026-01-01',
-                    'expiry_date' => '2027-01-01',
-                    'uploaded_by' => $uploader?->id,
-                    'verified' => true,
-                ]
-            );
+            BikeDocument::create([
+                'bike_id' => $bike->id,
+                'document_type' => BikeDocumentType::INSURANCE,
+                'file_path' => "documents/bikes/{$regClean}_insurance.pdf",
+                'issue_date' => '2026-01-01',
+                'expiry_date' => '2027-01-01',
+                'uploaded_by' => $uploader?->id,
+                'verified' => true,
+            ]);
 
-            BikeDocument::firstOrCreate(
-                [
-                    'bike_id' => $bike->id,
-                    'document_type' => BikeDocumentType::EMISSION_CERTIFICATE,
-                ],
-                [
-                    'file_path' => "documents/bikes/{$regClean}_emission.pdf",
-                    'issue_date' => '2026-06-01',
-                    'expiry_date' => '2026-12-01',
-                    'uploaded_by' => $uploader?->id,
-                    'verified' => true,
-                ]
-            );
+            BikeDocument::create([
+                'bike_id' => $bike->id,
+                'document_type' => BikeDocumentType::EMISSION_CERTIFICATE,
+                'file_path' => "documents/bikes/{$regClean}_emission.pdf",
+                'issue_date' => '2026-06-01',
+                'expiry_date' => '2026-12-01',
+                'uploaded_by' => $uploader?->id,
+                'verified' => true,
+            ]);
         }
     }
 }

@@ -149,6 +149,11 @@ class PricingService
                     PricingRateType::FIXED_OVERRIDE => (float) $selectedRule->value - $baseDailyRate,
                     PricingRateType::FLAT_ADDON => (float) $selectedRule->value,
                 };
+            } elseif (in_array($dayOfWeek, [0, 5, 6], true) && $bikeModel->weekend_daily_rate_override !== null) {
+                // Rate card weekend rate (Fri-Sun)
+                $weekendRate = (float) $bikeModel->weekend_daily_rate_override;
+                $adjustment = round($weekendRate - $baseDailyRate, 2);
+                $ruleName = "Weekend Tariff (Fri-Sun: ₹{$weekendRate}/day)";
             }
 
             $finalDayRate = round($baseDailyRate + $adjustment, 2);

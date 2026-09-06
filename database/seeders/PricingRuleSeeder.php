@@ -18,8 +18,8 @@ class PricingRuleSeeder extends Seeder
      */
     public function run(): void
     {
-        $koramangala = Store::where('name', 'Koramangala Hub')->first();
-        $indiranagar = Store::where('name', 'Indiranagar Station')->first();
+        $mainOffice = Store::where('name', 'GK WhizWheels Main Office')->first() ?? Store::where('name', 'Koramangala Hub')->first() ?? Store::first();
+        $stationHub = Store::where('name', 'Honnavar Railway Station Hub')->first() ?? Store::where('name', 'Indiranagar Station')->first() ?? Store::skip(1)->first();
         $scooter = BikeCategory::where('name', 'Scooter')->first();
 
         // 1. Weekend Rule: Saturday 15% surcharge across all categories
@@ -65,13 +65,13 @@ class PricingRuleSeeder extends Seeder
             ]
         );
 
-        // 3. One-Way Fee Rule: Inter-hub drop between Koramangala and Indiranagar
-        if ($koramangala !== null && $indiranagar !== null) {
+        // 3. One-Way Fee Rule: Inter-hub drop between Main Office and Railway Station Hub
+        if ($mainOffice !== null && $stationHub !== null) {
             PricingRule::firstOrCreate(
                 [
                     'rule_type' => PricingRuleType::ONE_WAY_FEE,
-                    'from_store_id' => $koramangala->id,
-                    'to_store_id' => $indiranagar->id,
+                    'from_store_id' => $mainOffice->id,
+                    'to_store_id' => $stationHub->id,
                 ],
                 [
                     'rate_type' => PricingRateType::FLAT_ADDON,
@@ -84,8 +84,8 @@ class PricingRuleSeeder extends Seeder
             PricingRule::firstOrCreate(
                 [
                     'rule_type' => PricingRuleType::ONE_WAY_FEE,
-                    'from_store_id' => $indiranagar->id,
-                    'to_store_id' => $koramangala->id,
+                    'from_store_id' => $stationHub->id,
+                    'to_store_id' => $mainOffice->id,
                 ],
                 [
                     'rate_type' => PricingRateType::FLAT_ADDON,

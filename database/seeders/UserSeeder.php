@@ -25,8 +25,8 @@ class UserSeeder extends Seeder
             Role::firstOrCreate(['name' => $role->value, 'guard_name' => 'sanctum']);
         }
 
-        $koramangala = Store::where('name', 'Koramangala Hub')->first();
-        $indiranagar = Store::where('name', 'Indiranagar Station')->first();
+        $mainOffice = Store::where('name', 'GK WhizWheels Main Office')->first() ?? Store::where('name', 'Koramangala Hub')->first();
+        $stationHub = Store::where('name', 'Honnavar Railway Station Hub')->first() ?? Store::where('name', 'Indiranagar Station')->first();
 
         // 1. Admin Users
         $superAdmin = User::firstOrCreate(
@@ -71,8 +71,8 @@ class UserSeeder extends Seeder
             ]
         );
         $staffRajesh->syncRoles([UserRole::STAFF->value]);
-        if ($koramangala !== null) {
-            $staffRajesh->stores()->syncWithoutDetaching([$koramangala->id]);
+        if ($mainOffice !== null) {
+            $staffRajesh->stores()->syncWithoutDetaching([$mainOffice->id]);
         }
 
         $staffPriya = User::firstOrCreate(
@@ -88,8 +88,8 @@ class UserSeeder extends Seeder
             ]
         );
         $staffPriya->syncRoles([UserRole::STAFF->value]);
-        if ($indiranagar !== null) {
-            $staffPriya->stores()->syncWithoutDetaching([$indiranagar->id]);
+        if ($stationHub !== null) {
+            $staffPriya->stores()->syncWithoutDetaching([$stationHub->id]);
         }
 
         $staffSuresh = User::firstOrCreate(
@@ -105,7 +105,7 @@ class UserSeeder extends Seeder
             ]
         );
         $staffSuresh->syncRoles([UserRole::STAFF->value]);
-        $storeIds = array_filter([$koramangala?->id, $indiranagar?->id]);
+        $storeIds = array_filter([$mainOffice?->id, $stationHub?->id]);
         if (! empty($storeIds)) {
             $staffSuresh->stores()->syncWithoutDetaching($storeIds);
         }

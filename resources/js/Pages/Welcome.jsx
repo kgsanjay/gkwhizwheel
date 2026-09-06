@@ -84,12 +84,12 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         "name": "G.K. WhizWheel Rental bike - Honnavar",
         "alternateName": ["GK WhizWheels", "G.K. WhizWheel", "Whizwheels Honnavar"],
         "sameAs": ["https://share.google/GoM4iOgiuUIa7ZfwV"],
-        "description": "Premier two-wheeler rental agency in Honnavar offering well-maintained Honda Activa, Honda H'ness CB350, Royal Enfield, and scooters starting at ₹300/day. Zero deposit option, 24-hour service, and instant booking at Palya Main Rd and Honnavar Railway Station.",
+        "description": "Premier two-wheeler rental agency in Honnavar offering well-maintained Honda Activa, Honda H'ness CB350, Royal Enfield, and scooters starting at ₹350/day. Zero deposit option, 24-hour service, and instant booking at Palya Main Rd and Honnavar Railway Station.",
         "image": "https://whizwheels.in/images/logo.png",
         "telephone": ["+918660989586", "+919731699125"],
         "email": "contact@whizwheels.in",
         "url": "https://whizwheels.in",
-        "priceRange": "₹300 - ₹1200 per day",
+        "priceRange": "₹350 - ₹1500 per day",
         "address": {
             "@type": "PostalAddress",
             "streetAddress": "Palya Main Rd",
@@ -134,9 +134,9 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                     "itemOffered": {
                         "@type": "Service",
                         "name": "Honda Activa 6G Rental in Honnavar",
-                        "description": "Daily scooter rental starting at ₹300/day with zero deposit option for exploring Honnavar beaches and Sharavathi backwaters"
+                        "description": "Daily scooter rental starting at ₹350/day with zero deposit option for exploring Honnavar beaches and Sharavathi backwaters"
                     },
-                    "price": "300",
+                    "price": "350",
                     "priceCurrency": "INR"
                 },
                 {
@@ -166,19 +166,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     return (
         <AppLayout>
             <Head>
-                <title>Bike Rental in Honnavar - G.K. WhizWheel | Zero Deposit & Starts ₹300/Day</title>
+                <title>Bike Rental in Honnavar - G.K. WhizWheel | Zero Deposit & Starts ₹350/Day</title>
                 <meta
                     name="description"
-                    content="Rent top-rated bikes and scooters in Honnavar starting at ₹300/day. G.K. WhizWheel offers 5.0★ rated fleet (Activa, Royal Enfield, H'ness CB350) with zero deposit option, sanitized fleet, 24-hour service, and instant booking at Palya Main Rd & Railway Station. Call +91 8660989586 / 097316 99125."
+                    content="Rent top-rated bikes and scooters in Honnavar starting at ₹350/day. G.K. WhizWheel offers 5.0★ rated fleet (Activa, Royal Enfield, H'ness CB350) with zero deposit option, sanitized fleet, 24-hour service, and instant booking at Palya Main Rd & Railway Station. Call +91 8660989586 / 097316 99125."
                 />
                 <meta
                     name="keywords"
                     content="bike rental in honnavar, honnavar bike rental price, rental bikes in honnavar, honnavar rental bikes, honnavar bike rent, honnavar bike rentals, G.K. WhizWheel Rental bike Honnavar, scooty rent in honnavar, activa rent in honnavar"
                 />
-                <meta property="og:title" content="Bike Rental in Honnavar - G.K. WhizWheel | Zero Deposit | Starts ₹300/Day" />
+                <meta property="og:title" content="Bike Rental in Honnavar - G.K. WhizWheel | Zero Deposit | Starts ₹350/Day" />
                 <meta
                     property="og:description"
-                    content="Rent top-rated bikes and scooters in Honnavar starting at 300/day. 5.0★ Google Rated (324+ reviews). Zero deposit, sanitized fleet, and instant booking. Call +91 8660989586 / 097316 99125."
+                    content="Rent top-rated bikes and scooters in Honnavar starting at ₹350/day. 5.0★ Google Rated (324+ reviews). Zero deposit, sanitized fleet, and instant booking. Call +91 8660989586 / 097316 99125."
                 />
                 <meta property="og:image" content="/images/logo.png" />
                 <meta property="og:type" content="website" />
@@ -276,7 +276,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         WebkitTextFillColor: 'transparent',
                                     }}
                                 >
-                                    G.K. WhizWheel • Starts ₹300/Day
+                                    G.K. WhizWheel • Starts ₹350/Day
                                 </Box>
                             </Typography>
 
@@ -303,7 +303,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     maxWidth: 640,
                                 }}
                             >
-                                Welcome to <strong>G.K. WhizWheel Rental bike - Honnavar</strong>. Check live <strong>honnavar bike rental price</strong> starting at just ₹300/day. Rent sanitized Activas, Royal Enfields, and Honda H'ness CB350 with zero deposit options, 24/7 service, and instant pickup at Palya Main Rd or Honnavar Railway Station.
+                                Welcome to <strong>G.K. WhizWheel Rental bike - Honnavar</strong>. Check live <strong>honnavar bike rental price</strong> starting at just ₹350/day. Rent sanitized Activas, Royal Enfields, and Honda H'ness CB350 with zero deposit options, 24/7 service, and instant pickup at Palya Main Rd or Honnavar Railway Station.
                             </Typography>
 
                             {/* Interactive Quick Search Bar */}
@@ -525,7 +525,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 <Grid container spacing={2}>
                                     <Grid size={{ xs: 4 }}>
                                         <Typography variant="h5" sx={{ color: '#F59E0B', fontWeight: 900 }}>
-                                            ₹300
+                                            ₹350
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
                                             Starts From/Day
@@ -675,8 +675,8 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80';
 
                             const isElectric = (bike.fuel_type || '').toLowerCase() === 'electric';
-                            const dailyRateNum = Number(bike.daily_rate || bike.base_daily_rate || 0);
-                            const depositNum = Number(bike.deposit_amount || 1500);
+                            const weekdayRateNum = Number(bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || 350);
+                            const weekendRateNum = Number(bike.weekend_rate || (weekdayRateNum + (weekdayRateNum >= 1000 ? (weekdayRateNum >= 1200 ? 300 : 200) : (weekdayRateNum === 450 ? 50 : 100))));
 
                             return (
                                 <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={bike.id}>
@@ -705,8 +705,12 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 position: 'relative',
                                                 height: 220,
                                                 width: '100%',
-                                                bgcolor: isDark ? '#0B1120' : '#F1F5F9',
+                                                bgcolor: isDark ? '#0F172A' : '#ECEEF1',
                                                 overflow: 'hidden',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                p: 1.5,
                                             }}
                                         >
                                             <Box
@@ -715,10 +719,12 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 alt={`${bike.brand} ${bike.model_name} — Rental Bikes in Honnavar`}
                                                 loading="lazy"
                                                 sx={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'cover',
-                                                    objectPosition: 'center',
+                                                    maxWidth: '100%',
+                                                    maxHeight: '100%',
+                                                    width: 'auto',
+                                                    height: 'auto',
+                                                    objectFit: 'contain',
+                                                    borderRadius: 2,
                                                     transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
                                                     '&:hover': {
                                                         transform: 'scale(1.06)',
@@ -771,7 +777,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             </Typography>
 
                                             {/* Accurate Specs Pills from DB */}
-                                            <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
+                                            <Stack direction="row" spacing={1} sx={{ mb: 2.5 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9', px: 1.2, py: 0.5, borderRadius: 1.5 }}>
                                                     {isElectric ? (
                                                         <ElectricBoltIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
@@ -798,66 +804,97 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 </Box>
                                             </Stack>
 
-                                            <Box sx={{ mt: 'auto' }}>
-                                                <Divider sx={{ borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0', mb: 2 }} />
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2.5 }}>
-                                                    <Box>
-                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600, display: 'block' }}>
-                                                            Honnavar Daily Rate
+                                            {/* Official Rate Card Pricing Box */}
+                                            <Box
+                                                sx={{
+                                                    mt: 'auto',
+                                                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                                                    p: 2,
+                                                    borderRadius: 2.5,
+                                                    mb: 2.5,
+                                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                                    <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700, fontSize: '0.85rem' }}>
+                                                        Mon – Thu <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekday)</Box>
+                                                    </Typography>
+                                                    <Typography variant="h6" sx={{ color: '#F59E0B', fontWeight: 900, lineHeight: 1 }}>
+                                                        ₹{weekdayRateNum.toLocaleString('en-IN')}
+                                                        <Typography component="span" variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', ml: 0.5, fontWeight: 600 }}>
+                                                            /day
                                                         </Typography>
-                                                        <Typography variant="h5" sx={{ color: '#F59E0B', fontWeight: 900, lineHeight: 1.1 }}>
-                                                            ₹{dailyRateNum.toLocaleString('en-IN')}
-                                                            <Typography component="span" variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', ml: 0.5, fontWeight: 600 }}>
-                                                                / day
-                                                            </Typography>
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box sx={{ textAlign: 'right' }}>
-                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
-                                                            Refundable Deposit
-                                                        </Typography>
-                                                        <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#0F172A', fontWeight: 800 }}>
-                                                            ₹{depositNum.toLocaleString('en-IN')}
-                                                        </Typography>
-                                                    </Box>
+                                                    </Typography>
                                                 </Box>
 
-                                                <Stack direction="row" spacing={1.5}>
-                                                    <Button
-                                                        fullWidth
-                                                        variant="contained"
-                                                        color="secondary"
-                                                        component={Link}
-                                                        href={`/bikes/${bike.id}`}
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                                    <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700, fontSize: '0.85rem' }}>
+                                                        Fri – Sun <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekend)</Box>
+                                                    </Typography>
+                                                    <Typography variant="h6" sx={{ color: isDark ? '#38BDF8' : '#0284C7', fontWeight: 900, lineHeight: 1 }}>
+                                                        ₹{weekendRateNum.toLocaleString('en-IN')}
+                                                        <Typography component="span" variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', ml: 0.5, fontWeight: 600 }}>
+                                                            /day
+                                                        </Typography>
+                                                    </Typography>
+                                                </Box>
+
+                                                <Divider sx={{ my: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0' }} />
+
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700 }}>
+                                                        ✓ Zero Deposit Option
+                                                    </Typography>
+                                                    <Chip
+                                                        label="Available"
+                                                        size="small"
                                                         sx={{
+                                                            height: 20,
+                                                            fontSize: '0.68rem',
                                                             fontWeight: 800,
-                                                            py: 1.1,
-                                                            borderRadius: 2,
-                                                            fontSize: '0.925rem',
+                                                            bgcolor: 'rgba(16, 185, 129, 0.12)',
+                                                            color: '#10B981',
+                                                            border: '1px solid rgba(16, 185, 129, 0.3)',
                                                         }}
-                                                    >
-                                                        Book Now
-                                                    </Button>
-                                                    <Button
-                                                        variant="outlined"
-                                                        component={Link}
-                                                        href={`/bikes/${bike.id}`}
-                                                        sx={{
-                                                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
-                                                            color: isDark ? '#E2E8F0' : '#0F172A',
-                                                            fontWeight: 700,
-                                                            px: 2.5,
-                                                            borderRadius: 2,
-                                                            '&:hover': {
-                                                                borderColor: '#F59E0B',
-                                                                bgcolor: 'rgba(245, 158, 11, 0.08)',
-                                                            },
-                                                        }}
-                                                    >
-                                                        Details
-                                                    </Button>
-                                                </Stack>
+                                                    />
+                                                </Box>
                                             </Box>
+
+                                            <Stack direction="row" spacing={1.5}>
+                                                <Button
+                                                    fullWidth
+                                                    variant="contained"
+                                                    color="secondary"
+                                                    component={Link}
+                                                    href={`/bikes/${bike.id}`}
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        py: 1.1,
+                                                        borderRadius: 2,
+                                                        fontSize: '0.925rem',
+                                                    }}
+                                                >
+                                                    Book Now
+                                                </Button>
+                                                <Button
+                                                    variant="outlined"
+                                                    component={Link}
+                                                    href={`/bikes/${bike.id}`}
+                                                    sx={{
+                                                        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                                                        color: isDark ? '#E2E8F0' : '#0F172A',
+                                                        fontWeight: 700,
+                                                        px: 2.5,
+                                                        borderRadius: 2,
+                                                        '&:hover': {
+                                                            borderColor: '#F59E0B',
+                                                            bgcolor: 'rgba(245, 158, 11, 0.08)',
+                                                        },
+                                                    }}
+                                                >
+                                                    Details
+                                                </Button>
+                                            </Stack>
                                         </CardContent>
                                     </Card>
                                 </Grid>
@@ -924,74 +961,67 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         }}
                     >
                         <TableContainer>
-                            <Table sx={{ minWidth: 650 }}>
-                                <TableHead sx={{ bgcolor: 'rgba(15, 23, 42, 0.8)' }}>
+                            <Table sx={{ minWidth: 700 }}>
+                                <TableHead sx={{ bgcolor: isDark ? '#0B1120' : '#0F172A' }}>
                                     <TableRow>
-                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.95rem' }}>Vehicle Model</TableCell>
-                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.95rem' }}>Ideal For</TableCell>
-                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800, fontSize: '0.95rem' }}>1–2 Days Rate</TableCell>
-                                        <TableCell sx={{ color: '#10B981', fontWeight: 800, fontSize: '0.95rem' }}>Weekly Rate (15% Off)</TableCell>
-                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.95rem' }}>Deposit</TableCell>
-                                        <TableCell align="right" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.95rem' }}>Action</TableCell>
+                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.92rem' }}>Vehicle Model</TableCell>
+                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.92rem' }}>Category & Spec</TableCell>
+                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800, fontSize: '0.92rem' }}>Mon – Thu (Weekday)</TableCell>
+                                        <TableCell sx={{ color: '#38BDF8', fontWeight: 800, fontSize: '0.92rem' }}>Fri – Sun (Weekend)</TableCell>
+                                        <TableCell sx={{ color: '#10B981', fontWeight: 800, fontSize: '0.92rem' }}>Security Deposit</TableCell>
+                                        <TableCell align="right" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.92rem' }}>Action</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.02)' } }}>
-                                        <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>
-                                            Honda Activa 6G (110cc)
-                                        </TableCell>
-                                        <TableCell sx={{ color: '#94A3B8' }}>Sharavathi Boating, Eco Beach, Town Errands</TableCell>
-                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800 }}>₹300 – ₹399 / day</TableCell>
-                                        <TableCell sx={{ color: '#10B981', fontWeight: 700 }}>₹280 / day</TableCell>
-                                        <TableCell sx={{ color: '#CBD5E1' }}>Zero Deposit Option / ₹1,000</TableCell>
-                                        <TableCell align="right">
-                                            <Button component={Link} href="/bikes" size="small" variant="outlined" sx={{ color: '#F59E0B', borderColor: '#F59E0B' }}>
-                                                Book Activa
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.02)' } }}>
-                                        <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>
-                                            Honda Shine 125 / Splendor
-                                        </TableCell>
-                                        <TableCell sx={{ color: '#94A3B8' }}>Apsarakonda Waterfalls, Mirjan Fort, Kumta</TableCell>
-                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800 }}>₹499 / day</TableCell>
-                                        <TableCell sx={{ color: '#10B981', fontWeight: 700 }}>₹424 / day</TableCell>
-                                        <TableCell sx={{ color: '#CBD5E1' }}>₹1,000 (Refundable)</TableCell>
-                                        <TableCell align="right">
-                                            <Button component={Link} href="/bikes" size="small" variant="outlined" sx={{ color: '#F59E0B', borderColor: '#F59E0B' }}>
-                                                Book Bike
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.02)' } }}>
-                                        <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>
-                                            Royal Enfield Classic 350
-                                        </TableCell>
-                                        <TableCell sx={{ color: '#94A3B8' }}>Murudeshwar, Gokarna Om Beach, Coastal NH66</TableCell>
-                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800 }}>₹899 / day</TableCell>
-                                        <TableCell sx={{ color: '#10B981', fontWeight: 700 }}>₹764 / day</TableCell>
-                                        <TableCell sx={{ color: '#CBD5E1' }}>₹1,500 (Refundable)</TableCell>
-                                        <TableCell align="right">
-                                            <Button component={Link} href="/bikes" size="small" variant="contained" color="secondary" sx={{ fontWeight: 800 }}>
-                                                Book Bullet
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.02)' } }}>
-                                        <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>
-                                            Honda H'ness CB350
-                                        </TableCell>
-                                        <TableCell sx={{ color: '#94A3B8' }}>Premium Coastal Touring, Yana Caves, Jog Falls</TableCell>
-                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800 }}>₹1,200 / day</TableCell>
-                                        <TableCell sx={{ color: '#10B981', fontWeight: 700 }}>₹1,020 / day</TableCell>
-                                        <TableCell sx={{ color: '#CBD5E1' }}>₹1,500 (Refundable)</TableCell>
-                                        <TableCell align="right">
-                                            <Button component={Link} href="/bikes" size="small" variant="contained" color="secondary" sx={{ fontWeight: 800 }}>
-                                                Book H'ness
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
+                                    {[
+                                        { name: 'Honda Dio DLX', keyword: 'dio', spec: '110cc • Automatic • Petrol', weekday: 350, weekend: 450 },
+                                        { name: "Honda H'ness CB350", keyword: 'ness', spec: '350cc • Manual Cruiser • Petrol', weekday: 1200, weekend: 1500 },
+                                        { name: 'Royal Enfield Classic 350', keyword: 'classic', spec: '350cc • Manual Cruiser • Petrol', weekday: 1000, weekend: 1200 },
+                                        { name: 'TVS Ntorq 125', keyword: 'ntorq', spec: '125cc • Sport Scooter • Petrol', weekday: 500, weekend: 600 },
+                                        { name: 'Yamaha Fascino 125', keyword: 'fascino', spec: '125cc • Retro Style • Petrol', weekday: 450, weekend: 500 },
+                                        { name: 'Suzuki Access 125', keyword: 'access', spec: '125cc • Classic Scooter • Petrol', weekday: 450, weekend: 500 },
+                                        { name: 'Honda Activa 6G', keyword: 'activa', spec: '110cc • Easy Commuter • Petrol', weekday: 400, weekend: 500 },
+                                        { name: 'Suzuki Burgman Street 125', keyword: 'burgman', spec: '125cc • Maxi Comfort • Petrol', weekday: 500, weekend: 600 },
+                                        { name: 'TVS Orbiter EV', keyword: 'orbiter', spec: 'Electric Scooter • 0 Emissions', weekday: 500, weekend: 600 },
+                                    ].map((row) => {
+                                        const matchedBike = featuredBikes.find(b =>
+                                            (b.model_name && b.model_name.toLowerCase().includes(row.keyword)) ||
+                                            (b.brand && row.name.toLowerCase().includes(b.brand.toLowerCase()))
+                                        );
+                                        const bookHref = matchedBike ? `/bikes/${matchedBike.id}` : '/bikes';
+
+                                        return (
+                                            <TableRow key={row.name} sx={{ '&:hover': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.02)' } }}>
+                                                <TableCell sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 700, fontSize: '0.95rem' }}>
+                                                    {row.name}
+                                                </TableCell>
+                                                <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.85rem' }}>
+                                                    {row.spec}
+                                                </TableCell>
+                                                <TableCell sx={{ color: '#F59E0B', fontWeight: 900, fontSize: '1rem' }}>
+                                                    ₹{row.weekday.toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.75rem', fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B' }}>/day</Box>
+                                                </TableCell>
+                                                <TableCell sx={{ color: isDark ? '#38BDF8' : '#0284C7', fontWeight: 900, fontSize: '1rem' }}>
+                                                    ₹{row.weekend.toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.75rem', fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B' }}>/day</Box>
+                                                </TableCell>
+                                                <TableCell sx={{ color: '#10B981', fontWeight: 700, fontSize: '0.88rem' }}>
+                                                    ✓ Zero Deposit
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    <Button
+                                                        component={Link}
+                                                        href={bookHref}
+                                                        size="small"
+                                                        variant={row.weekday >= 1000 ? "contained" : "outlined"}
+                                                        color="secondary"
+                                                        sx={{ fontWeight: 800, borderRadius: 1.5, px: 2 }}
+                                                    >
+                                                        Book Now
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         </TableContainer>

@@ -24,6 +24,10 @@ class BikeResource extends JsonResource
             ? (float) $this->base_daily_rate_override
             : (float) ($this->category?->base_daily_rate ?? 0.0);
 
+        $weekendRate = $this->weekend_daily_rate_override !== null
+            ? (float) $this->weekend_daily_rate_override
+            : round($dailyRate * 1.2, 2);
+
         $depositAmount = $this->deposit_amount_override !== null
             ? (float) $this->deposit_amount_override
             : (float) ($this->category?->default_deposit_amount ?? 0.0);
@@ -37,6 +41,8 @@ class BikeResource extends JsonResource
             'transmission' => $this->transmission?->value ?? (string) $this->transmission,
             'status' => $this->status?->value ?? (string) $this->status,
             'daily_rate' => $dailyRate,
+            'weekday_rate' => $dailyRate,
+            'weekend_rate' => $weekendRate,
             'deposit_amount' => $depositAmount,
             'primary_image_path' => $this->primary_image_path,
             'primary_image_url' => $this->primary_image_path

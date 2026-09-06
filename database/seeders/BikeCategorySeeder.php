@@ -26,6 +26,11 @@ class BikeCategorySeeder extends Seeder
                 'default_deposit_amount' => 4000.00,
             ],
             [
+                'name' => 'Electric',
+                'base_daily_rate' => 500.00,
+                'default_deposit_amount' => 1500.00,
+            ],
+            [
                 'name' => 'Sports',
                 'base_daily_rate' => 1500.00,
                 'default_deposit_amount' => 5000.00,
