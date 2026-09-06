@@ -76,13 +76,15 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     const structuredData = {
         "@context": "https://schema.org",
         "@type": ["AutoRental", "LocalBusiness"],
-        "name": "GK WhizWheels — Bike Rental in Honnavar",
-        "description": "Premier bike rental in Honnavar offering well-maintained Honda Activa, Royal Enfield, and scooters. Transparent Honnavar bike rental price from ₹399/day with pickup at Palya Main Rd and Honnavar Railway Station.",
+        "name": "G.K. WhizWheel Rental bike - Honnavar",
+        "alternateName": ["GK WhizWheels", "G.K. WhizWheel", "Whizwheels Honnavar"],
+        "sameAs": ["https://share.google/GoM4iOgiuUIa7ZfwV"],
+        "description": "Premier two-wheeler rental agency in Honnavar offering well-maintained Honda Activa, Honda H'ness CB350, Royal Enfield, and scooters starting at ₹300/day. Zero deposit option, 24-hour service, and instant booking at Palya Main Rd and Honnavar Railway Station.",
         "image": "https://whizwheels.in/images/logo.png",
-        "telephone": "+918660989586",
+        "telephone": ["+918660989586", "+919731699125"],
         "email": "contact@whizwheels.in",
         "url": "https://whizwheels.in",
-        "priceRange": "₹399 - ₹1200 per day",
+        "priceRange": "₹300 - ₹1200 per day",
         "address": {
             "@type": "PostalAddress",
             "streetAddress": "Palya Main Rd",
@@ -96,12 +98,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             "latitude": 14.2802,
             "longitude": 74.4437
         },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "5.0",
+            "reviewCount": "324",
+            "bestRating": "5",
+            "worstRating": "1"
+        },
         "openingHoursSpecification": [
             {
                 "@type": "OpeningHoursSpecification",
                 "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-                "opens": "07:30",
-                "closes": "21:30"
+                "opens": "00:00",
+                "closes": "23:59"
             }
         ],
         "areaServed": [
@@ -120,9 +129,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                     "itemOffered": {
                         "@type": "Service",
                         "name": "Honda Activa 6G Rental in Honnavar",
-                        "description": "Daily scooter rental for exploring Honnavar beaches and Sharavathi backwaters"
+                        "description": "Daily scooter rental starting at ₹300/day with zero deposit option for exploring Honnavar beaches and Sharavathi backwaters"
                     },
-                    "price": "399",
+                    "price": "300",
+                    "priceCurrency": "INR"
+                },
+                {
+                    "@type": "Offer",
+                    "itemOffered": {
+                        "@type": "Service",
+                        "name": "Honda H'ness CB350 Rental in Honnavar",
+                        "description": "Premium cruiser motorcycle rental for coastal highway road trips"
+                    },
+                    "price": "1200",
                     "priceCurrency": "INR"
                 },
                 {
@@ -130,7 +149,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                     "itemOffered": {
                         "@type": "Service",
                         "name": "Royal Enfield Classic 350 Rental in Honnavar",
-                        "description": "Cruiser bike rental for long coastal highway trips to Murudeshwar and Gokarna"
+                        "description": "Classic thumping cruiser bike rental for long coastal highway trips to Murudeshwar and Gokarna"
                     },
                     "price": "899",
                     "priceCurrency": "INR"
@@ -142,19 +161,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     return (
         <AppLayout>
             <Head>
-                <title>GK WhizWheels — #1 Bike Rental in Honnavar | Best Honnavar Bike Rental Price</title>
+                <title>Bike Rental in Honnavar - G.K. WhizWheel | Zero Deposit & Starts ₹300/Day</title>
                 <meta
                     name="description"
-                    content="Looking for bike rental in honnavar? GK WhizWheels offers top rental bikes in honnavar with the best honnavar bike rental price starting at ₹399/day. Easy honnavar bike rent at Palya Main Rd & Railway Station for Sharavathi Backwaters, Eco Beach, Apsarakonda & Gokarna. Call +91 8660989586."
+                    content="Rent top-rated bikes and scooters in Honnavar starting at ₹300/day. G.K. WhizWheel offers 5.0★ rated fleet (Activa, Royal Enfield, H'ness CB350) with zero deposit option, sanitized fleet, 24-hour service, and instant booking at Palya Main Rd & Railway Station. Call +91 8660989586 / 097316 99125."
                 />
                 <meta
                     name="keywords"
-                    content="bike rental in honnavar, honnavar bike rental price, rental bikes in honnavar, honnavar rental bikes, honnavar bike rent, honnavar bike rentals, scooty for rent in honnavar, rent activa in honnavar, royal enfield rent honnavar, honnavar railway station bike rental"
+                    content="bike rental in honnavar, honnavar bike rental price, rental bikes in honnavar, honnavar rental bikes, honnavar bike rent, honnavar bike rentals, G.K. WhizWheel Rental bike Honnavar, scooty rent in honnavar, activa rent in honnavar"
                 />
-                <meta property="og:title" content="GK WhizWheels — #1 Bike Rental in Honnavar | Transparent Prices" />
+                <meta property="og:title" content="Bike Rental in Honnavar - G.K. WhizWheel | Zero Deposit | Starts ₹300/Day" />
                 <meta
                     property="og:description"
-                    content="Best bike rental in Honnavar. Rent Honda Activa, Royal Enfield & scooters with zero hassle. Palya Main Rd & Railway Station pickup. Call +91 8660989586."
+                    content="Rent top-rated bikes and scooters in Honnavar starting at 300/day. 5.0★ Google Rated (324+ reviews). Zero deposit, sanitized fleet, and instant booking. Call +91 8660989586 / 097316 99125."
                 />
                 <meta property="og:image" content="/images/logo.png" />
                 <meta property="og:type" content="website" />
@@ -218,8 +237,8 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         {/* Left Hero Content & Quick Booking Form */}
                         <Grid item xs={12} lg={7}>
                             <Chip
-                                icon={<ElectricBoltIcon sx={{ color: '#F59E0B !important', fontSize: 16 }} />}
-                                label="GK WhizWheels • #1 Bike Rental in Honnavar, Karnataka"
+                                icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 16 }} />}
+                                label="G.K. WhizWheel • 5.0 ★ (324 Google Reviews) • Honnavar, Karnataka"
                                 sx={{
                                     bgcolor: 'rgba(245, 158, 11, 0.12)',
                                     color: '#FBBF24',
@@ -243,7 +262,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     mb: 2,
                                 }}
                             >
-                                Best Bike Rental in Honnavar <br />
+                                Bike Rental in Honnavar <br />
                                 <Box
                                     component="span"
                                     sx={{
@@ -252,21 +271,34 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         WebkitTextFillColor: 'transparent',
                                     }}
                                 >
-                                    Rent Activa & Royal Enfield
+                                    G.K. WhizWheel • Starts ₹300/Day
                                 </Box>
+                            </Typography>
+
+                            <Typography
+                                variant="subtitle1"
+                                sx={{
+                                    color: '#FBBF24',
+                                    fontWeight: 700,
+                                    fontStyle: 'italic',
+                                    mb: 1.5,
+                                    fontSize: '1.05rem',
+                                }}
+                            >
+                                “Ride the Freedom, Feel the Wind. Your trusted partner for bike rentals in Honnavar.”
                             </Typography>
 
                             <Typography
                                 variant="body1"
                                 sx={{
                                     color: '#94A3B8',
-                                    fontSize: { xs: '1rem', md: '1.15rem' },
+                                    fontSize: { xs: '1rem', md: '1.1rem' },
                                     lineHeight: 1.65,
                                     mb: 4,
                                     maxWidth: 640,
                                 }}
                             >
-                                Experience coastal freedom with <strong>GK WhizWheels</strong>. Compare live <strong>honnavar bike rental price</strong> starting at ₹399/day. Pick up reliable <strong>rental bikes in honnavar</strong> at our Palya Main Rd office or Honnavar Railway Station for seamless trips to Sharavathi Backwaters, Eco Beach, Apsarakonda, Mirjan Fort, Murudeshwar, and Gokarna.
+                                Welcome to <strong>G.K. WhizWheel Rental bike - Honnavar</strong>. Check live <strong>honnavar bike rental price</strong> starting at just ₹300/day. Rent sanitized Activas, Royal Enfields, and Honda H'ness CB350 with zero deposit options, 24/7 service, and instant pickup at Palya Main Rd or Honnavar Railway Station.
                             </Typography>
 
                             {/* Interactive Quick Search Bar */}
@@ -468,26 +500,29 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                                 <Stack direction="row" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
                                     {[1, 2, 3, 4, 5].map((s) => (
-                                        <StarIcon key={s} sx={{ color: '#F59E0B', fontSize: 22 }} />
+                                        <StarIcon key={s} sx={{ color: '#F59E0B', fontSize: 24 }} />
                                     ))}
                                 </Stack>
 
-                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800 }}>
-                                    4.9 / 5 Rating from 1,200+ Coastal Travelers
+                                <Typography variant="h5" sx={{ color: '#FFFFFF', fontWeight: 900, letterSpacing: '-0.01em' }}>
+                                    5.0 ★★★★★
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: '#94A3B8', mt: 0.5, mb: 3 }}>
-                                    Honnavar's most reliable two-wheeler rentals. Clean vehicles, digital RC documents, and flexible booking durations.
+                                <Typography variant="subtitle2" sx={{ color: '#FBBF24', fontWeight: 800, mb: 0.5 }}>
+                                    324+ Verified Google Reviews
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mb: 2.5 }}>
+                                    Two wheeler rental agency in Honnavar, Karnataka • Open 24 Hours
                                 </Typography>
 
-                                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', mb: 3 }} />
+                                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', mb: 2.5 }} />
 
                                 <Grid container spacing={2}>
                                     <Grid item xs={4}>
                                         <Typography variant="h5" sx={{ color: '#F59E0B', fontWeight: 900 }}>
-                                            ₹399
+                                            ₹300
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
-                                            Starting Rate/Day
+                                            Starts From/Day
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={4}>
@@ -500,10 +535,10 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     </Grid>
                                     <Grid item xs={4}>
                                         <Typography variant="h5" sx={{ color: '#10B981', fontWeight: 900 }}>
-                                            15 Min
+                                            24/7
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
-                                            Quick Handover
+                                            Open 24 Hours
                                         </Typography>
                                     </Grid>
                                 </Grid>
@@ -520,10 +555,29 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <PhoneIcon sx={{ color: '#10B981', fontSize: 16 }} />
                                         <Typography variant="caption" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
-                                            Call / WhatsApp: +91 8660989586
+                                            +91 8660989586 • 097316 99125
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <AccessTimeIcon sx={{ color: '#38BDF8', fontSize: 16 }} />
+                                        <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700 }}>
+                                            Open 24 Hours Daily
                                         </Typography>
                                     </Box>
                                 </Box>
+
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    component="a"
+                                    href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    size="small"
+                                    sx={{ mt: 2, color: '#38BDF8', borderColor: 'rgba(56, 189, 248, 0.3)', textTransform: 'none', fontWeight: 700 }}
+                                >
+                                    View 324 Reviews on Google (5.0 ★) →
+                                </Button>
                             </Paper>
                         </Grid>
                     </Grid>
@@ -832,9 +886,9 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             Honda Activa 6G (110cc)
                                         </TableCell>
                                         <TableCell sx={{ color: '#94A3B8' }}>Sharavathi Boating, Eco Beach, Town Errands</TableCell>
-                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800 }}>₹399 / day</TableCell>
-                                        <TableCell sx={{ color: '#10B981', fontWeight: 700 }}>₹339 / day</TableCell>
-                                        <TableCell sx={{ color: '#CBD5E1' }}>₹1,000 (Refundable)</TableCell>
+                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800 }}>₹300 – ₹399 / day</TableCell>
+                                        <TableCell sx={{ color: '#10B981', fontWeight: 700 }}>₹280 / day</TableCell>
+                                        <TableCell sx={{ color: '#CBD5E1' }}>Zero Deposit Option / ₹1,000</TableCell>
                                         <TableCell align="right">
                                             <Button component={Link} href="/bikes" size="small" variant="outlined" sx={{ color: '#F59E0B', borderColor: '#F59E0B' }}>
                                                 Book Activa
@@ -866,6 +920,20 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <TableCell align="right">
                                             <Button component={Link} href="/bikes" size="small" variant="contained" color="secondary" sx={{ fontWeight: 800 }}>
                                                 Book Bullet
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow sx={{ '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.02)' } }}>
+                                        <TableCell sx={{ color: '#E2E8F0', fontWeight: 700 }}>
+                                            Honda H'ness CB350
+                                        </TableCell>
+                                        <TableCell sx={{ color: '#94A3B8' }}>Premium Coastal Touring, Yana Caves, Jog Falls</TableCell>
+                                        <TableCell sx={{ color: '#F59E0B', fontWeight: 800 }}>₹1,200 / day</TableCell>
+                                        <TableCell sx={{ color: '#10B981', fontWeight: 700 }}>₹1,020 / day</TableCell>
+                                        <TableCell sx={{ color: '#CBD5E1' }}>₹1,500 (Refundable)</TableCell>
+                                        <TableCell align="right">
+                                            <Button component={Link} href="/bikes" size="small" variant="contained" color="secondary" sx={{ fontWeight: 800 }}>
+                                                Book H'ness
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -1420,10 +1488,10 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 </Typography>
                                             </Box>
                                             <Chip
-                                                icon={<AccessTimeIcon sx={{ fontSize: 14, color: '#F59E0B !important' }} />}
-                                                label="07:30 AM – 09:30 PM"
+                                                icon={<AccessTimeIcon sx={{ fontSize: 14, color: '#10B981 !important' }} />}
+                                                label="Open 24 Hours"
                                                 size="small"
-                                                sx={{ bgcolor: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', fontWeight: 600 }}
+                                                sx={{ bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10B981', fontWeight: 700 }}
                                             />
                                         </Box>
 
@@ -1437,7 +1505,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                             <PhoneIcon sx={{ color: '#10B981', fontSize: 18 }} />
                                             <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-                                                Hub Phone: +91 8660989586
+                                                Hub Contact: +91 8660989586 • 097316 99125
                                             </Typography>
                                         </Box>
 
@@ -1681,6 +1749,21 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             >
                                 +91 8660989586
                             </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748B' }}>•</Typography>
+                            <Typography
+                                component="a"
+                                href="tel:09731699125"
+                                variant="body2"
+                                sx={{ color: '#E2E8F0', fontWeight: 700, textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}
+                            >
+                                097316 99125
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <AccessTimeIcon sx={{ color: '#F59E0B', fontSize: 18 }} />
+                            <Typography variant="body2" sx={{ color: '#10B981', fontWeight: 700 }}>
+                                Open 24 Hours
+                            </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <EmailIcon sx={{ color: '#38BDF8', fontSize: 18 }} />
@@ -1691,6 +1774,19 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 sx={{ color: '#E2E8F0', fontWeight: 600, textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}
                             >
                                 contact@whizwheels.in
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <StarIcon sx={{ color: '#FBBF24', fontSize: 18 }} />
+                            <Typography
+                                component="a"
+                                href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                target="_blank"
+                                rel="noreferrer"
+                                variant="body2"
+                                sx={{ color: '#38BDF8', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                            >
+                                5.0★ (324 Reviews on Google)
                             </Typography>
                         </Box>
                     </Box>

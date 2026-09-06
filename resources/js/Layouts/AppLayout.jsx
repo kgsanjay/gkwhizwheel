@@ -19,6 +19,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 export default function AppLayout({ children, fullWidth = false }) {
     const { auth, flash } = usePage().props;
@@ -40,18 +41,18 @@ export default function AppLayout({ children, fullWidth = false }) {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                Office: Palya Main Rd, Honnavar, Karnataka 581334 • Railway Station Pickup Available
+                                Palya Main Rd, Honnavar, Karnataka 581334 • Railway Station Pickup Available
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
-                            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                Verified Rental Bikes in Honnavar • Best Daily Rates
+                            <Typography variant="caption" sx={{ color: '#FBBF24', fontWeight: 700 }}>
+                                5.0 ★★★★★ (324 Google Reviews) • Open 24 Hours
                             </Typography>
                         </Box>
                     </Stack>
 
-                    <Stack direction="row" spacing={3} alignItems="center">
+                    <Stack direction="row" spacing={2.5} alignItems="center">
                         <Box
                             component="a"
                             href="tel:+918660989586"
@@ -68,6 +69,23 @@ export default function AppLayout({ children, fullWidth = false }) {
                         >
                             <PhoneIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
                             +91 8660989586
+                        </Box>
+                        <Box
+                            component="a"
+                            href="tel:09731699125"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.6,
+                                color: '#E2E8F0',
+                                textDecoration: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                '&:hover': { color: '#F59E0B' },
+                            }}
+                        >
+                            <PhoneIcon sx={{ fontSize: 13, color: '#10B981' }} />
+                            097316 99125
                         </Box>
                         <Box
                             component="a"
@@ -410,6 +428,21 @@ export default function AppLayout({ children, fullWidth = false }) {
                                     >
                                         +91 8660989586
                                     </Typography>
+                                    <Typography variant="body2" sx={{ color: '#64748B' }}>•</Typography>
+                                    <Typography
+                                        component="a"
+                                        href="tel:09731699125"
+                                        variant="body2"
+                                        sx={{ color: '#E2E8F0', fontWeight: 600, textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}
+                                    >
+                                        097316 99125
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <AccessTimeIcon sx={{ color: '#F59E0B', fontSize: 18 }} />
+                                    <Typography variant="body2" sx={{ color: '#10B981', fontWeight: 700 }}>
+                                        Open 24 Hours • Daily Service
+                                    </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <EmailIcon sx={{ color: '#38BDF8', fontSize: 18 }} />
@@ -517,8 +550,18 @@ export default function AppLayout({ children, fullWidth = false }) {
                                 <Typography variant="body2" sx={{ color: '#CBD5E1', fontWeight: 600 }}>
                                     Hub 2: Honnavar Railway Station Hub
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                                    Open daily: 07:30 AM – 09:30 PM
+                                <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700, display: 'block' }}>
+                                    Open 24 Hours Daily • Round-the-clock Pickup
+                                </Typography>
+                                <Typography
+                                    component="a"
+                                    href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    variant="caption"
+                                    sx={{ color: '#38BDF8', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' }, display: 'inline-block' }}
+                                >
+                                    ★ 5.0 Rated (324 Reviews on Google) →
                                 </Typography>
                                 <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', my: 1 }} />
                                 <Typography component={Link} href="/account" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
