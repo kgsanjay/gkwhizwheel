@@ -18,23 +18,44 @@ use Inertia\Response;
 class AdminAuthController extends Controller
 {
     /**
-     * Display the admin & staff login view.
+     * Display the unified login view.
      */
     public function create(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
 
-        if ($user !== null && in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
-            return redirect()->route('admin.dashboard');
+        if ($user !== null) {
+            if (in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+                return redirect()->route('admin.dashboard');
+            }
+            return redirect()->route('account.index');
         }
 
         return Inertia::render('Admin/Login', [
             'status' => session('status'),
+            'initialTab' => 0, // 0 for Login, 1 for Sign Up
         ]);
     }
 
     /**
-     * Handle an incoming authentication request for admin/staff.
+     * Display the sign up view.
+     */
+    public function createRegister(Request $request): Response|RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user !== null) {
+            return redirect()->route('account.index');
+        }
+
+        return Inertia::render('Admin/Login', [
+            'status' => session('status'),
+            'initialTab' => 1, // Pre-select Sign Up
+        ]);
+    }
+
+    /**
+     * Handle an incoming authentication request for both customers and staff.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -61,9 +82,10 @@ class AdminAuthController extends Controller
             ])->onlyInput('login');
         }
 
-        if ($user->role === UserRole::CUSTOMER) {
+        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.login*');
+        if ($isAdminRoute && $user->role === UserRole::CUSTOMER) {
             return back()->withErrors([
-                'login' => 'Customer accounts cannot log in to the Staff & Admin portal. Please use the customer portal.',
+                'login' => 'Access denied. Customer accounts cannot access the admin console.',
             ])->onlyInput('login');
         }
 
@@ -72,7 +94,40 @@ class AdminAuthController extends Controller
 
         $request->session()->regenerate();
 
+        if ($user->role === UserRole::CUSTOMER) {
+            return redirect()->intended(route('account.index'));
+        }
+
         return redirect()->intended(route('admin.dashboard'));
+    }
+
+    /**
+     * Handle customer registration.
+     */
+    public function storeRegister(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
+            'password' => ['required', 'string', 'min:6'],
+            'whatsapp_opt_in' => ['nullable', 'boolean'],
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'password' => Hash::make($validated['password']),
+            'role' => UserRole::CUSTOMER,
+            'status' => UserStatus::ACTIVE,
+            'whatsapp_opt_in' => (bool) ($validated['whatsapp_opt_in'] ?? true),
+        ]);
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('account.index')->with('success', 'Account created successfully! Welcome to GK WhizWheels.');
     }
 
     /**
@@ -80,11 +135,15 @@ class AdminAuthController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin.login')->with('success', 'You have been logged out successfully.');
+        $redirectRoute = $isAdminRoute ? 'admin.login' : 'login';
+
+        return redirect()->route($redirectRoute)->with('success', 'You have been logged out successfully.');
     }
 }

@@ -39,11 +39,14 @@ Route::get('/account/bookings/{id}', [\App\Http\Controllers\Web\CustomerAccountW
 Route::get('/account/kyc', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'kyc'])->name('account.kyc');
 
 // Authentication
-Route::redirect('/login', '/admin/login')->name('login');
+Route::get('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('login');
+Route::post('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])->middleware('throttle:auth')->name('login.store');
+Route::get('/signup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister'])->name('register');
+Route::get('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister']);
+Route::post('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeRegister'])->middleware('throttle:auth')->name('register.store');
 Route::get('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('admin.login');
-Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])
-    ->middleware('throttle:auth')
-    ->name('admin.login.store');
+Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])->middleware('throttle:auth')->name('admin.login.store');
+Route::match(['get', 'post'], '/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('logout');
 Route::post('/admin/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('admin.logout');
 
 // Admin & Staff Portal Shell
