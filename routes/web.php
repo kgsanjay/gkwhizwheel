@@ -6,7 +6,27 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome');
+    $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
+        ->where('status', \App\Enums\BikeStatus::AVAILABLE)
+        ->latest()
+        ->take(6)
+        ->get();
+
+    $categories = \App\Models\BikeCategory::withCount(['bikes' => function ($query) {
+        $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
+    }])->get();
+
+    $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+        ->withCount(['bikes' => function ($query) {
+            $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
+        }])
+        ->get();
+
+    return Inertia::render('Welcome', [
+        'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
+        'categories' => $categories,
+        'stores' => $stores,
+    ]);
 });
 
 Route::get('/bikes', [\App\Http\Controllers\Web\BikeWebController::class, 'index'])->name('bikes.index');
