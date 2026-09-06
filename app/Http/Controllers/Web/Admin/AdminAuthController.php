@@ -18,7 +18,7 @@ use Inertia\Response;
 class AdminAuthController extends Controller
 {
     /**
-     * Display the unified login view.
+     * Display the login view (Customer or Admin).
      */
     public function create(Request $request): Response|RedirectResponse
     {
@@ -31,14 +31,17 @@ class AdminAuthController extends Controller
             return redirect()->route('account.index');
         }
 
-        return Inertia::render('Admin/Login', [
+        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
+        $component = $isAdminRoute ? 'Admin/Login' : 'Auth/Login';
+
+        return Inertia::render($component, [
             'status' => session('status'),
             'initialTab' => 0, // 0 for Login, 1 for Sign Up
         ]);
     }
 
     /**
-     * Display the sign up view.
+     * Display the customer sign up view.
      */
     public function createRegister(Request $request): Response|RedirectResponse
     {
@@ -48,7 +51,7 @@ class AdminAuthController extends Controller
             return redirect()->route('account.index');
         }
 
-        return Inertia::render('Admin/Login', [
+        return Inertia::render('Auth/Login', [
             'status' => session('status'),
             'initialTab' => 1, // Pre-select Sign Up
         ]);
