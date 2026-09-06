@@ -384,7 +384,7 @@ export default function AppLayout({ children, fullWidth = false }) {
                                     </Button>
                                     <Button
                                         component={Link}
-                                        href="/admin/login"
+                                        href="/login"
                                         variant="outlined"
                                         size="medium"
                                         startIcon={<LoginIcon sx={{ fontSize: 18 }} />}
