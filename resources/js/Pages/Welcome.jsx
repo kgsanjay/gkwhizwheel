@@ -703,14 +703,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <Box
                                             sx={{
                                                 position: 'relative',
-                                                height: 220,
+                                                height: 230,
                                                 width: '100%',
-                                                bgcolor: isDark ? '#0F172A' : '#ECEEF1',
+                                                bgcolor: '#DFE2E6',
                                                 overflow: 'hidden',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                p: 1.5,
+                                                p: 0,
                                             }}
                                         >
                                             <Box
@@ -719,12 +719,10 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 alt={`${bike.brand} ${bike.model_name} — Rental Bikes in Honnavar`}
                                                 loading="lazy"
                                                 sx={{
-                                                    maxWidth: '100%',
-                                                    maxHeight: '100%',
-                                                    width: 'auto',
-                                                    height: 'auto',
-                                                    objectFit: 'contain',
-                                                    borderRadius: 2,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    objectPosition: 'center 75%',
                                                     transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
                                                     '&:hover': {
                                                         transform: 'scale(1.06)',

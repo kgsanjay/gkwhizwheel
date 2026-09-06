@@ -295,15 +295,15 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     {/* Bike Real Photo Header */}
                                     <Box
                                         sx={{
-                                            height: 200,
+                                            height: 230,
                                             width: '100%',
                                             position: 'relative',
-                                            bgcolor: isDark ? '#0F172A' : '#ECEEF1',
+                                            bgcolor: '#DFE2E6',
                                             overflow: 'hidden',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            p: 1.5,
+                                            p: 0,
                                         }}
                                     >
                                         <Box
@@ -311,12 +311,10 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
                                             alt={`${bike.brand} ${bike.model_name}`}
                                             sx={{
-                                                maxWidth: '100%',
-                                                maxHeight: '100%',
-                                                width: 'auto',
-                                                height: 'auto',
-                                                objectFit: 'contain',
-                                                borderRadius: 2,
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                objectPosition: 'center 75%',
                                                 transition: 'transform 0.4s ease',
                                                 '&:hover': {
                                                     transform: 'scale(1.05)',

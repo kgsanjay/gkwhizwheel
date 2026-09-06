@@ -141,10 +141,10 @@ export default function BikeShow({ bike, stores = [] }) {
                     <Card sx={{ mb: 4, overflow: 'hidden', bgcolor: isDark ? '#131D2F' : '#FFFFFF', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
                         <Box
                             sx={{
-                                height: 280,
+                                height: { xs: 300, md: 440 },
                                 width: '100%',
                                 position: 'relative',
-                                bgcolor: isDark ? '#0B1120' : '#F1F5F9',
+                                bgcolor: '#DFE2E6',
                                 overflow: 'hidden',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -156,12 +156,10 @@ export default function BikeShow({ bike, stores = [] }) {
                                 src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
                                 alt={`${bike.brand} ${bike.model_name}`}
                                 sx={{
-                                    maxWidth: '100%',
-                                    maxHeight: '100%',
-                                    width: 'auto',
-                                    height: 'auto',
-                                    objectFit: 'contain',
-                                    p: 2,
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center 75%',
                                 }}
                             />
 
