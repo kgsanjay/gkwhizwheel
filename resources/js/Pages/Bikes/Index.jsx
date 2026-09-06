@@ -77,17 +77,18 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
     return (
         <AppLayout>
-            <Head title="Browse Fleet - GK WhizWheel" />
+            <Head title="Browse Fleet - GK WhizWheels Honnavar" />
 
-            {/* Page Header */}
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h2" component="h1" sx={{ fontWeight: 800, mb: 1 }}>
-                    Explore Our Two-Wheeler Fleet
-                </Typography>
-                <Typography variant="subtitle1">
-                    Select your pickup dates, preferred store location, or vehicle category to check instant availability.
-                </Typography>
-            </Box>
+            <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
+                {/* Page Header */}
+                <Box sx={{ mb: 4 }}>
+                    <Typography variant="h2" component="h1" sx={{ fontWeight: 800, mb: 1, color: '#FFFFFF' }}>
+                        Rental Bikes in Honnavar
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ color: '#94A3B8' }}>
+                        Select your pickup dates, preferred Honnavar hub (Palya Main Rd or Railway Station), or vehicle category.
+                    </Typography>
+                </Box>
 
             {/* Filter Panel */}
             <Paper
@@ -135,7 +136,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                             value={filters.store_id}
                             onChange={(e) => handleFilterChange('store_id', e.target.value)}
                         >
-                            <MenuItem value="">All Hubs (Bengaluru)</MenuItem>
+                            <MenuItem value="">All Hubs (Honnavar)</MenuItem>
                             {stores.map((store) => (
                                 <MenuItem key={store.id} value={store.id}>
                                     {store.name} ({store.city})
@@ -356,7 +357,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
                                             <LocationOnIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
                                             <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
-                                                {bike.current_store?.name || 'Bengaluru Hub'}
+                                                {bike.current_store?.name || 'Honnavar Hub'}
                                             </Typography>
                                         </Box>
 
@@ -403,6 +404,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     })}
                 </Grid>
             )}
+            </Box>
         </AppLayout>
     );
 }

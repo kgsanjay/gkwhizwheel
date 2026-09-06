@@ -114,19 +114,20 @@ export default function BikeShow({ bike, stores = [] }) {
 
     return (
         <AppLayout>
-            <Head title={`${bike.brand} ${bike.model_name} - Rental Details & Price Quote`} />
+            <Head title={`${bike.brand} ${bike.model_name} - Bike Rental in Honnavar`} />
 
-            {/* Back Navigation */}
-            <Box sx={{ mb: 3 }}>
-                <Button
-                    component={Link}
-                    href="/bikes"
-                    startIcon={<ArrowBackIcon />}
-                    sx={{ color: '#64748B', fontWeight: 600 }}
-                >
-                    Back to Fleet Catalog
-                </Button>
-            </Box>
+            <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
+                {/* Back Navigation */}
+                <Box sx={{ mb: 3 }}>
+                    <Button
+                        component={Link}
+                        href="/bikes"
+                        startIcon={<ArrowBackIcon />}
+                        sx={{ color: '#64748B', fontWeight: 600 }}
+                    >
+                        Back to Fleet Catalog
+                    </Button>
+                </Box>
 
             {/* Main Details Grid */}
             <Grid container spacing={4}>
@@ -196,7 +197,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                                 <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 20 }} />
                                 <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
-                                    Current Store: {bike.current_store?.name || 'Bengaluru Hub'} ({bike.current_store?.address_line})
+                                    Current Store: {bike.current_store?.name || 'Honnavar Hub'} ({bike.current_store?.address_line})
                                 </Typography>
                             </Box>
 
@@ -227,13 +228,13 @@ export default function BikeShow({ bike, stores = [] }) {
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Base Daily Rate</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                            ₹{Number(bike.base_daily_rate_override || bike.category?.base_daily_rate || 0).toLocaleString('en-IN')} / day
+                                             ₹{Number(bike.base_daily_rate_override || bike.category?.base_daily_rate || 0).toLocaleString('en-IN')} / day
                                         </TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Security Deposit</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: '#334155' }}>
-                                            ₹{Number(bike.deposit_amount_override || bike.category?.default_deposit_amount || 0).toLocaleString('en-IN')} (Refundable)
+                                             ₹{Number(bike.deposit_amount_override || bike.category?.default_deposit_amount || 0).toLocaleString('en-IN')} (Refundable)
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -270,7 +271,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                                 <CheckCircleIcon sx={{ color: '#10B981', fontSize: 18, mt: 0.3 }} />
                                 <Typography variant="body2" color="text.secondary">
-                                    <strong>One-Way Drop Permitted:</strong> Rent in Indiranagar, return in Koramangala or Whitefield with dynamic store routing.
+                                    <strong>One-Way Drop Permitted:</strong> Rent at Palya Main Rd, return at Honnavar Railway Station with dynamic store routing.
                                 </Typography>
                             </Box>
                         </Stack>
@@ -519,6 +520,7 @@ export default function BikeShow({ bike, stores = [] }) {
                     </Card>
                 </Grid>
             </Grid>
+            </Box>
 
             {/* Authentication Dialog (if unauthenticated when Book Now clicked) */}
             <AuthModal

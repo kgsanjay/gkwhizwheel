@@ -4,7 +4,6 @@ import {
     AppBar,
     Toolbar,
     Typography,
-    Container,
     Box,
     Button,
     Chip,
@@ -19,89 +18,123 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import PhoneIcon from '@mui/icons-material/Phone';
-import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
+import EmailIcon from '@mui/icons-material/Email';
 
-export default function AppLayout({ children, title }) {
+export default function AppLayout({ children, fullWidth = false }) {
     const { auth, flash } = usePage().props;
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#0B1120', color: '#F8FAFC' }}>
-            {/* Announcement / Support Bar */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#0B1120', color: '#F8FAFC', width: '100%', overflowX: 'hidden' }}>
+            {/* Top Announcement Bar (1920px Container-Fluid) */}
             <Box
                 sx={{
-                    bgcolor: 'rgba(15, 23, 42, 0.95)',
+                    bgcolor: 'rgba(15, 23, 42, 0.98)',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                    py: 0.75,
-                    px: 2,
+                    py: 0.8,
+                    width: '100%',
                     display: { xs: 'none', md: 'block' },
                 }}
             >
-                <Container maxWidth="lg">
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Stack direction="row" spacing={3} alignItems="center">
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                <LocationOnIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
-                                <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                    Active Hubs: Koramangala & Indiranagar, Bengaluru
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
-                                <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                    100% Insured Fleet • Zero Hidden Charges
-                                </Typography>
-                            </Box>
-                        </Stack>
-                        <Stack direction="row" spacing={2.5} alignItems="center">
-                            <Box
-                                component="a"
-                                href="https://wa.me/919999900001?text=Hi%20GK%20WhizWheel%20Team,%20I%20have%20an%20inquiry%20about%20bike%20rentals."
-                                target="_blank"
-                                rel="noreferrer"
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                    color: '#10B981',
-                                    textDecoration: 'none',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    '&:hover': { textDecoration: 'underline' },
-                                }}
-                            >
-                                <WhatsAppIcon sx={{ fontSize: 14 }} />
-                                WhatsApp Support: +91 99999 00001
-                            </Box>
-                            <Box
-                                component={Link}
-                                href="/admin/login"
-                                sx={{
-                                    color: '#94A3B8',
-                                    textDecoration: 'none',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    '&:hover': { color: '#F59E0B' },
-                                }}
-                            >
-                                Staff / Admin Portal →
-                            </Box>
-                        </Stack>
-                    </Box>
-                </Container>
+                <Box sx={{ maxWidth: '1920px', mx: 'auto', px: { xs: 2, sm: 4, md: 6 }, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Stack direction="row" spacing={3} alignItems="center">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
+                            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
+                                Office: Palya Main Rd, Honnavar, Karnataka 581334 • Railway Station Pickup Available
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
+                            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
+                                Verified Rental Bikes in Honnavar • Best Daily Rates
+                            </Typography>
+                        </Box>
+                    </Stack>
+
+                    <Stack direction="row" spacing={3} alignItems="center">
+                        <Box
+                            component="a"
+                            href="tel:+918660989586"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.6,
+                                color: '#E2E8F0',
+                                textDecoration: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                '&:hover': { color: '#F59E0B' },
+                            }}
+                        >
+                            <PhoneIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
+                            +91 8660989586
+                        </Box>
+                        <Box
+                            component="a"
+                            href="mailto:contact@whizwheels.in"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.6,
+                                color: '#E2E8F0',
+                                textDecoration: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                '&:hover': { color: '#F59E0B' },
+                            }}
+                        >
+                            <EmailIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
+                            contact@whizwheels.in
+                        </Box>
+                        <Box
+                            component="a"
+                            href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20am%20looking%20for%20a%20bike%20rental%20in%20Honnavar."
+                            target="_blank"
+                            rel="noreferrer"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                color: '#10B981',
+                                textDecoration: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                '&:hover': { textDecoration: 'underline' },
+                            }}
+                        >
+                            <WhatsAppIcon sx={{ fontSize: 15 }} />
+                            WhatsApp Booking
+                        </Box>
+                        <Box
+                            component={Link}
+                            href="/admin/login"
+                            sx={{
+                                color: '#64748B',
+                                textDecoration: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                '&:hover': { color: '#F59E0B' },
+                            }}
+                        >
+                            Staff Portal →
+                        </Box>
+                    </Stack>
+                </Box>
             </Box>
 
-            {/* Top Navigation Bar */}
+            {/* Top Navigation Bar (1920px Container-Fluid) */}
             <AppBar
                 position="sticky"
                 elevation={0}
                 sx={{
-                    bgcolor: 'rgba(15, 23, 42, 0.92)',
+                    bgcolor: 'rgba(15, 23, 42, 0.95)',
                     backdropFilter: 'blur(16px)',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                    width: '100%',
                 }}
             >
-                <Container maxWidth="lg">
-                    <Toolbar disableGutters sx={{ justifyContent: 'space-between', py: 1.2 }}>
+                <Box sx={{ maxWidth: '1920px', width: '100%', mx: 'auto', px: { xs: 2, sm: 4, md: 6 } }}>
+                    <Toolbar disableGutters sx={{ justifyContent: 'space-between', py: 1 }}>
                         {/* Brand Logo & Name */}
                         <Box
                             component={Link}
@@ -117,9 +150,9 @@ export default function AppLayout({ children, title }) {
                             <Box
                                 component="img"
                                 src="/images/logo.png"
-                                alt="GK WhizWheel Brand Logo"
+                                alt="GK WhizWheels — Bike Rental in Honnavar"
                                 sx={{
-                                    height: { xs: 46, sm: 54 },
+                                    height: { xs: 44, sm: 52 },
                                     width: 'auto',
                                     objectFit: 'contain',
                                     borderRadius: 1.5,
@@ -139,12 +172,12 @@ export default function AppLayout({ children, title }) {
                                         color: '#FFFFFF',
                                     }}
                                 >
-                                    GK WhizWheel
+                                    GK WhizWheels
                                 </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
                                     <ElectricBoltIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
                                     <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600, letterSpacing: '0.02em' }}>
-                                        Bengaluru Mobility & Rentals
+                                        Bike Rental in Honnavar, Karnataka
                                     </Typography>
                                 </Box>
                             </Box>
@@ -163,21 +196,7 @@ export default function AppLayout({ children, title }) {
                                     '&:hover': { color: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
                                 }}
                             >
-                                Browse Fleet
-                            </Button>
-                            <Button
-                                component={Link}
-                                href="/#hubs"
-                                sx={{
-                                    color: '#E2E8F0',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem',
-                                    px: 1.5,
-                                    display: { xs: 'none', sm: 'inline-flex' },
-                                    '&:hover': { color: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
-                                }}
-                            >
-                                Hubs
+                                Rental Bikes
                             </Button>
                             <Button
                                 component={Link}
@@ -187,15 +206,15 @@ export default function AppLayout({ children, title }) {
                                     fontWeight: 600,
                                     fontSize: '0.9rem',
                                     px: 1.5,
-                                    display: { xs: 'none', md: 'inline-flex' },
+                                    display: { xs: 'none', sm: 'inline-flex' },
                                     '&:hover': { color: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
                                 }}
                             >
-                                Pricing
+                                Rates & Prices
                             </Button>
                             <Button
                                 component={Link}
-                                href="/#how-it-works"
+                                href="/#hubs"
                                 sx={{
                                     color: '#E2E8F0',
                                     fontWeight: 600,
@@ -205,7 +224,35 @@ export default function AppLayout({ children, title }) {
                                     '&:hover': { color: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
                                 }}
                             >
-                                How It Works
+                                Honnavar Hubs
+                            </Button>
+                            <Button
+                                component={Link}
+                                href="/#routes"
+                                sx={{
+                                    color: '#E2E8F0',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem',
+                                    px: 1.5,
+                                    display: { xs: 'none', lg: 'inline-flex' },
+                                    '&:hover': { color: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
+                                }}
+                            >
+                                Places to Visit
+                            </Button>
+                            <Button
+                                component={Link}
+                                href="/#faq"
+                                sx={{
+                                    color: '#E2E8F0',
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem',
+                                    px: 1.5,
+                                    display: { xs: 'none', md: 'inline-flex' },
+                                    '&:hover': { color: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
+                                }}
+                            >
+                                FAQs
                             </Button>
 
                             {auth?.user ? (
@@ -252,18 +299,18 @@ export default function AppLayout({ children, title }) {
                             ) : (
                                 <Stack direction="row" spacing={1.5} alignItems="center">
                                     <Button
-                                        component={Link}
-                                        href="/admin/login"
+                                        component="a"
+                                        href="tel:+918660989586"
                                         size="small"
+                                        startIcon={<PhoneIcon />}
                                         sx={{
-                                            color: '#94A3B8',
-                                            fontWeight: 600,
+                                            color: '#FBBF24',
+                                            fontWeight: 700,
                                             fontSize: '0.85rem',
-                                            display: { xs: 'none', sm: 'inline-flex' },
-                                            '&:hover': { color: '#FFFFFF' },
+                                            display: { xs: 'none', md: 'inline-flex' },
                                         }}
                                     >
-                                        Staff Login
+                                        Call Now
                                     </Button>
                                     <Button
                                         variant="contained"
@@ -273,43 +320,43 @@ export default function AppLayout({ children, title }) {
                                         href="/bikes"
                                         sx={{
                                             fontWeight: 800,
-                                            px: { xs: 2, sm: 3 },
-                                            py: 1,
+                                            px: { xs: 2, sm: 2.75 },
+                                            py: 0.9,
                                             boxShadow: '0 4px 14px 0 rgba(245, 158, 11, 0.39)',
                                             borderRadius: 2,
                                         }}
                                     >
-                                        Book a Bike
+                                        Rent a Bike
                                     </Button>
                                 </Stack>
                             )}
                         </Stack>
                     </Toolbar>
-                </Container>
+                </Box>
             </AppBar>
 
             {/* Flash notification banner */}
             {flash?.success && (
-                <Container maxWidth="lg" sx={{ mt: 2 }}>
+                <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3 }, mt: 2, width: '100%' }}>
                     <Alert severity="success" sx={{ borderRadius: 2 }}>
                         {flash.success}
                     </Alert>
-                </Container>
+                </Box>
             )}
             {flash?.error && (
-                <Container maxWidth="lg" sx={{ mt: 2 }}>
+                <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3 }, mt: 2, width: '100%' }}>
                     <Alert severity="error" sx={{ borderRadius: 2 }}>
                         {flash.error}
                     </Alert>
-                </Container>
+                </Box>
             )}
 
-            {/* Main Content Area */}
-            <Box component="main" sx={{ flexGrow: 1 }}>
+            {/* Main Content Area — Page controls internal container widths */}
+            <Box component="main" sx={{ flexGrow: 1, width: '100%' }}>
                 {children}
             </Box>
 
-            {/* Comprehensive Modern Footer */}
+            {/* Comprehensive Footer (1920px Container-Fluid) */}
             <Box
                 component="footer"
                 sx={{
@@ -319,104 +366,161 @@ export default function AppLayout({ children, title }) {
                     pt: { xs: 6, md: 8 },
                     pb: 4,
                     mt: 10,
+                    width: '100%',
                 }}
             >
-                <Container maxWidth="lg">
+                <Box sx={{ maxWidth: '1920px', width: '100%', mx: 'auto', px: { xs: 2, sm: 4, md: 6 } }}>
                     <Grid container spacing={4} sx={{ mb: 6 }}>
-                        {/* Brand Col */}
+                        {/* Brand & Office Details */}
                         <Grid item xs={12} md={4}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                                 <Box
                                     component="img"
                                     src="/images/logo.png"
-                                    alt="GK WhizWheel"
-                                    sx={{ height: 48, width: 'auto', borderRadius: 1.5 }}
+                                    alt="GK WhizWheels — Honnavar Bike Rentals"
+                                    sx={{ height: 50, width: 'auto', borderRadius: 1.5 }}
                                 />
                                 <Box>
                                     <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, lineHeight: 1.1 }}>
-                                        GK WhizWheel
+                                        GK WhizWheels
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 600 }}>
-                                        Two-Wheeler Rental Platform
+                                    <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
+                                        #1 Bike Rental in Honnavar, Karnataka
                                     </Typography>
                                 </Box>
                             </Box>
-                            <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.7, mb: 3, maxWidth: 320 }}>
-                                Hassle-free scooter and bike rentals across Bengaluru with transparent dynamic pricing, instant digital KYC, and flexible multi-hub returns.
+                            <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.7, mb: 2.5, maxWidth: 360 }}>
+                                The most trusted name for rental bikes in Honnavar. Explore Sharavathi Backwaters, Eco Beach, Apsarakonda, Mirjan Fort, Murudeshwar, and Gokarna with reliable, sanitized two-wheelers.
                             </Typography>
+
+                            <Stack spacing={1.2} sx={{ mb: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18 }} />
+                                    <Typography variant="body2" sx={{ color: '#E2E8F0', fontWeight: 600 }}>
+                                        Palya Main Rd, Honnavar, Karnataka 581334
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <PhoneIcon sx={{ color: '#10B981', fontSize: 18 }} />
+                                    <Typography
+                                        component="a"
+                                        href="tel:+918660989586"
+                                        variant="body2"
+                                        sx={{ color: '#E2E8F0', fontWeight: 600, textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}
+                                    >
+                                        +91 8660989586
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <EmailIcon sx={{ color: '#38BDF8', fontSize: 18 }} />
+                                    <Typography
+                                        component="a"
+                                        href="mailto:contact@whizwheels.in"
+                                        variant="body2"
+                                        sx={{ color: '#E2E8F0', fontWeight: 600, textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}
+                                    >
+                                        contact@whizwheels.in
+                                    </Typography>
+                                </Box>
+                            </Stack>
+
                             <Stack direction="row" spacing={1.5}>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    color="secondary"
+                                    component="a"
+                                    href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20want%20to%20inquire%20about%20honnavar%20bike%20rent."
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    startIcon={<WhatsAppIcon />}
+                                    sx={{ fontWeight: 800, textTransform: 'none' }}
+                                >
+                                    WhatsApp Now
+                                </Button>
                                 <Button
                                     variant="outlined"
                                     size="small"
                                     component="a"
-                                    href="https://wa.me/919999900001"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    startIcon={<WhatsAppIcon sx={{ color: '#10B981' }} />}
-                                    sx={{
-                                        borderColor: 'rgba(255, 255, 255, 0.15)',
-                                        color: '#E2E8F0',
-                                        fontSize: '0.8rem',
-                                        textTransform: 'none',
-                                        '&:hover': { borderColor: '#10B981', bgcolor: 'rgba(16, 185, 129, 0.08)' },
-                                    }}
+                                    href="tel:+918660989586"
+                                    startIcon={<PhoneIcon />}
+                                    sx={{ borderColor: 'rgba(255, 255, 255, 0.2)', color: '#FFFFFF', textTransform: 'none' }}
                                 >
-                                    WhatsApp Helpline
+                                    Call Us
                                 </Button>
                             </Stack>
                         </Grid>
 
-                        {/* Quick Links */}
+                        {/* Rental Bikes in Honnavar */}
                         <Grid item xs={6} sm={4} md={2.5}>
-                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 700, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Explore Fleet
+                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Rental Bikes in Honnavar
                             </Typography>
                             <Stack spacing={1.2}>
                                 <Typography component={Link} href="/bikes" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    All Available Bikes
+                                    All Honnavar Rental Bikes
                                 </Typography>
                                 <Typography component={Link} href="/bikes?category_id=1" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    City Scooters (Activa, Jupiter)
+                                    Honda Activa 6G Rent
                                 </Typography>
                                 <Typography component={Link} href="/bikes?category_id=2" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    Cruisers (Royal Enfield)
+                                    Royal Enfield Classic 350
                                 </Typography>
                                 <Typography component={Link} href="/bikes?category_id=3" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    Daily Commuters
+                                    Honda Shine 125 Commuter
                                 </Typography>
                                 <Typography component={Link} href="/bikes?category_id=4" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    Electric Scooters (EV)
+                                    Electric Scooter Rental
+                                </Typography>
+                                <Typography component={Link} href="/#pricing" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                    Honnavar Bike Rental Price
                                 </Typography>
                             </Stack>
                         </Grid>
 
-                        {/* Rental Hubs */}
+                        {/* Popular Honnavar Destinations */}
                         <Grid item xs={6} sm={4} md={2.5}>
-                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 700, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Store Hubs
+                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Honnavar Attractions
                             </Typography>
                             <Stack spacing={1.2}>
-                                <Typography component={Link} href="/#hubs" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    Koramangala 5th Block Hub
+                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                    Sharavathi Backwaters & Boating
                                 </Typography>
-                                <Typography component={Link} href="/#hubs" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    Indiranagar Metro Station
+                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                    Honnavar Eco Beach & Boardwalk
                                 </Typography>
-                                <Typography component={Link} href="/#pricing" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    One-Way Drop Policy
+                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                    Apsarakonda Waterfalls
                                 </Typography>
-                                <Typography component={Link} href="/#faq" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    Security Deposit & Refund
+                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                    Mirjan Fort Historical Ride
+                                </Typography>
+                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                    Murudeshwar Temple & Beach
+                                </Typography>
+                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                    Gokarna Coastal Highway Ride
                                 </Typography>
                             </Stack>
                         </Grid>
 
                         {/* Customer & Staff Portal */}
                         <Grid item xs={12} sm={4} md={3}>
-                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 700, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Account & Portals
+                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Hub Locations & Support
                             </Typography>
                             <Stack spacing={1.2}>
+                                <Typography variant="body2" sx={{ color: '#CBD5E1', fontWeight: 600 }}>
+                                    Hub 1: Palya Main Rd (Head Office)
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#CBD5E1', fontWeight: 600 }}>
+                                    Hub 2: Honnavar Railway Station Hub
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                                    Open daily: 07:30 AM – 09:30 PM
+                                </Typography>
+                                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', my: 1 }} />
                                 <Typography component={Link} href="/account" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
                                     Customer Booking History
                                 </Typography>
@@ -424,21 +528,15 @@ export default function AppLayout({ children, title }) {
                                     Upload KYC Documents
                                 </Typography>
                                 <Typography component={Link} href="/admin/login" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                    Store Staff & Admin Login
+                                    Staff & Store Manager Login
                                 </Typography>
-                                <Box sx={{ pt: 1 }}>
-                                    <Chip
-                                        label="Operating 08:00 AM - 09:00 PM"
-                                        size="small"
-                                        sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', color: '#CBD5E1', fontSize: '0.75rem' }}
-                                    />
-                                </Box>
                             </Stack>
                         </Grid>
                     </Grid>
 
                     <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', mb: 3 }} />
 
+                    {/* SEO Footnote & Copyright */}
                     <Box
                         sx={{
                             display: 'flex',
@@ -448,22 +546,22 @@ export default function AppLayout({ children, title }) {
                             gap: 2,
                         }}
                     >
-                        <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.85rem' }}>
-                            © {new Date().getFullYear()} GK WhizWheel. All rights reserved. Commercial & Proprietary.
+                        <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.82rem' }}>
+                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. Palya Main Rd, Honnavar, Karnataka 581334.
                         </Typography>
-                        <Stack direction="row" spacing={3}>
+                        <Stack direction="row" spacing={2.5}>
                             <Typography component={Link} href="/#pricing" variant="caption" sx={{ color: '#64748B', textDecoration: 'none', '&:hover': { color: '#94A3B8' } }}>
-                                Pricing Policy
+                                Honnavar Bike Rent Terms
                             </Typography>
                             <Typography component={Link} href="/#faq" variant="caption" sx={{ color: '#64748B', textDecoration: 'none', '&:hover': { color: '#94A3B8' } }}>
-                                Cancellation & Refund
+                                Cancellation & Deposit Refund
                             </Typography>
-                            <Typography component={Link} href="/admin/login" variant="caption" sx={{ color: '#64748B', textDecoration: 'none', '&:hover': { color: '#94A3B8' } }}>
-                                Staff App (APK v1.2)
+                            <Typography component={Link} href="/bikes" variant="caption" sx={{ color: '#64748B', textDecoration: 'none', '&:hover': { color: '#94A3B8' } }}>
+                                Honnavar Bike Rentals Fleet
                             </Typography>
                         </Stack>
                     </Box>
-                </Container>
+                </Box>
             </Box>
         </Box>
     );
