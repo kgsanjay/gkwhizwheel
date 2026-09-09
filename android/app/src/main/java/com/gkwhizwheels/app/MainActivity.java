@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getDefaultServerUrl() {
-        return isEmulator() ? "http://10.0.2.2:8000" : "http://192.168.0.115:8000";
+        return isEmulator() ? "http://10.0.2.2:8000/admin" : "http://192.168.0.115:8000/admin";
     }
 
     private WebView webView;
@@ -86,12 +86,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getServerUrl() {
-        return preferences.getString(KEY_SERVER_URL, getDefaultServerUrl());
+        String url = preferences.getString(KEY_SERVER_URL, getDefaultServerUrl());
+        if (!url.contains("/admin")) {
+            url = url + (url.endsWith("/") ? "admin" : "/admin");
+        }
+        return url;
     }
 
     private void setServerUrl(String url) {
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             url = "http://" + url;
+        }
+        if (!url.contains("/admin")) {
+            url = url + (url.endsWith("/") ? "admin" : "/admin");
         }
         preferences.edit().putString(KEY_SERVER_URL, url).apply();
     }
@@ -115,9 +122,20 @@ public class MainActivity extends AppCompatActivity {
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        settings.setUserAgentString(settings.getUserAgentString() + " GKWhizWheelsAndroidApp/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " GKWhizWheelsOps/1.0");
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                String path = uri.getPath();
+                if (path == null || path.equals("/") || path.isEmpty()) {
+                    view.loadUrl(getServerUrl());
+                    return true;
+                }
+                return false;
+            }
+
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 progressBar.setVisibility(View.VISIBLE);
