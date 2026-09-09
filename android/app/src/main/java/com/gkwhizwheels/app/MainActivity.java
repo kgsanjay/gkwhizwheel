@@ -35,9 +35,23 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "GKWhizWheelsPrefs";
     private static final String KEY_SERVER_URL = "server_url";
-    private static final String DEFAULT_URL = "http://10.0.2.2:8000"; // Android Emulator host or change via UI
     private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
     private static final int PERMISSION_REQUEST_CODE = 2001;
+
+    private static boolean isEmulator() {
+        return Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86")
+                || Build.MANUFACTURER.contains("Genymotion")
+                || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
+                || "google_sdk".equals(Build.PRODUCT);
+    }
+
+    private String getDefaultServerUrl() {
+        return isEmulator() ? "http://10.0.2.2:8000" : "http://192.168.0.115:8000";
+    }
 
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -72,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getServerUrl() {
-        return preferences.getString(KEY_SERVER_URL, DEFAULT_URL);
+        return preferences.getString(KEY_SERVER_URL, getDefaultServerUrl());
     }
 
     private void setServerUrl(String url) {
