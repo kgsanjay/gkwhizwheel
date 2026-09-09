@@ -1,6 +1,17 @@
 # GK WhizWheel
 
-A unified online and offline bike rental platform designed for multi-store operations with dynamic tiered pricing. The platform seamlessly bridges customer web bookings with on-ground store operations, featuring concurrency-safe reservation holds, one-way rentals, and offline-resilient staff handovers.
+A unified online and offline bike & multi-service mobility platform designed for coastal multi-store operations with dynamic tiered pricing. The platform seamlessly bridges customer web bookings with on-ground store operations, featuring concurrency-safe reservation holds, one-way rentals, offline-resilient staff handovers, ground pass QR scanning, and a compiled native Android APK.
+
+---
+
+## Key Highlights
+
+- **Multi-Service Mobility**: Bike rentals, coastal car rentals, pre-owned vehicle sales marketplace, and motorcycle workshop repair/servicing scheduling.
+- **Ground Pass QR Fast Check-In (`/admin/check-in`)**: High-speed camera scanner that resolves customer QR passes, verifies deposits, and initiates instant handovers.
+- **Digital Handover & Return Inspection Wizards**: Interactive motorcycle damage diagram mapping, odometer & fuel tracking, photo capture, and customer digital signatures.
+- **Native Android APK (`gkwhizwheels.apk`)**: Standalone Android application with hardware camera permissions, GPS store locator, offline PWA cache, and configurable server switcher.
+- **Concurrency-Safe Availability Engine**: Pessimistic database locks (`SELECT ... FOR UPDATE`) preventing double-booking during peak checkout.
+- **Production-Ready & Fully Tested**: 370 automated test suites with 2,775 passing assertions across RBAC, payments, notifications, and offline sync.
 
 ---
 
@@ -8,26 +19,27 @@ A unified online and offline bike rental platform designed for multi-store opera
 
 - **Backend:** Laravel 11, PHP 8.3, MySQL 8.0 / MariaDB
 - **Web Frontend:** React 18, Inertia.js, Material UI (MUI) & Tailwind CSS
-- **Mobile Staff App:** React Native (Android APK) with offline SQLite action queue
-- **Payment & Communication:** Razorpay & PhonePe webhook integration, WhatsApp Cloud API, SMTP Email
+- **Mobile Android App:** Native Android (Gradle 8.7, Android SDK 34, Java 21) & React Native PWA wrapper
+- **Payment Gateway:** Razorpay with cryptographic webhook verification & idempotency
+- **Communication:** Multi-channel notification pipeline (WhatsApp Cloud API & SMTP Email fallback)
+- **Offline Sync:** IndexedDB local queue with automatic reconciliation upon network reconnect
 
 ---
 
 ## Getting Started
-
-Follow these steps to set up and run the platform locally:
 
 ### Prerequisites
 - PHP 8.3+ with `pdo_mysql`, `mbstring`, `openssl`, `curl` extensions
 - Composer 2.x
 - Node.js 18+ and npm
 - MySQL 8.0+
+- (Optional for Android builds) Java 21 & Android SDK 34
 
 ### Local Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-org/gkwhizwheel.git
+   git clone https://github.com/kgsanjay/gkwhizwheel.git
    cd gkwhizwheel
    ```
 
@@ -45,7 +57,7 @@ Follow these steps to set up and run the platform locally:
    ```bash
    cp .env.example .env
    ```
-   *Update your database credentials (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`) in `.env`.*
+   *Update your database credentials (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`) and Razorpay keys in `.env`.*
 
 5. **Generate application key:**
    ```bash
@@ -65,17 +77,52 @@ Follow these steps to set up and run the platform locally:
 8. **Start local development servers:**
    - Run Laravel backend:
      ```bash
-     php artisan serve
+     php artisan serve --port=8000
      ```
    - In a separate terminal, run Vite dev server:
      ```bash
      npm run dev
      ```
 
-9. **(Optional) Run tests:**
+9. **Run automated tests:**
    ```bash
-   ./vendor/bin/pest
+   php artisan test
    ```
+
+---
+
+## Android Mobile Application (APK)
+
+The repository includes a ready-to-install Android APK package and its native build source.
+
+- **Pre-built APK**: [`gkwhizwheels.apk`](gkwhizwheels.apk) (Located at project root, 5.2 MB)
+- **Android Source Code**: [`android/`](android/)
+
+### Installing on Android Device:
+```bash
+adb install -r gkwhizwheels.apk
+```
+*Or transfer `gkwhizwheels.apk` to your smartphone and install directly.*
+
+### Rebuilding the Android APK:
+```bash
+cd android
+./gradlew assembleDebug
+# Output generated at: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## Role-Based Access Control (RBAC)
+
+The application provides strictly scoped access control for four user roles:
+
+| Role | Core Interfaces | Responsibilities |
+|---|---|---|
+| **Super Admin** | `/admin/dashboard`, `/admin/pricing`, `/admin/coupons`, `/admin/reports`, `/admin/staff` | Full platform control, cross-store analytics, dynamic surge pricing rules, coupon creation, staff accounts. |
+| **Store Manager** | `/admin/bookings`, `/admin/bikes`, `/admin/services` | Local store operations, counter offline bookings, maintenance tracking, fleet availability. |
+| **Staff / Ground Crew** | `/admin/check-in`, `/admin/dispatch`, Handover & Return Modals | Ground Pass QR scanning, vehicle condition photo logging, customer signature capture, return settlement. |
+| **Customer** | `/`, `/bikes`, `/services`, `/account/bookings`, `/account/kyc` | Fleet browsing, date-hour quote calculations, Razorpay payment, KYC upload, PDF booking vouchers. |
 
 ---
 
@@ -83,40 +130,40 @@ Follow these steps to set up and run the platform locally:
 
 ```
 .
-├── app/                  # Laravel application core: Models, Controllers, Services, Enums, Requests
-├── bootstrap/            # Framework bootstrap and service configuration
-├── config/               # Application and package configuration files
+├── android/              # Native Android build wrapper (Gradle 8.7, Android SDK 34)
+├── app/                  # Laravel core: Models, Controllers, Services, Enums, Policies
+│   ├── Http/Controllers/ # Web, Admin, and API controllers
+│   ├── Models/           # Eloquent models (Bike, Booking, ServiceBooking, Store, User)
+│   ├── Notifications/    # WhatsApp & Email notification classes
+│   └── Services/         # Business logic: PricingService, AvailabilityService, QrCodeService
 ├── database/             # Migrations, model factories, and database seeders
-├── docs/                 # Project planning, architecture specs, and operational guides
-├── mobile/               # React Native Android staff application (symlinked to /mobile-app)
-├── public/               # Web server document root (index.php, static assets)
-├── resources/            # React + Inertia customer-facing website and view assets
+├── docs/                 # Architecture specifications, API catalogs, and operational guides
+├── public/               # Static assets, PWA manifest, service worker (sw.js)
+├── resources/            # React 18 + Inertia.js frontend components, pages, and layouts
+│   └── js/
+│       ├── Components/   # Reusable UI, Handover & Return Inspection Modals, Booking Modals
+│       ├── Layouts/      # AppLayout (Customer) & AdminLayout (Staff/Admin)
+│       └── Pages/        # Customer pages, Admin dashboard, Check-in, Dispatch, Services
 ├── routes/               # Route definitions: web.php, api.php, console.php
-├── storage/              # File uploads, private bike/KYC documents, framework caches, logs
-├── tests/                # Pest feature and unit test suites
-└── .env.example          # Baseline environment template for production and development
+├── tests/                # 370 Pest feature and unit test suites
+├── DETAILED_FEATURE_SPECIFICATION.md # Deep-dive architectural and state machine spec
+├── FULL_FEATURE_LIST.md  # Comprehensive module matrix and persona breakdown
+├── gkwhizwheels.apk      # Compiled Android debug APK
+└── .env.example          # Baseline environment configuration template
 ```
 
 ---
 
 ## Documentation
 
-The `docs/` directory contains complete architecture and operational specifications:
-
-- **[`docs/API.md`](docs/API.md)**: Actual implemented REST API endpoints, diff against initial spec, request/response envelopes, and webhook contracts.
-- **[`docs/ENV-VARIABLES.md`](docs/ENV-VARIABLES.md)**: Environment variable catalog, requirement classifications, defaults, and cross-checks against `.env.example`.
-- **[`docs/01-REQUIREMENTS-AND-FEATURES.md`](docs/01-REQUIREMENTS-AND-FEATURES.md)**: Business requirements, booking state machine, pricing algorithms, and staff flows.
-- **[`docs/02-DATABASE-SCHEMA.md`](docs/02-DATABASE-SCHEMA.md)**: Comprehensive schema definitions, table relationships, enums, and composite indexes.
-- **[`docs/03-API-SPECIFICATION.md`](docs/03-API-SPECIFICATION.md)**: Initial REST API specification and architecture guidelines.
-- **[`docs/04-CODING-STANDARDS-AND-STRUCTURE.md`](docs/04-CODING-STANDARDS-AND-STRUCTURE.md)**: Architecture conventions, service boundaries, and code review checklists.
-- **[`docs/05-ENVIRONMENT-SETUP.md`](docs/05-ENVIRONMENT-SETUP.md)**: Server setup guide, shared-hosting constraints, cron scheduling, and backup procedures.
-- **[`docs/06-PROMPT-PLAYBOOK.md`](docs/06-PROMPT-PLAYBOOK.md)**: Phased implementation guide and verification checklists.
-
----
-
-## Deployment
-
-For production deployments (including shared cPanel hosting setup, automated cron jobs, driver configurations, and Spatie backup configuration), follow the step-by-step guide in **[`docs/05-ENVIRONMENT-SETUP.md`](docs/05-ENVIRONMENT-SETUP.md)**.
+- **[`FULL_FEATURE_LIST.md`](FULL_FEATURE_LIST.md)**: High-level complete feature catalog across Customer, Staff, Store Manager, and Super Admin personas.
+- **[`DETAILED_FEATURE_SPECIFICATION.md`](DETAILED_FEATURE_SPECIFICATION.md)**: Comprehensive 558-line architectural specification detailing state machines, business formulas, database schemas, and APIs.
+- **[`docs/API.md`](docs/API.md)**: Actual implemented REST API endpoints, response envelopes, and webhook contracts.
+- **[`docs/ENV-VARIABLES.md`](docs/ENV-VARIABLES.md)**: Environment variable catalog and requirement classifications.
+- **[`docs/01-REQUIREMENTS-AND-FEATURES.md`](docs/01-REQUIREMENTS-AND-FEATURES.md)**: Business requirements, booking state machine, and pricing algorithms.
+- **[`docs/02-DATABASE-SCHEMA.md`](docs/02-DATABASE-SCHEMA.md)**: Schema definitions, table relationships, enums, and composite indexes.
+- **[`docs/04-CODING-STANDARDS-AND-STRUCTURE.md`](docs/04-CODING-STANDARDS-AND-STRUCTURE.md)**: Code standards, service boundaries, and review checklists.
+- **[`docs/05-ENVIRONMENT-SETUP.md`](docs/05-ENVIRONMENT-SETUP.md)**: Server setup guide, cron scheduling, and backup procedures.
 
 ---
 
@@ -124,4 +171,3 @@ For production deployments (including shared cPanel hosting setup, automated cro
 
 Copyright © 2026 GK WhizWheel. All rights reserved.  
 This software and documentation are proprietary and confidential. Unauthorized copying, distribution, or transfer is strictly prohibited. See [`LICENSE`](LICENSE) for details.
-

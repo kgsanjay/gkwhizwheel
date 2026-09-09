@@ -191,3 +191,30 @@ Registered at both `/api/v1/webhooks/*` and root `/webhooks/*` for payment gatew
 | `POST` | `/webhooks/phonepe` | `[PLANNED & BUILT]` | PhonePe | Confirms payments via X-VERIFY checksum verification. Moves booking to `confirmed`. |
 | `GET` | `/webhooks/whatsapp` | `[BUILT - ADDED]` | Meta Cloud API | Webhook challenge response for initial Meta handshake verification. |
 | `POST` | `/webhooks/whatsapp` | `[PLANNED & BUILT]` | Meta Cloud API | Delivery status receipts (`sent`, `delivered`, `read`, `failed`) updated in `notification_logs`. |
+
+---
+
+## 10. Multi-Service & Ground Check-In Operations
+
+### Ground Check-In & Fast Pass (`/admin/check-in`)
+| Method | Endpoint | Status | Purpose |
+|---|---|---|---|
+| `GET` | `/admin/check-in` | `[BUILT - ADDED]` | Ground Pass QR scanner view with integrated camera feed. |
+| `POST` | `/admin/check-in/lookup` | `[BUILT - ADDED]` | Look up customer booking via decoded QR pass token or phone number. |
+| `POST` | `/admin/check-in/{type}/{id}/process` | `[BUILT - ADDED]` | Verify deposit and execute one-tap vehicle handover release. |
+| `POST` | `/admin/check-in/sync` | `[BUILT - ADDED]` | Sync batch offline check-in inspections recorded in IndexedDB queue. |
+
+### Multi-Service Bookings (`/admin/services`)
+| Method | Endpoint | Status | Purpose |
+|---|---|---|---|
+| `GET` | `/admin/services/{type}/bookings` | `[BUILT - ADDED]` | List bookings for cars, used vehicle sales, or workshop repairs. |
+| `POST` | `/admin/services/{type}/bookings` | `[BUILT - ADDED]` | Record offline counter booking for an assigned service type. |
+| `GET` | `/admin/services/{type}/bookings/{id}` | `[BUILT - ADDED]` | View service booking detail with audit history. |
+| `POST` | `/admin/services/{type}/bookings/{id}/payment` | `[BUILT - ADDED]` | Settle balance payment for service booking. |
+| `POST` | `/admin/services/{type}/bookings/{id}/status` | `[BUILT - ADDED]` | Update service booking progression lifecycle. |
+| `GET` | `/admin/services/{type}/bookings/{id}/voucher` | `[BUILT - ADDED]` | Render or download printable PDF confirmation voucher. |
+| `GET` | `/admin/services/{type}/items` | `[BUILT - ADDED]` | Manage service catalog items, pricing tiers, and descriptions. |
+| `POST` | `/admin/services/{type}/items` | `[BUILT - ADDED]` | Create new service catalog item. |
+| `PUT` | `/admin/services/{type}/items/{id}` | `[BUILT - ADDED]` | Update service catalog item attributes. |
+| `DELETE` | `/admin/services/{type}/items/{id}` | `[BUILT - ADDED]` | Soft-delete service catalog item. |
+

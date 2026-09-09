@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0] - 2026-09-10
+
+### Major Production Release & Multi-Service Expansion
+
+Comprehensive platform release introducing native Android compilation, high-speed Ground Pass QR check-ins, interactive vehicle inspection wizards, multi-service mobility offerings, and complete architectural documentation.
+
+#### Added
+- **Native Android APK Package (`gkwhizwheels.apk`):**
+  - Standalone Android app built using Android SDK 34, Gradle 8.7, and Java 21.
+  - Native hardware integration: Camera permissions for Ground Pass QR code scanning, Geolocation GPS access for store navigation, and file chooser for damage photo and KYC uploads.
+  - Dynamic server switcher dialog allowing live connection switching between local development, Wi-Fi host IP, emulator host (`10.0.2.2:8000`), or production domains.
+- **Ground Pass QR Fast Check-In System (`/admin/check-in`):**
+  - Integrated high-speed video camera QR scanner resolving booking tokens instantly.
+  - One-tap customer check-in, deposit validation, and vehicle release workflow.
+  - Offline-first check-in queue powered by IndexedDB with auto-sync upon network reconnection.
+- **Interactive Handover & Return Inspection Wizards:**
+  - Dynamic motorcycle damage locator with interactive SVG hotspot selector for scratches, dents, and mechanical wear.
+  - Digital customer signature capture on mobile touchscreens.
+  - Starting/ending odometer and fuel gauge fraction recording.
+  - Automatic late fee calculations, fuel deficiency surcharges, and deposit refund settlement.
+- **Multi-Service Coastal Mobility Expansion:**
+  - Four-Wheeler Car Rental booking and fleet management.
+  - Certified Pre-Owned Vehicle Sales marketplace with inspection ratings and test-drive scheduling.
+  - Workshop Repair and Periodic Maintenance booking system with store allocation.
+  - Coastal tourism integration: Boating, Scuba Diving, Guided Heritage Tours, and Homestay reservations.
+- **Fleet & Driver Dispatch Console (`/admin/dispatch`):**
+  - Live dispatch board with multi-filter store assignment and status toggles.
+- **Documentation & Architectural Specifications:**
+  - Created `FULL_FEATURE_LIST.md` documenting complete persona workflows (Customer, Staff, Manager, Super Admin).
+  - Created `DETAILED_FEATURE_SPECIFICATION.md` detailing state machines, financial calculation algorithms, and database schemas.
+- **Test Suite Expansion:**
+  - Expanded test coverage to 370 automated feature and unit tests with 2,775 passing assertions.
+
+---
+
 ## [0.1.0] - 2026-09-06
 
 ### Initial MVP Release
@@ -47,7 +82,3 @@ Initial release of the GK WhizWheel unified online and offline bike rental platf
 - **Administrative Audit & Reporting:**
   - Audit logging of all critical mutations (inventory changes, price overrides, manual refunds, and store assignments) via `spatie/laravel-activitylog`.
   - Aggregated revenue reports and fleet utilization analytics endpoints.
-- **Production Shared-Hosting Optimization:**
-  - Configured for zero-daemon shared cPanel hosting using `file` cache, `database` session, and `sync` queue drivers.
-  - Automated Spatie database and file backup schedules.
-  - Complete Pest feature test suite passing 312 tests (2,445 assertions).
