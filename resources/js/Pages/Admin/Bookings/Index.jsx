@@ -48,6 +48,8 @@ import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import CancelIcon from '@mui/icons-material/Cancel';
 import LanguageIcon from '@mui/icons-material/Language';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import HandoverWizardModal from '../../../Components/BookingModals/HandoverWizardModal';
+import ReturnInspectionWizardModal from '../../../Components/BookingModals/ReturnInspectionWizardModal';
 
 export default function BookingsIndex({
     bookings = { data: [], links: [], current_page: 1, last_page: 1, total: 0 },
@@ -69,6 +71,10 @@ export default function BookingsIndex({
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(filters.month || new Date().toISOString().slice(0, 7));
     const [selectedEvent, setSelectedEvent] = useState(null);
+
+    // Modal inspection wizards state
+    const [handoverBooking, setHandoverBooking] = useState(null);
+    const [returnBooking, setReturnBooking] = useState(null);
 
     const handleFilterChange = (overrides = {}) => {
         const queryParams = {
@@ -217,15 +223,15 @@ export default function BookingsIndex({
 
             {/* Top Metrics Row */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TOTAL BOOKINGS
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={700} color="text.primary">
+                                    <Typography variant="h4" fontWeight={800} color="text.primary">
                                         {stats.total ?? 0}
                                     </Typography>
                                 </Box>
@@ -235,15 +241,15 @@ export default function BookingsIndex({
                     </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
-                                    <Typography variant="caption" color="warning.main" fontWeight={600}>
+                                    <Typography variant="caption" color="warning.main" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         ACTIVE ON-ROAD
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={700} color="warning.main">
+                                    <Typography variant="h4" fontWeight={800} color="warning.main">
                                         {stats.active_rentals ?? 0}
                                     </Typography>
                                 </Box>
@@ -253,15 +259,15 @@ export default function BookingsIndex({
                     </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
-                                    <Typography variant="caption" color="info.main" fontWeight={600}>
+                                    <Typography variant="caption" color="info.main" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TODAY'S PICKUPS
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={700} color="info.main">
+                                    <Typography variant="h4" fontWeight={800} color="info.main">
                                         {stats.today_handovers ?? 0}
                                     </Typography>
                                 </Box>
@@ -271,15 +277,15 @@ export default function BookingsIndex({
                     </Card>
                 </Grid>
 
-                <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
-                                    <Typography variant="caption" color="success.main" fontWeight={600}>
+                                    <Typography variant="caption" color="success.main" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TODAY'S RETURNS
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={700} color="success.main">
+                                    <Typography variant="h4" fontWeight={800} color="success.main">
                                         {stats.today_returns ?? 0}
                                     </Typography>
                                 </Box>
@@ -291,10 +297,10 @@ export default function BookingsIndex({
             </Grid>
 
             {/* Filter & View Switcher Bar */}
-            <Card sx={{ mb: 3, p: 2, borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <Card sx={{ mb: 3, p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                 <Grid container spacing={2} alignItems="center">
                     {/* View Mode Toggle */}
-                    <Grid item xs={12} md={3}>
+                    <Grid size={{ xs: 12, md: 3 }}>
                         <ButtonGroup variant="outlined" size="small" fullWidth>
                             <Button
                                 variant={viewMode === 'list' ? 'contained' : 'outlined'}
@@ -314,7 +320,7 @@ export default function BookingsIndex({
                     </Grid>
 
                     {/* Search Field */}
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <TextField
                             size="small"
                             fullWidth
@@ -322,6 +328,11 @@ export default function BookingsIndex({
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
+                            slotProps={{
+                                input: {
+                                    startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
+                                },
+                            }}
                             InputProps={{
                                 startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
                             }}
@@ -329,7 +340,7 @@ export default function BookingsIndex({
                     </Grid>
 
                     {/* Store Filter */}
-                    <Grid item xs={6} sm={3} md={2}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                         <TextField
                             select
                             size="small"
@@ -351,7 +362,7 @@ export default function BookingsIndex({
                     </Grid>
 
                     {/* Channel Filter */}
-                    <Grid item xs={6} sm={3} md={2}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                         <TextField
                             select
                             size="small"
@@ -373,7 +384,7 @@ export default function BookingsIndex({
                     </Grid>
 
                     {/* Status Filter */}
-                    <Grid item xs={6} sm={3} md={2}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                         <TextField
                             select
                             size="small"
@@ -396,12 +407,13 @@ export default function BookingsIndex({
                 </Grid>
 
                 {/* Additional Date Row & Action Buttons */}
-                <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid #F1F5F9', display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider', display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
                         <TextField
                             type="date"
                             size="small"
                             label="From Date"
+                            slotProps={{ inputLabel: { shrink: true } }}
                             InputLabelProps={{ shrink: true }}
                             value={dateFrom}
                             onChange={(e) => {
@@ -414,6 +426,7 @@ export default function BookingsIndex({
                             type="date"
                             size="small"
                             label="To Date"
+                            slotProps={{ inputLabel: { shrink: true } }}
                             InputLabelProps={{ shrink: true }}
                             value={dateTo}
                             onChange={(e) => {
@@ -456,9 +469,9 @@ export default function BookingsIndex({
             {/* VIEW MODE: CALENDAR */}
             {/* ========================================================================= */}
             {viewMode === 'calendar' ? (
-                <Card sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+                <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                     {/* Days of Week Header */}
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'center', py: 1 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', textAlign: 'center', py: 1 }}>
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
                             <Typography key={d} variant="subtitle2" fontWeight={700} color="text.secondary">
                                 {d}
@@ -467,7 +480,7 @@ export default function BookingsIndex({
                     </Box>
 
                     {/* Calendar Grid Cells */}
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', bgcolor: '#E2E8F0' }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', bgcolor: 'divider' }}>
                         {calendarDays.map((cd) => {
                             const isToday = cd.date === new Date().toISOString().slice(0, 10);
                             const dayEvents = eventsByDate[cd.date] || [];
@@ -477,7 +490,7 @@ export default function BookingsIndex({
                                     key={cd.date}
                                     sx={{
                                         minHeight: 115,
-                                        bgcolor: cd.isCurrentMonth ? '#FFFFFF' : '#F8FAFC',
+                                        bgcolor: cd.isCurrentMonth ? 'background.paper' : 'background.default',
                                         p: 1,
                                         display: 'flex',
                                         flexDirection: 'column',
@@ -517,7 +530,7 @@ export default function BookingsIndex({
                                                 onClick={() => setSelectedEvent(evt)}
                                                 sx={{
                                                     bgcolor: evt.color,
-                                                    color: '#FFFFFF',
+                                                    color: 'common.white',
                                                     fontSize: 11,
                                                     px: 0.8,
                                                     py: 0.3,
@@ -551,19 +564,19 @@ export default function BookingsIndex({
                 /* ========================================================================= */
                 /* VIEW MODE: LIST */
                 /* ========================================================================= */
-                <Card sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
-                    <TableContainer component={Paper} elevation={0}>
-                        <Table sx={{ minWidth: 800 }}>
-                            <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                    <TableContainer component={Paper} elevation={0} sx={{ overflowX: 'auto' }}>
+                        <Table sx={{ minWidth: 860 }}>
+                            <TableHead sx={{ bgcolor: 'background.default' }}>
                                 <TableRow>
-                                    <TableCell sx={{ fontWeight: 700 }}>Booking Ref & Channel</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Customer Details</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Bike Model</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Rental Dates</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Store Hub</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }} align="right">Total Amount</TableCell>
-                                    <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Booking Ref & Channel</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Customer Details</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Bike Model</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Rental Dates</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Store Hub</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Status</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }} align="right">Total Amount</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }} align="center">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -640,7 +653,35 @@ export default function BookingsIndex({
                                                     )}
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    <Stack direction="row" spacing={1} justifyContent="center">
+                                                    <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
+                                                        {b.status === 'confirmed' && (
+                                                            <Tooltip title="Start Bike Handover Inspection">
+                                                                <Button
+                                                                    variant="contained"
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    startIcon={<TwoWheelerIcon sx={{ fontSize: 16 }} />}
+                                                                    onClick={() => setHandoverBooking(b)}
+                                                                    sx={{ textTransform: 'none', py: 0.3, px: 1, fontSize: '0.75rem', fontWeight: 700 }}
+                                                                >
+                                                                    Handover
+                                                                </Button>
+                                                            </Tooltip>
+                                                        )}
+                                                        {b.status === 'handed_over' && (
+                                                            <Tooltip title="Start Return & Deposit Settlement">
+                                                                <Button
+                                                                    variant="contained"
+                                                                    size="small"
+                                                                    color="warning"
+                                                                    startIcon={<AssignmentReturnIcon sx={{ fontSize: 16 }} />}
+                                                                    onClick={() => setReturnBooking(b)}
+                                                                    sx={{ textTransform: 'none', py: 0.3, px: 1, fontSize: '0.75rem', fontWeight: 700 }}
+                                                                >
+                                                                    Return
+                                                                </Button>
+                                                            </Tooltip>
+                                                        )}
                                                         <Tooltip title="Edit Booking Details">
                                                             <IconButton
                                                                 component={Link}
@@ -752,7 +793,61 @@ export default function BookingsIndex({
                             </Box>
                         </Stack>
                     </DialogContent>
-                    <DialogActions sx={{ p: 2, pt: 1 }}>
+                    <DialogActions sx={{ p: 2, pt: 1, gap: 1 }}>
+                        {selectedEvent.status === 'confirmed' && (
+                            <Button
+                                variant="contained"
+                                size="small"
+                                color="primary"
+                                startIcon={<TwoWheelerIcon />}
+                                onClick={() => {
+                                    const found = bookings.data.find((b) => b.id === selectedEvent.id);
+                                    const fullBooking = found || {
+                                        id: selectedEvent.id,
+                                        booking_reference: selectedEvent.booking_reference,
+                                        user: { name: selectedEvent.customer_name, phone: selectedEvent.customer_phone },
+                                        bike: { model: selectedEvent.bike_model, registration_number: selectedEvent.registration_number, odometer_reading: 0 },
+                                        pickup_store: { name: selectedEvent.pickup_store },
+                                        return_store: { name: selectedEvent.return_store },
+                                        start_date: selectedEvent.start,
+                                        end_date: selectedEvent.end,
+                                        total_amount: selectedEvent.total_amount,
+                                        deposit_amount: 0,
+                                    };
+                                    setSelectedEvent(null);
+                                    setHandoverBooking(fullBooking);
+                                }}
+                            >
+                                Handover Bike
+                            </Button>
+                        )}
+                        {selectedEvent.status === 'handed_over' && (
+                            <Button
+                                variant="contained"
+                                size="small"
+                                color="warning"
+                                startIcon={<AssignmentReturnIcon />}
+                                onClick={() => {
+                                    const found = bookings.data.find((b) => b.id === selectedEvent.id);
+                                    const fullBooking = found || {
+                                        id: selectedEvent.id,
+                                        booking_reference: selectedEvent.booking_reference,
+                                        user: { name: selectedEvent.customer_name, phone: selectedEvent.customer_phone },
+                                        bike: { model: selectedEvent.bike_model, registration_number: selectedEvent.registration_number, odometer_reading: 0 },
+                                        pickup_store: { name: selectedEvent.pickup_store },
+                                        return_store: { name: selectedEvent.return_store },
+                                        start_date: selectedEvent.start,
+                                        end_date: selectedEvent.end,
+                                        total_amount: selectedEvent.total_amount,
+                                        deposit_amount: 0,
+                                    };
+                                    setSelectedEvent(null);
+                                    setReturnBooking(fullBooking);
+                                }}
+                            >
+                                Process Return
+                            </Button>
+                        )}
                         <Button
                             component={Link}
                             href={`/admin/bookings/${selectedEvent.id}/edit`}
@@ -775,6 +870,20 @@ export default function BookingsIndex({
                     </DialogActions>
                 </Dialog>
             )}
+
+            {/* Interactive Multi-Store Bike Handover & Return Inspection Modals */}
+            <HandoverWizardModal
+                open={Boolean(handoverBooking)}
+                onClose={() => setHandoverBooking(null)}
+                booking={handoverBooking}
+            />
+            <ReturnInspectionWizardModal
+                open={Boolean(returnBooking)}
+                onClose={() => setReturnBooking(null)}
+                booking={returnBooking}
+                stores={stores}
+            />
         </AdminLayout>
     );
 }
+

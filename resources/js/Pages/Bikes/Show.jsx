@@ -120,16 +120,16 @@ export default function BikeShow({ bike, stores = [] }) {
         <AppLayout>
             <Head title={`${bike.brand} ${bike.model_name} - Bike Rental in Honnavar`} />
 
-            <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
+            <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
                 {/* Back Navigation */}
                 <Box sx={{ mb: 3 }}>
                     <Button
                         component={Link}
-                        href="/bikes"
+                        href="/services/bikes"
                         startIcon={<ArrowBackIcon />}
                         sx={{ color: '#64748B', fontWeight: 600 }}
                     >
-                        Back to Fleet Catalog
+                        Back to Bike & Scooter Rentals
                     </Button>
                 </Box>
 
@@ -334,6 +334,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                         fullWidth
                                         type="date"
                                         label="Pickup Date"
+                                        slotProps={{ inputLabel: { shrink: true } }}
                                         InputLabelProps={{ shrink: true }}
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
@@ -344,6 +345,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                         fullWidth
                                         type="date"
                                         label="Return Date"
+                                        slotProps={{ inputLabel: { shrink: true } }}
                                         InputLabelProps={{ shrink: true }}
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}

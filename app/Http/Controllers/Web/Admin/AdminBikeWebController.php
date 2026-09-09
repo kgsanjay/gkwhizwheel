@@ -122,12 +122,12 @@ class AdminBikeWebController extends Controller
                 'current_store' => $bike->currentStore ? [
                     'id' => $bike->currentStore->id,
                     'name' => $bike->currentStore->name,
-                    'code' => $bike->currentStore->code,
+                    'city' => $bike->currentStore->city,
                 ] : null,
                 'home_store' => $bike->homeStore ? [
                     'id' => $bike->homeStore->id,
                     'name' => $bike->homeStore->name,
-                    'code' => $bike->homeStore->code,
+                    'city' => $bike->homeStore->city,
                 ] : null,
                 'documents' => [
                     'rc' => $rcDoc ? [
@@ -153,7 +153,7 @@ class AdminBikeWebController extends Controller
         return Inertia::render('Admin/Bikes/Index', [
             'bikes' => $formattedBikes,
             'categories' => $categories->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values()->all(),
-            'stores' => $stores->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'code' => $s->code])->values()->all(),
+            'stores' => $stores->map(fn ($s) => ['id' => $s->id, 'name' => $s->name, 'city' => $s->city])->values()->all(),
             'filters' => [
                 'search' => $request->query('search', ''),
                 'category_id' => $request->query('category_id', ''),
@@ -180,7 +180,7 @@ class AdminBikeWebController extends Controller
 
         return Inertia::render('Admin/Bikes/Create', [
             'categories' => BikeCategory::orderBy('name')->get(['id', 'name', 'base_daily_rate', 'default_deposit_amount']),
-            'stores' => Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'code', 'city']),
+            'stores' => Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']),
             'fuel_types' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], FuelType::cases()),
             'transmissions' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], Transmission::cases()),
             'statuses' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst(str_replace('_', ' ', $case->value))], BikeStatus::cases()),
@@ -301,7 +301,7 @@ class AdminBikeWebController extends Controller
                 ],
             ],
             'categories' => BikeCategory::orderBy('name')->get(['id', 'name', 'base_daily_rate', 'default_deposit_amount']),
-            'stores' => Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'code', 'city']),
+            'stores' => Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']),
             'fuel_types' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], FuelType::cases()),
             'transmissions' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], Transmission::cases()),
             'statuses' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst(str_replace('_', ' ', $case->value))], BikeStatus::cases()),

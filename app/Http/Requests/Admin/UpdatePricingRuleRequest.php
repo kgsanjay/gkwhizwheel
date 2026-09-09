@@ -27,10 +27,13 @@ class UpdatePricingRuleRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'name' => ['nullable', 'string', 'max:255'],
+            'service_type' => ['nullable', 'string', 'in:two_wheelers,taxi,boating,scuba,homestay,guide,tours'],
+            'service_item_id' => ['nullable', 'integer', 'exists:service_items,id'],
             'bike_id' => ['nullable', 'integer', 'exists:bikes,id'],
             'category_id' => ['nullable', 'integer', 'exists:bike_categories,id'],
             'rule_type' => ['sometimes', new Enum(PricingRuleType::class)],
-            'day_of_week' => ['nullable', 'integer', 'min:0', 'max:6'],
+            'day_of_week' => ['nullable', 'integer', 'min:0', 'max:7'],
             'date_start' => ['nullable', 'date'],
             'date_end' => ['nullable', 'date', 'after_or_equal:date_start'],
             'from_store_id' => ['nullable', 'integer', 'exists:stores,id'],

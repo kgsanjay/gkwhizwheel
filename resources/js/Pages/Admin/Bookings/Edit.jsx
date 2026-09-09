@@ -103,8 +103,8 @@ export default function BookingsEdit({
 
             <Grid container spacing={3}>
                 {/* Main Edit Form */}
-                <Grid item xs={12} md={7}>
-                    <Card sx={{ borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                <Grid size={{ xs: 12, md: 7 }}>
+                    <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                                 <EditCalendarIcon color="primary" />
@@ -117,12 +117,13 @@ export default function BookingsEdit({
                             <Box component="form" onSubmit={handleSubmit} noValidate>
                                 <Grid container spacing={2.5}>
                                     {/* Dates */}
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             type="date"
                                             label="Rental Start Date"
                                             fullWidth
                                             required
+                                            slotProps={{ inputLabel: { shrink: true } }}
                                             InputLabelProps={{ shrink: true }}
                                             value={data.start_date}
                                             onChange={(e) => setData('start_date', e.target.value)}
@@ -131,12 +132,13 @@ export default function BookingsEdit({
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             type="date"
                                             label="Rental End Date"
                                             fullWidth
                                             required
+                                            slotProps={{ inputLabel: { shrink: true } }}
                                             InputLabelProps={{ shrink: true }}
                                             value={data.end_date}
                                             onChange={(e) => setData('end_date', e.target.value)}
@@ -146,7 +148,7 @@ export default function BookingsEdit({
                                     </Grid>
 
                                     {/* Stores */}
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             select
                                             label="Pickup Store Hub"
@@ -165,7 +167,7 @@ export default function BookingsEdit({
                                         </TextField>
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             select
                                             label="Return Store Hub"
@@ -185,7 +187,7 @@ export default function BookingsEdit({
                                     </Grid>
 
                                     {/* Status Transition */}
-                                    <Grid item xs={12}>
+                                    <Grid size={{ xs: 12 }}>
                                         <TextField
                                             select
                                             label="Booking Status"
@@ -205,7 +207,7 @@ export default function BookingsEdit({
                                     </Grid>
 
                                     {/* Fee Adjustments */}
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             type="number"
                                             label="Late Fee Deduction (₹)"
@@ -214,11 +216,12 @@ export default function BookingsEdit({
                                             onChange={(e) => setData('late_fee_amount', e.target.value)}
                                             error={Boolean(errors.late_fee_amount)}
                                             helperText={errors.late_fee_amount}
+                                            slotProps={{ htmlInput: { min: 0, step: 'any' } }}
                                             InputProps={{ inputProps: { min: 0, step: 'any' } }}
                                         />
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <TextField
                                             type="number"
                                             label="Damage Fee Deduction (₹)"
@@ -227,12 +230,13 @@ export default function BookingsEdit({
                                             onChange={(e) => setData('damage_fee_amount', e.target.value)}
                                             error={Boolean(errors.damage_fee_amount)}
                                             helperText={errors.damage_fee_amount}
+                                            slotProps={{ htmlInput: { min: 0, step: 'any' } }}
                                             InputProps={{ inputProps: { min: 0, step: 'any' } }}
                                         />
                                     </Grid>
 
                                     {/* Internal Notes */}
-                                    <Grid item xs={12}>
+                                    <Grid size={{ xs: 12 }}>
                                         <TextField
                                             label="Admin Notes / Reason for Modification"
                                             fullWidth
@@ -247,7 +251,7 @@ export default function BookingsEdit({
                                     </Grid>
 
                                     {/* Actions */}
-                                    <Grid item xs={12}>
+                                    <Grid size={{ xs: 12 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1 }}>
                                             <Button
                                                 component={Link}
@@ -275,10 +279,10 @@ export default function BookingsEdit({
                 </Grid>
 
                 {/* Sidebar: Customer & Pricing Summary */}
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                     <Stack spacing={3}>
                         {/* Customer & Bike Info */}
-                        <Card sx={{ borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                        <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                             <CardContent sx={{ p: 2.5 }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <PersonIcon color="primary" /> Customer Profile
@@ -311,7 +315,7 @@ export default function BookingsEdit({
                         </Card>
 
                         {/* Financial Breakdown */}
-                        <Card sx={{ borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                        <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                             <CardContent sx={{ p: 2.5 }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <ReceiptLongIcon color="primary" /> Financial Summary

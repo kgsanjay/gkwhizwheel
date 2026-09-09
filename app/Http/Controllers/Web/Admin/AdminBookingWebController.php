@@ -17,12 +17,16 @@ use App\Models\ActivityLog;
 use App\Models\Bike;
 use App\Models\Booking;
 use App\Models\Store;
+use App\Services\BookingService;
 use App\Services\RefundService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,7 +44,7 @@ class AdminBookingWebController extends Controller
         $isSuperAdmin = $user->role === UserRole::SUPER_ADMIN;
 
         $query = Booking::query()
-            ->with(['bike.category', 'user', 'pickupStore', 'returnStore', 'payments', 'refunds']);
+            ->with(['bike.category', 'user', 'pickupStore', 'returnStore', 'payments', 'refunds', 'conditionLogs.photos', 'addons']);
 
         // Scope to user's assigned stores if not super admin
         if (! $isSuperAdmin) {
@@ -217,7 +221,33 @@ class AdminBookingWebController extends Controller
                     'model' => $b->bike?->model_name ?? 'Bike',
                     'registration_number' => $b->bike?->registration_number,
                     'category' => $b->bike?->category?->name,
+                    'odometer_reading' => (int) ($b->bike?->odometer_reading ?? 0),
+                    'base_daily_rate' => (float) ($b->bike?->base_daily_rate ?? $b->bike?->category?->base_daily_rate ?? 500.0),
                 ],
+                'latest_condition_log' => ($latestLog = $b->conditionLogs->sortByDesc('id')->first()) ? [
+                    'id' => $latestLog->id,
+                    'stage' => $latestLog->stage instanceof \App\Enums\BikeConditionStage ? $latestLog->stage->value : (string) $latestLog->stage,
+                    'odometer_reading' => (int) $latestLog->odometer_reading,
+                    'notes' => $latestLog->notes,
+                    'created_at' => $latestLog->created_at?->toIso8601String(),
+                ] : null,
+                'condition_logs' => $b->conditionLogs->sortByDesc('id')->map(fn ($cl) => [
+                    'id' => $cl->id,
+                    'stage' => $cl->stage instanceof \App\Enums\BikeConditionStage ? $cl->stage->value : (string) $cl->stage,
+                    'odometer_reading' => (int) $cl->odometer_reading,
+                    'notes' => $cl->notes,
+                    'photos' => $cl->photos->map(fn ($p) => [
+                        'id' => $p->id,
+                        'file_path' => $p->file_path,
+                        'url' => \Illuminate\Support\Facades\Storage::disk('public')->url($p->file_path),
+                    ])->values()->all(),
+                    'created_at' => $cl->created_at?->toIso8601String(),
+                ])->values()->all(),
+                'addons' => $b->addons->map(fn ($ad) => [
+                    'id' => $ad->id,
+                    'name' => $ad->name,
+                    'price' => (float) $ad->price,
+                ])->values()->all(),
                 'pickup_store' => [
                     'id' => $b->pickupStore?->id,
                     'name' => $b->pickupStore?->name,
@@ -535,4 +565,223 @@ class AdminBookingWebController extends Controller
         return redirect()->route('admin.bookings.index')
             ->with('success', "Refund of ₹{$refund->amount} processed successfully for booking '{$booking->booking_reference}'.");
     }
+
+    /**
+     * Download official PDF rental agreement / voucher for fleet booking
+     */
+    public function downloadVoucher(int|string $id, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\Http\Response
+    {
+        $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
+            ->where('id', $id)
+            ->orWhere('booking_reference', $id)
+            ->firstOrFail();
+
+        return $voucherService->generateBikeVoucherPdf($booking, $request->boolean('stream'));
+    }
+
+    /**
+     * Complete bike handover inspection and mark booking as handed_over.
+     */
+    public function handover(int $id, Request $request, BookingService $bookingService): RedirectResponse
+    {
+        $booking = Booking::with(['bike', 'pickupStore', 'returnStore'])->findOrFail($id);
+        Gate::authorize('handover', $booking);
+
+        if ($booking->status !== BookingStatus::CONFIRMED) {
+            throw ValidationException::withMessages([
+                'booking' => ["Booking must be in 'confirmed' status for handover. Current status: '{$booking->status->value}'."],
+            ]);
+        }
+
+        $validated = $request->validate([
+            'odometer_reading' => ['required', 'integer', 'min:0'],
+            'condition_photos' => ['nullable', 'array', 'max:6'],
+            'condition_photos.*' => ['image', 'max:10240'],
+            'signature' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'helmets_issued' => ['nullable', 'integer', 'min:1', 'max:2'],
+            'fuel_level' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $photoPaths = [];
+        if ($request->hasFile('condition_photos')) {
+            foreach ($request->file('condition_photos') as $photoFile) {
+                if ($photoFile instanceof UploadedFile) {
+                    $photoPaths[] = $photoFile->store('condition/handover', 'public');
+                }
+            }
+        }
+
+        $signaturePath = null;
+        if ($request->filled('signature')) {
+            $sigData = (string) $request->input('signature');
+            if (str_starts_with($sigData, 'data:image')) {
+                $rawImage = preg_replace('#^data:image/\w+;base64,#i', '', $sigData);
+                $decoded = base64_decode($rawImage, true);
+                if ($decoded !== false) {
+                    $filename = 'signatures/bookings/sig_'.Str::random(20).'.png';
+                    Storage::disk('public')->put($filename, $decoded);
+                    $signaturePath = $filename;
+                }
+            } else {
+                $filename = 'signatures/bookings/sig_'.Str::random(20).'.png';
+                Storage::disk('public')->put($filename, $sigData);
+                $signaturePath = $filename;
+            }
+        }
+
+        $inspectionNotes = trim(
+            ($validated['notes'] ?? '').
+            (isset($validated['helmets_issued']) ? " | Helmets Issued: {$validated['helmets_issued']}" : '').
+            (isset($validated['fuel_level']) ? " | Fuel Level: {$validated['fuel_level']}" : '')
+        );
+
+        $bookingService->markHandedOver(
+            booking: $booking,
+            odometerReading: (int) $validated['odometer_reading'],
+            signaturePath: $signaturePath,
+            notes: $inspectionNotes !== '' ? $inspectionNotes : null,
+            photoPaths: $photoPaths,
+            staffId: $request->user()->id
+        );
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'store_id' => $booking->pickup_store_id,
+            'action' => 'booking_handed_over',
+            'subject_type' => Booking::class,
+            'subject_id' => $booking->id,
+            'new_values' => [
+                'odometer_reading' => (int) $validated['odometer_reading'],
+                'helmets_issued' => $validated['helmets_issued'] ?? 1,
+                'condition_photos_count' => count($photoPaths),
+                'signature_recorded' => $signaturePath !== null,
+                'status' => 'handed_over',
+            ],
+        ]);
+
+        return redirect()->back()->with('success', "Bike handed over successfully for booking '{$booking->booking_reference}'. Keys and helmet handed over to customer.");
+    }
+
+    /**
+     * Process bike return inspection, update store relocation, and settle security deposit.
+     */
+    public function processReturn(
+        int $id,
+        Request $request,
+        BookingService $bookingService,
+        RefundService $refundService
+    ): RedirectResponse {
+        $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'user'])->findOrFail($id);
+        Gate::authorize('processReturn', $booking);
+
+        if ($booking->status !== BookingStatus::HANDED_OVER) {
+            throw ValidationException::withMessages([
+                'booking' => ["Booking must be in 'handed_over' status to process return. Current status: '{$booking->status->value}'."],
+            ]);
+        }
+
+        $validated = $request->validate([
+            'odometer_reading' => ['required', 'integer', 'min:0'],
+            'damage_fee' => ['nullable', 'numeric', 'min:0'],
+            'late_fee_override' => ['nullable', 'numeric', 'min:0'],
+            'deposit_refund_amount' => ['nullable', 'numeric', 'min:0'],
+            'return_store_id' => ['nullable', 'exists:stores,id'],
+            'condition_photos' => ['nullable', 'array', 'max:6'],
+            'condition_photos.*' => ['image', 'max:10240'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'fuel_level' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        // Calculate late fee
+        if ($request->filled('late_fee_override')) {
+            $lateFee = max(0.0, (float) $validated['late_fee_override']);
+        } else {
+            $scheduledEnd = Carbon::parse($booking->end_date)->endOfDay();
+            if (now()->greaterThan($scheduledEnd)) {
+                $overdueDays = max(1, (int) ceil($scheduledEnd->diffInHours(now()) / 24));
+                $dailyRate = (float) ($booking->bike?->base_daily_rate ?? $booking->bike?->category?->base_daily_rate ?? 500.0);
+                $lateFee = round($overdueDays * $dailyRate, 2);
+            } else {
+                $lateFee = 0.0;
+            }
+        }
+
+        $damageFee = max(0.0, (float) ($validated['damage_fee'] ?? 0.0));
+        $odometerReading = (int) $validated['odometer_reading'];
+        $returnStoreId = ! empty($validated['return_store_id'])
+            ? (int) $validated['return_store_id']
+            : $booking->return_store_id;
+
+        $photoPaths = [];
+        if ($request->hasFile('condition_photos')) {
+            foreach ($request->file('condition_photos') as $photoFile) {
+                if ($photoFile instanceof UploadedFile) {
+                    $photoPaths[] = $photoFile->store('condition/return', 'public');
+                }
+            }
+        }
+
+        $returnNotes = trim(
+            ($validated['notes'] ?? '').
+            (isset($validated['fuel_level']) ? " | Return Fuel Level: {$validated['fuel_level']}" : '')
+        );
+
+        // Mark returned in BookingService (relocates bike, marks AVAILABLE, updates odometer)
+        $bookingService->markReturned(
+            booking: $booking,
+            odometerReading: $odometerReading,
+            lateFee: $lateFee,
+            damageFee: $damageFee,
+            notes: $returnNotes !== '' ? $returnNotes : null,
+            photoPaths: $photoPaths,
+            staffId: $request->user()->id,
+            returnStoreId: $returnStoreId
+        );
+
+        // Process security deposit refund if applicable
+        $depositAmount = (float) $booking->deposit_amount;
+        $refund = null;
+        if ($depositAmount > 0) {
+            $refund = $refundService->createDepositRefund(
+                booking: $booking,
+                damageDeductions: $damageFee,
+                lateFeeDeductions: $lateFee,
+                reason: 'Deposit refund after bike return inspection',
+                processedBy: $request->user()->id
+            );
+
+            if ($request->filled('deposit_refund_amount')) {
+                $overrideRefundAmount = round(max(0.0, (float) $validated['deposit_refund_amount']), 2);
+                $refund->update([
+                    'amount' => $overrideRefundAmount,
+                ]);
+            }
+        }
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'store_id' => $returnStoreId,
+            'action' => 'booking_returned',
+            'subject_type' => Booking::class,
+            'subject_id' => $booking->id,
+            'new_values' => [
+                'odometer_reading' => $odometerReading,
+                'late_fee' => $lateFee,
+                'damage_fee' => $damageFee,
+                'deposit_amount' => $depositAmount,
+                'deposit_refunded' => $refund ? (float) $refund->amount : 0.0,
+                'return_store_id' => $returnStoreId,
+                'status' => 'returned',
+            ],
+        ]);
+
+        $msg = "Bike return processed successfully for booking '{$booking->booking_reference}'. Bike is now AVAILABLE at the selected store.";
+        if ($refund && (float) $refund->amount > 0) {
+            $msg .= " Security deposit refund of ₹{$refund->amount} settled.";
+        }
+
+        return redirect()->back()->with('success', $msg);
+    }
 }
+

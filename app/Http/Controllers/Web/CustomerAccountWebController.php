@@ -19,11 +19,15 @@ class CustomerAccountWebController extends Controller
     /**
      * Display the customer account dashboard with booking history.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): mixed
     {
         $user = $request->user();
 
-        $bookings = Booking::where('user_id', $user?->id)
+        if ($user === null) {
+            return redirect()->guest(route('login'));
+        }
+
+        $bookings = Booking::where('user_id', $user->id)
             ->with([
                 'bike.images',
                 'bike.category',
@@ -36,6 +40,27 @@ class CustomerAccountWebController extends Controller
             ->latest()
             ->get();
 
+        $serviceBookings = \App\Models\ServiceBooking::with(['serviceItem'])
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+                if (! empty($user->phone)) {
+                    $cleanPhone = preg_replace('/^\+?91/', '', $user->phone);
+                    $query->orWhere('customer_phone', $user->phone)
+                        ->orWhere('customer_phone', $cleanPhone);
+                }
+                if (! empty($user->email)) {
+                    $query->orWhere('customer_email', $user->email);
+                }
+            })
+            ->latest()
+            ->get();
+
+        $serviceBookings->transform(function ($sb) {
+            $coord = \App\Notifications\ServiceBookingConfirmedNotification::SERVICE_COORDINATORS[$sb->service_type] ?? null;
+            $sb->coordinator = $coord;
+            return $sb;
+        });
+
         $activeStatuses = [
             BookingStatus::HELD->value,
             BookingStatus::PENDING_PAYMENT->value,
@@ -43,26 +68,58 @@ class CustomerAccountWebController extends Controller
             BookingStatus::HANDED_OVER->value,
         ];
 
-        $activeCount = $bookings->filter(fn ($b) => in_array($b->status->value, $activeStatuses, true))->count();
-        $completedCount = $bookings->filter(fn ($b) => $b->status === BookingStatus::RETURNED)->count();
-        $cancelledCount = $bookings->filter(fn ($b) => $b->status === BookingStatus::CANCELLED)->count();
+        $bikeActiveCount = $bookings->filter(fn ($b) => in_array($b->status->value, $activeStatuses, true))->count();
+        $bikeCompletedCount = $bookings->filter(fn ($b) => $b->status === BookingStatus::RETURNED)->count();
+        $bikeCancelledCount = $bookings->filter(fn ($b) => $b->status === BookingStatus::CANCELLED)->count();
+
+        $serviceActiveCount = $serviceBookings->filter(fn ($sb) => in_array($sb->status, ['confirmed', 'in_progress'], true))->count();
+        $serviceCompletedCount = $serviceBookings->filter(fn ($sb) => $sb->status === 'completed')->count();
+        $serviceCancelledCount = $serviceBookings->filter(fn ($sb) => $sb->status === 'cancelled')->count();
+
+        $activeCount = $bikeActiveCount + $serviceActiveCount;
+        $completedCount = $bikeCompletedCount + $serviceCompletedCount;
+        $cancelledCount = $bikeCancelledCount + $serviceCancelledCount;
+
+        $featuredBikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
+            ->where('status', \App\Enums\BikeStatus::AVAILABLE)
+            ->take(3)
+            ->get();
+
+        $isKycVerified = $user ? $user->kycDocuments()->where('verified', true)->exists() : false;
+        $hasKycUploaded = $user ? $user->kycDocuments()->exists() : false;
 
         return Inertia::render('Account/Bookings', [
             'bookings' => BookingResource::collection($bookings)->resolve(),
+            'serviceBookings' => $serviceBookings,
             'stats' => [
                 'active_count' => $activeCount,
                 'completed_count' => $completedCount,
                 'cancelled_count' => $cancelledCount,
-                'total_count' => $bookings->count(),
+                'total_count' => $bookings->count() + $serviceBookings->count(),
             ],
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'is_kyc_verified' => $isKycVerified,
+                'has_kyc_uploaded' => $hasKycUploaded,
+            ],
+            'featuredBikes' => \App\Http\Resources\BikeResource::collection($featuredBikes)->resolve(),
         ]);
     }
 
     /**
      * Display detailed booking overview with bike documents and self-service actions.
      */
-    public function show(int $id, Request $request): Response
+    public function show(int $id, Request $request): mixed
     {
+        $currentUser = $request->user();
+
+        if ($currentUser === null) {
+            return redirect()->guest(route('login'));
+        }
+
         $booking = Booking::with([
             'bike.images',
             'bike.category',
@@ -75,15 +132,11 @@ class CustomerAccountWebController extends Controller
             'user',
         ])->findOrFail($id);
 
-        $currentUser = $request->user();
+        $isOwner = $currentUser->id === $booking->user_id;
+        $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
-        if ($currentUser !== null) {
-            $isOwner = $currentUser->id === $booking->user_id;
-            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
-
-            if (! $isOwner && ! $isStaffOrAdmin) {
-                abort(403, 'You are not authorized to view this booking.');
-            }
+        if (! $isOwner && ! $isStaffOrAdmin) {
+            abort(403, 'You are not authorized to view this booking.');
         }
 
         return Inertia::render('Account/BookingDetail', [
@@ -94,19 +147,24 @@ class CustomerAccountWebController extends Controller
     /**
      * Display customer KYC compliance and upload portal.
      */
-    public function kyc(Request $request): Response
+    public function kyc(Request $request): mixed
     {
         $user = $request->user();
-        $documents = $user ? $user->kycDocuments()->latest()->get() : collect();
+
+        if ($user === null) {
+            return redirect()->guest(route('login'));
+        }
+
+        $documents = $user->kycDocuments()->latest()->get();
 
         return Inertia::render('Account/Kyc', [
             'documents' => KycDocumentResource::collection($documents)->resolve(),
-            'user' => $user ? [
+            'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
-            ] : null,
+            ],
         ]);
     }
 }

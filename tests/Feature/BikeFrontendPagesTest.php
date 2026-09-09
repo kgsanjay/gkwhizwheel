@@ -66,18 +66,50 @@ beforeEach(function (): void {
     ]);
 });
 
-test('GET /bikes renders Inertia Bikes/Index component with categories and stores', function (): void {
-    $response = $this->get('/bikes?category_id='.$this->category->id);
+test('GET /bikes redirects with 301 to /services/bikes', function (): void {
+    $response = $this->get('/bikes');
+
+    $response->assertStatus(301);
+    $response->assertRedirect('/services/bikes');
+});
+
+test('GET /services/bikes renders Inertia Bikes/Index component with categories and stores', function (): void {
+    $response = $this->get('/services/bikes?category_id='.$this->category->id);
 
     $response->assertStatus(200);
 
     $response->assertInertia(
         fn (Assert $page) => $page
-        ->component('Bikes/Index')
-        ->has('categories', 1)
-        ->has('stores', 2)
-        ->has('initialFilters')
-        ->where('initialFilters.category_id', (string) $this->category->id)
+            ->component('Bikes/Index')
+            ->has('categories', 1)
+            ->has('stores', 2)
+            ->has('initialFilters')
+            ->where('initialFilters.category_id', (string) $this->category->id)
+    );
+});
+
+test('GET /services/bikes/{id} renders Inertia Bikes/Show component with bike details', function (): void {
+    $response = $this->get("/services/bikes/{$this->bike->id}");
+
+    $response->assertStatus(200);
+
+    $response->assertInertia(
+        fn (Assert $page) => $page
+            ->component('Bikes/Show')
+            ->where('bike.id', $this->bike->id)
+    );
+});
+
+test('GET /services/cabs renders Inertia CabsPage component', function (): void {
+    $response = $this->get('/services/cabs');
+
+    $response->assertStatus(200);
+
+    $response->assertInertia(
+        fn (Assert $page) => $page
+            ->component('CabsPage')
+            ->where('slug', 'cabs')
+            ->has('availableItems')
     );
 });
 

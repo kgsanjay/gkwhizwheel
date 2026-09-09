@@ -45,6 +45,17 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import SecurityIcon from '@mui/icons-material/Security';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import PersonIcon from '@mui/icons-material/Person';
+import CategoryIcon from '@mui/icons-material/Category';
+
+const SERVICE_OPTIONS = [
+    { slug: 'two_wheelers', name: 'Two-Wheelers & Bikes', short: 'Bikes' },
+    { slug: 'taxi', name: 'Cabs & Taxi', short: 'Taxi' },
+    { slug: 'boating', name: 'Boating & Water Sports', short: 'Boating' },
+    { slug: 'scuba', name: 'Scuba Diving & Snorkeling', short: 'Scuba' },
+    { slug: 'homestay', name: 'Homestays & Resorts', short: 'Stays' },
+    { slug: 'guide', name: 'Local Tour Guides', short: 'Guides' },
+    { slug: 'tours', name: 'Custom Packages & Tours', short: 'Tours' },
+];
 
 export default function StaffIndex({
     staff = [],
@@ -52,6 +63,7 @@ export default function StaffIndex({
     stats = {},
     filters = {},
     roles = [],
+    available_services = [],
 }) {
     const [search, setSearch] = useState(filters.search || '');
     const [selectedRole, setSelectedRole] = useState(filters.role || '');
@@ -74,6 +86,7 @@ export default function StaffIndex({
         password: '',
         role: 'staff',
         store_ids: [],
+        services: ['two_wheelers'],
     });
 
     // Edit form
@@ -85,6 +98,7 @@ export default function StaffIndex({
         status: 'active',
         password: '',
         store_ids: [],
+        services: [],
     });
 
     const handleFilterSubmit = (e) => {
@@ -106,6 +120,7 @@ export default function StaffIndex({
             password: '',
             role: 'staff',
             store_ids: [],
+            services: ['two_wheelers'],
         });
         setCreateModalOpen(true);
     };
@@ -130,6 +145,7 @@ export default function StaffIndex({
             status: user.status,
             password: '',
             store_ids: user.stores ? user.stores.map((s) => s.id) : [],
+            services: user.services && user.services.length > 0 ? user.services : ['two_wheelers'],
         });
         setEditModalOpen(true);
     };
@@ -195,7 +211,7 @@ export default function StaffIndex({
 
             {/* Metrics Strip */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Total Personnel
@@ -205,7 +221,7 @@ export default function StaffIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Store Managers
@@ -215,7 +231,7 @@ export default function StaffIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Operations Staff
@@ -225,7 +241,7 @@ export default function StaffIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Active Accounts
@@ -238,15 +254,24 @@ export default function StaffIndex({
             </Grid>
 
             {/* Filter Bar */}
-            <Paper component="form" onSubmit={handleFilterSubmit} sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Paper component="form" onSubmit={handleFilterSubmit} sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={5}>
+                    <Grid size={{ xs: 12, sm: 5 }}>
                         <TextField
                             fullWidth
                             size="small"
                             placeholder="Search by staff name, email, or phone..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon fontSize="small" color="action" />
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -257,7 +282,7 @@ export default function StaffIndex({
                         />
                     </Grid>
 
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                         <TextField
                             select
                             fullWidth
@@ -275,7 +300,7 @@ export default function StaffIndex({
                         </TextField>
                     </Grid>
 
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                         <TextField
                             select
                             fullWidth
@@ -296,7 +321,7 @@ export default function StaffIndex({
                         </TextField>
                     </Grid>
 
-                    <Grid item xs={12} sm={1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Grid size={{ xs: 12, sm: 1 }} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button type="submit" variant="outlined" sx={{ textTransform: 'none', height: 40, width: '100%' }}>
                             Filter
                         </Button>
@@ -306,7 +331,7 @@ export default function StaffIndex({
 
             {/* Staff Data Table */}
             {staff.length === 0 ? (
-                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider', bgcolor: 'background.paper' }}>
                     <BadgeIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
                         No staff members found
@@ -319,14 +344,15 @@ export default function StaffIndex({
                     </Button>
                 </Paper>
             ) : (
-                <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                    <Table>
-                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', overflowX: 'auto' }}>
+                    <Table sx={{ minWidth: 980 }}>
+                        <TableHead sx={{ bgcolor: 'background.default' }}>
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 700 }}>Staff Name</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Contact Info</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Assigned Store Hubs</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Assigned Services</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Account Status</TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
                             </TableRow>
@@ -373,6 +399,34 @@ export default function StaffIndex({
                                         )}
                                     </TableCell>
                                     <TableCell>
+                                        {user.services && user.services.length === SERVICE_OPTIONS.length ? (
+                                            <Chip
+                                                label="All Services (7)"
+                                                size="small"
+                                                color="primary"
+                                                sx={{ fontWeight: 700, fontSize: '0.75rem' }}
+                                            />
+                                        ) : user.services && user.services.length > 0 ? (
+                                            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ gap: 0.5, maxWidth: 220 }}>
+                                                {user.services.map((slug) => {
+                                                    const srv = SERVICE_OPTIONS.find((s) => s.slug === slug);
+                                                    return (
+                                                        <Chip
+                                                            key={slug}
+                                                            label={srv ? srv.short : slug}
+                                                            size="small"
+                                                            color="secondary"
+                                                            variant="outlined"
+                                                            sx={{ fontWeight: 600, fontSize: '0.72rem' }}
+                                                        />
+                                                    );
+                                                })}
+                                            </Stack>
+                                        ) : (
+                                            <Chip label="Bikes Only (Default)" size="small" variant="outlined" sx={{ fontStyle: 'italic', fontSize: '0.72rem' }} />
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
                                         <Chip
                                             label={user.status}
                                             size="small"
@@ -416,7 +470,7 @@ export default function StaffIndex({
                         )}
 
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -429,7 +483,7 @@ export default function StaffIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -443,7 +497,7 @@ export default function StaffIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -456,7 +510,7 @@ export default function StaffIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -470,7 +524,7 @@ export default function StaffIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     select
                                     fullWidth
@@ -489,7 +543,7 @@ export default function StaffIndex({
                             </Grid>
 
                             {/* Multi-Store Assignment Selector */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <FormControl fullWidth error={Boolean(createForm.errors.store_ids)}>
                                     <InputLabel id="assign-stores-label">Assign to Store Hubs (Multiple)</InputLabel>
                                     <Select
@@ -515,6 +569,71 @@ export default function StaffIndex({
                                         ))}
                                     </Select>
                                 </FormControl>
+                            </Grid>
+
+                            {/* Managed Services & Permissions Selector */}
+                            <Grid size={{ xs: 12 }}>
+                                <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                <CategoryIcon fontSize="small" color="primary" /> Managed Services (Role-Based Access)
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Select which services this account can oversee, view bookings for, and edit inventory.
+                                            </Typography>
+                                        </Box>
+                                        <Stack direction="row" spacing={1}>
+                                            <Button
+                                                size="small"
+                                                variant="text"
+                                                onClick={() => createForm.setData('services', SERVICE_OPTIONS.map((s) => s.slug))}
+                                                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0 }}
+                                            >
+                                                Select All
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="text"
+                                                color="inherit"
+                                                onClick={() => createForm.setData('services', [])}
+                                                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0 }}
+                                            >
+                                                Clear
+                                            </Button>
+                                        </Stack>
+                                    </Box>
+                                    <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap sx={{ gap: 0.8 }}>
+                                        {SERVICE_OPTIONS.map((srv) => {
+                                            const isSelected = (createForm.data.services || []).includes(srv.slug);
+                                            return (
+                                                <Chip
+                                                    key={srv.slug}
+                                                    label={srv.name}
+                                                    onClick={() => {
+                                                        const current = createForm.data.services || [];
+                                                        const updated = isSelected
+                                                            ? current.filter((s) => s !== srv.slug)
+                                                            : [...current, srv.slug];
+                                                        createForm.setData('services', updated);
+                                                    }}
+                                                    color={isSelected ? 'primary' : 'default'}
+                                                    variant={isSelected ? 'filled' : 'outlined'}
+                                                    sx={{
+                                                        fontWeight: isSelected ? 700 : 500,
+                                                        cursor: 'pointer',
+                                                        borderRadius: 1.5,
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Stack>
+                                    {createForm.errors.services && (
+                                        <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                                            {createForm.errors.services}
+                                        </Typography>
+                                    )}
+                                </Box>
                             </Grid>
                         </Grid>
                     </DialogContent>
@@ -546,7 +665,7 @@ export default function StaffIndex({
                         )}
 
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -558,7 +677,7 @@ export default function StaffIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -571,7 +690,7 @@ export default function StaffIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -583,7 +702,7 @@ export default function StaffIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     select
                                     fullWidth
@@ -601,7 +720,7 @@ export default function StaffIndex({
                                 </TextField>
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     select
                                     fullWidth
@@ -616,7 +735,7 @@ export default function StaffIndex({
                                 </TextField>
                             </Grid>
 
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <TextField
                                     fullWidth
                                     type="password"
@@ -630,7 +749,7 @@ export default function StaffIndex({
                             </Grid>
 
                             {/* Multi-Store Assignment Selector */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <FormControl fullWidth error={Boolean(editForm.errors.store_ids)}>
                                     <InputLabel id="edit-assign-stores-label">Assign to Store Hubs (Multiple)</InputLabel>
                                     <Select
@@ -656,6 +775,71 @@ export default function StaffIndex({
                                         ))}
                                     </Select>
                                 </FormControl>
+                            </Grid>
+
+                            {/* Managed Services & Permissions Selector */}
+                            <Grid size={{ xs: 12 }}>
+                                <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                                                <CategoryIcon fontSize="small" color="primary" /> Managed Services (Role-Based Access)
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Select which services this account can oversee, view bookings for, and edit inventory.
+                                            </Typography>
+                                        </Box>
+                                        <Stack direction="row" spacing={1}>
+                                            <Button
+                                                size="small"
+                                                variant="text"
+                                                onClick={() => editForm.setData('services', SERVICE_OPTIONS.map((s) => s.slug))}
+                                                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0 }}
+                                            >
+                                                Select All
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="text"
+                                                color="inherit"
+                                                onClick={() => editForm.setData('services', [])}
+                                                sx={{ textTransform: 'none', fontSize: '0.75rem', py: 0 }}
+                                            >
+                                                Clear
+                                            </Button>
+                                        </Stack>
+                                    </Box>
+                                    <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap sx={{ gap: 0.8 }}>
+                                        {SERVICE_OPTIONS.map((srv) => {
+                                            const isSelected = (editForm.data.services || []).includes(srv.slug);
+                                            return (
+                                                <Chip
+                                                    key={srv.slug}
+                                                    label={srv.name}
+                                                    onClick={() => {
+                                                        const current = editForm.data.services || [];
+                                                        const updated = isSelected
+                                                            ? current.filter((s) => s !== srv.slug)
+                                                            : [...current, srv.slug];
+                                                        editForm.setData('services', updated);
+                                                    }}
+                                                    color={isSelected ? 'primary' : 'default'}
+                                                    variant={isSelected ? 'filled' : 'outlined'}
+                                                    sx={{
+                                                        fontWeight: isSelected ? 700 : 500,
+                                                        cursor: 'pointer',
+                                                        borderRadius: 1.5,
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Stack>
+                                    {editForm.errors.services && (
+                                        <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                                            {editForm.errors.services}
+                                        </Typography>
+                                    )}
+                                </Box>
                             </Grid>
                         </Grid>
                     </DialogContent>

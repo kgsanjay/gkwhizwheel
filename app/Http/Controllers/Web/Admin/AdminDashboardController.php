@@ -102,6 +102,66 @@ class AdminDashboardController extends Controller
             ->take(8)
             ->get();
 
+        // Multi-Service Operational Metrics (Scoped by Manager's Assigned Services or All for Super Admin)
+        $assignedServices = $user->assignedServicesList();
+        $allServices = ['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'];
+        $servicesScope = $isSuperAdmin ? $allServices : $assignedServices;
+
+        $serviceMetrics = [];
+        $serviceLabels = [
+            'two_wheelers' => 'Two Wheelers',
+            'taxi' => 'Cabs & Taxi',
+            'boating' => 'Boating & Cruise',
+            'scuba' => 'Scuba & Watersports',
+            'homestay' => 'Stays & Homestays',
+            'guide' => 'Tour Guides',
+            'tours' => 'Tour Packages',
+        ];
+
+        if (! empty($servicesScope)) {
+            foreach ($servicesScope as $st) {
+                $serviceMetrics[$st] = [
+                    'type' => $st,
+                    'label' => $serviceLabels[$st] ?? ucfirst($st),
+                    'items_count' => \App\Models\ServiceItem::where('service_type', $st)->count(),
+                    'active_bookings' => \App\Models\ServiceBooking::where('service_type', $st)
+                        ->whereIn('status', ['confirmed', 'in_progress'])
+                        ->count(),
+                    'pending_bookings' => \App\Models\ServiceBooking::where('service_type', $st)
+                        ->where('status', 'pending')
+                        ->count(),
+                    'month_revenue' => (float) \App\Models\ServiceBooking::where('service_type', $st)
+                        ->whereIn('payment_status', ['partial', 'paid'])
+                        ->where('created_at', '>=', $monthStart)
+                        ->sum('advance_paid'),
+                ];
+            }
+        }
+
+        $recentServiceBookings = [];
+        if (! empty($servicesScope)) {
+            $recentServiceBookings = \App\Models\ServiceBooking::with('serviceItem')
+                ->whereIn('service_type', $servicesScope)
+                ->latest()
+                ->take(6)
+                ->get()
+                ->map(fn ($b) => [
+                    'id' => $b->id,
+                    'booking_number' => $b->booking_number,
+                    'service_type' => $b->service_type,
+                    'service_name' => $b->serviceItem?->name ?? ucfirst($b->service_type),
+                    'customer_name' => $b->customer_name,
+                    'customer_phone' => $b->customer_phone,
+                    'start_datetime' => $b->start_datetime ? $b->start_datetime->format('d M Y, h:i A') : 'N/A',
+                    'total_amount' => (float) $b->total_amount,
+                    'advance_paid' => (float) $b->advance_paid,
+                    'balance_due' => (float) $b->balance_due,
+                    'payment_status' => $b->payment_status,
+                    'status' => $b->status,
+                    'booking_channel' => $b->booking_channel,
+                ])->values()->all();
+        }
+
         return Inertia::render('Admin/Dashboard', [
             'metrics' => [
                 'active_rentals' => $activeRentalsCount,
@@ -112,17 +172,18 @@ class AdminDashboardController extends Controller
                 'unverified_kyc' => $unverifiedKycCount,
                 'month_revenue' => $monthRevenue,
             ],
+            'service_metrics' => array_values($serviceMetrics),
+            'recent_service_bookings' => $recentServiceBookings,
+            'assigned_services' => $servicesScope,
             'recent_bookings' => BookingResource::collection($recentBookings)->resolve(),
             'current_store' => $assignedStore ? [
                 'id' => $assignedStore->id,
                 'name' => $assignedStore->name,
-                'code' => $assignedStore->code,
                 'city' => $assignedStore->city,
             ] : null,
             'stores' => $stores->map(fn ($s) => [
                 'id' => $s->id,
                 'name' => $s->name,
-                'code' => $s->code,
                 'city' => $s->city,
             ])->values()->all(),
         ]);

@@ -46,6 +46,7 @@ class WhatsAppChannel
             NotificationLog::create([
                 'user_id' => $notifiable->id ?? null,
                 'booking_id' => method_exists($notification, 'bookingId') ? $notification->bookingId() : null,
+                'service_booking_id' => method_exists($notification, 'serviceBookingId') ? $notification->serviceBookingId() : null,
                 'channel' => NotificationChannel::WHATSAPP,
                 'template' => method_exists($notification, 'template') ? $notification->template() : 'whatsapp_template',
                 'status' => NotificationStatus::SENT,
@@ -66,6 +67,7 @@ class WhatsAppChannel
         NotificationLog::create([
             'user_id' => $notifiable->id ?? null,
             'booking_id' => method_exists($notification, 'bookingId') ? $notification->bookingId() : null,
+            'service_booking_id' => method_exists($notification, 'serviceBookingId') ? $notification->serviceBookingId() : null,
             'channel' => NotificationChannel::WHATSAPP,
             'template' => method_exists($notification, 'template') ? $notification->template() : 'whatsapp_template',
             'status' => NotificationStatus::FAILED,

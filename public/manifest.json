@@ -1,0 +1,40 @@
+{
+  "name": "GK WhizWheel Operations Console",
+  "short_name": "WhizWheel Ops",
+  "description": "Ground coordinator, fleet dispatch and management console for GK WhizWheel Honnavar",
+  "start_url": "/admin/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scan Ground Pass",
+      "short_name": "Scanner",
+      "description": "Scan customer QR code or look up booking",
+      "url": "/admin/check-in",
+      "icons": [{ "src": "/favicon.ico", "sizes": "64x64" }]
+    },
+    {
+      "name": "Dispatch Board",
+      "short_name": "Dispatch",
+      "description": "Visual timeline and fleet availability",
+      "url": "/admin/dispatch",
+      "icons": [{ "src": "/favicon.ico", "sizes": "64x64" }]
+    },
+    {
+      "name": "Live Reservations",
+      "short_name": "Bookings",
+      "description": "Active bookings pipeline",
+      "url": "/admin/bookings",
+      "icons": [{ "src": "/favicon.ico", "sizes": "64x64" }]
+    }
+  ]
+}

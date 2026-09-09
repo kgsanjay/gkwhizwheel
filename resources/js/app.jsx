@@ -32,3 +32,11 @@ createInertiaApp({
         color: '#F59E0B',
     },
 });
+
+if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Service worker registration ignored in unsupported environments
+        });
+    });
+}

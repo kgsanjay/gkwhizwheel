@@ -51,6 +51,13 @@ trait LogsNotification
             : null;
     }
 
+    public function serviceBookingId(): ?int
+    {
+        return property_exists($this, 'serviceBooking') && $this->serviceBooking !== null
+            ? (int) $this->serviceBooking->id
+            : null;
+    }
+
     /**
      * Helper to explicitly record a send attempt to notification_logs.
      */
@@ -65,6 +72,7 @@ trait LogsNotification
         return NotificationLog::create([
             'user_id' => $userId,
             'booking_id' => $this->bookingId(),
+            'service_booking_id' => $this->serviceBookingId(),
             'channel' => $channel,
             'template' => $this->template(),
             'status' => $status,

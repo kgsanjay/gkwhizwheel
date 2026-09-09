@@ -21,13 +21,17 @@ class EnsureAdminOrStaff
         $user = $request->user();
 
         if ($user === null) {
-            if ($request->expectsJson()) {
+            if ($request->is('api/*')) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
                     'message' => 'Unauthenticated.',
                     'errors' => null,
                 ], 401);
+            }
+
+            if ($request->header('X-Inertia')) {
+                return \Inertia\Inertia::location(route('admin.login'));
             }
 
             return redirect()->guest(route('admin.login'));
@@ -40,7 +44,7 @@ class EnsureAdminOrStaff
         ];
 
         if (! in_array($user->role, $allowedRoles, true)) {
-            if ($request->expectsJson()) {
+            if ($request->is('api/*')) {
                 return response()->json([
                     'success' => false,
                     'data' => null,

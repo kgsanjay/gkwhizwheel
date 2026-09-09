@@ -210,7 +210,7 @@ export default function CouponsIndex({
 
             {/* Metrics Strip */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Total Coupons
@@ -220,7 +220,7 @@ export default function CouponsIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Active Promos
@@ -230,7 +230,7 @@ export default function CouponsIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Total Redemptions
@@ -240,7 +240,7 @@ export default function CouponsIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Expired Promos
@@ -253,15 +253,24 @@ export default function CouponsIndex({
             </Grid>
 
             {/* Filter & Search Bar */}
-            <Paper component="form" onSubmit={handleFilterSubmit} sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Paper component="form" onSubmit={handleFilterSubmit} sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6} md={5}>
+                    <Grid size={{ xs: 12, sm: 6, md: 5 }}>
                         <TextField
                             fullWidth
                             size="small"
                             placeholder="Search coupon code (e.g. MONSOON20)..."
                             value={searchCode}
                             onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon fontSize="small" color="action" />
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -272,7 +281,7 @@ export default function CouponsIndex({
                         />
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                         <TextField
                             select
                             fullWidth
@@ -295,7 +304,7 @@ export default function CouponsIndex({
                         </TextField>
                     </Grid>
 
-                    <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, gap: 1.5 }}>
+                    <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, gap: 1.5 }}>
                         <Button type="submit" variant="outlined" sx={{ textTransform: 'none' }}>
                             Search
                         </Button>
@@ -318,7 +327,7 @@ export default function CouponsIndex({
 
             {/* Coupons List or Grid */}
             {coupons.length === 0 ? (
-                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider', bgcolor: 'background.paper' }}>
                     <ConfirmationNumberIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
                         No coupons found
@@ -331,9 +340,9 @@ export default function CouponsIndex({
                     </Button>
                 </Paper>
             ) : viewMode === 'list' ? (
-                <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                    <Table>
-                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', overflowX: 'auto' }}>
+                    <Table sx={{ minWidth: 840 }}>
+                        <TableHead sx={{ bgcolor: 'background.default' }}>
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 700 }}>Coupon Code</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Discount</TableCell>
@@ -351,15 +360,13 @@ export default function CouponsIndex({
                                             <Chip
                                                 label={coupon.code}
                                                 size="medium"
+                                                color="primary"
+                                                variant="outlined"
                                                 sx={{
                                                     fontFamily: 'monospace',
                                                     fontWeight: 800,
                                                     fontSize: '0.9rem',
                                                     letterSpacing: '0.05em',
-                                                    bgcolor: 'primary.50',
-                                                    color: 'primary.dark',
-                                                    border: '1px solid',
-                                                    borderColor: 'primary.200',
                                                 }}
                                             />
                                             <Tooltip title="Copy code">
@@ -373,13 +380,9 @@ export default function CouponsIndex({
                                         <Chip
                                             label={formatDiscountBadge(coupon)}
                                             size="small"
-                                            sx={{
-                                                fontWeight: 800,
-                                                bgcolor: coupon.discount_type === 'percentage' ? 'success.50' : 'info.50',
-                                                color: coupon.discount_type === 'percentage' ? 'success.dark' : 'info.dark',
-                                                border: '1px solid',
-                                                borderColor: coupon.discount_type === 'percentage' ? 'success.200' : 'info.200',
-                                            }}
+                                            color={coupon.discount_type === 'percentage' ? 'success' : 'info'}
+                                            variant="outlined"
+                                            sx={{ fontWeight: 800 }}
                                         />
                                     </TableCell>
                                     <TableCell>
@@ -432,21 +435,19 @@ export default function CouponsIndex({
             ) : (
                 <Grid container spacing={2.5}>
                     {coupons.map((coupon) => (
-                        <Grid item xs={12} sm={6} md={4} key={coupon.id}>
-                            <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', opacity: coupon.is_active && !coupon.is_expired ? 1 : 0.7 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={coupon.id}>
+                            <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', opacity: coupon.is_active && !coupon.is_expired ? 1 : 0.7 }}>
                                 <CardContent sx={{ p: 2.5 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                         <Stack direction="row" alignItems="center" spacing={1}>
                                             <Chip
                                                 label={coupon.code}
                                                 size="medium"
+                                                color="primary"
+                                                variant="outlined"
                                                 sx={{
                                                     fontFamily: 'monospace',
                                                     fontWeight: 800,
-                                                    bgcolor: 'primary.50',
-                                                    color: 'primary.dark',
-                                                    border: '1px solid',
-                                                    borderColor: 'primary.200',
                                                 }}
                                             />
                                             <Tooltip title="Copy code">
@@ -467,7 +468,7 @@ export default function CouponsIndex({
                                         {formatDiscountBadge(coupon)}
                                     </Typography>
 
-                                    <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 2 }}>
+                                    <Box sx={{ mb: 2, p: 1.5, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 700 }}>
                                             VALIDITY WINDOW
                                         </Typography>
@@ -542,7 +543,7 @@ export default function CouponsIndex({
 
                         <Grid container spacing={2}>
                             {/* Code */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <TextField
                                     fullWidth
                                     label="Coupon Code"
@@ -550,12 +551,15 @@ export default function CouponsIndex({
                                     onChange={(e) => setData('code', e.target.value.toUpperCase())}
                                     error={Boolean(errors.code)}
                                     helperText={errors.code || 'Uppercase alphanumeric promo code (e.g. FESTIVE20)'}
+                                    slotProps={{
+                                        htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase' } },
+                                    }}
                                     inputProps={{ style: { fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase' } }}
                                 />
                             </Grid>
 
                             {/* Discount Type and Value */}
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     select
                                     fullWidth
@@ -573,7 +577,7 @@ export default function CouponsIndex({
                                 </TextField>
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     fullWidth
                                     type="number"
@@ -591,11 +595,12 @@ export default function CouponsIndex({
                             </Grid>
 
                             {/* Validity Dates */}
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     fullWidth
                                     type="date"
                                     label="Valid From"
+                                    slotProps={{ inputLabel: { shrink: true } }}
                                     InputLabelProps={{ shrink: true }}
                                     value={data.valid_from}
                                     onChange={(e) => setData('valid_from', e.target.value)}
@@ -604,11 +609,12 @@ export default function CouponsIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     fullWidth
                                     type="date"
                                     label="Valid Until"
+                                    slotProps={{ inputLabel: { shrink: true } }}
                                     InputLabelProps={{ shrink: true }}
                                     value={data.valid_until}
                                     onChange={(e) => setData('valid_until', e.target.value)}
@@ -618,7 +624,7 @@ export default function CouponsIndex({
                             </Grid>
 
                             {/* Usage Limits */}
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     fullWidth
                                     type="number"
@@ -630,7 +636,7 @@ export default function CouponsIndex({
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     fullWidth
                                     type="number"
@@ -643,7 +649,7 @@ export default function CouponsIndex({
                             </Grid>
 
                             {/* Active Switch */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <FormControlLabel
                                     control={
                                         <Switch

@@ -50,6 +50,8 @@ class StoreStaffRequest extends FormRequest
             ],
             'store_ids' => ['nullable', 'array'],
             'store_ids.*' => ['integer', 'exists:stores,id'],
+            'services' => ['nullable', 'array'],
+            'services.*' => ['string', Rule::in(['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'])],
         ];
     }
 }

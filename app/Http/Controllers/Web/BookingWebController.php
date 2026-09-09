@@ -112,4 +112,30 @@ class BookingWebController extends Controller
             'message' => 'Booking confirmed via test payment simulation.',
         ]);
     }
+
+    /**
+     * Download official PDF rental agreement / voucher
+     */
+    public function downloadVoucher(int|string $id, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\Http\Response
+    {
+        $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
+            ->where('id', $id)
+            ->orWhere('booking_number', $id)
+            ->firstOrFail();
+
+        return $voucherService->generateBikeVoucherPdf($booking, $request->boolean('stream'));
+    }
+
+    /**
+     * View print-optimized rental agreement / pass in browser
+     */
+    public function printVoucher(int|string $id, \App\Services\VoucherService $voucherService): \Illuminate\View\View
+    {
+        $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
+            ->where('id', $id)
+            ->orWhere('booking_number', $id)
+            ->firstOrFail();
+
+        return $voucherService->renderBikeVoucherHtml($booking);
+    }
 }

@@ -412,3 +412,35 @@ test('KYC upload rejects invalid file formats or oversized files', function (): 
     $responseHuge->assertStatus(422);
     $responseHuge->assertJsonValidationErrors(['file']);
 });
+
+test('customer can view travel service bookings on /account with coordinator info', function (): void {
+    $serviceBooking = \App\Models\ServiceBooking::create([
+        'booking_number' => 'GKW-BT-260910-ACCT',
+        'service_type' => 'boating',
+        'user_id' => $this->customer->id,
+        'customer_name' => $this->customer->name,
+        'customer_phone' => $this->customer->phone,
+        'customer_email' => $this->customer->email,
+        'booking_channel' => 'online',
+        'start_datetime' => '2026-09-15 11:00:00',
+        'pickup_location' => 'Sharavathi Boating Jetty',
+        'quantity' => 2,
+        'base_amount' => 1500.00,
+        'total_amount' => 1500.00,
+        'advance_paid' => 1500.00,
+        'balance_due' => 0.00,
+        'payment_status' => 'paid',
+        'status' => 'confirmed',
+    ]);
+
+    $response = $this->actingAs($this->customer)->get('/account');
+
+    $response->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Account/Bookings')
+            ->has('serviceBookings', 1)
+            ->where('serviceBookings.0.booking_number', 'GKW-BT-260910-ACCT')
+            ->has('serviceBookings.0.coordinator')
+            ->where('serviceBookings.0.coordinator.name', 'Captain Boating Desk')
+        );
+});

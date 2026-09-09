@@ -48,6 +48,14 @@ class Store extends Model
     }
 
     /**
+     * Optional accessor for code (fallback to initials/city or null).
+     */
+    public function getCodeAttribute(): ?string
+    {
+        return $this->attributes['code'] ?? null;
+    }
+
+    /**
      * Bikes physically located at this store.
      */
     public function currentBikes(): HasMany

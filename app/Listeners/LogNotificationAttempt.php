@@ -64,9 +64,14 @@ class LogNotificationAttempt
             ? $notification->bookingId()
             : (isset($notification->booking->id) ? (int) $notification->booking->id : null);
 
+        $serviceBookingId = method_exists($notification, 'serviceBookingId')
+            ? $notification->serviceBookingId()
+            : (isset($notification->serviceBooking->id) ? (int) $notification->serviceBooking->id : null);
+
         return NotificationLog::create([
             'user_id' => $userId,
             'booking_id' => $bookingId,
+            'service_booking_id' => $serviceBookingId,
             'channel' => $mappedChannel,
             'template' => $template,
             'status' => $status,

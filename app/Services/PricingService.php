@@ -310,4 +310,186 @@ class PricingService
             'price_breakdown_json' => $priceBreakdownJson,
         ];
     }
+
+    /**
+     * Calculate an itemized dynamic quote for travel services (Cabs, Boating, Scuba, Homestays, Guides, Tours).
+     *
+     * @param string $serviceType
+     * @param int|\App\Models\ServiceItem $item
+     * @param CarbonInterface|string $travelDate
+     * @param int $quantity
+     * @param string|null $couponCode
+     * @return array{
+     *     service_type: string,
+     *     service_item_id: int,
+     *     service_item_name: string,
+     *     travel_date: string,
+     *     quantity: int,
+     *     base_unit_rate: float,
+     *     base_amount: float,
+     *     surge_amount: float,
+     *     surge_percentage: float,
+     *     discount_amount: float,
+     *     total_amount: float,
+     *     applied_rules: array<int, array<string, mixed>>,
+     *     breakdown: array<string, mixed>
+     * }
+     */
+    public function calculateServiceQuote(
+        string $serviceType,
+        int|\App\Models\ServiceItem|null $item,
+        CarbonInterface|string $travelDate,
+        int $quantity = 1,
+        ?string $couponCode = null,
+        ?float $customBasePrice = null
+    ): array {
+        $serviceItem = null;
+        if ($item !== null) {
+            $serviceItem = $item instanceof \App\Models\ServiceItem
+                ? $item
+                : \App\Models\ServiceItem::find($item);
+        }
+
+        $date = Carbon::parse($travelDate);
+        $baseUnitRate = (float) ($customBasePrice ?? $serviceItem?->price_base ?? 0);
+        $qty = max(1, $quantity);
+        $baseAmount = $baseUnitRate * $qty;
+
+        // Fetch candidate rules matching this service_type or specific service_item_id
+        $candidateRules = PricingRule::where('is_active', true)
+            ->where(function ($query) use ($serviceType, $serviceItem) {
+                if ($serviceItem !== null) {
+                    $query->where('service_item_id', $serviceItem->id)
+                        ->orWhere(function ($q) use ($serviceType) {
+                            $q->whereNull('service_item_id')
+                                ->where('service_type', $serviceType);
+                        });
+                } else {
+                    $query->where('service_type', $serviceType);
+                }
+            })
+            ->orderByDesc('priority')
+            ->orderByDesc('id')
+            ->get();
+
+        $appliedRules = [];
+        $surgeAmount = 0.0;
+        $surgePercentage = 0.0;
+        $adjustedUnitRate = $baseUnitRate;
+
+        foreach ($candidateRules as $rule) {
+            $applies = false;
+            $ruleName = $rule->name ?: match ($rule->rule_type) {
+                PricingRuleType::WEEKEND => 'Weekend Surcharge',
+                PricingRuleType::HOLIDAY => 'Holiday Surge Rate',
+                PricingRuleType::SEASONAL => 'Peak Season Rate',
+                default => 'Special Surge Rate',
+            };
+
+            if ($rule->rule_type === PricingRuleType::WEEKEND) {
+                $isoDay = (int) $date->dayOfWeekIso; // 1 (Mon) - 7 (Sun)
+                $dayOfWeekMatches = $rule->day_of_week !== null
+                    ? (int) $rule->day_of_week === $isoDay
+                    : in_array($isoDay, [6, 7], true); // default Sat & Sun
+                if ($dayOfWeekMatches) {
+                    $applies = true;
+                }
+            } elseif (in_array($rule->rule_type, [PricingRuleType::HOLIDAY, PricingRuleType::SEASONAL], true)) {
+                if ($rule->date_start && $rule->date_end) {
+                    $start = Carbon::parse($rule->date_start)->startOfDay();
+                    $end = Carbon::parse($rule->date_end)->endOfDay();
+                    if ($date->betweenIncluded($start, $end)) {
+                        $applies = true;
+                    }
+                }
+            }
+
+            if ($applies) {
+                $adjustment = 0.0;
+                if ($rule->rate_type === PricingRateType::PERCENTAGE) {
+                    $pct = (float) $rule->value;
+                    $adjustment = round(($baseUnitRate * ($pct / 100)), 2);
+                    $adjustedUnitRate += $adjustment;
+                    $surgePercentage += $pct;
+                } elseif ($rule->rate_type === PricingRateType::FLAT_ADDON) {
+                    $flat = (float) $rule->value;
+                    $adjustment = $flat;
+                    $adjustedUnitRate += $flat;
+                } elseif ($rule->rate_type === PricingRateType::FIXED_OVERRIDE) {
+                    $override = (float) $rule->value;
+                    $adjustment = max(0, $override - $baseUnitRate);
+                    $adjustedUnitRate = $override;
+                }
+
+                $appliedRules[] = [
+                    'rule_id' => $rule->id,
+                    'rule_name' => $ruleName,
+                    'rule_type' => $rule->rule_type->value,
+                    'rate_type' => $rule->rate_type->value,
+                    'value' => (float) $rule->value,
+                    'adjustment_per_unit' => $adjustment,
+                    'total_adjustment' => $adjustment * $qty,
+                ];
+
+                $surgeAmount += ($adjustment * $qty);
+
+                // Stop if fixed override or specific item rule takes exclusive priority
+                if ($rule->rate_type === PricingRateType::FIXED_OVERRIDE || $rule->service_item_id !== null) {
+                    break;
+                }
+            }
+        }
+
+        $subtotal = $baseAmount + $surgeAmount;
+        $discountAmount = 0.0;
+
+        // Coupon check if provided
+        if (! empty($couponCode)) {
+            $coupon = Coupon::where('code', strtoupper(trim($couponCode)))
+                ->where('is_active', true)
+                ->where('start_date', '<=', Carbon::now())
+                ->where('end_date', '>=', Carbon::now())
+                ->first();
+
+            if ($coupon && ($coupon->min_booking_amount === null || $subtotal >= (float) $coupon->min_booking_amount)) {
+                if ($coupon->discount_type === DiscountType::PERCENTAGE) {
+                    $calc = round(($subtotal * ((float) $coupon->discount_value / 100)), 2);
+                    $discountAmount = $coupon->max_discount_amount !== null
+                        ? min($calc, (float) $coupon->max_discount_amount)
+                        : $calc;
+                } else {
+                    $discountAmount = min($subtotal, (float) $coupon->discount_value);
+                }
+            }
+        }
+
+        $totalAmount = max(0.0, round($subtotal - $discountAmount, 2));
+
+        return [
+            'service_type' => $serviceType,
+            'service_item_id' => $serviceItem?->id,
+            'service_item_name' => $serviceItem?->name ?? 'Custom Package',
+            'travel_date' => $date->toDateString(),
+            'quantity' => $qty,
+            'base_unit_rate' => $baseUnitRate,
+            'base_price' => $baseUnitRate,
+            'base_amount' => $baseAmount,
+            'surge_amount' => $surgeAmount,
+            'surge_percentage' => $surgePercentage,
+            'discount_amount' => $discountAmount,
+            'discount' => $discountAmount,
+            'subtotal' => $subtotal,
+            'total_amount' => $totalAmount,
+            'total' => $totalAmount,
+            'dynamic_unit_price' => $qty > 0 ? round($totalAmount / $qty, 2) : $totalAmount,
+            'applied_rules' => $appliedRules,
+            'breakdown' => [
+                'unit_price_effective' => $qty > 0 ? round($totalAmount / $qty, 2) : $totalAmount,
+                'has_surge' => $surgeAmount > 0,
+                'surge_label' => ! empty($appliedRules) ? implode(', ', array_column($appliedRules, 'rule_name')) : null,
+                'applied_rule_names' => array_column($appliedRules, 'rule_name'),
+                'surges' => $appliedRules,
+            ],
+        ];
+    }
 }

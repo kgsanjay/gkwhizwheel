@@ -24,7 +24,7 @@ export const getTheme = (mode = 'dark') => {
             },
             text: {
                 primary: isDark ? '#F8FAFC' : '#0F172A',
-                secondary: isDark ? '#94A3B8' : '#64748B',
+                secondary: isDark ? '#CBD5E1' : '#334155',
             },
             success: {
                 main: '#10B981',
@@ -38,7 +38,7 @@ export const getTheme = (mode = 'dark') => {
             info: {
                 main: '#38BDF8',
             },
-            divider: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
+            divider: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0',
         },
         typography: {
             fontFamily: [
@@ -84,21 +84,21 @@ export const getTheme = (mode = 'dark') => {
             },
             subtitle1: {
                 fontSize: '1rem',
-                color: isDark ? '#94A3B8' : '#64748B',
+                color: isDark ? '#CBD5E1' : '#334155',
             },
             subtitle2: {
                 fontSize: '0.875rem',
-                color: isDark ? '#94A3B8' : '#64748B',
-                fontWeight: 500,
+                color: isDark ? '#CBD5E1' : '#334155',
+                fontWeight: 600,
             },
             body1: {
                 fontSize: '0.9375rem',
                 lineHeight: 1.6,
-                color: isDark ? '#CBD5E1' : '#334155',
+                color: isDark ? '#E2E8F0' : '#1E293B',
             },
             body2: {
                 fontSize: '0.875rem',
-                color: isDark ? '#94A3B8' : '#64748B',
+                color: isDark ? '#CBD5E1' : '#334155',
             },
             button: {
                 fontWeight: 600,
@@ -120,6 +120,10 @@ export const getTheme = (mode = 'dark') => {
                         padding: '8px 20px',
                         fontWeight: 600,
                         transition: 'all 0.15s ease-in-out',
+                        '&:focus-visible': {
+                            outline: '3px solid #F59E0B',
+                            outlineOffset: '2px',
+                        },
                     },
                     containedPrimary: {
                         backgroundColor: isDark ? '#F59E0B' : '#0F172A',
@@ -156,16 +160,19 @@ export const getTheme = (mode = 'dark') => {
                     },
                 },
             },
+            MuiInputLabel: {
+                styleOverrides: {
+                    root: {
+                        fontSize: '0.875rem',
+                    },
+                },
+            },
             MuiOutlinedInput: {
                 styleOverrides: {
                     root: {
                         borderRadius: 8,
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: isDark ? '#F59E0B' : '#0F172A',
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#F59E0B',
-                            borderWidth: 2,
+                        '& input[type="date"], & input[type="time"], & input[type="datetime-local"]': {
+                            colorScheme: isDark ? 'dark' : 'light',
                         },
                     },
                 },

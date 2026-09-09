@@ -19,6 +19,7 @@ import {
     TableCell,
     TableRow,
     Alert,
+    Container,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
@@ -27,6 +28,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PrintIcon from '@mui/icons-material/Print';
+import DownloadIcon from '@mui/icons-material/Download';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -52,14 +54,22 @@ export default function BookingConfirmation({ booking }) {
     return (
         <AppLayout>
             <Head title={`Booking Confirmed - ${booking.booking_reference} - GK WhizWheel`} />
-            <Box sx={{ maxWidth: '1410px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
+            <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 } }}>
 
             {/* Back to fleet bar */}
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Button component={Link} href="/bikes" startIcon={<ArrowBackIcon />} sx={{ color: '#64748B' }}>
+                <Button component={Link} href="/services/bikes" startIcon={<ArrowBackIcon />} sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                     Browse More Fleet
                 </Button>
-                <Button variant="outlined" startIcon={<PrintIcon />} onClick={handlePrint} sx={{ color: isDark ? '#FFFFFF' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1' }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<PrintIcon />}
+                    onClick={handlePrint}
+                    sx={{
+                        color: isDark ? '#FFFFFF' : '#0F172A',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                    }}
+                >
                     Print Receipt
                 </Button>
             </Box>
@@ -70,7 +80,8 @@ export default function BookingConfirmation({ booking }) {
                 sx={{
                     p: { xs: 3, md: 4 },
                     mb: 4,
-                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                    backdropFilter: 'blur(16px)',
                     border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     borderRadius: 4,
                     textAlign: 'center',
@@ -96,7 +107,7 @@ export default function BookingConfirmation({ booking }) {
                 <Typography variant="h3" component="h1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1 }}>
                     Booking Confirmed!
                 </Typography>
-                <Typography variant="subtitle1" sx={{ color: '#64748B', maxWidth: 600, mx: 'auto', mb: 2 }}>
+                <Typography variant="subtitle1" sx={{ color: isDark ? '#94A3B8' : '#64748B', maxWidth: 600, mx: 'auto', mb: 2 }}>
                     Your vehicle is locked and reserved. A confirmation email and WhatsApp message have been sent to your registered contacts.
                 </Typography>
 
@@ -104,13 +115,14 @@ export default function BookingConfirmation({ booking }) {
                     <Chip
                         label={`Reference: ${booking.booking_reference}`}
                         sx={{
-                            bgcolor: '#0F172A',
+                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : '#0F172A',
                             color: '#FFFFFF',
                             fontFamily: 'monospace',
                             fontWeight: 700,
                             fontSize: '0.9rem',
                             py: 2,
                             px: 1,
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
                         }}
                     />
                     <Chip
@@ -121,9 +133,53 @@ export default function BookingConfirmation({ booking }) {
                     {latestPayment && (
                         <Chip
                             label={`Paid via ${latestPayment.payment_method?.toUpperCase() || 'GATEWAY'}`}
-                            sx={{ bgcolor: '#F1F5F9', color: '#334155', fontWeight: 600 }}
+                            sx={{
+                                bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F1F5F9',
+                                color: isDark ? '#CBD5E1' : '#334155',
+                                fontWeight: 600,
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                            }}
                         />
                     )}
+                </Box>
+
+                <Box sx={{ mt: 2.5, display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <Button
+                        variant="contained"
+                        component="a"
+                        href={`/bookings/${booking.id}/voucher`}
+                        download
+                        startIcon={<DownloadIcon />}
+                        sx={{
+                            bgcolor: '#D97706',
+                            '&:hover': { bgcolor: '#B45309' },
+                            fontWeight: 800,
+                            textTransform: 'none',
+                            px: 2.5,
+                            py: 1,
+                            borderRadius: 2,
+                        }}
+                    >
+                        Download Rental Voucher (PDF)
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        component="a"
+                        href={`/bookings/${booking.id}/print`}
+                        target="_blank"
+                        startIcon={<PrintIcon />}
+                        sx={{
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                            color: isDark ? '#F1F5F9' : '#334155',
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            px: 2.5,
+                            py: 1,
+                            borderRadius: 2,
+                        }}
+                    >
+                        Print Agreement Pass
+                    </Button>
                 </Box>
             </Paper>
 
@@ -131,11 +187,20 @@ export default function BookingConfirmation({ booking }) {
                 {/* Left Column: Trip & Vehicle Overview */}
                 <Grid size={{ xs: 12, md: 7 }}>
                     {/* Vehicle Card */}
-                    <Card sx={{ mb: 3, borderRadius: 3, overflow: 'hidden', bgcolor: isDark ? '#131D2F' : '#FFFFFF', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
+                    <Card
+                        sx={{
+                            mb: 3,
+                            borderRadius: 3,
+                            overflow: 'hidden',
+                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                            backdropFilter: 'blur(16px)',
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                        }}
+                    >
                         <Box
                             sx={{
                                 p: 2.5,
-                                bgcolor: '#0F172A',
+                                bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : '#0F172A',
                                 color: '#FFFFFF',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -173,27 +238,35 @@ export default function BookingConfirmation({ booking }) {
                             <Grid container spacing={2}>
                                 {/* Pickup Store */}
                                 <Grid size={{ xs: 12, sm: 6 }}>
-                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                        }}
+                                    >
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                             <LocationOnIcon sx={{ color: '#10B981', fontSize: 20 }} />
                                             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                                 Pick-up Store
                                             </Typography>
                                         </Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {pickupStore.name || 'Bengaluru Hub'}
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: isDark ? '#F1F5F9' : '#1E293B' }}>
+                                            {pickupStore.name || 'Honnavar Hub'}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', mb: 1 }}>
                                             {pickupStore.address_line}, {pickupStore.city} - {pickupStore.pincode}
                                         </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#475569' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: isDark ? '#94A3B8' : '#475569' }}>
                                             <CalendarTodayIcon sx={{ fontSize: 14 }} />
                                             <Typography variant="caption" sx={{ fontWeight: 600 }}>
                                                 Start: {booking.start_date}
                                             </Typography>
                                         </Box>
                                         {pickupStore.phone && (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#475569', mt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: isDark ? '#94A3B8' : '#475569', mt: 0.5 }}>
                                                 <PhoneIcon sx={{ fontSize: 14 }} />
                                                 <Typography variant="caption">
                                                     Hub Contact: {pickupStore.phone}
@@ -216,27 +289,35 @@ export default function BookingConfirmation({ booking }) {
 
                                 {/* Return Store */}
                                 <Grid size={{ xs: 12, sm: 6 }}>
-                                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                        }}
+                                    >
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                             <LocationOnIcon sx={{ color: '#EA580C', fontSize: 20 }} />
                                             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                                 Drop-off Store {isOneWay && '(One-Way)'}
                                             </Typography>
                                         </Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {returnStore.name || 'Bengaluru Hub'}
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: isDark ? '#F1F5F9' : '#1E293B' }}>
+                                            {returnStore.name || 'Honnavar Hub'}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', mb: 1 }}>
                                             {returnStore.address_line}, {returnStore.city} - {returnStore.pincode}
                                         </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#475569' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: isDark ? '#94A3B8' : '#475569' }}>
                                             <CalendarTodayIcon sx={{ fontSize: 14 }} />
                                             <Typography variant="caption" sx={{ fontWeight: 600 }}>
                                                 Return: {booking.end_date}
                                             </Typography>
                                         </Box>
                                         {returnStore.phone && (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#475569', mt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: isDark ? '#94A3B8' : '#475569', mt: 0.5 }}>
                                                 <PhoneIcon sx={{ fontSize: 14 }} />
                                                 <Typography variant="caption">
                                                     Hub Contact: {returnStore.phone}
@@ -250,7 +331,17 @@ export default function BookingConfirmation({ booking }) {
                     </Card>
 
                     {/* KYC Handover Instructions */}
-                    <Paper elevation={0} sx={{ p: 3, border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0', borderRadius: 3, bgcolor: isDark ? '#131D2F' : '#FFFFFF', mb: 3 }}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: 3,
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                            borderRadius: 3,
+                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                            backdropFilter: 'blur(16px)',
+                            mb: 3,
+                        }}
+                    >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                             <BadgeIcon color="primary" />
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
@@ -258,20 +349,28 @@ export default function BookingConfirmation({ booking }) {
                             </Typography>
                         </Box>
                         <Stack spacing={1}>
-                            <Typography variant="body2" sx={{ color: '#475569' }}>
+                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#475569' }}>
                                 1. <strong>Original Driving License:</strong> Must be presented by the primary rider at pickup.
                             </Typography>
-                            <Typography variant="body2" sx={{ color: '#475569' }}>
+                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#475569' }}>
                                 2. <strong>Government Photo ID:</strong> Aadhaar, Passport, or Voter ID for identity verification.
                             </Typography>
-                            <Typography variant="body2" sx={{ color: '#475569' }}>
+                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#475569' }}>
                                 3. <strong>Odometer & Condition Inspection:</strong> Staff will conduct a 360° photo inspection with you before key handover.
                             </Typography>
                         </Stack>
                     </Paper>
 
                     {/* Digital Vehicle Documents Deep-Link */}
-                    <Paper elevation={0} sx={{ p: 3, border: '1px dashed #CBD5E1', borderRadius: 3, bgcolor: '#F8FAFC' }}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: 3,
+                            border: isDark ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed #CBD5E1',
+                            borderRadius: 3,
+                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC',
+                        }}
+                    >
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <DescriptionIcon color="secondary" sx={{ fontSize: 32 }} />
@@ -279,16 +378,14 @@ export default function BookingConfirmation({ booking }) {
                                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         Digital Bike Documents
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: '#64748B' }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                                         Access Insurance certificate, Emission PUC, and RC digitally during your trip.
                                     </Typography>
                                 </Box>
                             </Box>
                             <Button
-                                component="a"
-                                href={`/api/v1/bookings/${booking.id}/documents`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                component={Link}
+                                href={`/account/bookings/${booking.id}`}
                                 variant="outlined"
                                 color="primary"
                                 startIcon={<DescriptionIcon />}
@@ -302,10 +399,26 @@ export default function BookingConfirmation({ booking }) {
 
                 {/* Right Column: Payment & Receipt Summary */}
                 <Grid size={{ xs: 12, md: 5 }}>
-                    <Card sx={{ borderRadius: 3, border: '1px solid #E2E8F0' }}>
-                        <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Card
+                        sx={{
+                            borderRadius: 3,
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                            backdropFilter: 'blur(16px)',
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                p: 2.5,
+                                bgcolor: isDark ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC',
+                                borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                            }}
+                        >
                             <ReceiptLongIcon color="primary" />
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                 Payment Receipt
                             </Typography>
                         </Box>
@@ -314,16 +427,20 @@ export default function BookingConfirmation({ booking }) {
                             <Table size="small">
                                 <TableBody>
                                     <TableRow>
-                                        <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Base Rental</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                        <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 500, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                            Base Rental
+                                        </TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 600, color: isDark ? '#FFFFFF' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                             ₹{Number(booking.base_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </TableCell>
                                     </TableRow>
 
                                     {Number(booking.pricing_adjustments_amount || 0) > 0 && (
                                         <TableRow>
-                                            <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Adjustments</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 600, color: '#EA580C' }}>
+                                            <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 500, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                                Adjustments
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 600, color: '#EA580C', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                                 + ₹{Number(booking.pricing_adjustments_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </TableCell>
                                         </TableRow>
@@ -331,8 +448,10 @@ export default function BookingConfirmation({ booking }) {
 
                                     {Number(booking.one_way_fee_amount || 0) > 0 && (
                                         <TableRow>
-                                            <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>One-Way Store Fee</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 600, color: '#EA580C' }}>
+                                            <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 500, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                                One-Way Store Fee
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 600, color: '#EA580C', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                                 + ₹{Number(booking.one_way_fee_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </TableCell>
                                         </TableRow>
@@ -340,10 +459,10 @@ export default function BookingConfirmation({ booking }) {
 
                                     {addons.length > 0 && (
                                         <TableRow>
-                                            <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>
+                                            <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 500, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                                 Add-ons ({addons.length} items)
                                             </TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                            <TableCell align="right" sx={{ fontWeight: 600, color: isDark ? '#FFFFFF' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                                 + ₹{Number(booking.addon_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </TableCell>
                                         </TableRow>
@@ -351,47 +470,56 @@ export default function BookingConfirmation({ booking }) {
 
                                     {Number(booking.discount_amount || 0) > 0 && (
                                         <TableRow>
-                                            <TableCell sx={{ color: '#10B981', fontWeight: 500 }}>Coupon Discount</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700, color: '#10B981' }}>
+                                            <TableCell sx={{ color: '#10B981', fontWeight: 500, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                                Coupon Discount
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700, color: '#10B981', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                                 - ₹{Number(booking.discount_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </TableCell>
                                         </TableRow>
                                     )}
 
                                     <TableRow>
-                                        <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>
+                                        <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 500, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                             Refundable Deposit
                                         </TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                        <TableCell align="right" sx={{ fontWeight: 600, color: isDark ? '#FFFFFF' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                             ₹{Number(booking.deposit_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </TableCell>
                                     </TableRow>
 
                                     <TableRow>
-                                        <TableCell sx={{ fontWeight: 800, color: '#0F172A', fontSize: '1rem', pt: 2 }}>
+                                        <TableCell sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', fontSize: '1rem', pt: 2, borderColor: 'transparent' }}>
                                             Total Paid
                                         </TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '1.25rem', pt: 2 }}>
+                                        <TableCell align="right" sx={{ fontWeight: 800, color: '#F59E0B', fontSize: '1.25rem', pt: 2, borderColor: 'transparent' }}>
                                             ₹{Number(booking.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
 
-                            <Divider sx={{ my: 2 }} />
+                            <Divider sx={{ my: 2, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }} />
 
                             {latestPayment && (
-                                <Box sx={{ bgcolor: '#F8FAFC', p: 2, borderRadius: 2, border: '1px solid #E2E8F0' }}>
-                                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                                <Box
+                                    sx={{
+                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                    }}
+                                >
+                                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
                                         Gateway Reference ID:
                                     </Typography>
-                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                                    <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         {latestPayment.gateway_reference || 'N/A'}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', mt: 1 }}>
                                         Payment Method:
                                     </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'capitalize', color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         {latestPayment.payment_method} ({latestPayment.status})
                                     </Typography>
                                 </Box>
@@ -404,7 +532,7 @@ export default function BookingConfirmation({ booking }) {
                     </Card>
                 </Grid>
             </Grid>
-                    </Box>
+            </Container>
         </AppLayout>
     );
 }

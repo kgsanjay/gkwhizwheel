@@ -20,6 +20,9 @@ class PricingRule extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'name',
+        'service_type',
+        'service_item_id',
         'bike_id',
         'category_id',
         'rule_type',
@@ -83,5 +86,13 @@ class PricingRule extends Model
     public function toStore(): BelongsTo
     {
         return $this->belongsTo(Store::class, 'to_store_id');
+    }
+
+    /**
+     * Specific travel service item this rule applies to, if any.
+     */
+    public function serviceItem(): BelongsTo
+    {
+        return $this->belongsTo(ServiceItem::class, 'service_item_id');
     }
 }

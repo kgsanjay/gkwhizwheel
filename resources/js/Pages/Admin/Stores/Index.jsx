@@ -94,7 +94,7 @@ export default function StoresIndex({
 
             {/* Metrics Strip */}
             <Grid container spacing={2} sx={{ mb: 4 }}>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Total Hubs
@@ -104,7 +104,7 @@ export default function StoresIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Active Hubs
@@ -114,7 +114,7 @@ export default function StoresIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Inactive Hubs
@@ -124,7 +124,7 @@ export default function StoresIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={3}>
+                <Grid size={{ xs: 6, sm: 3 }}>
                     <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
                             Fleet Housed
@@ -137,15 +137,24 @@ export default function StoresIndex({
             </Grid>
 
             {/* Filters Bar */}
-            <Paper component="form" onSubmit={handleSearchSubmit} sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Paper component="form" onSubmit={handleSearchSubmit} sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6} md={5}>
+                    <Grid size={{ xs: 12, sm: 6, md: 5 }}>
                         <TextField
                             fullWidth
                             size="small"
                             placeholder="Search by hub name, city, or address..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon fontSize="small" color="action" />
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -156,7 +165,7 @@ export default function StoresIndex({
                         />
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                         <TextField
                             select
                             fullWidth
@@ -174,7 +183,7 @@ export default function StoresIndex({
                         </TextField>
                     </Grid>
 
-                    <Grid item xs={12} md={3} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, gap: 1.5 }}>
+                    <Grid size={{ xs: 12, md: 3 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' }, gap: 1.5 }}>
                         <Button type="submit" variant="outlined" sx={{ textTransform: 'none' }}>
                             Filter
                         </Button>
@@ -197,7 +206,7 @@ export default function StoresIndex({
 
             {/* Content: List or Grid */}
             {stores.length === 0 ? (
-                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
+                <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider', bgcolor: 'background.paper' }}>
                     <StorefrontIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
                         No store hubs found
@@ -210,9 +219,9 @@ export default function StoresIndex({
                     </Button>
                 </Paper>
             ) : viewMode === 'list' ? (
-                <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                    <Table>
-                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', overflowX: 'auto' }}>
+                    <Table sx={{ minWidth: 840 }}>
+                        <TableHead sx={{ bgcolor: 'background.default' }}>
                             <TableRow>
                                 <TableCell sx={{ fontWeight: 700 }}>Store Hub Name</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Address & Location</TableCell>
@@ -287,8 +296,8 @@ export default function StoresIndex({
             ) : (
                 <Grid container spacing={2.5}>
                     {stores.map((store) => (
-                        <Grid item xs={12} sm={6} md={4} key={store.id}>
-                            <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', opacity: store.status === 'active' ? 1 : 0.7 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={store.id}>
+                            <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', opacity: store.status === 'active' ? 1 : 0.7 }}>
                                 <CardContent sx={{ p: 2.5 }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                         <Typography variant="h6" sx={{ fontWeight: 800 }}>
@@ -308,7 +317,7 @@ export default function StoresIndex({
                                         {store.address_line}, {store.city}, {store.state} - {store.pincode}
                                     </Typography>
 
-                                    <Box sx={{ p: 1.5, bgcolor: 'grey.50', borderRadius: 2, mb: 2 }}>
+                                    <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 2, mb: 2, border: '1px solid', borderColor: 'divider' }}>
                                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                                             <PlaceIcon fontSize="small" color="primary" />
                                             <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>

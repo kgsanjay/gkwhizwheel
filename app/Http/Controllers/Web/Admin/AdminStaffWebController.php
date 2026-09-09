@@ -94,10 +94,20 @@ class AdminStaffWebController extends Controller
                     'name' => $s->name,
                     'city' => $s->city,
                 ]),
+                'services' => $user->assignedServicesList(),
                 'created_at' => $user->created_at?->toIso8601String(),
             ]),
             'stores' => $stores,
             'stats' => $stats,
+            'available_services' => [
+                ['slug' => 'two_wheelers', 'name' => 'Two-Wheelers & Bikes', 'icon' => 'Bike'],
+                ['slug' => 'taxi', 'name' => 'Cabs & Taxi', 'icon' => 'Car'],
+                ['slug' => 'boating', 'name' => 'Boating & Water Sports', 'icon' => 'Ship'],
+                ['slug' => 'scuba', 'name' => 'Scuba Diving & Snorkeling', 'icon' => 'Anchor'],
+                ['slug' => 'homestay', 'name' => 'Homestays & Resorts', 'icon' => 'Home'],
+                ['slug' => 'guide', 'name' => 'Local Tour Guides', 'icon' => 'Compass'],
+                ['slug' => 'tours', 'name' => 'Custom Packages & Tours', 'icon' => 'Map'],
+            ],
             'filters' => [
                 'search' => $request->query('search', ''),
                 'role' => $request->query('role', ''),
@@ -130,6 +140,10 @@ class AdminStaffWebController extends Controller
             $user->stores()->sync($validated['store_ids']);
         }
 
+        if (isset($validated['services']) && is_array($validated['services'])) {
+            $user->syncAssignedServices($validated['services']);
+        }
+
         try {
             $user->assignRole($validated['role']);
         } catch (\Throwable) {
@@ -158,6 +172,8 @@ class AdminStaffWebController extends Controller
             'status' => ['nullable', 'string', Rule::in([UserStatus::ACTIVE->value, UserStatus::BLACKLISTED->value])],
             'store_ids' => ['nullable', 'array'],
             'store_ids.*' => ['integer', 'exists:stores,id'],
+            'services' => ['nullable', 'array'],
+            'services.*' => ['string', Rule::in(['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'])],
         ]);
 
         $updateData = [
@@ -179,6 +195,10 @@ class AdminStaffWebController extends Controller
 
         if (isset($validated['store_ids']) && is_array($validated['store_ids'])) {
             $staff->stores()->sync($validated['store_ids']);
+        }
+
+        if (isset($validated['services']) && is_array($validated['services'])) {
+            $staff->syncAssignedServices($validated['services']);
         }
 
         try {

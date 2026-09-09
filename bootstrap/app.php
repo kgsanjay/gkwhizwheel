@@ -20,14 +20,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'logout',
+            'admin/logout',
+        ]);
         $middleware->statefulApi();
         $middleware->alias([
             'admin.auth' => \App\Http\Middleware\EnsureAdminOrStaff::class,
+            'service.access' => \App\Http\Middleware\EnsureServiceAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (ValidationException $e, Request $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
@@ -38,7 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (AuthenticationException $e, Request $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
@@ -49,7 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\App\Exceptions\BikeNotAvailableException $e, Request $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
@@ -60,7 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException|\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e, Request $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
@@ -71,7 +76,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\App\Exceptions\InvalidBookingTransitionException $e, Request $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([
                     'success' => false,
                     'data' => null,

@@ -30,10 +30,20 @@ class AdminPricingRuleWebController extends Controller
     {
         Gate::authorize('viewAny', PricingRule::class);
 
-        $query = PricingRule::query()->with(['bike', 'category', 'fromStore', 'toStore']);
+        $query = PricingRule::query()->with(['bike', 'category', 'fromStore', 'toStore', 'serviceItem']);
 
         if ($type = $request->query('rule_type')) {
             $query->where('rule_type', $type);
+        }
+
+        if ($serviceType = $request->query('service_type')) {
+            if ($serviceType === 'two_wheelers') {
+                $query->where(function ($q) {
+                    $q->whereNull('service_type')->orWhere('service_type', 'two_wheelers');
+                });
+            } else {
+                $query->where('service_type', $serviceType);
+            }
         }
 
         if ($request->has('is_active') && $request->query('is_active') !== '') {
@@ -55,11 +65,25 @@ class AdminPricingRuleWebController extends Controller
             'holiday' => (clone $allRules)->where('rule_type', PricingRuleType::HOLIDAY)->count(),
             'seasonal' => (clone $allRules)->where('rule_type', PricingRuleType::SEASONAL)->count(),
             'one_way' => (clone $allRules)->where('rule_type', PricingRuleType::ONE_WAY_FEE)->count(),
+            'services_count' => (clone $allRules)->whereNotNull('service_type')->where('service_type', '!=', 'two_wheelers')->count(),
         ];
+
+        $serviceItems = \App\Models\ServiceItem::orderBy('service_type')
+            ->orderBy('name')
+            ->get(['id', 'name', 'service_type', 'price_base']);
 
         return Inertia::render('Admin/Pricing/Index', [
             'rules' => $rules->map(fn (PricingRule $rule): array => [
                 'id' => $rule->id,
+                'name' => $rule->name,
+                'service_type' => $rule->service_type,
+                'service_item_id' => $rule->service_item_id,
+                'service_item' => $rule->serviceItem ? [
+                    'id' => $rule->serviceItem->id,
+                    'name' => $rule->serviceItem->name,
+                    'service_type' => $rule->serviceItem->service_type,
+                    'price_base' => (float) $rule->serviceItem->price_base,
+                ] : null,
                 'rule_type' => $rule->rule_type instanceof PricingRuleType ? $rule->rule_type->value : (string) $rule->rule_type,
                 'rate_type' => $rule->rate_type instanceof PricingRateType ? $rule->rate_type->value : (string) $rule->rate_type,
                 'value' => (float) $rule->value,
@@ -97,6 +121,7 @@ class AdminPricingRuleWebController extends Controller
             'categories' => BikeCategory::orderBy('name')->get(['id', 'name', 'base_daily_rate']),
             'stores' => Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']),
             'bikes' => Bike::orderBy('brand')->orderBy('model_name')->get(['id', 'brand', 'model_name', 'registration_number']),
+            'service_items' => $serviceItems,
             'rule_types' => array_map(fn ($case) => [
                 'value' => $case->value,
                 'label' => match ($case) {
@@ -110,13 +135,14 @@ class AdminPricingRuleWebController extends Controller
                 'value' => $case->value,
                 'label' => match ($case) {
                     PricingRateType::PERCENTAGE => 'Percentage (+%)',
-                    PricingRateType::FIXED_OVERRIDE => 'Fixed Daily Override (₹)',
+                    PricingRateType::FIXED_OVERRIDE => 'Fixed Rate Override (₹)',
                     PricingRateType::FLAT_ADDON => 'Flat Add-on (₹)',
                 },
             ], PricingRateType::cases()),
             'stats' => $stats,
             'filters' => [
                 'rule_type' => $request->query('rule_type', ''),
+                'service_type' => $request->query('service_type', ''),
                 'is_active' => $request->query('is_active', ''),
                 'category_id' => $request->query('category_id', ''),
             ],
@@ -224,5 +250,90 @@ class AdminPricingRuleWebController extends Controller
 
         return redirect()->route('admin.pricing.index')
             ->with('success', 'Pricing rule removed successfully.');
+    }
+
+    /**
+     * Simulate quote calculation for bikes or travel services.
+     */
+    public function simulateQuote(Request $request, \App\Services\PricingService $pricingService): \Illuminate\Http\JsonResponse
+    {
+        Gate::authorize('viewAny', PricingRule::class);
+
+        $domain = $request->input('domain');
+        if (empty($domain)) {
+            $domain = ($request->filled('service_type') || $request->filled('service_item_id')) ? 'service' : 'bike';
+            $request->merge(['domain' => $domain]);
+        }
+
+        if (! $request->filled('start_date') && $request->filled('travel_date')) {
+            $request->merge(['start_date' => $request->input('travel_date')]);
+        }
+
+        $validated = $request->validate([
+            'domain' => ['required', 'string', 'in:bike,service'],
+            'service_type' => ['nullable', 'string'],
+            'service_item_id' => ['nullable', 'integer'],
+            'bike_id' => ['nullable', 'integer'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['nullable', 'date'],
+            'quantity' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        if ($validated['domain'] === 'service') {
+            $item = null;
+            if (! empty($validated['service_item_id'])) {
+                $item = \App\Models\ServiceItem::find($validated['service_item_id']);
+            }
+            if (! $item && ! empty($validated['service_type'])) {
+                $item = \App\Models\ServiceItem::where('service_type', $validated['service_type'])->first();
+            }
+
+            if (! $item) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Service item not found.',
+                ], 404);
+            }
+
+            $quote = $pricingService->calculateServiceQuote(
+                $item->service_type,
+                $item,
+                $validated['start_date'],
+                (int) ($validated['quantity'] ?? 1)
+            );
+
+            return response()->json([
+                'success' => true,
+                'quote' => $quote,
+            ]);
+        }
+
+        $bike = ! empty($validated['bike_id'])
+            ? Bike::with(['category', 'currentStore'])->find($validated['bike_id'])
+            : Bike::with(['category', 'currentStore'])->first();
+
+        if (! $bike) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No fleet bike available.',
+            ], 404);
+        }
+
+        $store = $bike->currentStore ?? Store::first();
+        $startDate = $validated['start_date'];
+        $endDate = $validated['end_date'] ?? $validated['start_date'];
+
+        $quote = $pricingService->calculateQuote(
+            $bike,
+            $startDate,
+            $endDate,
+            $store,
+            $store
+        );
+
+        return response()->json([
+            'success' => true,
+            'quote' => $quote,
+        ]);
     }
 }

@@ -113,8 +113,8 @@ export default function BookingsRefund({
 
             <Grid container spacing={3}>
                 {/* Refund Action Card */}
-                <Grid item xs={12} md={7}>
-                    <Card sx={{ borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                <Grid size={{ xs: 12, md: 7 }}>
+                    <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                                 <CurrencyRupeeIcon color="secondary" />
@@ -160,6 +160,9 @@ export default function BookingsRefund({
                                     onChange={(e) => setData('amount', e.target.value)}
                                     error={Boolean(errors.amount)}
                                     helperText={errors.amount || `Maximum refundable balance: ₹${max_refundable}`}
+                                    slotProps={{
+                                        htmlInput: { min: 0.01, max: max_refundable, step: 'any' },
+                                    }}
                                     InputProps={{
                                         inputProps: { min: 0.01, max: max_refundable, step: 'any' },
                                     }}
@@ -178,25 +181,11 @@ export default function BookingsRefund({
                                     >
                                         {booking.payments.map((p) => (
                                             <MenuItem key={p.id} value={p.id}>
-                                                Txn #{p.id} - ₹{p.amount} ({p.payment_method || 'Online Gateway'}) - {p.created_at?.slice(0, 10)}
+                                                {p.gateway?.toUpperCase() || 'PAYMENT'} - ₹{p.amount} ({p.status}) - ID: {p.transaction_id || p.id}
                                             </MenuItem>
                                         ))}
                                     </TextField>
                                 )}
-
-                                {/* Reason / Justification */}
-                                <TextField
-                                    label="Reason for Refund / Cancellation"
-                                    multiline
-                                    rows={3}
-                                    required
-                                    fullWidth
-                                    placeholder="Enter administrative justification for customer or internal records..."
-                                    value={data.reason}
-                                    onChange={(e) => setData('reason', e.target.value)}
-                                    error={Boolean(errors.reason)}
-                                    helperText={errors.reason || 'Required for accounting and compliance audit trail'}
-                                />
 
                                 {/* Mark Cancelled Checkbox */}
                                 {booking.status !== 'cancelled' && (
@@ -239,9 +228,9 @@ export default function BookingsRefund({
                 </Grid>
 
                 {/* Financial Overview Card */}
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                     <Stack spacing={3}>
-                        <Card sx={{ borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                        <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                             <CardContent sx={{ p: 2.5 }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <ReceiptIcon color="primary" /> Payment Ledger
@@ -281,7 +270,7 @@ export default function BookingsRefund({
                                                 -₹{total_refunded.toLocaleString('en-IN')}
                                             </TableCell>
                                         </TableRow>
-                                        <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                                        <TableRow sx={{ bgcolor: 'action.hover' }}>
                                             <TableCell sx={{ pl: 1, fontWeight: 700 }}>Max Refundable Balance</TableCell>
                                             <TableCell align="right" sx={{ pr: 1, fontWeight: 700, fontSize: 16, color: 'secondary.main' }}>
                                                 ₹{max_refundable.toLocaleString('en-IN')}
@@ -294,7 +283,7 @@ export default function BookingsRefund({
 
                         {/* Past Refunds History */}
                         {booking.refunds && booking.refunds.length > 0 && (
-                            <Card sx={{ borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                            <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                                 <CardContent sx={{ p: 2.5 }}>
                                     <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <HistoryIcon color="info" /> Refund History

@@ -23,6 +23,7 @@ import {
     Paper,
     Chip,
     Stack,
+    useTheme,
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
@@ -53,6 +54,16 @@ export default function ReportsIndex({
     stores = [],
     filters = {},
 }) {
+    const muiTheme = useTheme();
+    const isDark = muiTheme.palette.mode === 'dark';
+    const chartTooltipStyle = {
+        backgroundColor: isDark ? muiTheme.palette.background.paper : '#0F172A',
+        color: isDark ? muiTheme.palette.text.primary : '#FFF',
+        borderRadius: 8,
+        border: `1px solid ${muiTheme.palette.divider}`,
+    };
+    const axisStroke = muiTheme.palette.text.secondary;
+    const gridStroke = muiTheme.palette.divider;
     const [tabIndex, setTabIndex] = useState(0);
     const [timeframe, setTimeframe] = useState(filters.timeframe || '30d');
     const [selectedStore, setSelectedStore] = useState(filters.store_id || '');
@@ -77,7 +88,7 @@ export default function ReportsIndex({
             <Head title="Reports & Analytics - Admin" />
 
             {/* Top Controls Bar */}
-            <Card sx={{ mb: 3, p: 2, borderRadius: 2, border: '1px solid #E2E8F0' }}>
+            <Card sx={{ mb: 3, p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <AssessmentIcon color="primary" sx={{ fontSize: 28 }} />
@@ -102,21 +113,21 @@ export default function ReportsIndex({
                                 setSelectedStore(e.target.value);
                                 handleFilterChange(undefined, e.target.value);
                             }}
-                            sx={{ minWidth: 170 }}
+                            sx={{ minWidth: 160 }}
                         >
-                            <MenuItem value="">All Store Hubs</MenuItem>
+                            <MenuItem value="">All Hub Locations</MenuItem>
                             {stores.map((s) => (
                                 <MenuItem key={s.id} value={s.id}>
-                                    {s.name} ({s.city})
+                                    {s.name} {s.city ? `(${s.city})` : ''}
                                 </MenuItem>
                             ))}
                         </TextField>
 
-                        <ButtonGroup variant="outlined" size="small">
+                        <ButtonGroup size="small" variant="outlined">
                             {[
                                 { key: '7d', label: '7 Days' },
                                 { key: '30d', label: '30 Days' },
-                                { key: '90d', label: '90 Days' },
+                                { key: 'month', label: 'This Month' },
                                 { key: 'year', label: 'This Year' },
                             ].map((tf) => (
                                 <Button
@@ -150,65 +161,65 @@ export default function ReportsIndex({
                 <Stack spacing={3}>
                     {/* Financial KPI Cards */}
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6} md={2.4}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         GROSS REVENUE
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="primary.main">
+                                    <Typography variant="h5" fontWeight={800} color="primary.main">
                                         {formatCurrency(revenue_stats.gross_revenue)}
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={2.4}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         NET REVENUE
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="success.main">
+                                    <Typography variant="h5" fontWeight={800} color="success.main">
                                         {formatCurrency(revenue_stats.net_revenue)}
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={2.4}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         RENTAL FEES
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="info.main">
+                                    <Typography variant="h5" fontWeight={800} color="info.main">
                                         {formatCurrency(revenue_stats.rental_collected)}
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={2.4}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         DEPOSITS COLLECTED
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="secondary.main">
+                                    <Typography variant="h5" fontWeight={800} color="secondary.main">
                                         {formatCurrency(revenue_stats.deposit_collected)}
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={2.4}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         REFUNDS ISSUED
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="error.main">
+                                    <Typography variant="h5" fontWeight={800} color="error.main">
                                         {formatCurrency(revenue_stats.refunds_issued)}
                                     </Typography>
                                 </CardContent>
@@ -217,7 +228,7 @@ export default function ReportsIndex({
                     </Grid>
 
                     {/* Daily Revenue Timeline Chart */}
-                    <Card sx={{ p: 3, borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                    <Card sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                         <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
                             Daily Revenue & Income Timeline (₹)
                         </Typography>
@@ -234,12 +245,12 @@ export default function ReportsIndex({
                                             <stop offset="95%" stopColor="#2E7D32" stopOpacity={0.0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                    <XAxis dataKey="date" stroke="#64748B" fontSize={12} />
-                                    <YAxis stroke="#64748B" fontSize={12} tickFormatter={(v) => `₹${v}`} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                                    <XAxis dataKey="date" stroke={axisStroke} fontSize={12} />
+                                    <YAxis stroke={axisStroke} fontSize={12} tickFormatter={(v) => `₹${v}`} />
                                     <Tooltip
                                         formatter={(val) => formatCurrency(val)}
-                                        contentStyle={{ backgroundColor: '#0F172A', color: '#FFF', borderRadius: 8 }}
+                                        contentStyle={chartTooltipStyle}
                                     />
                                     <Legend />
                                     <Area type="monotone" dataKey="revenue" name="Gross Revenue" stroke="#1976D2" strokeWidth={2} fillOpacity={1} fill="url(#colorGross)" />
@@ -253,15 +264,15 @@ export default function ReportsIndex({
                     {/* Breakdown Charts Grid */}
                     <Grid container spacing={3}>
                         {/* Revenue by Bike Category */}
-                        <Grid item xs={12} md={4}>
-                            <Card sx={{ p: 3, borderRadius: 2, border: '1px solid #E2E8F0', height: '100%' }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <Card sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
                                     Revenue by Bike Category
                                 </Typography>
                                 <Box sx={{ width: '100%', height: 260 }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={revenue_stats.category_breakdown || []} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.2)" />
                                             <XAxis dataKey="category" stroke="#64748B" fontSize={11} angle={-20} textAnchor="end" />
                                             <YAxis stroke="#64748B" fontSize={11} tickFormatter={(v) => `₹${v}`} />
                                             <Tooltip formatter={(v) => formatCurrency(v)} />
@@ -273,15 +284,15 @@ export default function ReportsIndex({
                         </Grid>
 
                         {/* Revenue by Store Hub */}
-                        <Grid item xs={12} md={4}>
-                            <Card sx={{ p: 3, borderRadius: 2, border: '1px solid #E2E8F0', height: '100%' }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <Card sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
                                     Revenue by Store Hub
                                 </Typography>
                                 <Box sx={{ width: '100%', height: 260 }}>
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={revenue_stats.store_breakdown || []} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.2)" />
                                             <XAxis dataKey="store" stroke="#64748B" fontSize={11} angle={-20} textAnchor="end" />
                                             <YAxis stroke="#64748B" fontSize={11} tickFormatter={(v) => `₹${v}`} />
                                             <Tooltip formatter={(v) => formatCurrency(v)} />
@@ -293,8 +304,8 @@ export default function ReportsIndex({
                         </Grid>
 
                         {/* Booking Channel Distribution */}
-                        <Grid item xs={12} md={4}>
-                            <Card sx={{ p: 3, borderRadius: 2, border: '1px solid #E2E8F0', height: '100%' }}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <Card sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
                                     Booking Channel Share
                                 </Typography>
@@ -332,52 +343,52 @@ export default function ReportsIndex({
                 <Stack spacing={3}>
                     {/* Utilization KPI Cards */}
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TOTAL FLEET SIZE
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="primary.main">
+                                    <Typography variant="h5" fontWeight={800} color="primary.main">
                                         {utilization_stats.total_fleet ?? 0} Bikes
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         OPERATIONAL FLEET
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="info.main">
+                                    <Typography variant="h5" fontWeight={800} color="info.main">
                                         {utilization_stats.active_fleet ?? 0} Bikes
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         AVERAGE UTILIZATION
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="success.main">
+                                    <Typography variant="h5" fontWeight={800} color="success.main">
                                         {utilization_stats.average_utilization ?? 0}%
                                     </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TOTAL RENTAL DAYS
                                     </Typography>
-                                    <Typography variant="h5" fontWeight={700} color="secondary.main">
+                                    <Typography variant="h5" fontWeight={800} color="secondary.main">
                                         {utilization_stats.total_rented_days ?? 0} Days
                                     </Typography>
                                 </CardContent>
@@ -386,19 +397,19 @@ export default function ReportsIndex({
                     </Grid>
 
                     {/* Fleet Utilization Timeline Line Chart */}
-                    <Card sx={{ p: 3, borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                    <Card sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                         <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
                             Daily Fleet Utilization Rate (%)
                         </Typography>
                         <Box sx={{ width: '100%', height: 320 }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={utilization_stats.timeline || []} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                    <XAxis dataKey="date" stroke="#64748B" fontSize={12} />
-                                    <YAxis domain={[0, 100]} stroke="#64748B" fontSize={12} tickFormatter={(v) => `${v}%`} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.2)" />
+                                    <XAxis dataKey="date" stroke={axisStroke} fontSize={12} />
+                                    <YAxis domain={[0, 100]} stroke={axisStroke} fontSize={12} tickFormatter={(v) => `${v}%`} />
                                     <Tooltip
                                         formatter={(val) => [`${val}%`, 'Utilization Rate']}
-                                        contentStyle={{ backgroundColor: '#0F172A', color: '#FFF', borderRadius: 8 }}
+                                        contentStyle={chartTooltipStyle}
                                     />
                                     <Legend />
                                     <Line
@@ -416,8 +427,8 @@ export default function ReportsIndex({
                     </Card>
 
                     {/* Top Performing Bikes Table */}
-                    <Card sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
-                        <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                    <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                        <Box sx={{ p: 2.5, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
                             <Typography variant="subtitle1" fontWeight={700}>
                                 Top Earning & Most Utilized Bikes
                             </Typography>
@@ -426,9 +437,9 @@ export default function ReportsIndex({
                             </Typography>
                         </Box>
 
-                        <TableContainer component={Paper} elevation={0}>
-                            <Table sx={{ minWidth: 700 }}>
-                                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                        <TableContainer component={Paper} elevation={0} sx={{ overflowX: 'auto' }}>
+                            <Table sx={{ minWidth: 780 }}>
+                                <TableHead sx={{ bgcolor: 'background.default' }}>
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700 }}># Rank</TableCell>
                                         <TableCell sx={{ fontWeight: 700 }}>Bike Model & Reg</TableCell>

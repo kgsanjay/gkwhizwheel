@@ -1,3 +1,67 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Native Date & Time Input Enhancements */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+    position: relative;
+    color-scheme: light;
+}
+
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.85;
+    padding: 2px;
+    border-radius: 4px;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+/* ==========================================================================
+   WCAG 2.2 LEVEL AA & LEVEL AAA ACCESSIBILITY ENHANCEMENTS
+   ========================================================================== */
+
+/* Ensure form fields use standard styling without custom outline overlays */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+    outline: none !important;
+}
+
+/* 2. VISUAL COMMUNICATORS: Underline inline links within body text */
+p a:not([class*="MuiButton"]),
+span a:not([class*="MuiButton"]) {
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 2.5px;
+}
+
+/* 3. ACCESSIBILITY: Smooth scrolling respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}

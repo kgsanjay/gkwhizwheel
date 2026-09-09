@@ -46,8 +46,29 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'phone' => $request->user()->phone,
                     'role' => $request->user()->role?->value ?? (string) $request->user()->role,
+                    'assigned_services' => $request->user()->assignedServicesList(),
                 ] : null,
             ],
+            'sidebar_counts' => fn () => ($user = $request->user()) && in_array($user->role?->value ?? (string) $user->role, ['super_admin', 'store_manager', 'staff'], true) ? [
+                'bikes' => [
+                    'total' => \App\Models\Booking::whereIn('status', [
+                        \App\Enums\BookingStatus::PENDING_PAYMENT,
+                        \App\Enums\BookingStatus::CONFIRMED,
+                    ])->count(),
+                    'pickups' => \App\Models\Booking::where('status', \App\Enums\BookingStatus::CONFIRMED)->count(),
+                    'returns' => \App\Models\Booking::where('status', \App\Enums\BookingStatus::HANDED_OVER)->count(),
+                ],
+                'services' => \App\Models\ServiceBooking::select('service_type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+                    ->whereIn('status', ['confirmed', 'pending'])
+                    ->groupBy('service_type')
+                    ->pluck('count', 'service_type')
+                    ->toArray(),
+                'services_total' => \App\Models\ServiceBooking::whereIn('status', ['confirmed', 'pending'])->count(),
+                'staff' => \App\Models\User::whereIn('role', [
+                    \App\Enums\UserRole::STORE_MANAGER,
+                    \App\Enums\UserRole::STAFF,
+                ])->count(),
+            ] : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

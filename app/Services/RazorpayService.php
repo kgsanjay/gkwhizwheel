@@ -68,6 +68,77 @@ class RazorpayService
     }
 
     /**
+     * Create a Razorpay order for a multi-service booking (advance or full balance).
+     *
+     * @return array<string, mixed>
+     */
+    public function createServiceOrder(\App\Models\ServiceBooking $booking, ?float $amount = null): array
+    {
+        $keyId = (string) config('services.razorpay.key_id', 'rzp_test_placeholder');
+        $keySecret = (string) config('services.razorpay.key_secret', 'test_secret_placeholder');
+
+        $chargeAmount = $amount ?? (float) $booking->balance_due;
+        if ($chargeAmount <= 0) {
+            $chargeAmount = (float) $booking->total_amount;
+        }
+        $amountPaise = (int) round($chargeAmount * 100);
+
+        $payload = [
+            'amount' => $amountPaise,
+            'currency' => 'INR',
+            'receipt' => $booking->booking_number,
+            'notes' => [
+                'booking_id' => (string) $booking->id,
+                'booking_number' => (string) $booking->booking_number,
+                'service_type' => (string) $booking->service_type,
+                'user_id' => (string) $booking->user_id,
+            ],
+        ];
+
+        try {
+            $response = Http::withBasicAuth($keyId, $keySecret)
+                ->timeout(5)
+                ->post('https://api.razorpay.com/v1/orders', $payload);
+
+            if ($response->successful()) {
+                /** @var array<string, mixed> $data */
+                $data = $response->json();
+                $data['key_id'] = $keyId;
+
+                return $data;
+            }
+        } catch (\Throwable) {
+            // fall through to synthetic order in local/testing environment
+        }
+
+        if (app()->environment('local', 'testing')) {
+            return [
+                'id' => 'order_'.strtolower(Str::random(14)),
+                'entity' => 'order',
+                'amount' => $amountPaise,
+                'currency' => 'INR',
+                'receipt' => $booking->booking_number,
+                'status' => 'created',
+                'key_id' => $keyId,
+                'notes' => $payload['notes'],
+            ];
+        }
+
+        throw new \RuntimeException('Razorpay order creation failed: '.($response->body() ?? 'unknown error'));
+    }
+
+    /**
+     * Verify payment signature from checkout callback.
+     */
+    public function verifyPaymentSignature(string $orderId, string $paymentId, string $signature): bool
+    {
+        $keySecret = (string) config('services.razorpay.key_secret', 'test_secret_placeholder');
+        $expectedSignature = hash_hmac('sha256', $orderId.'|'.$paymentId, $keySecret);
+
+        return hash_equals($expectedSignature, $signature);
+    }
+
+    /**
      * Verify the HMAC SHA-256 signature on an incoming Razorpay webhook.
      */
     public function verifyWebhookSignature(string $rawPayload, ?string $signature, ?string $secret = null): bool

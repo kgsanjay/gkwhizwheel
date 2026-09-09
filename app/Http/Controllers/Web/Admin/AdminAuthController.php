@@ -23,15 +23,23 @@ class AdminAuthController extends Controller
     public function create(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
+        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
 
         if ($user !== null) {
             if (in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
                 return redirect()->route('admin.dashboard');
             }
-            return redirect()->route('account.index');
+
+            if ($isAdminRoute) {
+                // User is a customer attempting to reach admin login; log them out of customer session
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            } else {
+                return redirect()->route('account.index');
+            }
         }
 
-        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
         $component = $isAdminRoute ? 'Admin/Login' : 'Auth/Login';
 
         return Inertia::render($component, [
@@ -98,10 +106,20 @@ class AdminAuthController extends Controller
         $request->session()->regenerate();
 
         if ($user->role === UserRole::CUSTOMER) {
-            return redirect()->intended(route('account.index'));
+            $intended = session()->get('url.intended');
+            if ($intended && ! str_contains($intended, '/admin')) {
+                return redirect()->intended(route('account.index'));
+            }
+            return redirect()->route('account.index');
         }
 
-        return redirect()->intended(route('admin.dashboard'));
+        // For staff, store_manager, and super_admin:
+        $intended = session()->get('url.intended');
+        if ($intended && str_contains($intended, '/admin') && ! str_contains($intended, '/admin/login')) {
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        return redirect()->route('admin.dashboard');
     }
 
     /**
@@ -136,7 +154,7 @@ class AdminAuthController extends Controller
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request): mixed
     {
         $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
 
@@ -145,8 +163,12 @@ class AdminAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $redirectRoute = $isAdminRoute ? 'admin.login' : 'login';
+        $targetUrl = $isAdminRoute ? route('admin.login') : route('home');
 
-        return redirect()->route($redirectRoute)->with('success', 'You have been logged out successfully.');
+        if ($request->header('X-Inertia')) {
+            return \Inertia\Inertia::location($targetUrl);
+        }
+
+        return redirect($targetUrl)->with('success', 'You have been logged out successfully.');
     }
 }

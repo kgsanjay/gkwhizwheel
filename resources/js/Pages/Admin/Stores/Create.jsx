@@ -82,8 +82,8 @@ export default function StoresCreate({
             <Box component="form" onSubmit={handleSubmit} noValidate>
                 <Grid container spacing={3}>
                     {/* Left Column: Hub Information */}
-                    <Grid item xs={12} md={6}>
-                        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', mb: 3 }}>
                             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
                                 <StorefrontIcon color="primary" />
                                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -93,7 +93,7 @@ export default function StoresCreate({
                             <Divider sx={{ mb: 3 }} />
 
                             <Grid container spacing={2}>
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         required
                                         fullWidth
@@ -106,7 +106,7 @@ export default function StoresCreate({
                                     />
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         required
                                         fullWidth
@@ -121,7 +121,7 @@ export default function StoresCreate({
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         required
                                         fullWidth
@@ -133,7 +133,7 @@ export default function StoresCreate({
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         required
                                         fullWidth
@@ -145,7 +145,7 @@ export default function StoresCreate({
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         required
                                         fullWidth
@@ -158,7 +158,7 @@ export default function StoresCreate({
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Hub Phone Number"
@@ -170,7 +170,7 @@ export default function StoresCreate({
                                     />
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         select
                                         fullWidth
@@ -192,8 +192,8 @@ export default function StoresCreate({
                     </Grid>
 
                     {/* Right Column: OpenStreetMap / Leaflet Picker */}
-                    <Grid item xs={12} md={6}>
-                        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', mb: 3 }}>
                             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
                                 <PlaceIcon color="primary" />
                                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -215,7 +215,7 @@ export default function StoresCreate({
 
                             {/* Numeric Coordinates Sync */}
                             <Grid container spacing={2} sx={{ mt: 1 }}>
-                                <Grid item xs={6}>
+                                <Grid size={{ xs: 6 }}>
                                     <TextField
                                         required
                                         fullWidth
@@ -228,7 +228,7 @@ export default function StoresCreate({
                                         helperText={errors.latitude}
                                     />
                                 </Grid>
-                                <Grid item xs={6}>
+                                <Grid size={{ xs: 6 }}>
                                     <TextField
                                         required
                                         fullWidth
@@ -246,8 +246,8 @@ export default function StoresCreate({
                     </Grid>
 
                     {/* Submit Bar */}
-                    <Grid item xs={12}>
-                        <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                    <Grid size={{ xs: 12 }}>
+                        <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                             <Button component={Link} href="/admin/stores" sx={{ textTransform: 'none' }}>
                                 Cancel
                             </Button>

@@ -196,4 +196,75 @@ class User extends Authenticatable
     {
         return $this->phone;
     }
+
+    /**
+     * Services this staff member or manager is assigned to.
+     * Table: service_user (user_id, service_type)
+     *
+     * @return array<string>
+     */
+    public function assignedServicesList(): array
+    {
+        if ($this->role === UserRole::SUPER_ADMIN) {
+            return ['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'];
+        }
+
+        $assigned = \Illuminate\Support\Facades\DB::table('service_user')
+            ->where('user_id', $this->id)
+            ->pluck('service_type')
+            ->toArray();
+
+        // If no services explicitly assigned, fallback to two_wheelers for legacy store staff
+        if (empty($assigned) && in_array($this->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+            return ['two_wheelers'];
+        }
+
+        return $assigned;
+    }
+
+    /**
+     * Check if user can manage a specific service.
+     */
+    public function canManageService(string $serviceType): bool
+    {
+        if ($this->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if (! in_array($this->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+            return false;
+        }
+
+        return in_array($serviceType, $this->assignedServicesList(), true);
+    }
+
+    /**
+     * Sync assigned services for this staff/manager.
+     *
+     * @param array<string> $serviceTypes
+     */
+    public function syncAssignedServices(array $serviceTypes): void
+    {
+        \Illuminate\Support\Facades\DB::table('service_user')->where('user_id', $this->id)->delete();
+
+        $validServices = ['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'];
+        $inserts = [];
+        $now = now();
+
+        foreach ($serviceTypes as $st) {
+            if (in_array($st, $validServices, true)) {
+                $inserts[] = [
+                    'user_id' => $this->id,
+                    'service_type' => $st,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        if (! empty($inserts)) {
+            \Illuminate\Support\Facades\DB::table('service_user')->insert($inserts);
+        }
+    }
 }
+

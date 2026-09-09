@@ -69,4 +69,45 @@ class BookingPolicy
     {
         return in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER], true);
     }
+
+    /**
+     * Determine whether the user can perform bike handover.
+     */
+    public function handover(User $user, Booking $booking): bool
+    {
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+
+            return empty($userStoreIds)
+                || in_array($booking->pickup_store_id, $userStoreIds, true)
+                || in_array($booking->return_store_id, $userStoreIds, true);
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can process bike return.
+     */
+    public function processReturn(User $user, Booking $booking): bool
+    {
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+
+            return empty($userStoreIds)
+                || in_array($booking->pickup_store_id, $userStoreIds, true)
+                || in_array($booking->return_store_id, $userStoreIds, true);
+        }
+
+        return false;
+    }
 }
+

@@ -82,6 +82,35 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
         registerForm.post('/register');
     };
 
+    const handleQuickFill = (email, password = 'Customer@12345') => {
+        loginForm.setData({
+            ...loginForm.data,
+            login: email,
+            password: password,
+        });
+    };
+
+    const demoCustomerAccounts = [
+        {
+            role: 'Demo Rider',
+            email: 'customer@whizwheel.com',
+            desc: 'Verified customer with active bookings & KYC profile',
+            badgeBg: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7',
+            badgeColor: isDark ? '#FCD34D' : '#B45309',
+            borderColor: isDark ? 'rgba(245, 158, 11, 0.45)' : '#FDE68A',
+            icon: <TwoWheelerIcon sx={{ fontSize: 14 }} />,
+        },
+        {
+            role: 'Test Customer',
+            email: 'kgsanjay.kallabbe@gmail.com',
+            desc: 'Registered customer account with trip history',
+            badgeBg: isDark ? 'rgba(56, 189, 248, 0.2)' : '#E0F2FE',
+            badgeColor: isDark ? '#7DD3FC' : '#0369A1',
+            borderColor: isDark ? 'rgba(56, 189, 248, 0.45)' : '#BAE6FD',
+            icon: <PersonIcon sx={{ fontSize: 14 }} />,
+        },
+    ];
+
     return (
         <Box
             sx={{
@@ -198,29 +227,30 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                             : 'linear-gradient(180deg, rgba(248, 250, 252, 0.9) 0%, transparent 100%)',
                     }}
                 >
-                    {/* Logo */}
+                    {/* Brand Text */}
                     <Box
                         component={Link}
                         href="/"
                         sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            display: 'inline-block',
                             textDecoration: 'none',
-                            mb: 1.5,
+                            mb: 1,
+                            transition: 'transform 0.2s ease',
+                            '&:hover': { transform: 'scale(1.02)' },
                         }}
                     >
-                        <Box
-                            component="img"
-                            src="/images/logo.png"
-                            alt="G.K. WhizWheel Honnavar Logo"
+                        <Typography
+                            component="div"
                             sx={{
-                                height: { xs: 52, sm: 60 },
-                                width: 'auto',
-                                objectFit: 'contain',
-                                filter: 'drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35))',
+                                fontWeight: 900,
+                                fontSize: { xs: '1.85rem', sm: '2.2rem' },
+                                letterSpacing: '-0.03em',
+                                lineHeight: 1.1,
+                                color: isDark ? '#FFFFFF' : '#0F172A',
                             }}
-                        />
+                        >
+                            GK <Box component="span" sx={{ color: '#F59E0B' }}>WhizWheel</Box>
+                        </Typography>
                     </Box>
 
                     {/* Title & Tagline */}
@@ -419,73 +449,109 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                 </Alert>
                             )}
 
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                id="login"
-                                label="Mobile Number or Email"
-                                name="login"
-                                autoComplete="username"
-                                autoFocus
-                                value={loginForm.data.login}
-                                onChange={(e) => loginForm.setData('login', e.target.value)}
-                                error={Boolean(loginForm.errors.login)}
-                                placeholder="e.g. 9876543210 or your@email.com"
-                                helperText="Use the mobile number or email you booked with"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 2.5,
-                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                        color: isDark ? '#F8FAFC' : '#0F172A',
-                                    },
-                                }}
-                            />
+                            <Stack spacing={2.25} sx={{ mt: 1 }}>
+                                <Box>
+                                    <Typography
+                                        component="label"
+                                        htmlFor="login"
+                                        sx={{
+                                            display: 'block',
+                                            fontSize: '0.825rem',
+                                            fontWeight: 700,
+                                            color: isDark ? '#E2E8F0' : '#1E293B',
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Mobile Number or Email <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        id="login"
+                                        name="login"
+                                        autoComplete="username"
+                                        autoFocus
+                                        value={loginForm.data.login}
+                                        onChange={(e) => loginForm.setData('login', e.target.value)}
+                                        error={Boolean(loginForm.errors.login)}
+                                        placeholder="e.g. 9876543210 or your@email.com"
+                                        helperText="Use the mobile number or email you booked with"
+                                        FormHelperTextProps={{
+                                            sx: {
+                                                color: isDark ? '#94A3B8' : '#64748B',
+                                                mt: 0.75,
+                                                mx: 0.5,
+                                                fontSize: '0.75rem',
+                                            },
+                                        }}
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                    </InputAdornment>
+                                                ),
+                                            },
+                                        }}
+                                    />
+                                </Box>
 
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                name="password"
-                                label="Password"
-                                type={showLoginPassword ? 'text' : 'password'}
-                                id="password"
-                                autoComplete="current-password"
-                                value={loginForm.data.password}
-                                onChange={(e) => loginForm.setData('password', e.target.value)}
-                                error={Boolean(loginForm.errors.password)}
-                                helperText={loginForm.errors.password}
-                                placeholder="••••••••"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                        </InputAdornment>
-                                    ),
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label="toggle password visibility"
-                                                onClick={() => setShowLoginPassword(!showLoginPassword)}
-                                                edge="end"
-                                                sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
-                                            >
-                                                {showLoginPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 2.5,
-                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                        color: isDark ? '#F8FAFC' : '#0F172A',
-                                    },
-                                }}
-                            />
+                                <Box>
+                                    <Typography
+                                        component="label"
+                                        htmlFor="password"
+                                        sx={{
+                                            display: 'block',
+                                            fontSize: '0.825rem',
+                                            fontWeight: 700,
+                                            color: isDark ? '#E2E8F0' : '#1E293B',
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Password <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        name="password"
+                                        type={showLoginPassword ? 'text' : 'password'}
+                                        id="password"
+                                        autoComplete="current-password"
+                                        value={loginForm.data.password}
+                                        onChange={(e) => loginForm.setData('password', e.target.value)}
+                                        error={Boolean(loginForm.errors.password)}
+                                        helperText={loginForm.errors.password}
+                                        placeholder="••••••••"
+                                        FormHelperTextProps={{
+                                            sx: {
+                                                color: isDark ? '#F87171' : '#DC2626',
+                                                mt: 0.75,
+                                                mx: 0.5,
+                                                fontSize: '0.75rem',
+                                            },
+                                        }}
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                    </InputAdornment>
+                                                ),
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <IconButton
+                                                            aria-label="toggle password visibility"
+                                                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                                                            edge="end"
+                                                            sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                                                        >
+                                                            {showLoginPassword ? <VisibilityOff /> : <Visibility />}
+                                                        </IconButton>
+                                                    </InputAdornment>
+                                                ),
+                                            },
+                                        }}
+                                    />
+                                </Box>
+                            </Stack>
 
                             <Box
                                 sx={{
@@ -577,6 +643,154 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                     </Box>
                                 </Typography>
                             </Box>
+
+                            {/* Demo Quick-Fill Credentials for Testing */}
+                            <Divider sx={{ my: 3, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }}>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: isDark ? '#94A3B8' : '#64748B',
+                                        fontWeight: 700,
+                                        letterSpacing: '0.08em',
+                                        fontSize: '0.72rem',
+                                    }}
+                                >
+                                    DEMO CUSTOMER ACCOUNTS (FOR TESTING)
+                                </Typography>
+                            </Divider>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                                {demoCustomerAccounts.map((account) => {
+                                    const isSelected = loginForm.data.login === account.email;
+                                    return (
+                                        <Box
+                                            key={account.email}
+                                            onClick={() => handleQuickFill(account.email)}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                p: 1.25,
+                                                borderRadius: 2.5,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                bgcolor: isSelected
+                                                    ? (isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7')
+                                                    : (isDark ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'),
+                                                border: '1px solid',
+                                                borderColor: isSelected
+                                                    ? '#F59E0B'
+                                                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'),
+                                                boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.03)',
+                                                '&:hover': {
+                                                    borderColor: '#F59E0B',
+                                                    bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FFFBEB',
+                                                    transform: 'translateY(-1px)',
+                                                },
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flex: 1 }}>
+                                                <Box
+                                                    sx={{
+                                                        px: 1,
+                                                        py: 0.35,
+                                                        borderRadius: 1.5,
+                                                        bgcolor: account.badgeBg,
+                                                        color: account.badgeColor,
+                                                        border: `1px solid ${account.borderColor}`,
+                                                        fontSize: '0.72rem',
+                                                        fontWeight: 700,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    {account.icon}
+                                                    {account.role}
+                                                </Box>
+                                                <Box sx={{ minWidth: 0, flex: 1, pr: 0.5 }}>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            fontFamily: 'monospace',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 600,
+                                                            color: isDark ? '#F8FAFC' : '#0F172A',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        {account.email}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{
+                                                            display: 'block',
+                                                            fontSize: '0.68rem',
+                                                            color: isDark ? '#94A3B8' : '#64748B',
+                                                            lineHeight: 1.2,
+                                                        }}
+                                                    >
+                                                        {account.desc}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+
+                                            <Button
+                                                size="small"
+                                                variant={isSelected ? 'contained' : 'outlined'}
+                                                color={isSelected ? 'warning' : 'inherit'}
+                                                startIcon={isSelected ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : null}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleQuickFill(account.email);
+                                                }}
+                                                sx={{
+                                                    ml: 1,
+                                                    flexShrink: 0,
+                                                    fontSize: '0.7rem',
+                                                    py: 0.3,
+                                                    px: 1,
+                                                    borderRadius: 1.5,
+                                                    textTransform: 'none',
+                                                    fontWeight: 700,
+                                                    bgcolor: isSelected ? '#F59E0B' : 'transparent',
+                                                    color: isSelected ? '#0F172A' : (isDark ? '#E2E8F0' : '#475569'),
+                                                    borderColor: isSelected ? '#F59E0B' : (isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1'),
+                                                }}
+                                            >
+                                                {isSelected ? 'Selected' : 'Auto Fill'}
+                                            </Button>
+                                        </Box>
+                                    );
+                                })}
+
+                                {/* Shared Password Callout */}
+                                <Box
+                                    sx={{
+                                        mt: 0.5,
+                                        p: 1,
+                                        borderRadius: 2,
+                                        bgcolor: isDark ? 'rgba(245, 158, 11, 0.08)' : '#FFFBEB',
+                                        border: isDark ? '1px dashed rgba(245, 158, 11, 0.35)' : '1px dashed #FCD34D',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                        <LockOutlinedIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
+                                        <Typography variant="caption" sx={{ color: isDark ? '#FDE68A' : '#92400E', fontWeight: 600 }}>
+                                            Demo Password: <strong>Customer@12345</strong>
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.68rem' }}>
+                                        Tap tile to 1-click fill
+                                    </Typography>
+                                </Box>
+                            </Box>
                         </Box>
                     )}
 
@@ -585,129 +799,199 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                     ========================================================================== */}
                     {currentTab === 1 && (
                         <Box component="form" onSubmit={handleRegisterSubmit} noValidate>
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                id="name"
-                                label="Full Name (as per Driving License)"
-                                name="name"
-                                autoComplete="name"
-                                autoFocus
-                                value={registerForm.data.name}
-                                onChange={(e) => registerForm.setData('name', e.target.value)}
-                                error={Boolean(registerForm.errors.name)}
-                                helperText={registerForm.errors.name}
-                                placeholder="e.g. Ramesh Kumar"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 2.5,
-                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                        color: isDark ? '#F8FAFC' : '#0F172A',
-                                    },
-                                }}
-                            />
+                            <Stack spacing={2.25} sx={{ mt: 1 }}>
+                                <Box>
+                                    <Typography
+                                        component="label"
+                                        htmlFor="name"
+                                        sx={{
+                                            display: 'block',
+                                            fontSize: '0.825rem',
+                                            fontWeight: 700,
+                                            color: isDark ? '#E2E8F0' : '#1E293B',
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Full Name (as per Driving License) <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        id="name"
+                                        name="name"
+                                        autoComplete="name"
+                                        autoFocus
+                                        value={registerForm.data.name}
+                                        onChange={(e) => registerForm.setData('name', e.target.value)}
+                                        error={Boolean(registerForm.errors.name)}
+                                        helperText={registerForm.errors.name}
+                                        placeholder="e.g. Ramesh Kumar"
+                                        FormHelperTextProps={{
+                                            sx: {
+                                                color: isDark ? '#F87171' : '#DC2626',
+                                                mt: 0.75,
+                                                mx: 0.5,
+                                                fontSize: '0.75rem',
+                                            },
+                                        }}
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                    </InputAdornment>
+                                                ),
+                                            },
+                                        }}
+                                    />
+                                </Box>
 
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                id="email"
-                                label="Email Address"
-                                name="email"
-                                type="email"
-                                autoComplete="email"
-                                value={registerForm.data.email}
-                                onChange={(e) => registerForm.setData('email', e.target.value)}
-                                error={Boolean(registerForm.errors.email)}
-                                helperText={registerForm.errors.email}
-                                placeholder="e.g. ramesh@gmail.com"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <EmailIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 2.5,
-                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                        color: isDark ? '#F8FAFC' : '#0F172A',
-                                    },
-                                }}
-                            />
+                                <Box>
+                                    <Typography
+                                        component="label"
+                                        htmlFor="email"
+                                        sx={{
+                                            display: 'block',
+                                            fontSize: '0.825rem',
+                                            fontWeight: 700,
+                                            color: isDark ? '#E2E8F0' : '#1E293B',
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Email Address <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        autoComplete="email"
+                                        value={registerForm.data.email}
+                                        onChange={(e) => registerForm.setData('email', e.target.value)}
+                                        error={Boolean(registerForm.errors.email)}
+                                        helperText={registerForm.errors.email}
+                                        placeholder="e.g. ramesh@gmail.com"
+                                        FormHelperTextProps={{
+                                            sx: {
+                                                color: isDark ? '#F87171' : '#DC2626',
+                                                mt: 0.75,
+                                                mx: 0.5,
+                                                fontSize: '0.75rem',
+                                            },
+                                        }}
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <EmailIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                    </InputAdornment>
+                                                ),
+                                            },
+                                        }}
+                                    />
+                                </Box>
 
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                id="phone"
-                                label="WhatsApp / Mobile Number"
-                                name="phone"
-                                type="tel"
-                                autoComplete="tel"
-                                value={registerForm.data.phone}
-                                onChange={(e) => registerForm.setData('phone', e.target.value)}
-                                error={Boolean(registerForm.errors.phone)}
-                                helperText={registerForm.errors.phone || 'Used for instant booking confirmation & OTP'}
-                                placeholder="e.g. 9876543210"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <PhoneIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 2.5,
-                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                        color: isDark ? '#F8FAFC' : '#0F172A',
-                                    },
-                                }}
-                            />
+                                <Box>
+                                    <Typography
+                                        component="label"
+                                        htmlFor="phone"
+                                        sx={{
+                                            display: 'block',
+                                            fontSize: '0.825rem',
+                                            fontWeight: 700,
+                                            color: isDark ? '#E2E8F0' : '#1E293B',
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        WhatsApp / Mobile Number <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        id="phone"
+                                        name="phone"
+                                        type="tel"
+                                        autoComplete="tel"
+                                        value={registerForm.data.phone}
+                                        onChange={(e) => registerForm.setData('phone', e.target.value)}
+                                        error={Boolean(registerForm.errors.phone)}
+                                        helperText={registerForm.errors.phone || 'Used for instant booking confirmation & OTP'}
+                                        placeholder="e.g. 9876543210"
+                                        FormHelperTextProps={{
+                                            sx: {
+                                                color: registerForm.errors.phone ? (isDark ? '#F87171' : '#DC2626') : (isDark ? '#94A3B8' : '#64748B'),
+                                                mt: 0.75,
+                                                mx: 0.5,
+                                                fontSize: '0.75rem',
+                                            },
+                                        }}
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <PhoneIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                    </InputAdornment>
+                                                ),
+                                            },
+                                        }}
+                                    />
+                                </Box>
 
-                            <TextField
-                                margin="normal"
-                                required
-                                fullWidth
-                                name="password"
-                                label="Password (min 6 characters)"
-                                type={showRegisterPassword ? 'text' : 'password'}
-                                id="register-password"
-                                autoComplete="new-password"
-                                value={registerForm.data.password}
-                                onChange={(e) => registerForm.setData('password', e.target.value)}
-                                error={Boolean(registerForm.errors.password)}
-                                helperText={registerForm.errors.password}
-                                placeholder="Create a secure password"
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                        </InputAdornment>
-                                    ),
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label="toggle password visibility"
-                                                onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                                                edge="end"
-                                                sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
-                                            >
-                                                {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 2.5,
-                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                        color: isDark ? '#F8FAFC' : '#0F172A',
-                                    },
-                                }}
-                            />
+                                <Box>
+                                    <Typography
+                                        component="label"
+                                        htmlFor="register-password"
+                                        sx={{
+                                            display: 'block',
+                                            fontSize: '0.825rem',
+                                            fontWeight: 700,
+                                            color: isDark ? '#E2E8F0' : '#1E293B',
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Password (min 6 characters) <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        name="password"
+                                        type={showRegisterPassword ? 'text' : 'password'}
+                                        id="register-password"
+                                        autoComplete="new-password"
+                                        value={registerForm.data.password}
+                                        onChange={(e) => registerForm.setData('password', e.target.value)}
+                                        error={Boolean(registerForm.errors.password)}
+                                        helperText={registerForm.errors.password}
+                                        placeholder="Create a secure password"
+                                        FormHelperTextProps={{
+                                            sx: {
+                                                color: isDark ? '#F87171' : '#DC2626',
+                                                mt: 0.75,
+                                                mx: 0.5,
+                                                fontSize: '0.75rem',
+                                            },
+                                        }}
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                    </InputAdornment>
+                                                ),
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <IconButton
+                                                            aria-label="toggle password visibility"
+                                                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                                                            edge="end"
+                                                            sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                                                        >
+                                                            {showRegisterPassword ? <VisibilityOff /> : <Visibility />}
+                                                        </IconButton>
+                                                    </InputAdornment>
+                                                ),
+                                            },
+                                        }}
+                                    />
+                                </Box>
+                            </Stack>
 
                             <Box sx={{ mt: 1.5, mb: 2.5 }}>
                                 <FormControlLabel

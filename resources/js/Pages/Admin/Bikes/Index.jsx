@@ -235,8 +235,8 @@ export default function BikesIndex({
 
             {/* Fleet Statistics Bar */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={6} sm={2.4}>
-                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
+                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase' }}>
                             Total Fleet
                         </Typography>
@@ -245,8 +245,8 @@ export default function BikesIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={2.4}>
-                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
+                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, textTransform: 'uppercase' }}>
                             Available
                         </Typography>
@@ -255,8 +255,8 @@ export default function BikesIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={2.4}>
-                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
+                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, textTransform: 'uppercase' }}>
                             On Road (Rented)
                         </Typography>
@@ -265,8 +265,8 @@ export default function BikesIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={2.4}>
-                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
+                    <Paper sx={{ p: 2, borderRadius: 2.5, textAlign: 'center', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                         <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 700, textTransform: 'uppercase' }}>
                             Maintenance
                         </Typography>
@@ -275,7 +275,7 @@ export default function BikesIndex({
                         </Typography>
                     </Paper>
                 </Grid>
-                <Grid item xs={6} sm={2.4}>
+                <Grid size={{ xs: 12, sm: 4, md: 2.4 }}>
                     <Paper
                         onClick={handleDriftToggle}
                         sx={{
@@ -300,10 +300,10 @@ export default function BikesIndex({
             </Grid>
 
             {/* Filter and View Toggle Controls */}
-            <Paper sx={{ p: 2, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+            <Paper sx={{ p: 2, mb: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
                 <Grid container spacing={2} alignItems="center">
                     {/* Search Field */}
-                    <Grid item xs={12} md={3.5}>
+                    <Grid size={{ xs: 12, md: 3.5 }}>
                         <Box component="form" onSubmit={handleSearchSubmit}>
                             <TextField
                                 size="small"
@@ -311,6 +311,15 @@ export default function BikesIndex({
                                 placeholder="Search model, brand, registration..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
+                                slotProps={{
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                }}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
@@ -323,7 +332,7 @@ export default function BikesIndex({
                     </Grid>
 
                     {/* Category Filter */}
-                    <Grid item xs={6} sm={3} md={2}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                         <TextField
                             select
                             size="small"
@@ -343,7 +352,7 @@ export default function BikesIndex({
                     </Grid>
 
                     {/* Store Filter */}
-                    <Grid item xs={6} sm={3} md={2}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                         <TextField
                             select
                             size="small"
@@ -357,13 +366,13 @@ export default function BikesIndex({
                         >
                             <MenuItem value="">All Hubs</MenuItem>
                             {stores.map((s) => (
-                                <MenuItem key={s.id} value={s.id}>{s.name} ({s.code})</MenuItem>
+                                <MenuItem key={s.id} value={s.id}>{s.name} {s.city ? `(${s.city})` : ''}</MenuItem>
                             ))}
                         </TextField>
                     </Grid>
 
                     {/* Status Filter */}
-                    <Grid item xs={6} sm={3} md={2}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                         <TextField
                             select
                             size="small"
@@ -385,7 +394,7 @@ export default function BikesIndex({
                     </Grid>
 
                     {/* Drift Filter Toggle & View Switcher */}
-                    <Grid item xs={6} sm={3} md={2.5} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2.5 }} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                         <Button
                             variant={driftOnly ? 'contained' : 'outlined'}
                             color="warning"
@@ -416,9 +425,9 @@ export default function BikesIndex({
             {/* Main Content: List View or Grid View */}
             {viewMode === 'list' ? (
                 /* Table View */
-                <Paper sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
-                    <TableContainer>
-                        <Table size="medium">
+                <Paper sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                    <TableContainer sx={{ overflowX: 'auto' }}>
+                        <Table sx={{ minWidth: 860 }} size="medium">
                             <TableHead sx={{ bgcolor: 'background.default' }}>
                                 <TableRow>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>VEHICLE</TableCell>
@@ -472,7 +481,7 @@ export default function BikesIndex({
                                                 {bike.is_drifted && (
                                                     <Chip
                                                         icon={<WarningAmberIcon sx={{ fontSize: '0.9rem !important' }} />}
-                                                        label={`Home: ${bike.home_store?.code}`}
+                                                        label={`Home: ${bike.home_store?.name || 'Home Hub'}`}
                                                         color="warning"
                                                         size="small"
                                                         sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, mt: 0.5 }}
@@ -535,8 +544,8 @@ export default function BikesIndex({
                 <Grid container spacing={3}>
                     {bikes.length > 0 ? (
                         bikes.map((bike) => (
-                            <Grid item xs={12} sm={6} md={4} key={bike.id}>
-                                <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={bike.id}>
+                                <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
                                     {bike.primary_image_url ? (
                                         <CardMedia
                                             component="img"
