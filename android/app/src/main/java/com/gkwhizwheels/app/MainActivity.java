@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         settings.setUserAgentString(settings.getUserAgentString() + " GKWhizWheelsAndroidApp/1.0");
 
         webView.setWebViewClient(new WebViewClient() {
@@ -126,10 +127,12 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
                 swipeRefreshLayout.setRefreshing(false);
+                android.util.Log.d("GKWhizWheels", "Page finished loading: " + url);
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                android.util.Log.e("GKWhizWheels", "WebView error: " + error.getDescription() + " code: " + error.getErrorCode() + " for url: " + request.getUrl());
                 if (request.isForMainFrame()) {
                     webView.setVisibility(View.GONE);
                     errorView.setVisibility(View.VISIBLE);
@@ -140,6 +143,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
+                android.util.Log.d("GKWhizWheelsJS", consoleMessage.message() + " -- From line "
+                        + consoleMessage.lineNumber() + " of "
+                        + consoleMessage.sourceId());
+                return true;
+            }
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 progressBar.setProgress(newProgress);
