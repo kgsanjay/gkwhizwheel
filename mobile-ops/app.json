@@ -7,11 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
-    },
     "ios": {
       "bundleIdentifier": "com.gkwhizwheel.ops",
       "buildNumber": "1",
@@ -19,7 +14,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "GK WhizWheel Operations requires camera access to scan customer booking QR codes, photograph returned vehicle condition, and record odometer readings.",
         "NSPhotoLibraryUsageDescription": "GK WhizWheel Operations requires photo library access to upload handover inspection photos.",
-        "NSLocationWhenInUseUsageDescription": "GK WhizWheel Operations requires location access to verify station hub presence during vehicle dispatch and return check-in."
+        "NSLocationWhenInUseUsageDescription": "GK WhizWheel Operations requires location access to verify station hub presence during vehicle dispatch and return check-in.",
+        "NSFaceIDUsageDescription": "GK WhizWheel Operations requires Face ID / Touch ID to securely unlock the app for staff operations."
       }
     },
     "android": {
@@ -37,7 +33,9 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.RECORD_AUDIO"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -49,20 +47,20 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "GK WhizWheel Operations requires photo library access to upload inspection photos.",
-          "cameraPermission": "GK WhizWheel Operations requires camera access to scan QR codes and inspect vehicles."
+          "photosPermission": "GK WhizWheel Operations requires photo library access to upload handover inspection photos.",
+          "cameraPermission": "GK WhizWheel Operations requires camera access to scan customer booking QR codes, photograph returned vehicle condition, and record odometer readings."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "GK WhizWheel Operations requires location access to verify station hub presence."
+          "locationWhenInUsePermission": "GK WhizWheel Operations requires location access to verify station hub presence during vehicle dispatch and return check-in."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "GK WhizWheel Operations requires camera access to scan customer booking QR codes."
+          "cameraPermission": "GK WhizWheel Operations requires camera access to scan customer booking QR codes, photograph returned vehicle condition, and record odometer readings."
         }
       ],
       [
@@ -74,7 +72,22 @@
         }
       ],
       "expo-sharing",
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0F172A",
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8bb2b930-ece9-4c19-8bd8-c759269a3d39"
+      }
+    },
+    "owner": "kgsanjay"
   }
 }

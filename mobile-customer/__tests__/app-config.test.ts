@@ -15,17 +15,20 @@ describe('App Configuration & Store Permissions (F17)', () => {
       expect(expoConfig.android.package).toBe('com.gkwhizwheel.customer');
     });
 
-    it('configures dark navy splash screen', () => {
-      expect(expoConfig.splash.backgroundColor).toBe('#0F172A');
-      expect(expoConfig.splash.resizeMode).toBe('contain');
-      expect(expoConfig.splash.image).toBe('./assets/splash-icon.png');
+    it('configures dark navy splash screen via plugin', () => {
+      const splashPlugin = expoConfig.plugins.find((p: any) => Array.isArray(p) && p[0] === 'expo-splash-screen') as any[];
+      expect(splashPlugin).toBeDefined();
+      expect(splashPlugin[1].backgroundColor).toBe('#0F172A');
+      expect(splashPlugin[1].resizeMode).toBe('contain');
+      expect(splashPlugin[1].image).toBe('./assets/splash-icon.png');
     });
   });
 
   describe('Brand Assets Integrity', () => {
     it('configures paths to brand assets generated from F4 theme', () => {
       expect(expoConfig.icon).toBe('./assets/icon.png');
-      expect(expoConfig.splash.image).toBe('./assets/splash-icon.png');
+      const splashPlugin = expoConfig.plugins.find((p: any) => Array.isArray(p) && p[0] === 'expo-splash-screen') as any[];
+      expect(splashPlugin[1].image).toBe('./assets/splash-icon.png');
       expect(expoConfig.android.adaptiveIcon.foregroundImage).toBe('./assets/android-icon-foreground.png');
       expect(expoConfig.android.adaptiveIcon.backgroundImage).toBe('./assets/android-icon-background.png');
       expect(expoConfig.android.adaptiveIcon.monochromeImage).toBe('./assets/android-icon-monochrome.png');

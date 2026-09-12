@@ -158,14 +158,7 @@ Route::prefix('v1')->group(function (): void {
             Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\StoreController::class, 'update']);
         });
 
-        // Staff (Admin & Store Manager)
-        Route::prefix('staff')->middleware('role:super_admin,store_manager')->group(function (): void {
-            Route::get('/', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'index']);
-            Route::post('/', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'store']);
-            Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'show']);
-            Route::post('/{id}/stores', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'assignStores']);
-            Route::delete('/{id}/stores/{storeId}', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'unassignStore']);
-        });
+        // Staff was moved to super_admin,store_manager group below
 
         // Bookings
         Route::prefix('bookings')->group(function (): void {
@@ -174,18 +167,31 @@ Route::prefix('v1')->group(function (): void {
             Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'update']);
         });
 
-        // Refunds (Admin & Store Manager)
-        Route::post('bookings/{id}/refund', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'refund'])
-            ->middleware('role:super_admin,store_manager');
-
-        // Reports (Admin & Store Manager)
-        Route::prefix('reports')->middleware('role:super_admin,store_manager')->group(function (): void {
-            Route::get('/revenue', [\App\Http\Controllers\Api\V1\Admin\ReportController::class, 'revenue']);
-            Route::get('/utilization', [\App\Http\Controllers\Api\V1\Admin\ReportController::class, 'utilization']);
-        });
+        // Refunds and Reports were moved to super_admin,store_manager group below
 
         // Activity Logs
         Route::get('/activity-logs', [\App\Http\Controllers\Api\V1\Admin\ActivityLogController::class, 'index']);
+    });
+
+    // Admin & Store Manager Routes
+    Route::middleware(['auth:sanctum', 'role:super_admin,store_manager'])->prefix('admin')->group(function (): void {
+        // Staff
+        Route::prefix('staff')->group(function (): void {
+            Route::get('/', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'store']);
+            Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'show']);
+            Route::post('/{id}/stores', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'assignStores']);
+            Route::delete('/{id}/stores/{storeId}', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'unassignStore']);
+        });
+
+        // Refunds
+        Route::post('bookings/{id}/refund', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'refund']);
+
+        // Reports
+        Route::prefix('reports')->group(function (): void {
+            Route::get('/revenue', [\App\Http\Controllers\Api\V1\Admin\ReportController::class, 'revenue']);
+            Route::get('/utilization', [\App\Http\Controllers\Api\V1\Admin\ReportController::class, 'utilization']);
+        });
     });
 
     // Admin & Store Manager Service Items

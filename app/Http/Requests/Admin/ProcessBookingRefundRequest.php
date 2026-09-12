@@ -20,12 +20,12 @@ class ProcessBookingRefundRequest extends FormRequest
             return false;
         }
 
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->role === UserRole::SUPER_ADMIN || $user->role === UserRole::STORE_MANAGER) {
             return true;
         }
 
         try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin');
+            return $user->hasRole('super_admin') || $user->hasRole('store_manager');
         } catch (\Throwable) {
             return false;
         }

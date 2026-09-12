@@ -24,15 +24,19 @@ beforeEach(function (): void {
         'city' => 'City',
         'state' => 'State',
         'pincode' => '111111',
+        'latitude' => '12.9716',
+        'longitude' => '77.5946',
         'status' => StoreStatus::ACTIVE,
     ]);
 
     $this->store2 = Store::create([
         'name' => 'Test Store 2',
         'address_line' => 'Line 2',
-        'city' => 'City',
-        'state' => 'State',
+        'city' => 'City2',
+        'state' => 'State2',
         'pincode' => '222222',
+        'latitude' => '12.9716',
+        'longitude' => '77.5946',
         'status' => StoreStatus::ACTIVE,
     ]);
 
@@ -78,6 +82,8 @@ beforeEach(function (): void {
         'brand' => 'Honda',
         'model_name' => 'Activa',
         'registration_number' => 'KA01AB1234',
+        'fuel_type' => 'petrol',
+        'transmission' => 'automatic',
         'status' => 'available',
     ]);
 
