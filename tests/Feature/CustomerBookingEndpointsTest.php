@@ -346,7 +346,7 @@ test('customer can cancel booking and refund is processed if paid', function ():
     $this->assertDatabaseHas('refunds', [
         'booking_id' => $booking->id,
         'amount' => 3200.00,
-        'status' => 'completed',
+        'status' => 'pending',
     ]);
 });
 

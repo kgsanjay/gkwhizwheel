@@ -96,6 +96,9 @@ beforeEach(function (): void {
         'status' => BikeStatus::ON_RENT,
         'odometer_reading' => 10000,
     ]);
+
+    $this->staff->stores()->attach([$this->store1->id, $this->store2->id]);
+    $this->storeManager->stores()->attach([$this->store1->id, $this->store2->id]);
 });
 
 test('unauthenticated users cannot access active bookings or return endpoints', function (): void {

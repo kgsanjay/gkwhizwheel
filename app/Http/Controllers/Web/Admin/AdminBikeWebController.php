@@ -9,6 +9,7 @@ use App\Enums\BikeStatus;
 use App\Enums\FuelType;
 use App\Enums\StoreStatus;
 use App\Enums\Transmission;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BulkImportBikesRequest;
 use App\Http\Requests\Admin\StoreBikeRequest;
@@ -39,8 +40,22 @@ class AdminBikeWebController extends Controller
     {
         Gate::authorize('viewAny', Bike::class);
 
+        $user = $request->user();
+        $isSuperAdmin = $user?->role === UserRole::SUPER_ADMIN;
+
         $query = Bike::query()
             ->with(['category', 'currentStore', 'homeStore', 'images', 'documents']);
+
+        // Scope to user's assigned stores if not super admin
+        if (! $isSuperAdmin && $user !== null) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+            if (! empty($userStoreIds)) {
+                $query->where(function ($q) use ($userStoreIds): void {
+                    $q->whereIn('current_store_id', $userStoreIds)
+                        ->orWhereIn('home_store_id', $userStoreIds);
+                });
+            }
+        }
 
         // Search query
         if ($search = $request->query('search')) {

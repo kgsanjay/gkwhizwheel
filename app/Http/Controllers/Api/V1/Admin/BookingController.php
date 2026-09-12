@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProcessBookingRefundRequest;
 use App\Http\Requests\Admin\UpdateBookingOverrideRequest;
@@ -13,35 +12,27 @@ use App\Http\Resources\RefundResource;
 use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Services\RefundService;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BookingController extends Controller
 {
     /**
-     * Authorize that the current authenticated user has admin privileges.
-     */
-    protected function authorizeAdmin(Request $request): void
-    {
-        $user = $request->user();
-        $isAuthorized = $user !== null && (
-            $user->role === UserRole::SUPER_ADMIN
-            || $user->hasRole('super_admin')
-            || $user->hasRole('admin')
-        );
-
-        if (! $isAuthorized) {
-            throw new AuthorizationException('This action is unauthorized.');
-        }
-    }
-
-    /**
      * Display a paginated listing of bookings with administrative filters.
      */
     public function index(Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
+        $request->validate([
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'channel' => ['nullable', 'string', 'max:50'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'date' => ['nullable', 'date'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'bike_id' => ['nullable', 'integer', 'exists:bikes,id'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
 
         $query = Booking::query()
             ->with(['user', 'bike', 'pickupStore', 'returnStore', 'addons', 'payments', 'refunds']);
@@ -105,8 +96,6 @@ class BookingController extends Controller
      */
     public function show(int $id, Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         $booking = Booking::with([
             'user',
             'bike.images',

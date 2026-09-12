@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "GK WhizWheel",
+    "slug": "gkwhizwheel-customer",
+    "scheme": "gkwhizwheel",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "bundleIdentifier": "com.gkwhizwheel.customer",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "GK WhizWheel requires camera access to photograph your Indian Driving License and Aadhaar document for KYC verification, as well as take vehicle condition photos during station bike handover.",
+        "NSPhotoLibraryUsageDescription": "GK WhizWheel requires photo library access to upload existing photos or scans of your Driving License and Aadhaar document for KYC approval.",
+        "NSLocationWhenInUseUsageDescription": "GK WhizWheel requires your location to identify the nearest rental station hub in Honnavar, calculate travel distances, and provide station platform directions.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "GK WhizWheel uses your location to dispatch 24/7 roadside assistance teams accurately across coastal Karnataka."
+      }
+    },
+    "android": {
+      "package": "com.gkwhizwheel.customer",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "GK WhizWheel requires photo library access to upload your Driving License and Aadhaar document for KYC approval.",
+          "cameraPermission": "GK WhizWheel requires camera access to photograph your Indian Driving License and vehicle condition during handover."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "GK WhizWheel requires your location to identify the nearest rental station hub in Honnavar and calculate travel distances."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#F59E0B",
+          "sounds": []
+        }
+      ],
+      "expo-sharing",
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}

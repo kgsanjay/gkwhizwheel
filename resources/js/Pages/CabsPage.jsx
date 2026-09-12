@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import CabsBookingModal from '../Components/BookingModals/CabsBookingModal';
+import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
     Box,
     Typography,
@@ -185,16 +188,62 @@ const HONNAVAR_DISTANCES = [
     { destination: 'Mirjan Historic Fort', distance: '21 km', time: '22 Mins', mode: 'NH-66 Highway Cruise' },
     { destination: 'Murudeshwar Shiva Temple & Beach', distance: '27 km', time: '35 Mins', mode: 'NH-66 South Corridor' },
     { destination: 'Gokarna Om Beach & Mahabaleshwar', distance: '48 km', time: '50 Mins', mode: 'NH-66 North Corridor' },
-    { destination: 'Jog Falls (Sharavathi Valley)', distance: '60 km', time: '1 Hr 15 Mins', mode: 'Scenic Ghat Road' },
 ];
+
+const CAB_FAQS = [
+    {
+        q: 'How does the Honnavar Railway Station cab pickup work?',
+        a: 'We have a dedicated dispatch hub at Honnavar Railway Station (Platform 1 exit). When your train arrives, your chauffeur waits right outside the exit gate holding a welcome name board. There is zero waiting time, and our team helps with your luggage.',
+    },
+    {
+        q: 'Can I book a full-day cab to visit Jog Falls, Gerusoppa, and Sharavathi Valley?',
+        a: 'Yes! Jog Falls is one of our most popular day excursions (60 km each way). Our fixed-rate round-trip package covers pickup from Honnavar, scenic stops at Gerusoppa & Sharavathi hanging bridge, all viewpoints at Jog Falls, and drop back in the evening.',
+    },
+    {
+        q: 'Do you provide 7-seater vehicles like Toyota Innova Crysta or Maruti Ertiga?',
+        a: 'Yes! We maintain an extensive fleet of Maruti Ertiga and luxury Toyota Innova Crysta vehicles, featuring dual chilled AC, captain seats, and generous luggage boot space ideal for family groups.',
+    },
+    {
+        q: 'What if my train arrives late at night or early morning (e.g., 3:00 AM)?',
+        a: 'Our Honnavar station cab desk operates 24x7. We track your Konkan Railway PNR or train status live to ensure your driver is on standby even if the train is delayed by several hours.',
+    },
+    {
+        q: 'Are there any hidden charges, waiting fees, or peak surge pricing?',
+        a: 'Never. At GK WhizWheels, all cab tariffs are fixed and transparent with zero dynamic surge pricing. You only pay the pre-agreed fare plus actual toll/parking receipts.',
+    },
+    {
+        q: 'Can we book a cab for a drop to Goa Airport (Dabolim / Mopa) or Mangalore Airport?',
+        a: 'Yes! We operate direct airport transfers to both Goa airports (Dabolim & Mopa) and Mangalore International Airport with verified highway drivers experienced in Konkan NH-66 travel.',
+    },
+    {
+        q: 'How far are major tourist spots and transit hubs from Honnavar? (Distance & Travel Time Matrix)',
+        a: 'Accurate driving times and distances by cab from Honnavar Railway Station and central town hubs:',
+    },
+];
+
+const cabFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: CAB_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
 
 export default function CabsPage({ availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
     const [modalOpen, setModalOpen] = useState(false);
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [selectedVehicleForGallery, setSelectedVehicleForGallery] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [tripType, setTripType] = useState('outstation'); // 'station', 'daytrip', 'outstation', 'airport'
+    const [showTariffTable, setShowTariffTable] = useState(false);
 
     // Interactive Instant Fare Estimator State
     const [calcServiceType, setCalcServiceType] = useState('outstation');
@@ -253,13 +302,37 @@ export default function CabsPage({ availableItems = [] }) {
 
     return (
         <AppLayout>
-            <Head>
-                <title>Honnavar Cabs & Taxi Services - AC Sedans, Innova Crysta & Station Pickups | GK WhizWheels</title>
-                <meta
-                    name="description"
-                    content="Book verified AC taxi & cab rentals in Honnavar. Platform 1 Honnavar Railway Station pickups, flat-rate Jog Falls & Gokarna day trips, and sanitized Innova Crysta / Dzire cabs from ₹12/km."
-                />
-            </Head>
+            <PageHead
+                title="Honnavar Taxi Service & AC Cab Rentals | Station Pickup – GK WhizWheel"
+                description="Hire verified AC cabs & taxis in Honnavar starting ₹12/km or ₹1,400/day. Station pickup, Innova Crysta, Dzire, outstation trips to Gokarna, Jog Falls & Goa."
+                canonicalUrl="https://whizwheels.in/services/cabs"
+                ogImage="/images/services/four_wheelers.jpg"
+                ogType="website"
+                structuredData={[
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: 'Honnavar AC Cab & Taxi Rental Service',
+                        description: 'Reliable chauffeur-driven taxi service in Honnavar with railway station transfers, full-day sightseeing, and outstation trips across Karnataka and Goa.',
+                        category: 'Taxi & Cab Rental',
+                        offers: {
+                            '@type': 'AggregateOffer',
+                            priceCurrency: 'INR',
+                            lowPrice: '1400',
+                            highPrice: '6000',
+                            offerCount: '6',
+                            price: '1400',
+                        },
+                        provider: {
+                            '@type': 'LocalBusiness',
+                            name: 'GK WhizWheel',
+                            telephone: '+918660989586',
+                            url: 'https://whizwheels.in',
+                        },
+                    },
+                    cabFaqSchema,
+                ]}
+            />
 
             <Box component="main" id="main-content" sx={{ width: '100%', overflowX: 'hidden' }}>
                 {/* =========================================================================
@@ -560,7 +633,7 @@ export default function CabsPage({ availableItems = [] }) {
                                         <Box
                                             component="img"
                                             src="/images/services/taxi.jpg"
-                                            alt="Honnavar AC Cabs & Taxi Services"
+                                            alt="Honnavar AC Cabs & Taxi Services - Station Pickup and Coastal Sightseeing"
                                             sx={{
                                                 width: '100%',
                                                 height: '100%',
@@ -607,10 +680,10 @@ export default function CabsPage({ availableItems = [] }) {
                                             </Box>
 
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: '#38BDF8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.68rem', display: 'block' }}>
+                                                <Typography variant="caption" component="span" sx={{ color: '#38BDF8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.68rem', display: 'block' }}>
                                                     HONNAVAR • GOKARNA • MURUDESHWAR • JOG FALLS • GOA
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.05rem', lineHeight: 1.25, mt: 0.3 }}>
+                                                <Typography variant="h6" component="p" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.05rem', lineHeight: 1.25, mt: 0.3 }}>
                                                     Dzire Sedans, Ertiga (7-Seater) & Innova Crysta Fleet
                                                 </Typography>
                                             </Box>
@@ -705,7 +778,7 @@ export default function CabsPage({ availableItems = [] }) {
                                 size="small"
                                 sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 900, mb: 1.2 }}
                             />
-                            <Typography variant="h4" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em' }}>
+                            <Typography variant="h4" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em' }}>
                                 Instant Honnavar Cab Fare Estimator
                             </Typography>
                             <Typography variant="body2" sx={{ color: secondaryTextColor, maxWidth: 650, mt: 0.5 }}>
@@ -814,7 +887,7 @@ export default function CabsPage({ availableItems = [] }) {
                                         <Typography variant="caption" sx={{ color: '#0284C7', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                             Estimated Total Tariff
                                         </Typography>
-                                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, my: 0.8 }}>
+                                        <Typography variant="h3" component="p" sx={{ fontWeight: 950, color: primaryTextColor, my: 0.8 }}>
                                             ₹{estimatedFare.total.toLocaleString('en-IN')}
                                         </Typography>
                                         <Divider sx={{ my: 1.5, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#BAE6FD' }} />
@@ -855,6 +928,79 @@ export default function CabsPage({ availableItems = [] }) {
                                 </Paper>
                             </Grid>
                         </Grid>
+
+                        {/* Merged Outstation Tariff Sheet Reference Toggle */}
+                        <Box sx={{ mt: 3.5, pt: 2.5, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+                                <Box>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 850, color: primaryTextColor }}>
+                                        Looking for per-kilometer outstation reference tariffs?
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: secondaryTextColor }}>
+                                        View complete vehicle tariff sheet with minimum daily km averages and driver batta.
+                                    </Typography>
+                                </Box>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => setShowTariffTable(!showTariffTable)}
+                                    endIcon={<ExpandMoreIcon sx={{ transform: showTariffTable ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />}
+                                    sx={{
+                                        borderColor: '#0284C7',
+                                        color: '#0284C7',
+                                        fontWeight: 800,
+                                        borderRadius: 2,
+                                        textTransform: 'none',
+                                        '&:hover': { borderColor: '#0369A1', bgcolor: 'rgba(2, 132, 199, 0.05)' },
+                                    }}
+                                >
+                                    {showTariffTable ? 'Hide Outstation Tariff Sheet' : 'View Outstation Tariff Sheet'}
+                                </Button>
+                            </Box>
+
+                            {showTariffTable && (
+                                <Box sx={{ mt: 2.5 }}>
+                                    <TableContainer
+                                        sx={{
+                                            borderRadius: 2.5,
+                                            border: `1px solid ${cardBorderColor}`,
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <Table size="small" sx={{ minWidth: 640 }}>
+                                            <TableHead sx={{ bgcolor: isDark ? '#0F172A' : '#1E293B' }}>
+                                                <TableRow>
+                                                    <TableCell sx={{ color: '#FFFFFF', fontWeight: 850, py: 1.2 }}>Vehicle Model</TableCell>
+                                                    <TableCell sx={{ color: '#FFFFFF', fontWeight: 850, py: 1.2 }}>Category & Seating</TableCell>
+                                                    <TableCell sx={{ color: '#38BDF8', fontWeight: 850, py: 1.2 }}>Per KM Rate</TableCell>
+                                                    <TableCell sx={{ color: '#FBBF24', fontWeight: 850, py: 1.2 }}>Min Daily Avg</TableCell>
+                                                    <TableCell sx={{ color: '#6EE7B7', fontWeight: 850, py: 1.2 }}>Driver Batta</TableCell>
+                                                    <TableCell sx={{ color: '#FFFFFF', fontWeight: 850, py: 1.2 }}>Ideal For</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {OUTSTATION_FARE_MATRIX.map((row, idx) => (
+                                                    <TableRow
+                                                        key={idx}
+                                                        sx={{
+                                                            '&:nth-of-type(even)': { bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC' },
+                                                            '&:hover': { bgcolor: isDark ? 'rgba(2, 132, 199, 0.06)' : '#F0F9FF' },
+                                                        }}
+                                                    >
+                                                        <TableCell sx={{ fontWeight: 850, color: primaryTextColor, py: 1.2 }}>{row.vehicle}</TableCell>
+                                                        <TableCell sx={{ color: secondaryTextColor, fontSize: '0.82rem', py: 1.2 }}>{row.category}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 900, color: '#0284C7', fontSize: '0.88rem', py: 1.2 }}>{row.perKm}</TableCell>
+                                                        <TableCell sx={{ color: secondaryTextColor, fontSize: '0.82rem', py: 1.2 }}>{row.minKmPerDay}</TableCell>
+                                                        <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800, py: 1.2 }}>{row.driverBatta}</TableCell>
+                                                        <TableCell sx={{ color: mutedTextColor, fontSize: '0.8rem', py: 1.2 }}>{row.idealFor}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </Box>
+                            )}
+                        </Box>
                     </Paper>
                 </Box>
 
@@ -875,7 +1021,7 @@ export default function CabsPage({ availableItems = [] }) {
                                 border: '1px solid rgba(2, 132, 199, 0.3)',
                             }}
                         />
-                        <Typography variant="h2" sx={{ fontWeight: 950, color: primaryTextColor, fontSize: { xs: '1.8rem', sm: '2.4rem', md: '2.8rem' }, letterSpacing: '-0.02em', mb: 1.5 }}>
+                        <Typography variant="h2" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, fontSize: { xs: '1.8rem', sm: '2.4rem', md: '2.8rem' }, letterSpacing: '-0.02em', mb: 1.5 }}>
                             Popular Sightseeing Cab Packages from Honnavar
                         </Typography>
                         <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 680, mx: 'auto', lineHeight: 1.7 }}>
@@ -920,7 +1066,7 @@ export default function CabsPage({ availableItems = [] }) {
                                             </Box>
                                         </Box>
 
-                                        <Typography variant="h6" sx={{ fontWeight: 900, color: primaryTextColor, lineHeight: 1.3, mb: 1 }}>
+                                        <Typography variant="h6" component="h3" sx={{ fontWeight: 900, color: primaryTextColor, lineHeight: 1.3, mb: 1 }}>
                                             {route.title}
                                         </Typography>
 
@@ -971,100 +1117,14 @@ export default function CabsPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    4. COMPREHENSIVE OUTSTATION FARE CHART & TARIFF MATRIX
-                ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 5 } }}>
-                        <Chip
-                            label="PER-KILOMETER TARIFF MATRIX"
-                            sx={{
-                                bgcolor: 'rgba(16, 185, 129, 0.12)',
-                                color: '#10B981',
-                                fontWeight: 850,
-                                fontSize: '0.75rem',
-                                letterSpacing: '0.06em',
-                                mb: 1.5,
-                            }}
-                        />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1 }}>
-                            Honnavar Cab Rates & Outstation Tariff Sheet
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 660, mx: 'auto' }}>
-                            Pre-fixed per-km rates with zero hidden charges. GPS-metered journeys and automated invoicing.
-                        </Typography>
-                    </Box>
-
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            borderRadius: 3.5,
-                            overflow: 'hidden',
-                            border: `1px solid ${cardBorderColor}`,
-                            bgcolor: cardBgColor,
-                            boxShadow: isDark ? 'none' : '0 4px 20px -4px rgba(0, 0, 0, 0.05)',
-                        }}
-                    >
-                        <TableContainer>
-                            <Table sx={{ minWidth: 720 }}>
-                                <TableHead sx={{ bgcolor: isDark ? '#0F172A' : '#1E293B' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 850 }}>Vehicle Model</TableCell>
-                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 850 }}>Category & Seating</TableCell>
-                                        <TableCell sx={{ color: '#38BDF8', fontWeight: 850 }}>Per KM Rate</TableCell>
-                                        <TableCell sx={{ color: '#FBBF24', fontWeight: 850 }}>Min Daily Average</TableCell>
-                                        <TableCell sx={{ color: '#6EE7B7', fontWeight: 850 }}>Driver Batta</TableCell>
-                                        <TableCell sx={{ color: '#FFFFFF', fontWeight: 850 }}>Ideal For</TableCell>
-                                        <TableCell align="right" sx={{ color: '#FFFFFF', fontWeight: 850 }}>Reserve</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {OUTSTATION_FARE_MATRIX.map((row, idx) => (
-                                        <TableRow
-                                            key={idx}
-                                            sx={{
-                                                '&:nth-of-type(even)': { bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC' },
-                                                '&:hover': { bgcolor: isDark ? 'rgba(2, 132, 199, 0.06)' : '#F0F9FF' },
-                                            }}
-                                        >
-                                            <TableCell sx={{ fontWeight: 850, color: primaryTextColor }}>{row.vehicle}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontSize: '0.85rem' }}>{row.category}</TableCell>
-                                            <TableCell sx={{ fontWeight: 900, color: '#0284C7', fontSize: '0.95rem' }}>{row.perKm}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontSize: '0.85rem' }}>{row.minKmPerDay}</TableCell>
-                                            <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800 }}>{row.driverBatta}</TableCell>
-                                            <TableCell sx={{ color: mutedTextColor, fontSize: '0.82rem', maxWidth: 260 }}>{row.idealFor}</TableCell>
-                                            <TableCell align="right">
-                                                <Button
-                                                    onClick={() => setModalOpen(true)}
-                                                    size="small"
-                                                    variant="contained"
-                                                    sx={{
-                                                        bgcolor: '#0284C7',
-                                                        color: '#FFFFFF',
-                                                        fontWeight: 800,
-                                                        borderRadius: 1.8,
-                                                        '&:hover': { bgcolor: '#0369A1' },
-                                                    }}
-                                                >
-                                                    Select
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Paper>
-                </Box>
-
-                {/* =========================================================================
-                    5. LIVE DB VEHICLES CATALOG (Toyota Innova Crysta, Dzire, Tempo)
+                    4. LIVE DB VEHICLES CATALOG (Toyota Innova Crysta, Dzire, Tempo)
                 ========================================================================== */}
                 {availableItems && availableItems.length > 0 && (
                     <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 4 }}>
                             <Box>
                                 <Chip label="FLEET SPECIFICATIONS" size="small" sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1 }} />
-                                <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em' }}>
+                                <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em' }}>
                                     Available Vehicles in Our Honnavar Fleet
                                 </Typography>
                             </Box>
@@ -1086,7 +1146,9 @@ export default function CabsPage({ availableItems = [] }) {
                         </Box>
 
                         <Grid container spacing={3}>
-                            {filteredVehicles.map((item) => (
+                            {filteredVehicles.map((item) => {
+                                const media = getServiceItemMedia(item, '/images/services/taxi.jpg');
+                                return (
                                 <Grid key={item.id} size={{ xs: 12, md: 4 }}>
                                     <Card
                                         sx={{
@@ -1105,12 +1167,33 @@ export default function CabsPage({ availableItems = [] }) {
                                             },
                                         }}
                                     >
-                                        <Box sx={{ position: 'relative', height: 200, bgcolor: '#0F172A', overflow: 'hidden' }}>
+                                        <Box 
+                                            sx={{ 
+                                                position: 'relative', 
+                                                height: 200, 
+                                                bgcolor: '#0F172A', 
+                                                overflow: 'hidden',
+                                                cursor: media.gallery.length > 0 ? 'pointer' : 'default',
+                                            }}
+                                            onClick={() => {
+                                                if (media.gallery.length > 0) {
+                                                    setSelectedVehicleForGallery(item);
+                                                    setGalleryModalOpen(true);
+                                                }
+                                            }}
+                                        >
                                             <Box
                                                 component="img"
-                                                src={item.image_url || '/images/services/taxi.jpg'}
-                                                alt={item.name}
-                                                sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                src={media.primary}
+                                                loading="lazy"
+                                                alt={`${item.name} - Chauffeur-driven AC cab rental in Honnavar`}
+                                                sx={{ 
+                                                    width: '100%', 
+                                                    height: '100%', 
+                                                    objectFit: 'cover',
+                                                    transition: 'transform 0.4s ease',
+                                                    '&:hover': media.gallery.length > 0 ? { transform: 'scale(1.05)' } : {},
+                                                }}
                                             />
                                             {item.badge && (
                                                 <Chip
@@ -1125,6 +1208,31 @@ export default function CabsPage({ availableItems = [] }) {
                                                         fontWeight: 800,
                                                         backdropFilter: 'blur(8px)',
                                                         border: '1px solid rgba(2, 132, 199, 0.8)',
+                                                    }}
+                                                />
+                                            )}
+                                            {media.hasMultiple && (
+                                                <Chip
+                                                    icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+                                                    size="small"
+                                                    label={`${media.count} Photos`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedVehicleForGallery(item);
+                                                        setGalleryModalOpen(true);
+                                                    }}
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        bottom: 12,
+                                                        left: 12,
+                                                        bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                        color: '#FFFFFF',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.72rem',
+                                                        backdropFilter: 'blur(8px)',
+                                                        cursor: 'pointer',
+                                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                        '&:hover': { bgcolor: 'rgba(2, 132, 199, 0.9)' },
                                                     }}
                                                 />
                                             )}
@@ -1183,7 +1291,7 @@ export default function CabsPage({ availableItems = [] }) {
                                                         <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', fontSize: '0.7rem' }}>
                                                             Base Tariff
                                                         </Typography>
-                                                        <Typography variant="h6" sx={{ fontWeight: 900, color: '#0284C7', lineHeight: 1.1 }}>
+                                                        <Typography variant="h6" component="span" sx={{ fontWeight: 900, color: '#0284C7', lineHeight: 1.1 }}>
                                                             ₹{Number(item.price_base).toLocaleString('en-IN')}
                                                             <Typography component="span" variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, ml: 0.5 }}>
                                                                 / {item.price_unit?.replace('per_', '')}
@@ -1211,16 +1319,17 @@ export default function CabsPage({ availableItems = [] }) {
                                         </CardContent>
                                     </Card>
                                 </Grid>
-                            ))}
+                                );
+                            })}
                         </Grid>
                     </Box>
                 )}
 
                 {/* =========================================================================
-                    6. HOW HONNAVAR CAB BOOKING WORKS (Step-by-Step Flow)
+                    5. HOW HONNAVAR CAB BOOKING WORKS (Step-by-Step Flow)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
+                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 7 } }}>
+                    <Box sx={{ textAlign: 'center', mb: 3 }}>
                         <Chip
                             label="PUNCTUAL & CONVENIENT"
                             sx={{
@@ -1229,87 +1338,99 @@ export default function CabsPage({ availableItems = [] }) {
                                 fontWeight: 850,
                                 fontSize: '0.75rem',
                                 letterSpacing: '0.06em',
-                                mb: 1.5,
+                                mb: 1,
                             }}
                         />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
+                        <Typography variant="h4" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em' }}>
                             How Honnavar Cab Booking Works
                         </Typography>
-                        <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto' }}>
+                        <Typography variant="body2" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto', mt: 0.5 }}>
                             Zero waiting outside railway stations. Book online or on WhatsApp in under 2 minutes.
                         </Typography>
                     </Box>
 
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                         {[
                             {
                                 step: '01',
                                 title: 'Share Travel Details',
                                 desc: 'Tell us your pickup location (Honnavar Station, resort, or airport), date, time, and destination.',
                                 color: '#0284C7',
-                                badge: '⚡ 2-Min Inquiry',
                             },
                             {
                                 step: '02',
                                 title: 'Fixed Transparent Quote',
                                 desc: 'Receive instant confirmation with driver details, car number, and fixed tariff. No hidden surge fees.',
                                 color: '#F59E0B',
-                                badge: '🔒 Zero Surge Rate',
                             },
                             {
                                 step: '03',
                                 title: 'Punctual Doorstep Pickup',
                                 desc: 'Your chauffeur arrives 10 minutes early at Honnavar Station Platform 1 exit or your hotel lobby.',
                                 color: '#10B981',
-                                badge: '🚉 Platform 1 Meet',
                             },
                             {
                                 step: '04',
                                 title: 'Relax & Pay on Completion',
                                 desc: 'Enjoy chilled AC travel with courteous driving. Pay securely via UPI, cash, or credit card upon trip end.',
                                 color: '#8B5CF6',
-                                badge: '💳 Flexible Payment',
                             },
                         ].map((item, idx) => (
                             <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
                                 <Paper
                                     elevation={0}
                                     sx={{
-                                        p: 3.5,
+                                        p: 2.2,
                                         height: '100%',
+                                        borderRadius: 2.5,
                                         bgcolor: cardBgColor,
                                         border: `1px solid ${cardBorderColor}`,
-                                        borderRadius: 3.5,
                                         display: 'flex',
-                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        gap: 1.5,
                                     }}
                                 >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Box
+                                    <Box
+                                        sx={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: '50%',
+                                            bgcolor: `${item.color}15`,
+                                            color: item.color,
+                                            fontWeight: 950,
+                                            fontSize: '0.9rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: `1.5px solid ${item.color}`,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {item.step}
+                                    </Box>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography
+                                            variant="subtitle2"
                                             sx={{
-                                                width: 48,
-                                                height: 48,
-                                                borderRadius: '50%',
-                                                bgcolor: `${item.color}15`,
-                                                color: item.color,
-                                                fontWeight: 950,
-                                                fontSize: '1.2rem',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                border: `2px solid ${item.color}`,
+                                                fontWeight: 800,
+                                                color: primaryTextColor,
+                                                fontSize: '0.92rem',
+                                                mb: 0.3,
                                             }}
                                         >
-                                            {item.step}
-                                        </Box>
-                                        <Chip label={item.badge} size="small" sx={{ bgcolor: `${item.color}15`, color: item.color, fontWeight: 800, fontSize: '0.68rem' }} />
+                                            {item.title}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: secondaryTextColor,
+                                                fontSize: '0.8rem',
+                                                lineHeight: 1.45,
+                                            }}
+                                        >
+                                            {item.desc}
+                                        </Typography>
                                     </Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 850, color: primaryTextColor, mb: 1 }}>
-                                        {item.title}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.6 }}>
-                                        {item.desc}
-                                    </Typography>
                                 </Paper>
                             </Grid>
                         ))}
@@ -1317,66 +1438,7 @@ export default function CabsPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    7. HONNAVAR DISTANCE & SIGHTSEEING MATRIX
-                ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Box sx={{ textAlign: 'center', mb: 4 }}>
-                        <Chip
-                            label="HONNAVAR HUBS SIGHTSEEING GUIDE"
-                            sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1.5 }}
-                        />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor }}>
-                            Distances & Travel Times by Cab from Honnavar Hubs
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto', mt: 1 }}>
-                            Accurate driving times from Honnavar Railway Station & Palya Main Road Head Office.
-                        </Typography>
-                    </Box>
-
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            borderRadius: 3.5,
-                            overflow: 'hidden',
-                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                            border: `1px solid ${cardBorderColor}`,
-                        }}
-                    >
-                        <Grid container>
-                            {HONNAVAR_DISTANCES.map((item, dIdx) => (
-                                <Grid
-                                    key={dIdx}
-                                    size={{ xs: 12, sm: 6, md: 3 }}
-                                    sx={{
-                                        p: 2.5,
-                                        borderRight: { sm: (dIdx + 1) % 2 !== 0 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0') : 'none', md: (dIdx + 1) % 4 !== 0 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0') : 'none' },
-                                        borderBottom: dIdx < HONNAVAR_DISTANCES.length - 4 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0') : { xs: '1px solid #E2E8F0', md: 'none' },
-                                    }}
-                                >
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: primaryTextColor, fontSize: '0.88rem' }}>
-                                        {item.destination}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                                        <Chip
-                                            size="small"
-                                            label={item.distance}
-                                            sx={{ fontWeight: 800, fontSize: '0.72rem', bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7' }}
-                                        />
-                                        <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 700 }}>
-                                            {item.time}
-                                        </Typography>
-                                    </Box>
-                                    <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', mt: 0.8 }}>
-                                        {item.mode}
-                                    </Typography>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Paper>
-                </Box>
-
-                {/* =========================================================================
-                    8. INCLUSIONS & POLICIES CHECKLIST
+                    6. INCLUSIONS & POLICIES CHECKLIST
                 ========================================================================== */}
                 <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Grid container spacing={3}>
@@ -1392,7 +1454,7 @@ export default function CabsPage({ availableItems = [] }) {
                             >
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                                     <CheckCircleIcon sx={{ color: '#10B981', fontSize: 24 }} />
-                                    <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         What's Included in Every Cab Booking
                                     </Typography>
                                 </Box>
@@ -1428,7 +1490,7 @@ export default function CabsPage({ availableItems = [] }) {
                             >
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                                     <SecurityIcon sx={{ color: '#EF4444', fontSize: 24 }} />
-                                    <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         Transparent Guidelines & Exclusions
                                     </Typography>
                                 </Box>
@@ -1454,10 +1516,10 @@ export default function CabsPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    9. HONNAVAR CAB FAQS (Detailed Accordion)
+                    7. HONNAVAR CAB FAQS (Detailed Accordion)
                 ========================================================================== */}
                 <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1 }}>
+                    <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1 }}>
                         Honnavar Cab Services — Frequently Asked Questions
                     </Typography>
                     <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 3.5 }}>
@@ -1465,32 +1527,7 @@ export default function CabsPage({ availableItems = [] }) {
                     </Typography>
 
                     <Stack spacing={1.5}>
-                        {[
-                            {
-                                q: 'How does the Honnavar Railway Station cab pickup work?',
-                                a: 'We have a dedicated dispatch hub at Honnavar Railway Station (Platform 1 exit). When your train arrives, your chauffeur waits right outside the exit gate holding a welcome name board. There is zero waiting time, and our team helps with your luggage.',
-                            },
-                            {
-                                q: 'Can I book a full-day cab to visit Jog Falls, Gerusoppa, and Sharavathi Valley?',
-                                a: 'Yes! Jog Falls is one of our most popular day excursions (60 km each way). Our fixed-rate round-trip package covers pickup from Honnavar, scenic stops at Gerusoppa & Sharavathi hanging bridge, all viewpoints at Jog Falls, and drop back in the evening.',
-                            },
-                            {
-                                q: 'Do you provide 7-seater vehicles like Toyota Innova Crysta or Maruti Ertiga?',
-                                a: 'Yes! We maintain an extensive fleet of Maruti Ertiga and luxury Toyota Innova Crysta vehicles, featuring dual chilled AC, captain seats, and generous luggage boot space ideal for family groups.',
-                            },
-                            {
-                                q: 'What if my train arrives late at night or early morning (e.g., 3:00 AM)?',
-                                a: 'Our Honnavar station cab desk operates 24x7. We track your Konkan Railway PNR or train status live to ensure your driver is on standby even if the train is delayed by several hours.',
-                            },
-                            {
-                                q: 'Are there any hidden charges or peak surge fees?',
-                                a: 'Never. At GK WhizWheels, all cab tariffs are fixed and transparent. You only pay the pre-agreed fare plus actual toll/parking charges. We do not use dynamic surge pricing algorithms.',
-                            },
-                            {
-                                q: 'Can we book a cab for a drop to Goa Airport (Dabolim / Mopa) or Mangalore Airport?',
-                                a: 'Yes! We operate direct airport transfers to both Goa airports (Dabolim & Mopa) and Mangalore International Airport with verified highway drivers experienced in Konkan NH-66 travel.',
-                            },
-                        ].map((faq, fIdx) => (
+                        {CAB_FAQS.slice(0, 6).map((faq, fIdx) => (
                             <Accordion
                                 key={fIdx}
                                 defaultExpanded={fIdx === 0}
@@ -1514,6 +1551,61 @@ export default function CabsPage({ availableItems = [] }) {
                                 </AccordionDetails>
                             </Accordion>
                         ))}
+
+                        {/* Embedded Distance & Travel Time Matrix Accordion */}
+                        <Accordion
+                            sx={{
+                                bgcolor: cardBgColor,
+                                border: `1px solid ${cardBorderColor}`,
+                                borderRadius: '14px !important',
+                                '&:before': { display: 'none' },
+                                boxShadow: 'none',
+                            }}
+                        >
+                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#0284C7' }} />}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 850, color: primaryTextColor }}>
+                                    How far are major tourist spots and transit hubs from Honnavar? (Distance & Travel Time Matrix)
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2 }}>
+                                    Accurate driving times and distances by cab from Honnavar Railway Station and central town hubs:
+                                </Typography>
+                                <Grid container spacing={1.5}>
+                                    {HONNAVAR_DISTANCES.map((item, dIdx) => (
+                                        <Grid key={dIdx} size={{ xs: 12, sm: 6, md: 3 }}>
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: 1.5,
+                                                    borderRadius: 2,
+                                                    bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
+                                                    border: `1px solid ${cardBorderColor}`,
+                                                    height: '100%',
+                                                }}
+                                            >
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: primaryTextColor, fontSize: '0.82rem' }}>
+                                                    {item.destination}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 0.5 }}>
+                                                    <Chip
+                                                        size="small"
+                                                        label={item.distance}
+                                                        sx={{ fontWeight: 800, fontSize: '0.7rem', height: 20, bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7' }}
+                                                    />
+                                                    <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 700 }}>
+                                                        {item.time}
+                                                    </Typography>
+                                                </Box>
+                                                <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', fontSize: '0.72rem', lineHeight: 1.3 }}>
+                                                    {item.mode}
+                                                </Typography>
+                                            </Paper>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </AccordionDetails>
+                        </Accordion>
                     </Stack>
                 </Box>
 
@@ -1536,7 +1628,7 @@ export default function CabsPage({ availableItems = [] }) {
                     >
                         <Box>
                             <Chip label="24x7 HONNAVAR CAB DESK" size="small" sx={{ bgcolor: '#0284C7', color: '#FFFFFF', fontWeight: 900, mb: 1.5 }} />
-                            <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1, fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' } }}>
+                            <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1, fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' } }}>
                                 Need an AC Cab in Honnavar Right Now?
                             </Typography>
                             <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 650 }}>
@@ -1592,6 +1684,17 @@ export default function CabsPage({ availableItems = [] }) {
                     onClose={() => setModalOpen(false)}
                     initialTripType="local_transfer"
                     availableItems={availableItems}
+                />
+
+                {/* Multi-Image Vehicle Gallery Lightbox */}
+                <ServiceGalleryModal
+                    open={galleryModalOpen}
+                    onClose={() => setGalleryModalOpen(false)}
+                    item={selectedVehicleForGallery}
+                    onBook={(item) => {
+                        setGalleryModalOpen(false);
+                        setModalOpen(true);
+                    }}
                 />
             </Box>
         </AppLayout>

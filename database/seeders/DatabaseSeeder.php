@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             BikeSeeder::class,
             PricingRuleSeeder::class,
+            ServiceItemSeeder::class,
         ]);
     }
 }

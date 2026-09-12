@@ -24,7 +24,7 @@ class BulkImportBikesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'mimetypes:text/csv,text/plain,application/csv,text/x-csv', 'max:10240'],
         ];
     }
 }

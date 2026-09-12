@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import HomestayBookingModal from '../Components/BookingModals/HomestayBookingModal';
 import {
@@ -43,6 +44,8 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ShieldIcon from '@mui/icons-material/Shield';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
+import { getServiceItemMedia } from '../Components/ServiceGalleryModal';
 import GroupsIcon from '@mui/icons-material/Groups';
 import SecurityIcon from '@mui/icons-material/Security';
 import WaterIcon from '@mui/icons-material/Water';
@@ -167,6 +170,42 @@ const DISTANCE_MATRIX = [
     { spot: 'Jog Falls (Highest Plunge Falls)', dist: '60 km', time: '1 Hr 15 Mins', note: 'Spectacular day-trip through Sharavathi valley ghats' },
 ];
 
+const HOMESTAY_FAQS = [
+    {
+        q: 'What are the check-in and check-out timings?',
+        a: 'Standard check-in is 12:00 PM and check-out is 11:00 AM. If you are arriving on early morning Konkan Railway trains (4:00 AM to 7:00 AM), our hosts provide flexible luggage drop and early room access subject to previous-night occupancy.',
+    },
+    {
+        q: 'Are fresh homecooked meals included in the stay?',
+        a: 'Yes! All room bookings include a complimentary authentic Karavali breakfast (such as Neer Dosa, hot Idlis, chutney, and Malnad filter coffee). Lunch and dinner featuring traditional vegetarian thalis or fresh Arabian Sea fish fry/curry can be pre-ordered directly with your host family at nominal rates.',
+    },
+    {
+        q: 'What is your pet policy and are homestays couple-friendly?',
+        a: 'All properties are verified, secure family premises welcoming respectful couples, solo travelers, and families with kids (government-issued Photo ID required for all adult guests). Select garden cottages and plantation stays are pet-friendly with advance notice.',
+    },
+    {
+        q: 'What is the booking deposit and cancellation / refund window?',
+        a: 'Your reservation is secured with a small advance token. We provide free cancellation with a 100% refund up to 48 hours prior to your scheduled check-in time.',
+    },
+    {
+        q: 'How far are beaches, waterfalls, and transit hubs from the homestays? (Distance Matrix)',
+        a: 'Honnavar homestay zones offer swift access to backwaters, railway transit, beaches, and waterfalls across Uttara Kannada:',
+    },
+];
+
+const homestayFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: HOMESTAY_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
+
 export default function HomestaysPage({ availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
@@ -174,6 +213,7 @@ export default function HomestaysPage({ availableItems = [] }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedRoomCategory, setSelectedRoomCategory] = useState('All');
     const [selectedRoomForDetail, setSelectedRoomForDetail] = useState(null);
+    const [activeModalImg, setActiveModalImg] = useState(null);
 
     // Filter bar state
     const [checkInDate, setCheckInDate] = useState('');
@@ -193,30 +233,36 @@ export default function HomestaysPage({ availableItems = [] }) {
 
         // 1. Live database items
         if (availableItems && availableItems.length > 0) {
-            const mappedDb = availableItems.map((item) => ({
-                id: `db-${item.id}`,
-                name: item.name,
-                type: item.category || 'Curated Homestay',
-                location: 'Honnavar Coastal Belt, Karnataka',
-                badge: item.badge || 'Verified Stay',
-                rating: 4.9,
-                reviewsCount: 85,
-                pricePerNight: Number(item.price_base) || 1500,
-                capacity: item.capacity || '2 - 3 Guests',
-                bedType: 'AC Room with Attached Bath',
-                roomSize: '320 sq.ft',
-                image: item.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop&q=80',
-                highlights: item.features && Array.isArray(item.features) && item.features.length > 0
-                    ? item.features
-                    : [
-                        'Clean sanitized AC room with attached private bath',
-                        'Authentic coastal breakfast included',
-                        'High-speed Wi-Fi and power backup',
-                        'Host hospitality with local sightseeing assistance',
-                    ],
-                idealFor: item.description,
-                isDb: true,
-            }));
+            const mappedDb = availableItems.map((item) => {
+                const media = getServiceItemMedia(item, 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop&q=80');
+                return {
+                    id: `db-${item.id}`,
+                    name: item.name,
+                    type: item.category || 'Curated Homestay',
+                    location: 'Honnavar Coastal Belt, Karnataka',
+                    badge: item.badge || 'Verified Stay',
+                    rating: 4.9,
+                    reviewsCount: 85,
+                    pricePerNight: Number(item.price_base) || 1500,
+                    capacity: item.capacity || '2 - 3 Guests',
+                    bedType: 'AC Room with Attached Bath',
+                    roomSize: '320 sq.ft',
+                    image: media.primary,
+                    gallery: media.gallery,
+                    hasMultipleImages: media.hasMultiple,
+                    photoCount: media.count,
+                    highlights: item.features && Array.isArray(item.features) && item.features.length > 0
+                        ? item.features
+                        : [
+                            'Clean sanitized AC room with attached private bath',
+                            'Authentic coastal breakfast included',
+                            'High-speed Wi-Fi and power backup',
+                            'Host hospitality with local sightseeing assistance',
+                        ],
+                    idealFor: item.description,
+                    isDb: true,
+                };
+            });
             list = [...mappedDb];
         }
 
@@ -240,13 +286,37 @@ export default function HomestaysPage({ availableItems = [] }) {
 
     return (
         <AppLayout noFooterMargin>
-            <Head>
-                <title>Riverside & Beachside Coastal Homestays in Honnavar | Rooms & Cottages | GK WhizWheels</title>
-                <meta
-                    name="description"
-                    content="Book authentic coastal homestays, riverfront wooden cottages, and beach villas in Honnavar from ₹1,200/night. Verified host families, homemade Karavali breakfast, and Sharavathi sunset views."
-                />
-            </Head>
+            <PageHead
+                title="Riverside & Beach Homestays in Honnavar | Rooms & Cottages – GK WhizWheel"
+                description="Book verified riverfront homestays, wooden cottages & coastal villas in Honnavar from ₹1,200/night. Homemade Karavali food, AC rooms & backwater views."
+                canonicalUrl="https://whizwheels.in/services/homestays"
+                ogImage="/images/services/homestay.jpg"
+                ogType="website"
+                structuredData={[
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: 'Honnavar Riverside & Coastal Homestays',
+                        description: 'Authentic coastal homestays and riverside cottages in Honnavar with homemade Karavali meals, scenic views, and family-friendly hospitality.',
+                        category: 'Lodging & Accommodation',
+                        offers: {
+                            '@type': 'AggregateOffer',
+                            priceCurrency: 'INR',
+                            lowPrice: '1200',
+                            highPrice: '6500',
+                            offerCount: '8',
+                            price: '1200',
+                        },
+                        provider: {
+                            '@type': 'LocalBusiness',
+                            name: 'GK WhizWheel',
+                            telephone: '+918660989586',
+                            url: 'https://whizwheels.in',
+                        },
+                    },
+                    homestayFaqSchema,
+                ]}
+            />
 
             <Box sx={{ width: '100%', overflowX: 'hidden' }}>
                 {/* =========================================================================
@@ -547,7 +617,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                                         <Box
                                             component="img"
                                             src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop&q=80"
-                                            alt="Honnavar Riverside Homestays & Cottages"
+                                            alt="Honnavar Riverside Homestays & Cottages along Sharavathi River"
                                             sx={{
                                                 width: '100%',
                                                 height: '100%',
@@ -594,10 +664,10 @@ export default function HomestaysPage({ availableItems = [] }) {
                                             </Box>
 
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: '#FDA4AF', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.68rem', display: 'block' }}>
+                                                <Typography variant="caption" component="span" sx={{ color: '#FDA4AF', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.68rem', display: 'block' }}>
                                                     SHARAVATHI RIVERFRONT • ECO BEACH • HONNAVAR TOWN
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.05rem', lineHeight: 1.25, mt: 0.3 }}>
+                                                <Typography variant="h6" component="p" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.05rem', lineHeight: 1.25, mt: 0.3 }}>
                                                     Handpicked Karavali Wooden Cottages & Beach Villas
                                                 </Typography>
                                             </Box>
@@ -771,7 +841,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 4 }}>
                         <Box>
                             <Chip label="HANDPICKED COASTAL STAYS" size="small" sx={{ bgcolor: 'rgba(225, 29, 72, 0.12)', color: '#E11D48', fontWeight: 850, mb: 1 }} />
-                            <Typography variant="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.6rem' } }}>
+                            <Typography variant="h2" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.6rem' } }}>
                                 Available Rooms & Cottages in Honnavar
                             </Typography>
                             <Typography variant="body2" sx={{ color: secondaryTextColor, mt: 0.5 }}>
@@ -822,7 +892,8 @@ export default function HomestaysPage({ availableItems = [] }) {
                                         <Box
                                             component="img"
                                             src={room.image}
-                                            alt={room.name}
+                                            alt={`${room.name} - Riverside stay & cottage accommodation in Honnavar`}
+                                            loading="lazy"
                                             sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                         />
                                         <Chip
@@ -840,6 +911,24 @@ export default function HomestaysPage({ availableItems = [] }) {
                                                 border: '1px solid rgba(225, 29, 72, 0.7)',
                                             }}
                                         />
+                                        {room.hasMultipleImages && (
+                                            <Chip
+                                                icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#FFFFFF !important' }} />}
+                                                label={`${room.photoCount} Photos`}
+                                                size="small"
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 12,
+                                                    right: 12,
+                                                    bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                    color: '#FFFFFF',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.7rem',
+                                                    backdropFilter: 'blur(8px)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                }}
+                                            />
+                                        )}
                                         {room.isDb && (
                                             <Chip
                                                 label="⚡ Live DB Verified"
@@ -875,7 +964,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                                                 </Box>
                                             </Box>
 
-                                            <Typography variant="h6" sx={{ fontWeight: 900, color: primaryTextColor, lineHeight: 1.25, mb: 1 }}>
+                                            <Typography variant="h6" component="h3" sx={{ fontWeight: 900, color: primaryTextColor, lineHeight: 1.25, mb: 1 }}>
                                                 {room.name}
                                             </Typography>
 
@@ -901,7 +990,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                                             </Stack>
 
                                             {/* Feature Chips */}
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mb: 2 }}>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mb: 1.5 }}>
                                                 {room.highlights.slice(0, 3).map((feat, fIdx) => (
                                                     <Chip
                                                         key={fIdx}
@@ -915,6 +1004,44 @@ export default function HomestaysPage({ availableItems = [] }) {
                                                     />
                                                 ))}
                                             </Box>
+
+                                            {/* Compact Room Amenities Icon Row */}
+                                            <Stack
+                                                direction="row"
+                                                spacing={1.5}
+                                                alignItems="center"
+                                                sx={{
+                                                    mb: 2,
+                                                    py: 0.8,
+                                                    px: 1.2,
+                                                    borderRadius: 2,
+                                                    bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                                                    border: `1px solid ${cardBorderColor}`,
+                                                    flexWrap: 'wrap',
+                                                    gap: 0.8,
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} title="Complimentary Breakfast">
+                                                    <CoffeeIcon sx={{ fontSize: 15, color: '#E11D48' }} />
+                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: secondaryTextColor, fontWeight: 700 }}>Breakfast</Typography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} title="Split AC & Power Backup">
+                                                    <AcUnitIcon sx={{ fontSize: 15, color: '#0284C7' }} />
+                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: secondaryTextColor, fontWeight: 700 }}>AC</Typography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} title="High-Speed Wi-Fi">
+                                                    <WifiIcon sx={{ fontSize: 15, color: '#10B981' }} />
+                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: secondaryTextColor, fontWeight: 700 }}>Wi-Fi</Typography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} title="Hot Water Shower">
+                                                    <BathtubIcon sx={{ fontSize: 15, color: '#8B5CF6' }} />
+                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: secondaryTextColor, fontWeight: 700 }}>Hot Water</Typography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }} title="Private Parking">
+                                                    <LocalParkingIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
+                                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: secondaryTextColor, fontWeight: 700 }}>Parking</Typography>
+                                                </Box>
+                                            </Stack>
                                         </Box>
 
                                         {/* Pricing & CTA */}
@@ -924,7 +1051,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                                                     <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', fontSize: '0.68rem' }}>
                                                         Daily Tariff
                                                     </Typography>
-                                                    <Typography variant="h5" sx={{ fontWeight: 950, color: '#E11D48' }}>
+                                                    <Typography variant="h5" component="span" sx={{ fontWeight: 950, color: '#E11D48' }}>
                                                         ₹{room.pricePerNight.toLocaleString('en-IN')}
                                                         <Box component="span" sx={{ fontSize: '0.75rem', color: secondaryTextColor, fontWeight: 600, ml: 0.5 }}>
                                                             / night
@@ -978,46 +1105,131 @@ export default function HomestaysPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    4. COMPREHENSIVE HOMESTAY AMENITIES MATRIX
+                    5. HOW HONNAVAR HOMESTAY BOOKING WORKS (COMPACT STRIP)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-                        <Chip
-                            label="COMFORT & HOSPITALITY STANDARDS"
-                            sx={{ bgcolor: 'rgba(225, 29, 72, 0.12)', color: '#E11D48', fontWeight: 850, mb: 1.5 }}
-                        />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1 }}>
-                            Standard Homestay Amenities & Hospitality
+                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 6 } }}>
+                    <Stack
+                        direction={{ xs: 'column', md: 'row' }}
+                        alignItems={{ xs: 'flex-start', md: 'center' }}
+                        justifyContent="space-between"
+                        spacing={2}
+                        sx={{ mb: 3 }}
+                    >
+                        <Box>
+                            <Typography
+                                variant="overline"
+                                sx={{
+                                    color: '#E11D48',
+                                    fontWeight: 850,
+                                    letterSpacing: '0.08em',
+                                    fontSize: '0.75rem',
+                                }}
+                            >
+                                TRANSPARENT WORKFLOW
+                            </Typography>
+                            <Typography
+                                variant="h5"
+                                component="h2"
+                                sx={{
+                                    fontWeight: 900,
+                                    color: primaryTextColor,
+                                    fontSize: { xs: '1.3rem', sm: '1.5rem' },
+                                }}
+                            >
+                                How Homestay Room Booking Works
+                            </Typography>
+                        </Box>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: secondaryTextColor,
+                                maxWidth: 540,
+                                fontSize: '0.88rem',
+                            }}
+                        >
+                            Zero double-booking headaches. Select room, get instant coordinator lock with live GPS coordinates, and pick up your transit link.
                         </Typography>
-                        <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 660, mx: 'auto' }}>
-                            Every cottage and room listed with GK WhizWheels conforms to strict cleanliness, hygiene, and guest privacy standards.
-                        </Typography>
-                    </Box>
+                    </Stack>
 
-                    <Grid container spacing={2.5}>
-                        {AMENITY_LIST.map((item, idx) => (
-                            <Grid key={idx} size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Grid container spacing={2}>
+                        {[
+                            {
+                                step: '01',
+                                title: 'Select Room & Dates',
+                                desc: 'Choose your desired cottage or beach villa with your exact travel dates.',
+                                color: '#E11D48',
+                            },
+                            {
+                                step: '02',
+                                title: 'Instant Confirmation',
+                                desc: 'Our coordinator locks the room and sends bed layouts with live GPS coordinates.',
+                                color: '#0284C7',
+                            },
+                            {
+                                step: '03',
+                                title: 'Station Transit Link',
+                                desc: 'Arriving on Konkan Railway? Pick up your rental bike or taxi at Station Platform 1.',
+                                color: '#10B981',
+                            },
+                            {
+                                step: '04',
+                                title: 'Savour Coastal Life',
+                                desc: 'Enjoy homemade Karavali meals, river balcony sunsets, and backwater boat pickups.',
+                                color: '#F59E0B',
+                            },
+                        ].map((item, idx) => (
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
                                 <Paper
                                     elevation={0}
                                     sx={{
-                                        p: 3,
+                                        p: 2.2,
                                         height: '100%',
-                                        borderRadius: 3.5,
+                                        borderRadius: 2.5,
                                         bgcolor: cardBgColor,
                                         border: `1px solid ${cardBorderColor}`,
                                         display: 'flex',
-                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
                                         gap: 1.5,
                                     }}
                                 >
-                                    <Box sx={{ width: 44, height: 44, borderRadius: 2.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        {item.icon}
+                                    <Box
+                                        sx={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: '50%',
+                                            bgcolor: `${item.color}15`,
+                                            color: item.color,
+                                            fontWeight: 950,
+                                            fontSize: '0.9rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: `1.5px solid ${item.color}`,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {item.step}
                                     </Box>
-                                    <Box>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 850, color: primaryTextColor, fontSize: '0.94rem', lineHeight: 1.3 }}>
-                                            {item.name}
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography
+                                            variant="subtitle2"
+                                            sx={{
+                                                fontWeight: 800,
+                                                color: primaryTextColor,
+                                                fontSize: '0.92rem',
+                                                mb: 0.3,
+                                            }}
+                                        >
+                                            {item.title}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: secondaryTextColor, fontSize: '0.78rem', display: 'block', mt: 0.5, lineHeight: 1.4 }}>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: secondaryTextColor,
+                                                fontSize: '0.8rem',
+                                                lineHeight: 1.45,
+                                            }}
+                                        >
                                             {item.desc}
                                         </Typography>
                                     </Box>
@@ -1028,159 +1240,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    5. HOW HONNAVAR HOMESTAY BOOKING WORKS (Step-by-Step Flow)
-                ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-                        <Chip
-                            label="TRANSPARENT WORKFLOW"
-                            sx={{ bgcolor: 'rgba(225, 29, 72, 0.12)', color: '#E11D48', fontWeight: 850, mb: 1.5 }}
-                        />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
-                            How Homestay Room Booking Works
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto' }}>
-                            Zero double-booking headaches. Fast confirmation with direct GPS navigation and host coordination.
-                        </Typography>
-                    </Box>
-
-                    <Grid container spacing={3}>
-                        {[
-                            {
-                                step: '01',
-                                title: 'Select Room & Dates',
-                                desc: 'Choose your desired riverfront wooden cottage, beach villa, or family estate with your exact travel dates.',
-                                color: '#E11D48',
-                                badge: '⚡ Real-time Availability',
-                            },
-                            {
-                                step: '02',
-                                title: 'Instant Confirmation',
-                                desc: 'Our Honnavar coordinator locks the room, confirms bed layout, and shares photos and live GPS coordinates.',
-                                color: '#0284C7',
-                                badge: '📍 Exact GPS Coordinates',
-                            },
-                            {
-                                step: '03',
-                                title: 'Arrival & Station Pickup',
-                                desc: 'Arriving on Konkan Railway? Pick up your rental bike/cab right at Station Platform 1 and ride to your stay.',
-                                color: '#10B981',
-                                badge: '🚉 Seamless Transit Link',
-                            },
-                            {
-                                step: '04',
-                                title: 'Relax & Savour Coastal Life',
-                                desc: 'Enjoy homemade Karavali meals, sunset river balcony views, and private backwater boat cruises right from the dock.',
-                                color: '#F59E0B',
-                                badge: '☕ Fresh Breakfast Included',
-                            },
-                        ].map((item, idx) => (
-                            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 3.5,
-                                        height: '100%',
-                                        bgcolor: cardBgColor,
-                                        border: `1px solid ${cardBorderColor}`,
-                                        borderRadius: 3.5,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                    }}
-                                >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Box
-                                            sx={{
-                                                width: 48,
-                                                height: 48,
-                                                borderRadius: '50%',
-                                                bgcolor: `${item.color}15`,
-                                                color: item.color,
-                                                fontWeight: 950,
-                                                fontSize: '1.2rem',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                border: `2px solid ${item.color}`,
-                                            }}
-                                        >
-                                            {item.step}
-                                        </Box>
-                                        <Chip label={item.badge} size="small" sx={{ bgcolor: `${item.color}15`, color: item.color, fontWeight: 800, fontSize: '0.68rem' }} />
-                                    </Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 850, color: primaryTextColor, mb: 1 }}>
-                                        {item.title}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.6 }}>
-                                        {item.desc}
-                                    </Typography>
-                                </Paper>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
-
-                {/* =========================================================================
-                    6. DISTANCES FROM HONNAVAR HOMESTAY CLUSTERS
-                ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Box sx={{ textAlign: 'center', mb: 4 }}>
-                        <Chip
-                            label="PROXIMITY & SIGHTSEEING MATRIX"
-                            sx={{ bgcolor: 'rgba(225, 29, 72, 0.12)', color: '#E11D48', fontWeight: 850, mb: 1.5 }}
-                        />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor }}>
-                            Distances from Honnavar Homestay Belts
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto', mt: 1 }}>
-                            Convenient access to beaches, river cruises, and heritage landmarks in Uttara Kannada.
-                        </Typography>
-                    </Box>
-
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            borderRadius: 3.5,
-                            overflow: 'hidden',
-                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                            border: `1px solid ${cardBorderColor}`,
-                        }}
-                    >
-                        <Grid container>
-                            {DISTANCE_MATRIX.map((item, dIdx) => (
-                                <Grid
-                                    key={dIdx}
-                                    size={{ xs: 12, sm: 6, md: 3 }}
-                                    sx={{
-                                        p: 2.5,
-                                        borderRight: { sm: (dIdx + 1) % 2 !== 0 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0') : 'none', md: (dIdx + 1) % 4 !== 0 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0') : 'none' },
-                                        borderBottom: dIdx < DISTANCE_MATRIX.length - 4 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0') : { xs: '1px solid #E2E8F0', md: 'none' },
-                                    }}
-                                >
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: primaryTextColor, fontSize: '0.88rem' }}>
-                                        {item.spot}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                                        <Chip
-                                            size="small"
-                                            label={item.dist}
-                                            sx={{ fontWeight: 800, fontSize: '0.72rem', bgcolor: 'rgba(225, 29, 72, 0.12)', color: '#E11D48' }}
-                                        />
-                                        <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 700 }}>
-                                            {item.time}
-                                        </Typography>
-                                    </Box>
-                                    <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', mt: 0.8 }}>
-                                        {item.note}
-                                    </Typography>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Paper>
-                </Box>
-
-                {/* =========================================================================
-                    7. INCLUSIONS & POLICIES CHECKLIST
+                    6. INCLUSIONS & POLICIES CHECKLIST
                 ========================================================================== */}
                 <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Grid container spacing={3}>
@@ -1196,7 +1256,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                             >
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                                     <CheckCircleIcon sx={{ color: '#10B981', fontSize: 24 }} />
-                                    <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         What's Included in Your Room Stay
                                     </Typography>
                                 </Box>
@@ -1232,7 +1292,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                             >
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
                                     <SecurityIcon sx={{ color: '#EF4444', fontSize: 24 }} />
-                                    <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         House Rules & Exclusions
                                     </Typography>
                                 </Box>
@@ -1258,39 +1318,18 @@ export default function HomestaysPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    8. FREQUENTLY ASKED QUESTIONS (Accordion)
+                    7. FREQUENTLY ASKED QUESTIONS (Accordion)
                 ========================================================================== */}
                 <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1 }}>
+                    <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1 }}>
                         Honnavar Homestays — Frequently Asked Questions
                     </Typography>
                     <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 3.5 }}>
-                        Everything you need to know about food, train arrivals, family safety, and booking rules.
+                        Key details about check-in, homecooked meals, pet rules, and transit distances.
                     </Typography>
 
                     <Stack spacing={1.5}>
-                        {[
-                            {
-                                q: 'What is the check-in and check-out timing for homestays in Honnavar?',
-                                a: 'Standard check-in is 12:00 PM and check-out is 11:00 AM. However, if you are arriving on early morning Konkan Railway trains (e.g., 4:00 AM to 7:00 AM), we provide flexible luggage drop and early room check-in subject to previous night occupancy.',
-                            },
-                            {
-                                q: 'Is fresh homecooked food provided at the homestays?',
-                                a: 'Yes! All room bookings include a complimentary authentic Karavali/Malnad breakfast (such as fresh Neer Dosa, Idlis, Chutney, and filter coffee). Lunch and dinner featuring vegetarian thalis and fresh Arabian Sea catch (fish curry/fry) can be pre-ordered from the host family at very reasonable home rates.',
-                            },
-                            {
-                                q: 'Are these homestays suitable for unmarried couples and families with kids?',
-                                a: 'Yes. All our listed properties are verified family residences that welcome respectful couples, solo travelers, and families. A valid government photo ID (Aadhaar or Passport) is required for each guest during check-in.',
-                            },
-                            {
-                                q: 'Can we book a rental bike or cab directly to the homestay?',
-                                a: 'Absolutely! GK WhizWheels operates an integrated mobility network. We can have your rental Honda Activa, Royal Enfield, or AC taxi waiting for you right at Honnavar Railway Station or delivered directly to your homestay doorstep.',
-                            },
-                            {
-                                q: 'How far in advance should we book riverfront cottages in Honnavar?',
-                                a: 'Riverfront cottages and Eco Beach suites have limited inventory and high demand on weekends and holiday months (October through March). We recommend reserving at least 1 to 2 weeks in advance.',
-                            },
-                        ].map((faq, fIdx) => (
+                        {HOMESTAY_FAQS.slice(0, 4).map((faq, fIdx) => (
                             <Accordion
                                 key={fIdx}
                                 defaultExpanded={fIdx === 0}
@@ -1314,6 +1353,60 @@ export default function HomestaysPage({ availableItems = [] }) {
                                 </AccordionDetails>
                             </Accordion>
                         ))}
+
+                        <Accordion
+                            sx={{
+                                bgcolor: cardBgColor,
+                                border: `1px solid ${cardBorderColor}`,
+                                borderRadius: '14px !important',
+                                '&:before': { display: 'none' },
+                                boxShadow: 'none',
+                            }}
+                        >
+                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#E11D48' }} />}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 850, color: primaryTextColor }}>
+                                    How far are beaches, waterfalls, and transit hubs from the homestays? (Distance Matrix)
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2 }}>
+                                    Honnavar homestay zones offer swift access to backwaters, railway transit, beaches, and waterfalls across Uttara Kannada:
+                                </Typography>
+                                <Grid container spacing={1.5}>
+                                    {DISTANCE_MATRIX.map((item, dIdx) => (
+                                        <Grid key={dIdx} size={{ xs: 12, sm: 6, md: 3 }}>
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: 1.5,
+                                                    borderRadius: 2,
+                                                    bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
+                                                    border: `1px solid ${cardBorderColor}`,
+                                                    height: '100%',
+                                                }}
+                                            >
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: primaryTextColor, fontSize: '0.82rem' }}>
+                                                    {item.spot}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 0.5 }}>
+                                                    <Chip
+                                                        size="small"
+                                                        label={item.dist}
+                                                        sx={{ fontWeight: 800, fontSize: '0.7rem', height: 20, bgcolor: 'rgba(225, 29, 72, 0.12)', color: '#E11D48' }}
+                                                    />
+                                                    <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 700 }}>
+                                                        {item.time}
+                                                    </Typography>
+                                                </Box>
+                                                <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', fontSize: '0.72rem', lineHeight: 1.3 }}>
+                                                    {item.note}
+                                                </Typography>
+                                            </Paper>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </AccordionDetails>
+                        </Accordion>
                     </Stack>
                 </Box>
 
@@ -1336,7 +1429,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                     >
                         <Box>
                             <Chip label="24x7 HONNAVAR STAYS ASSISTANCE" size="small" sx={{ bgcolor: '#E11D48', color: '#FFFFFF', fontWeight: 900, mb: 1.5 }} />
-                            <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1, fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' } }}>
+                            <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1, fontSize: { xs: '1.6rem', sm: '2rem', md: '2.2rem' } }}>
                                 Planning Your Stay in Honnavar?
                             </Typography>
                             <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 650 }}>
@@ -1401,7 +1494,62 @@ export default function HomestaysPage({ availableItems = [] }) {
                             </Typography>
                         </DialogTitle>
                         <DialogContent dividers sx={{ pt: 2 }}>
-                            <Box component="img" src={selectedRoomForDetail.image} alt={selectedRoomForDetail.name} sx={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 2.5, mb: 2 }} />
+                            {/* Full photo gallery */}
+                            <Box sx={{ position: 'relative', height: 260, borderRadius: 2.5, overflow: 'hidden', mb: 2, bgcolor: '#0F172A' }}>
+                                <Box
+                                    component="img"
+                                    src={activeModalImg || selectedRoomForDetail.image}
+                                    alt={`${selectedRoomForDetail.name} - Cottage accommodation in Honnavar`}
+                                    loading="lazy"
+                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                                {selectedRoomForDetail.gallery && selectedRoomForDetail.gallery.length > 1 && (
+                                    <Chip
+                                        icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#FFFFFF !important' }} />}
+                                        label={`${(selectedRoomForDetail.gallery.indexOf(activeModalImg || selectedRoomForDetail.image) + 1 || 1)} / ${selectedRoomForDetail.gallery.length}`}
+                                        size="small"
+                                        sx={{
+                                            position: 'absolute',
+                                            bottom: 10,
+                                            right: 10,
+                                            bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                            color: '#FFFFFF',
+                                            fontWeight: 800,
+                                            fontSize: '0.7rem',
+                                            backdropFilter: 'blur(8px)',
+                                        }}
+                                    />
+                                )}
+                            </Box>
+
+                            {/* Thumbnail strip if multiple photos */}
+                            {selectedRoomForDetail.gallery && selectedRoomForDetail.gallery.length > 1 && (
+                                <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 0.5 }}>
+                                    {selectedRoomForDetail.gallery.map((gImg, gIdx) => (
+                                        <Box
+                                            key={gIdx}
+                                            component="img"
+                                            src={gImg}
+                                            alt={`${selectedRoomForDetail.name} photo preview ${gIdx + 1}`}
+                                            loading="lazy"
+                                            onClick={() => setActiveModalImg(gImg)}
+                                            sx={{
+                                                width: 64,
+                                                height: 48,
+                                                objectFit: 'cover',
+                                                borderRadius: 1.5,
+                                                cursor: 'pointer',
+                                                border: (activeModalImg || selectedRoomForDetail.image) === gImg ? '2px solid #E11D48' : '2px solid transparent',
+                                                opacity: (activeModalImg || selectedRoomForDetail.image) === gImg ? 1 : 0.6,
+                                                transition: 'all 0.2s ease',
+                                                flexShrink: 0,
+                                                '&:hover': { opacity: 1 },
+                                            }}
+                                        />
+                                    ))}
+                                </Stack>
+                            )}
+
                             <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2, lineHeight: 1.6 }}>
                                 {selectedRoomForDetail.idealFor}
                             </Typography>
@@ -1419,7 +1567,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                             <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(255,255,255,0.04)' : '#F8FAFC', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Box>
                                     <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block' }}>Tariff</Typography>
-                                    <Typography variant="h6" sx={{ fontWeight: 900, color: '#E11D48' }}>₹{selectedRoomForDetail.pricePerNight} / night</Typography>
+                                    <Typography variant="h6" component="span" sx={{ fontWeight: 900, color: '#E11D48' }}>₹{selectedRoomForDetail.pricePerNight} / night</Typography>
                                 </Box>
                                 <Typography variant="caption" sx={{ fontWeight: 800, color: '#10B981' }}>Breakfast Included</Typography>
                             </Box>

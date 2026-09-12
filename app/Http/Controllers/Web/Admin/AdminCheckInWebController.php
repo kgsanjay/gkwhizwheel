@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web\Admin;
 
 use App\Enums\BookingStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Booking;
@@ -257,6 +258,12 @@ class AdminCheckInWebController extends Controller
 
         if ($type === 'bike') {
             $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'user'])->findOrFail($id);
+            if ($user && in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF])) {
+                $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
+                if (! empty($userStoreIds) && ! in_array($booking->pickup_store_id, $userStoreIds) && ! in_array($booking->return_store_id, $userStoreIds)) {
+                    abort(403, 'Unauthorized store check-in.');
+                }
+            }
 
             $newStatus = match ($action) {
                 'complete' => BookingStatus::COMPLETED,

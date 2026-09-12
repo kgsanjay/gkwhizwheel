@@ -27,7 +27,7 @@ class UploadKycDocumentRequest extends FormRequest
     {
         return [
             'document_type' => ['required', 'string', Rule::in(KycDocumentType::values())],
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // 5MB max
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:5120'], // 5MB max
         ];
     }
 

@@ -222,7 +222,7 @@ test('admin can process manual refund and an activity log is created', function 
         ->assertJsonPath('data.booking_id', $this->booking->id)
         ->assertJsonPath('data.amount', 1000)
         ->assertJsonPath('data.reason', 'Customer cancelled early and requested partial refund')
-        ->assertJsonPath('data.status', 'completed');
+        ->assertJsonPath('data.status', 'pending');
 
     expect(Refund::where('booking_id', $this->booking->id)->count())->toBe(1);
 

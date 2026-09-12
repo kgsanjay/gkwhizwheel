@@ -65,6 +65,10 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
+            'processors' => [
+                \App\Logging\MaskSensitiveDataProcessor::class,
+                PsrLogMessageProcessor::class,
+            ],
         ],
 
         'daily' => [
@@ -73,6 +77,10 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+            'processors' => [
+                \App\Logging\MaskSensitiveDataProcessor::class,
+                PsrLogMessageProcessor::class,
+            ],
         ],
 
         'slack' => [
@@ -93,7 +101,10 @@ return [
                 'port' => env('PAPERTRAIL_PORT'),
                 'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
             ],
-            'processors' => [PsrLogMessageProcessor::class],
+            'processors' => [
+                \App\Logging\MaskSensitiveDataProcessor::class,
+                PsrLogMessageProcessor::class,
+            ],
         ],
 
         'stderr' => [
@@ -104,7 +115,10 @@ return [
             'with' => [
                 'stream' => 'php://stderr',
             ],
-            'processors' => [PsrLogMessageProcessor::class],
+            'processors' => [
+                \App\Logging\MaskSensitiveDataProcessor::class,
+                PsrLogMessageProcessor::class,
+            ],
         ],
 
         'syslog' => [

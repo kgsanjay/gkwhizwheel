@@ -67,7 +67,19 @@ class BookingPolicy
      */
     public function processRefund(User $user, Booking $booking): bool
     {
-        return in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER], true);
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if ($user->role === UserRole::STORE_MANAGER) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+
+            return empty($userStoreIds)
+                || in_array($booking->pickup_store_id, $userStoreIds, true)
+                || in_array($booking->return_store_id, $userStoreIds, true);
+        }
+
+        return false;
     }
 
     /**

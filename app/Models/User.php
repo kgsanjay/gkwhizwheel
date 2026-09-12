@@ -36,6 +36,7 @@ class User extends Authenticatable
         'password',
         'role',
         'whatsapp_opt_in',
+        'expo_push_token',
         'status',
         'blacklist_reason',
         'google_id',
@@ -49,6 +50,8 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -64,6 +67,9 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'status' => UserStatus::class,
             'whatsapp_opt_in' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -198,6 +204,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Route notifications for the Expo Push channel.
+     */
+    public function routeNotificationForExpoPush(): ?string
+    {
+        return $this->expo_push_token;
+    }
+
+    /**
      * Services this staff member or manager is assigned to.
      * Table: service_user (user_id, service_type)
      *
@@ -265,6 +279,111 @@ class User extends Authenticatable
         if (! empty($inserts)) {
             \Illuminate\Support\Facades\DB::table('service_user')->insert($inserts);
         }
+    }
+
+    /**
+     * Check if user has platform-wide or explicit cross-store access.
+     */
+    public function canAccessAllStores(): bool
+    {
+        if ($this->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        try {
+            if ($this->hasPermissionTo('bookings.cross_store')) {
+                return true;
+            }
+        } catch (\Throwable) {
+            // ignore if Spatie permission not registered
+        }
+
+        return false;
+    }
+
+    /**
+     * Get IDs of stores this user is authorized to manage or act on.
+     * Returns null for unrestricted access (Super Admin or explicit cross-store permission).
+     *
+     * @return list<int>|null
+     */
+    public function getAuthorizedStoreIds(): ?array
+    {
+        if ($this->canAccessAllStores()) {
+            return null;
+        }
+
+        return $this->stores()->pluck('stores.id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * Get the Sanctum token abilities for this user based on their role.
+     *
+     * @return list<string>
+     */
+    public function tokenAbilities(): array
+    {
+        return match ($this->role) {
+            UserRole::SUPER_ADMIN => [
+                'admin:manage',
+                'admin:bikes',
+                'admin:pricing',
+                'admin:coupons',
+                'admin:stores',
+                'admin:staff',
+                'admin:bookings',
+                'admin:reports',
+                'admin:services',
+                'staff:bikes',
+                'staff:bookings',
+                'staff:service-bookings',
+                'staff:customers',
+                'staff:sync',
+                'customer:bookings',
+                'customer:kyc',
+                'customer:profile',
+            ],
+            UserRole::STORE_MANAGER => [
+                'staff:bikes',
+                'staff:bookings',
+                'staff:service-bookings',
+                'staff:customers',
+                'staff:sync',
+                'store:manage',
+                'reports:view',
+                'customer:profile',
+            ],
+            UserRole::STAFF => [
+                'staff:bikes',
+                'staff:bookings',
+                'staff:service-bookings',
+                'staff:customers',
+                'staff:sync',
+                'customer:profile',
+            ],
+            default => [
+                'customer:bookings',
+                'customer:kyc',
+                'customer:profile',
+            ],
+        };
+    }
+
+    /**
+     * Check if two-factor authentication is enabled and confirmed for this user.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && ! empty($this->two_factor_secret);
+    }
+
+    /**
+     * Check if two-factor authentication is required for this user's role.
+     * Required at minimum for Super Admin and Store Manager.
+     */
+    public function requiresTwoFactor(): bool
+    {
+        return in_array($this->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER], true);
     }
 }
 

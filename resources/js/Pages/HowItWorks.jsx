@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+import PageHead from '../Components/SEO/PageHead';
 import { useColorMode } from '../theme/ColorModeContext';
 import {
     Box,
@@ -115,9 +116,29 @@ export default function HowItWorks() {
         },
     ];
 
+    const faqSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: f.a,
+            },
+        })),
+    };
+
     return (
         <AppLayout>
-            <Head title="How It Works - GK WhizWheels Honnavar" />
+            <PageHead
+                title="How It Works – 4 Simple Steps to Rent a Bike in Honnavar"
+                description="Rent bikes in Honnavar in 4 easy steps: select fleet, complete 2-minute digital KYC, pick up at Railway Station or Palya Main Rd, and ride Karavali coast."
+                canonicalUrl="https://whizwheels.in/how-it-works"
+                ogImage="/images/logo.png"
+                ogType="website"
+                structuredData={faqSchema}
+            />
 
             {/* Standardized Hero Banner (Full Width with Ambient Glow) */}
             <Box

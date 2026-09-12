@@ -91,7 +91,7 @@ The platform operates on a **Single Source of Truth** architecture: all inventor
   - Add-on fees.
   - Refundable Security Deposit (highlighted clearly).
   - Total Advance Due vs Balance Payable at Counter.
-- **Hold Reservation Timer:** 15-minute concurrency lock during checkout to prevent double-booking.
+- **Hold Reservation Timer:** 10-minute concurrency lock during checkout to prevent double-booking.
 
 ### 1.4 Multi-Service Tourism Marketplace (`/services/*`)
 GK WhizWheels extends beyond two-wheelers into a complete coastal experience ecosystem:

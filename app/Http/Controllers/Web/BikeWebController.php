@@ -21,6 +21,15 @@ class BikeWebController extends Controller
      */
     public function index(Request $request): Response
     {
+        $request->validate([
+            'category_id' => ['nullable', 'integer'],
+            'store_id' => ['nullable', 'integer'],
+            'min_price' => ['nullable', 'numeric', 'min:0'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date'],
+        ]);
+
         $categories = BikeCategory::orderBy('name')->get();
         $stores = Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get();
 

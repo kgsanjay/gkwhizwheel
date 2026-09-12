@@ -33,7 +33,19 @@ class BikePolicy
 
     public function view(User $user, Bike $bike): bool
     {
-        return $this->manage($user);
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+
+            return empty($userStoreIds)
+                || in_array($bike->current_store_id, $userStoreIds, true)
+                || in_array($bike->home_store_id, $userStoreIds, true);
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
@@ -43,17 +55,53 @@ class BikePolicy
 
     public function update(User $user, Bike $bike): bool
     {
-        return $this->manage($user);
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if ($user->role === UserRole::STORE_MANAGER) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+
+            return empty($userStoreIds)
+                || in_array($bike->current_store_id, $userStoreIds, true)
+                || in_array($bike->home_store_id, $userStoreIds, true);
+        }
+
+        return false;
     }
 
     public function delete(User $user, Bike $bike): bool
     {
-        return $this->manage($user);
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if ($user->role === UserRole::STORE_MANAGER) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+
+            return empty($userStoreIds)
+                || in_array($bike->current_store_id, $userStoreIds, true)
+                || in_array($bike->home_store_id, $userStoreIds, true);
+        }
+
+        return false;
     }
 
     public function uploadDocuments(User $user, Bike $bike): bool
     {
-        return $this->manage($user);
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+
+        if ($user->role === UserRole::STORE_MANAGER) {
+            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+
+            return empty($userStoreIds)
+                || in_array($bike->current_store_id, $userStoreIds, true)
+                || in_array($bike->home_store_id, $userStoreIds, true);
+        }
+
+        return false;
     }
 
     public function bulkImport(User $user): bool

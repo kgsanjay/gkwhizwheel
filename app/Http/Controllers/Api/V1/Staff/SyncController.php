@@ -10,52 +10,24 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Enums\SyncStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\SyncBatchRequest;
 use App\Models\Bike;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\SyncQueue;
+use App\Models\User;
 use App\Services\AvailabilityService;
 use App\Services\BookingService;
 use App\Services\RefundService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Throwable;
 
 class SyncController extends Controller
 {
-    /**
-     * Authorize staff, store manager, or super admin access.
-     */
-    protected function authorizeStaff(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null) {
-            abort(401, 'Unauthenticated.');
-        }
-
-        $isStaff = in_array($user->role, [
-            UserRole::STAFF,
-            UserRole::STORE_MANAGER,
-            UserRole::SUPER_ADMIN,
-        ], true);
-
-        if (! $isStaff) {
-            try {
-                $isStaff = $user->hasAnyRole(['staff', 'store_manager', 'super_admin', 'admin']);
-            } catch (Throwable) {
-                // ignore
-            }
-        }
-
-        if (! $isStaff) {
-            abort(403, 'Unauthorized. Staff access required.');
-        }
-    }
-
     /**
      * Batch process queued offline mobile actions with per-item status response.
      */
@@ -65,7 +37,6 @@ class SyncController extends Controller
         BookingService $bookingService,
         RefundService $refundService
     ): JsonResponse {
-        $this->authorizeStaff($request);
 
         $deviceId = (string) ($request->validated('device_id') ?? 'mobile_device');
         $actions = $request->validated('actions');
@@ -97,12 +68,12 @@ class SyncController extends Controller
 
             try {
                 $itemData = match ($actionType) {
-                    'create_booking', 'hold_booking' => $this->handleCreateBooking($payload, $idempotencyKey, $staffUser->id, $availabilityService),
-                    'collect_payment' => $this->handleCollectPayment($payload, $staffUser->id, $bookingService),
-                    'handover' => $this->handleHandover($payload, $staffUser->id, $bookingService),
-                    'return', 'mark_returned' => $this->handleReturn($payload, $staffUser->id, $bookingService, $refundService),
-                    'maintenance' => $this->handleMaintenance($payload),
-                    default => throw new \InvalidArgumentException("Unsupported action type: '{$actionType}'"),
+                    'create_booking', 'hold_booking' => $this->handleCreateBooking($payload, $idempotencyKey, $staffUser, $availabilityService),
+                    'collect_payment' => $this->handleCollectPayment($payload, $staffUser, $bookingService),
+                    'handover' => $this->handleHandover($payload, $staffUser, $bookingService),
+                    'return', 'mark_returned' => $this->handleReturn($payload, $staffUser, $bookingService, $refundService),
+                    'maintenance' => $this->handleMaintenance($payload, $staffUser),
+                    default => throw new InvalidArgumentException("Unsupported action type: '{$actionType}'"),
                 };
 
                 SyncQueue::updateOrCreate(
@@ -169,13 +140,19 @@ class SyncController extends Controller
     protected function handleCreateBooking(
         array $payload,
         string $idempotencyKey,
-        int $staffId,
+        User $staffUser,
         AvailabilityService $availabilityService
     ): array {
+        $pickupStoreId = (int) $payload['pickup_store_id'];
+        $authorizedStoreIds = $staffUser->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null && ! in_array($pickupStoreId, $authorizedStoreIds, true)) {
+            throw new AuthorizationException("Staff is not assigned to pickup store ID {$pickupStoreId}.");
+        }
+
         $booking = $availabilityService->holdBooking([
             'bike_id' => (int) $payload['bike_id'],
             'user_id' => (int) ($payload['user_id'] ?? $payload['customer_id']),
-            'pickup_store_id' => (int) $payload['pickup_store_id'],
+            'pickup_store_id' => $pickupStoreId,
             'return_store_id' => (int) $payload['return_store_id'],
             'start_date' => (string) $payload['start_date'],
             'end_date' => (string) $payload['end_date'],
@@ -183,7 +160,7 @@ class SyncController extends Controller
             'idempotency_key' => $idempotencyKey,
             'coupon_code' => $payload['coupon_code'] ?? null,
             'addons' => $payload['addons'] ?? [],
-            'created_by' => $staffId,
+            'created_by' => $staffUser->id,
         ]);
 
         return [
@@ -202,11 +179,32 @@ class SyncController extends Controller
      */
     protected function handleCollectPayment(
         array $payload,
-        int $staffId,
+        User $staffUser,
         BookingService $bookingService
     ): array {
-        $booking = Booking::findOrFail((int) $payload['booking_id']);
-        $amount = isset($payload['amount']) ? (float) $payload['amount'] : (float) $booking->total_amount;
+        $booking = Booking::with('payments')->findOrFail((int) $payload['booking_id']);
+
+        $authorizedStoreIds = $staffUser->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null
+            && ! in_array($booking->pickup_store_id, $authorizedStoreIds, true)
+            && ! in_array($booking->return_store_id, $authorizedStoreIds, true)) {
+            throw new AuthorizationException("Staff is not assigned to store for booking {$booking->booking_reference}.");
+        }
+
+        // Server-side balance validation (Requirement 2)
+        $totalPaid = (float) $booking->payments->where('status', PaymentStatus::SUCCESS)->sum('amount');
+        $outstandingBalance = max(0.0, round((float) $booking->total_amount - $totalPaid, 2));
+
+        $amount = isset($payload['amount']) ? (float) $payload['amount'] : $outstandingBalance;
+
+        if ($amount <= 0.0) {
+            throw new InvalidArgumentException("Payment amount must be greater than zero for booking {$booking->booking_reference}.");
+        }
+
+        if ($amount > $outstandingBalance + 0.01) {
+            throw new InvalidArgumentException("Submitted payment amount of ₹{$amount} exceeds remaining outstanding balance of ₹{$outstandingBalance} for booking {$booking->booking_reference}.");
+        }
+
         $method = PaymentMethod::tryFrom((string) ($payload['payment_method'] ?? $payload['method'] ?? 'cash')) ?? PaymentMethod::CASH;
         $gatewayRef = $payload['gateway_reference'] ?? null;
 
@@ -217,11 +215,11 @@ class SyncController extends Controller
             'method' => $method,
             'gateway_reference' => $gatewayRef,
             'status' => PaymentStatus::SUCCESS,
-            'collected_by' => $staffId,
+            'collected_by' => $staffUser->id,
             'notes' => $payload['notes'] ?? 'Offline sync payment collection',
         ]);
 
-        $bookingService->confirmPayment($booking, $gatewayRef, $staffId);
+        $bookingService->confirmPayment($booking, $gatewayRef, $staffUser->id);
 
         return [
             'booking_id' => $booking->id,
@@ -238,10 +236,15 @@ class SyncController extends Controller
      */
     protected function handleHandover(
         array $payload,
-        int $staffId,
+        User $staffUser,
         BookingService $bookingService
     ): array {
         $booking = Booking::with('bike')->findOrFail((int) $payload['booking_id']);
+
+        $authorizedStoreIds = $staffUser->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null && ! in_array($booking->pickup_store_id, $authorizedStoreIds, true)) {
+            throw new AuthorizationException("Staff is not assigned to pickup store ID {$booking->pickup_store_id} for booking {$booking->booking_reference}.");
+        }
 
         $bookingService->markHandedOver(
             booking: $booking,
@@ -249,7 +252,7 @@ class SyncController extends Controller
             signaturePath: $payload['signature_path'] ?? null,
             notes: $payload['notes'] ?? null,
             photoPaths: $payload['photo_paths'] ?? [],
-            staffId: $staffId
+            staffId: $staffUser->id
         );
 
         return [
@@ -267,18 +270,24 @@ class SyncController extends Controller
      */
     protected function handleReturn(
         array $payload,
-        int $staffId,
+        User $staffUser,
         BookingService $bookingService,
         RefundService $refundService
     ): array {
         $booking = Booking::with(['bike', 'category'])->findOrFail((int) $payload['booking_id']);
+
+        $returnStoreId = isset($payload['return_store_id']) ? (int) $payload['return_store_id'] : $booking->return_store_id;
+
+        $authorizedStoreIds = $staffUser->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null && ! in_array($returnStoreId, $authorizedStoreIds, true)) {
+            throw new AuthorizationException("Staff is not assigned to return store ID {$returnStoreId} for booking {$booking->booking_reference}.");
+        }
 
         $lateFee = isset($payload['late_fee_override'])
             ? (float) $payload['late_fee_override']
             : 0.0;
 
         $damageFee = (float) ($payload['damage_fee'] ?? 0.0);
-        $returnStoreId = isset($payload['return_store_id']) ? (int) $payload['return_store_id'] : $booking->return_store_id;
 
         $bookingService->markReturned(
             booking: $booking,
@@ -287,7 +296,7 @@ class SyncController extends Controller
             damageFee: $damageFee,
             notes: $payload['notes'] ?? null,
             photoPaths: $payload['photo_paths'] ?? [],
-            staffId: $staffId,
+            staffId: $staffUser->id,
             returnStoreId: $returnStoreId
         );
 
@@ -297,7 +306,7 @@ class SyncController extends Controller
                 damageDeductions: $damageFee,
                 lateFeeDeductions: $lateFee,
                 reason: 'Offline sync return inspection deposit refund',
-                processedBy: $staffId
+                processedBy: $staffUser->id
             );
         }
 
@@ -315,9 +324,14 @@ class SyncController extends Controller
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    protected function handleMaintenance(array $payload): array
+    protected function handleMaintenance(array $payload, User $staffUser): array
     {
         $bike = Bike::findOrFail((int) $payload['bike_id']);
+
+        $authorizedStoreIds = $staffUser->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null && ! in_array($bike->current_store_id, $authorizedStoreIds, true)) {
+            throw new AuthorizationException("Staff is not assigned to store ID {$bike->current_store_id} housing bike {$bike->registration_number}.");
+        }
 
         if (isset($payload['status'])) {
             $newStatus = BikeStatus::from((string) $payload['status']);

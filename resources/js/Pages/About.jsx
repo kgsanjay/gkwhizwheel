@@ -1,6 +1,7 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+import PageHead from '../Components/SEO/PageHead';
 import { useColorMode } from '../theme/ColorModeContext';
 import {
     Box,
@@ -76,7 +77,13 @@ export default function About() {
 
     return (
         <AppLayout>
-            <Head title="About Us - GK WhizWheels Honnavar" />
+            <PageHead
+                title="About GK WhizWheels | Premier Bike Rental in Honnavar"
+                description="Discover GK WhizWheels, Honnavar's trusted two-wheeler rental agency. Verified legal fleet, zero deposit options, and 24/7 coastal Karnataka road support."
+                canonicalUrl="https://whizwheels.in/about"
+                ogImage="/images/logo.png"
+                ogType="website"
+            />
 
             {/* Standardized Hero Banner (Full Width with Ambient Glow) */}
             <Box
@@ -439,6 +446,7 @@ export default function About() {
                                 <Box
                                     component="img"
                                     src="https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80"
+                                    loading="lazy"
                                     alt="GK WhizWheels Fleet"
                                     sx={{
                                         width: '100%',

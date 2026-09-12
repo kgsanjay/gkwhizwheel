@@ -8,12 +8,18 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\ServiceBooking;
 use App\Models\ServiceItem;
+use App\Models\ServiceItemCategory;
+use App\Models\ServiceItemDocument;
+use App\Models\ServiceItemImage;
 use App\Models\User;
 use App\Notifications\ServiceBookingConfirmedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,7 +29,7 @@ class AdminServiceWebController extends Controller
     /**
      * Service type metadata definitions
      */
-    protected const SERVICE_CONFIGS = [
+    public const SERVICE_CONFIGS = [
         'two_wheelers' => [
             'slug' => 'two_wheelers',
             'title' => 'Two-Wheeler Rentals',
@@ -59,6 +65,16 @@ class AdminServiceWebController extends Controller
             'units' => ['per_dive' => 'Per Dive', 'per_person' => 'Per Person', 'per_session' => 'Per Session'],
             'categories' => ['Introductory Shore Dive', 'Netrani Island Boat Dive', 'PADI Discovery Scuba', 'Snorkeling & Dolphin Safari'],
             'suggested_features' => ['Free 4K Underwater Video & Photos', '1-on-1 PADI Certified Instructor', 'Speedboat Transfer to Netrani', 'Full Scuba Gear & Wetsuit', 'Fresh Fruits & Light Refreshments', 'Non-Swimmers Fully Welcome'],
+            'document_types' => [
+                'instructor_certification' => [
+                    'label' => 'Instructor Certification (PADI / SSI)',
+                    'description' => 'Valid dive master or instructor certification credential',
+                ],
+                'insurance_docs' => [
+                    'label' => 'Insurance Documentation',
+                    'description' => 'Commercial dive operator liability and accident insurance policy',
+                ],
+            ],
         ],
         'homestay' => [
             'slug' => 'homestay',
@@ -68,6 +84,16 @@ class AdminServiceWebController extends Controller
             'units' => ['per_night' => 'Per Night', 'per_day' => 'Per Day', 'per_room' => 'Per Room/Night'],
             'categories' => ['Beachfront Luxury Villa', 'River Heritage Cottage', 'Forest Eco-Stay', 'Deluxe AC Family Suite', 'Cozy Backwater Room'],
             'suggested_features' => ['Direct Beach / Water Access', 'Free High-Speed Wi-Fi', 'Authentic Karavali Homemade Meals', 'Air Conditioned Rooms', '24/7 Hot Water & Power Backup', 'Private Verandah & Garden', 'Campfire & BBQ Facility', 'Secure Car Parking'],
+            'document_types' => [
+                'fire_safety' => [
+                    'label' => 'Fire Safety Certificate / NOC',
+                    'description' => 'Fire and emergency services clearance certification',
+                ],
+                'trade_license' => [
+                    'label' => 'Trade License / Gram Panchayat NOC',
+                    'description' => 'Official local commercial trade and homestay operating license',
+                ],
+            ],
         ],
         'guide' => [
             'slug' => 'guide',
@@ -77,6 +103,12 @@ class AdminServiceWebController extends Controller
             'units' => ['per_trip' => 'Per Trip', 'per_day' => 'Per Day', 'per_hour' => 'Per Hour'],
             'categories' => ['Coastal & Beach Trek Guide', 'Heritage & Temple Specialist', 'Sharavathi Wildlife Trail', 'Photography & Secret Spots Guide'],
             'suggested_features' => ['Govt Approved Certified Guide', 'Fluent in English, Kannada, Hindi', 'Deep Historical & Cultural Knowledge', 'Customized Route According to Group Pace', 'Local Culinary & Shopping Tips', 'First Aid Trained'],
+            'document_types' => [
+                'govt_guide_license' => [
+                    'label' => 'Govt. Tourist Guide License',
+                    'description' => 'Ministry of Tourism or Karnataka Tourism approved guide license card',
+                ],
+            ],
         ],
         'tours' => [
             'slug' => 'tours',
@@ -90,15 +122,38 @@ class AdminServiceWebController extends Controller
     ];
 
     /**
+     * Get all service configuration definitions.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function getServiceConfigs(): array
+    {
+        return self::SERVICE_CONFIGS;
+    }
+
+    /**
      * Ensure valid service type or abort 404
      */
-    protected function getServiceConfig(string $serviceType): array
+    public function getServiceConfig(string $serviceType): array
     {
         if (! isset(self::SERVICE_CONFIGS[$serviceType])) {
             abort(404, "Unknown service: {$serviceType}");
         }
 
-        return self::SERVICE_CONFIGS[$serviceType];
+        $config = self::SERVICE_CONFIGS[$serviceType];
+
+        // Dynamically load categories from database if available
+        $dbCategories = ServiceItemCategory::where('service_type', $serviceType)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
+
+        if (! empty($dbCategories)) {
+            $config['categories'] = $dbCategories;
+        }
+
+        return $config;
     }
 
     /**
@@ -106,9 +161,15 @@ class AdminServiceWebController extends Controller
      */
     public function items(Request $request, string $serviceType): Response
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'string', 'max:50'],
+        ]);
+
         $config = $this->getServiceConfig($serviceType);
 
-        $query = ServiceItem::where('service_type', $serviceType);
+        $query = ServiceItem::where('service_type', $serviceType)
+            ->with(['images' => fn ($q) => $q->orderBy('sort_order')]);
 
         if ($request->filled('search')) {
             $search = trim((string) $request->query('search'));
@@ -166,27 +227,93 @@ class AdminServiceWebController extends Controller
             'price_unit' => ['required', 'string', 'max:50'],
             'capacity' => ['nullable', 'string', 'max:50'],
             'image_url' => ['nullable', 'url', 'max:500'],
+            'primary_image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
+            'primary_image_index' => ['nullable', 'integer', 'min:0'],
             'badge' => ['nullable', 'string', 'max:50'],
             'features' => ['nullable', 'array'],
             'features.*' => ['string', 'max:100'],
             'status' => ['required', 'string', 'in:available,maintenance,booked,inactive'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'documents' => ['nullable', 'array'],
+            'documents.*.document_type' => ['required_with:documents', 'string', 'max:100'],
+            'documents.*.file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
+            'documents.*.expiry_date' => ['nullable', 'date'],
+            'documents.*.verified' => ['nullable', 'boolean'],
         ]);
 
-        $item = ServiceItem::create([
-            'service_type' => $serviceType,
-            'name' => $validated['name'],
-            'category' => $validated['category'] ?? null,
-            'description' => $validated['description'] ?? null,
-            'price_base' => $validated['price_base'],
-            'price_unit' => $validated['price_unit'],
-            'capacity' => $validated['capacity'] ?? null,
-            'image_url' => $validated['image_url'] ?? null,
-            'badge' => $validated['badge'] ?? null,
-            'features' => $validated['features'] ?? [],
-            'status' => $validated['status'],
-            'sort_order' => $validated['sort_order'] ?? 0,
-        ]);
+        $itemData = collect($validated)->except(['primary_image', 'images', 'primary_image_index', 'documents'])->all();
+        $itemData['service_type'] = $serviceType;
+        $itemData['sort_order'] = $validated['sort_order'] ?? 0;
+        $itemData['features'] = $validated['features'] ?? [];
+
+        $item = DB::transaction(function () use ($itemData, $request, $validated) {
+            $item = ServiceItem::create($itemData);
+
+            $primarySet = false;
+            $sortIndex = 0;
+
+            if ($request->hasFile('primary_image')) {
+                $primaryFile = $request->file('primary_image');
+                if ($primaryFile instanceof UploadedFile) {
+                    $path = $primaryFile->store('services/primary', 'public');
+                    ServiceItemImage::create([
+                        'service_item_id' => $item->id,
+                        'image_path' => $path,
+                        'sort_order' => $sortIndex++,
+                        'is_primary' => true,
+                    ]);
+                    $primarySet = true;
+                    if (empty($item->image_url)) {
+                        $item->update(['image_url' => Storage::disk('public')->url($path)]);
+                    }
+                }
+            }
+
+            if ($request->hasFile('images')) {
+                $targetPrimaryIndex = $request->input('primary_image_index');
+                foreach ($request->file('images') as $idx => $imageFile) {
+                    if ($imageFile instanceof UploadedFile) {
+                        $path = $imageFile->store('services/gallery', 'public');
+                        $isPrimary = (! $primarySet && $targetPrimaryIndex !== null && (int) $targetPrimaryIndex === $idx)
+                            || (! $primarySet && $targetPrimaryIndex === null && $sortIndex === 0 && ! $request->hasFile('primary_image'));
+
+                        if ($isPrimary) {
+                            $primarySet = true;
+                            if (empty($item->image_url)) {
+                                $item->update(['image_url' => Storage::disk('public')->url($path)]);
+                            }
+                        }
+
+                        ServiceItemImage::create([
+                            'service_item_id' => $item->id,
+                            'image_path' => $path,
+                            'sort_order' => $sortIndex++,
+                            'is_primary' => $isPrimary,
+                        ]);
+                    }
+                }
+            }
+
+            if (! empty($validated['documents']) && is_array($validated['documents'])) {
+                foreach ($validated['documents'] as $docData) {
+                    if (isset($docData['file']) && $docData['file'] instanceof UploadedFile) {
+                        $path = $docData['file']->store('services/documents', 'public');
+                        ServiceItemDocument::create([
+                            'service_item_id' => $item->id,
+                            'document_type' => $docData['document_type'],
+                            'file_path' => $path,
+                            'expiry_date' => $docData['expiry_date'] ?? null,
+                            'verified' => ! empty($docData['verified']),
+                            'uploaded_by' => $request->user()?->id,
+                        ]);
+                    }
+                }
+            }
+
+            return $item;
+        });
 
         ActivityLog::create([
             'user_id' => $request->user()?->id,
@@ -207,7 +334,12 @@ class AdminServiceWebController extends Controller
     public function editItem(string $serviceType, int $id): Response
     {
         $config = $this->getServiceConfig($serviceType);
-        $item = ServiceItem::where('service_type', $serviceType)->findOrFail($id);
+        $item = ServiceItem::where('service_type', $serviceType)
+            ->with([
+                'images' => fn ($q) => $q->orderBy('sort_order'),
+                'documents.uploader:id,name',
+            ])
+            ->findOrFail($id);
 
         return Inertia::render('Admin/Services/Items/Edit', [
             'serviceConfig' => $config,
@@ -231,14 +363,206 @@ class AdminServiceWebController extends Controller
             'price_unit' => ['required', 'string', 'max:50'],
             'capacity' => ['nullable', 'string', 'max:50'],
             'image_url' => ['nullable', 'url', 'max:500'],
+            'primary_image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
+            'images' => ['nullable', 'array'],
+            'images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
+            'primary_image_id' => ['nullable', 'integer'],
+            'primary_image_index' => ['nullable', 'integer', 'min:0'],
+            'image_order' => ['nullable', 'array'],
+            'image_order.*' => ['integer'],
+            'images_meta' => ['nullable', 'array'],
+            'images_meta.*.id' => ['required_with:images_meta', 'integer'],
+            'images_meta.*.sort_order' => ['nullable', 'integer'],
+            'images_meta.*.is_primary' => ['nullable', 'boolean'],
+            'delete_image_ids' => ['nullable', 'array'],
+            'delete_image_ids.*' => ['integer'],
             'badge' => ['nullable', 'string', 'max:50'],
             'features' => ['nullable', 'array'],
             'features.*' => ['string', 'max:100'],
             'status' => ['required', 'string', 'in:available,maintenance,booked,inactive'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'documents' => ['nullable', 'array'],
+            'documents.*.document_type' => ['required_with:documents', 'string', 'max:100'],
+            'documents.*.file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
+            'documents.*.expiry_date' => ['nullable', 'date'],
+            'documents.*.verified' => ['nullable', 'boolean'],
+            'delete_document_ids' => ['nullable', 'array'],
+            'delete_document_ids.*' => ['integer'],
         ]);
 
-        $item->update($validated);
+        $itemData = collect($validated)->except([
+            'primary_image', 'images', 'primary_image_id', 'primary_image_index',
+            'image_order', 'images_meta', 'delete_image_ids', 'documents', 'delete_document_ids',
+        ])->all();
+
+        DB::transaction(function () use ($item, $itemData, $validated, $request) {
+            $item->update($itemData);
+
+            // 1. Delete requested images
+            if (! empty($validated['delete_image_ids'])) {
+                $imagesToDelete = ServiceItemImage::where('service_item_id', $item->id)
+                    ->whereIn('id', $validated['delete_image_ids'])
+                    ->get();
+                foreach ($imagesToDelete as $delImg) {
+                    Storage::disk('public')->delete($delImg->image_path);
+                    $delImg->delete();
+                }
+            }
+
+            // 2. Reorder existing images via image_order array (list of IDs)
+            if (! empty($validated['image_order'])) {
+                foreach ($validated['image_order'] as $orderIndex => $imgId) {
+                    ServiceItemImage::where('service_item_id', $item->id)
+                        ->where('id', (int) $imgId)
+                        ->update(['sort_order' => $orderIndex]);
+                }
+            }
+
+            // 2b. Reorder / meta update via images_meta (id, sort_order, is_primary)
+            if (! empty($validated['images_meta'])) {
+                foreach ($validated['images_meta'] as $meta) {
+                    $img = ServiceItemImage::where('service_item_id', $item->id)
+                        ->where('id', (int) $meta['id'])
+                        ->first();
+                    if ($img) {
+                        $updates = [];
+                        if (isset($meta['sort_order'])) {
+                            $updates['sort_order'] = (int) $meta['sort_order'];
+                        }
+                        if (isset($meta['is_primary'])) {
+                            $updates['is_primary'] = (bool) $meta['is_primary'];
+                            if ($meta['is_primary']) {
+                                ServiceItemImage::where('service_item_id', $item->id)
+                                    ->where('id', '!=', $img->id)
+                                    ->update(['is_primary' => false]);
+                                if (empty($item->image_url)) {
+                                    $item->update(['image_url' => Storage::disk('public')->url($img->image_path)]);
+                                }
+                            }
+                        }
+                        if (! empty($updates)) {
+                            $img->update($updates);
+                        }
+                    }
+                }
+            }
+
+            // Track current max sort order
+            $currentMaxSort = (int) (ServiceItemImage::where('service_item_id', $item->id)->max('sort_order') ?? -1);
+
+            // 3. Upload new primary_image if supplied
+            if ($request->hasFile('primary_image')) {
+                $file = $request->file('primary_image');
+                if ($file instanceof UploadedFile) {
+                    ServiceItemImage::where('service_item_id', $item->id)->update(['is_primary' => false]);
+                    $path = $file->store('services/primary', 'public');
+                    $newImg = ServiceItemImage::create([
+                        'service_item_id' => $item->id,
+                        'image_path' => $path,
+                        'sort_order' => ++$currentMaxSort,
+                        'is_primary' => true,
+                    ]);
+                    if (empty($item->image_url)) {
+                        $item->update(['image_url' => Storage::disk('public')->url($path)]);
+                    }
+                }
+            }
+
+            // 4. Upload new gallery images
+            if ($request->hasFile('images')) {
+                $targetPrimaryIndex = $request->input('primary_image_index');
+                foreach ($request->file('images') as $idx => $imageFile) {
+                    if ($imageFile instanceof UploadedFile) {
+                        $path = $imageFile->store('services/gallery', 'public');
+                        $isPrimary = ($targetPrimaryIndex !== null && (int) $targetPrimaryIndex === $idx);
+
+                        if ($isPrimary) {
+                            ServiceItemImage::where('service_item_id', $item->id)->update(['is_primary' => false]);
+                            if (empty($item->image_url)) {
+                                $item->update(['image_url' => Storage::disk('public')->url($path)]);
+                            }
+                        }
+
+                        ServiceItemImage::create([
+                            'service_item_id' => $item->id,
+                            'image_path' => $path,
+                            'sort_order' => ++$currentMaxSort,
+                            'is_primary' => $isPrimary,
+                        ]);
+                    }
+                }
+            }
+
+            // 5. Explicitly set an existing image as primary by ID
+            if (! empty($validated['primary_image_id'])) {
+                $primaryImg = ServiceItemImage::where('service_item_id', $item->id)
+                    ->where('id', (int) $validated['primary_image_id'])
+                    ->first();
+                if ($primaryImg) {
+                    ServiceItemImage::where('service_item_id', $item->id)->update(['is_primary' => false]);
+                    $primaryImg->update(['is_primary' => true]);
+
+                    if (empty($item->image_url)) {
+                        $item->update(['image_url' => Storage::disk('public')->url($primaryImg->image_path)]);
+                    }
+                }
+            }
+
+            // 6. Delete requested documents
+            if (! empty($validated['delete_document_ids'])) {
+                $docsToDelete = ServiceItemDocument::where('service_item_id', $item->id)
+                    ->whereIn('id', $validated['delete_document_ids'])
+                    ->get();
+                foreach ($docsToDelete as $delDoc) {
+                    Storage::disk('public')->delete($delDoc->file_path);
+                    $delDoc->delete();
+                }
+            }
+
+            // 7. Create or update documents
+            if (! empty($validated['documents']) && is_array($validated['documents'])) {
+                foreach ($validated['documents'] as $docData) {
+                    $docType = $docData['document_type'] ?? null;
+                    if (! $docType) {
+                        continue;
+                    }
+
+                    $existingDoc = ServiceItemDocument::where('service_item_id', $item->id)
+                        ->where('document_type', $docType)
+                        ->first();
+
+                    $payload = [];
+                    if (array_key_exists('expiry_date', $docData)) {
+                        $payload['expiry_date'] = $docData['expiry_date'] ?: null;
+                    }
+                    if (array_key_exists('verified', $docData)) {
+                        $payload['verified'] = (bool) $docData['verified'];
+                    }
+
+                    if (isset($docData['file']) && $docData['file'] instanceof UploadedFile) {
+                        if ($existingDoc && Storage::disk('public')->exists($existingDoc->file_path)) {
+                            Storage::disk('public')->delete($existingDoc->file_path);
+                        }
+                        $path = $docData['file']->store('services/documents', 'public');
+                        $payload['file_path'] = $path;
+                        $payload['uploaded_by'] = $request->user()?->id;
+                    }
+
+                    if ($existingDoc) {
+                        if (! empty($payload)) {
+                            $existingDoc->update($payload);
+                        }
+                    } elseif (isset($payload['file_path'])) {
+                        ServiceItemDocument::create(array_merge([
+                            'service_item_id' => $item->id,
+                            'document_type' => $docType,
+                            'uploaded_by' => $request->user()?->id,
+                            'verified' => ! empty($docData['verified']),
+                        ], $payload));
+                    }
+                }
+            }
+        });
 
         ActivityLog::create([
             'user_id' => $request->user()?->id,
@@ -259,9 +583,20 @@ class AdminServiceWebController extends Controller
     public function destroyItem(Request $request, string $serviceType, int $id): RedirectResponse
     {
         $config = $this->getServiceConfig($serviceType);
-        $item = ServiceItem::where('service_type', $serviceType)->findOrFail($id);
+        $item = ServiceItem::where('service_type', $serviceType)
+            ->with(['images', 'documents'])
+            ->findOrFail($id);
         $name = $item->name;
-        $item->delete();
+
+        DB::transaction(function () use ($item) {
+            foreach ($item->images as $image) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+            foreach ($item->documents as $doc) {
+                Storage::disk('public')->delete($doc->file_path);
+            }
+            $item->delete();
+        });
 
         ActivityLog::create([
             'user_id' => $request->user()?->id,
@@ -276,10 +611,39 @@ class AdminServiceWebController extends Controller
     }
 
     /**
+     * Delete an uploaded document from a service item
+     */
+    public function destroyDocument(Request $request, string $serviceType, int $itemId, int $documentId): RedirectResponse
+    {
+        $item = ServiceItem::where('service_type', $serviceType)->findOrFail($itemId);
+        $doc = ServiceItemDocument::where('service_item_id', $item->id)->findOrFail($documentId);
+
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+
+        ActivityLog::create([
+            'user_id' => $request->user()?->id,
+            'action' => 'service_item_document.deleted',
+            'description' => "Deleted document '{$doc->document_type}' from {$item->name}",
+            'subject_type' => ServiceItem::class,
+            'subject_id' => (string) $item->id,
+            'metadata' => ['service_type' => $serviceType, 'document_type' => $doc->document_type],
+        ]);
+
+        return redirect()->back()->with('success', 'Document deleted successfully.');
+    }
+
+    /**
      * List bookings for the selected service
      */
     public function bookings(Request $request, string $serviceType): Response
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'channel' => ['nullable', 'string', 'max:50'],
+        ]);
+
         $config = $this->getServiceConfig($serviceType);
 
         $query = ServiceBooking::with(['serviceItem', 'creator'])
@@ -381,31 +745,36 @@ class AdminServiceWebController extends Controller
             $paymentStatus = 'partial';
         }
 
-        $booking = ServiceBooking::create([
-            'booking_number' => $bookingNumber,
-            'service_type' => $serviceType,
-            'service_item_id' => $validated['service_item_id'] ?? null,
-            'customer_name' => $validated['customer_name'],
-            'customer_phone' => $validated['customer_phone'],
-            'customer_email' => $validated['customer_email'] ?? null,
-            'booking_channel' => $validated['booking_channel'],
-            'start_datetime' => $validated['start_datetime'],
-            'end_datetime' => $validated['end_datetime'] ?? null,
-            'pickup_location' => $validated['pickup_location'] ?? 'Palya Main Rd Hub, Honnavar',
-            'drop_location' => $validated['drop_location'] ?? null,
-            'quantity' => $validated['quantity'],
-            'base_amount' => $validated['base_amount'],
-            'discount_amount' => $validated['discount_amount'] ?? 0,
-            'total_amount' => $total,
-            'advance_paid' => $advance,
-            'balance_due' => $balance,
-            'payment_status' => $paymentStatus,
-            'payment_method' => $validated['payment_method'],
-            'status' => $validated['status'],
-            'customer_notes' => $validated['customer_notes'] ?? null,
-            'admin_notes' => $validated['admin_notes'] ?? null,
-            'created_by' => $request->user()?->id,
-        ]);
+        $availabilityService = app(\App\Services\AvailabilityService::class);
+        try {
+            $booking = $availabilityService->createServiceBooking([
+                'booking_number' => $bookingNumber,
+                'service_type' => $serviceType,
+                'service_item_id' => $validated['service_item_id'] ?? null,
+                'customer_name' => $validated['customer_name'],
+                'customer_phone' => $validated['customer_phone'],
+                'customer_email' => $validated['customer_email'] ?? null,
+                'booking_channel' => $validated['booking_channel'],
+                'start_datetime' => $validated['start_datetime'],
+                'end_datetime' => $validated['end_datetime'] ?? null,
+                'pickup_location' => $validated['pickup_location'] ?? 'Palya Main Rd Hub, Honnavar',
+                'drop_location' => $validated['drop_location'] ?? null,
+                'quantity' => $validated['quantity'],
+                'base_amount' => $validated['base_amount'],
+                'discount_amount' => $validated['discount_amount'] ?? 0,
+                'total_amount' => $total,
+                'advance_paid' => $advance,
+                'balance_due' => $balance,
+                'payment_status' => $paymentStatus,
+                'payment_method' => $validated['payment_method'],
+                'status' => $validated['status'],
+                'customer_notes' => $validated['customer_notes'] ?? null,
+                'admin_notes' => $validated['admin_notes'] ?? null,
+                'created_by' => $request->user()?->id,
+            ]);
+        } catch (\App\Exceptions\ServiceItemNotAvailableException $e) {
+            return back()->withInput()->withErrors(['service_item_id' => $e->getMessage()])->with('error', $e->getMessage());
+        }
 
         ActivityLog::create([
             'user_id' => $request->user()?->id,
@@ -472,7 +841,21 @@ class AdminServiceWebController extends Controller
             'admin_notes' => ['nullable', 'string'],
         ]);
 
-        $booking->update($validated);
+        if ($validated['status'] === 'confirmed' && $booking->status !== 'confirmed') {
+            try {
+                app(\App\Services\AvailabilityService::class)->confirmServiceBooking($booking);
+                if (isset($validated['admin_notes'])) {
+                    $booking->update(['admin_notes' => $validated['admin_notes']]);
+                }
+            } catch (\App\Exceptions\ServiceItemNotAvailableException $e) {
+                return back()->with('error', $e->getMessage());
+            }
+        } else {
+            $booking->update($validated);
+            if (in_array($validated['status'], ['completed', 'cancelled'], true) && $booking->serviceItem) {
+                $booking->serviceItem->releaseAvailability();
+            }
+        }
 
         ActivityLog::create([
             'user_id' => $request->user()?->id,
@@ -532,6 +915,10 @@ class AdminServiceWebController extends Controller
      */
     public function downloadVoucher(Request $request, string $serviceType, int $id, \App\Services\VoucherService $voucherService): \Illuminate\Http\Response
     {
+        $request->validate([
+            'stream' => ['nullable', 'boolean'],
+        ]);
+
         $this->getServiceConfig($serviceType);
 
         $booking = ServiceBooking::with(['serviceItem'])

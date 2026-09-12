@@ -113,31 +113,40 @@ class CustomerServiceBookingController extends Controller
         $randomCode = strtoupper(Str::random(4));
         $bookingNumber = "GKW-{$prefix}-{$dateCode}-{$randomCode}";
 
-        $booking = ServiceBooking::create([
-            'booking_number' => $bookingNumber,
-            'service_type' => $validated['service_type'],
-            'service_item_id' => $item?->id,
-            'user_id' => $request->user()?->id,
-            'customer_name' => $validated['customer_name'],
-            'customer_phone' => $validated['customer_phone'],
-            'customer_email' => $validated['customer_email'] ?? null,
-            'booking_channel' => 'online',
-            'start_datetime' => $validated['start_datetime'],
-            'end_datetime' => $validated['end_datetime'] ?? null,
-            'pickup_location' => $validated['pickup_location'],
-            'drop_location' => $validated['drop_location'] ?? null,
-            'quantity' => $quantity,
-            'base_amount' => $baseAmount,
-            'tax_amount' => 0.00,
-            'discount_amount' => $quote ? $quote['discount_amount'] : 0.00,
-            'total_amount' => $totalAmount,
-            'advance_paid' => $advancePaid,
-            'balance_due' => $balanceDue,
-            'payment_status' => $paymentStatus,
-            'payment_method' => $validated['payment_method'],
-            'status' => 'confirmed',
-            'customer_notes' => $customerNotes ?: null,
-        ]);
+        $availabilityService = app(\App\Services\AvailabilityService::class);
+        try {
+            $booking = $availabilityService->createServiceBooking([
+                'booking_number' => $bookingNumber,
+                'service_type' => $validated['service_type'],
+                'service_item_id' => $item?->id,
+                'user_id' => $request->user()?->id,
+                'customer_name' => $validated['customer_name'],
+                'customer_phone' => $validated['customer_phone'],
+                'customer_email' => $validated['customer_email'] ?? null,
+                'booking_channel' => 'online',
+                'start_datetime' => $validated['start_datetime'],
+                'end_datetime' => $validated['end_datetime'] ?? null,
+                'pickup_location' => $validated['pickup_location'],
+                'drop_location' => $validated['drop_location'] ?? null,
+                'quantity' => $quantity,
+                'base_amount' => $baseAmount,
+                'tax_amount' => 0.00,
+                'discount_amount' => $quote ? $quote['discount_amount'] : 0.00,
+                'total_amount' => $totalAmount,
+                'advance_paid' => $advancePaid,
+                'balance_due' => $balanceDue,
+                'payment_status' => $paymentStatus,
+                'payment_method' => $validated['payment_method'],
+                'status' => 'confirmed',
+                'customer_notes' => $customerNotes ?: null,
+            ]);
+        } catch (\App\Exceptions\ServiceItemNotAvailableException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            return back()->withInput()->withErrors(['service_item_id' => $e->getMessage()])->with('error', $e->getMessage());
+        }
 
         ActivityLog::create([
             'user_id' => $request->user()?->id,
@@ -179,13 +188,30 @@ class CustomerServiceBookingController extends Controller
     }
 
     /**
+     * Verify ownership or staff/admin access for service booking operations.
+     */
+    protected function authorizeBookingAccess(?User $user, ServiceBooking $booking): void
+    {
+        if ($user !== null && $booking->user_id !== null) {
+            $isOwner = $user->id === $booking->user_id;
+            $isStaffOrAdmin = in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+
+            if (! $isOwner && ! $isStaffOrAdmin) {
+                abort(403, 'You are not authorized to access this service booking.');
+            }
+        }
+    }
+
+    /**
      * Show booking confirmation page
      */
-    public function confirmation(string $bookingNumber): Response
+    public function confirmation(string $bookingNumber, Request $request): Response
     {
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
+
+        $this->authorizeBookingAccess($request->user(), $booking);
 
         $coordinator = \App\Notifications\ServiceBookingConfirmedNotification::SERVICE_COORDINATORS[$booking->service_type] ?? [
             'name' => 'WhizWheel Operations Desk',
@@ -209,6 +235,8 @@ class CustomerServiceBookingController extends Controller
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
 
+        $this->authorizeBookingAccess($request->user(), $booking);
+
         if ($booking->payment_status === 'paid' || (float) $booking->balance_due <= 0) {
             return response()->json([
                 'success' => false,
@@ -216,7 +244,11 @@ class CustomerServiceBookingController extends Controller
             ], 422);
         }
 
-        $amount = (float) $request->input('amount', $booking->balance_due);
+        $validated = $request->validate([
+            'amount' => ['nullable', 'numeric', 'min:1'],
+        ]);
+
+        $amount = (float) ($validated['amount'] ?? $booking->balance_due);
         if ($amount <= 0 || $amount > (float) $booking->balance_due) {
             $amount = (float) $booking->balance_due;
         }
@@ -252,6 +284,8 @@ class CustomerServiceBookingController extends Controller
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
+
+        $this->authorizeBookingAccess($request->user(), $booking);
 
         $validated = $request->validate([
             'razorpay_payment_id' => ['required', 'string'],
@@ -370,9 +404,15 @@ class CustomerServiceBookingController extends Controller
      */
     public function downloadVoucher(string $bookingNumber, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\Http\Response
     {
+        $request->validate([
+            'stream' => ['nullable', 'boolean'],
+        ]);
+
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
+
+        $this->authorizeBookingAccess($request->user(), $booking);
 
         return $voucherService->generateServiceVoucherPdf($booking, $request->boolean('stream'));
     }
@@ -380,11 +420,13 @@ class CustomerServiceBookingController extends Controller
     /**
      * View print-optimized trip pass in browser
      */
-    public function printVoucher(string $bookingNumber, \App\Services\VoucherService $voucherService): \Illuminate\View\View
+    public function printVoucher(string $bookingNumber, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\View\View
     {
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
+
+        $this->authorizeBookingAccess($request->user(), $booking);
 
         return $voucherService->renderServiceVoucherHtml($booking);
     }

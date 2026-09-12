@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\BookingStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Bike;
 use App\Models\Booking;
 use Carbon\Carbon;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,28 +16,15 @@ use Illuminate\Support\Facades\DB;
 class ReportController extends Controller
 {
     /**
-     * Authorize that the current authenticated user has admin privileges.
-     */
-    protected function authorizeAdmin(Request $request): void
-    {
-        $user = $request->user();
-        $isAuthorized = $user !== null && (
-            $user->role === UserRole::SUPER_ADMIN
-            || $user->hasRole('super_admin')
-            || $user->hasRole('admin')
-        );
-
-        if (! $isAuthorized) {
-            throw new AuthorizationException('This action is unauthorized.');
-        }
-    }
-
-    /**
      * Generate revenue report grouped by store, channel, or bike.
      */
     public function revenue(Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
+        $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'group_by' => ['nullable', 'string', 'in:store,channel,bike'],
+        ]);
 
         $startDate = $request->filled('start_date')
             ? (string) $request->query('start_date')
@@ -144,7 +129,12 @@ class ReportController extends Controller
      */
     public function utilization(Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
+        $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'category_id' => ['nullable', 'integer', 'exists:bike_categories,id'],
+        ]);
 
         $startDate = $request->filled('start_date')
             ? (string) $request->query('start_date')

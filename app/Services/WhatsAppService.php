@@ -175,4 +175,31 @@ class WhatsAppService
 
         return $digits;
     }
+
+    /**
+     * Verify the HMAC SHA-256 signature of an incoming WhatsApp (Meta) webhook payload.
+     * Uses hash_equals to prevent timing attacks.
+     */
+    public function verifyWebhookSignature(
+        string $rawPayload,
+        ?string $signatureHeader,
+        ?string $appSecret = null
+    ): bool {
+        if ($signatureHeader === null || $signatureHeader === '') {
+            return false;
+        }
+
+        $secret = $appSecret ?? (string) config('services.whatsapp.app_secret', '');
+        if ($secret === '') {
+            return false;
+        }
+
+        $expectedHash = hash_hmac('sha256', $rawPayload, $secret);
+        $providedHash = Str::startsWith($signatureHeader, 'sha256=')
+            ? substr($signatureHeader, 7)
+            : $signatureHeader;
+
+        return hash_equals($expectedHash, $providedHash);
+    }
 }
+

@@ -18,4 +18,5 @@ enum NotificationChannel: string
 
     case EMAIL = 'email';
     case WHATSAPP = 'whatsapp';
+    case EXPO_PUSH = 'expo_push';
 }

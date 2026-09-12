@@ -128,14 +128,23 @@ test('customer attempting to access /admin directly receives 403 Forbidden', fun
     $response->assertStatus(403);
 });
 
-test('super admin can login via /admin/login and is redirected to /admin', function (): void {
+test('super admin login via /admin/login requires 2fa setup before accessing /admin', function (): void {
     $response = $this->post('/admin/login', [
         'login' => 'admin@gkwhizwheel.com',
         'password' => 'Password123!',
     ]);
 
+    $response->assertRedirect(route('admin.2fa.setup'));
+});
+
+test('staff member can login directly via /admin/login without 2fa and is redirected to /admin', function (): void {
+    $response = $this->post('/admin/login', [
+        'login' => $this->staff->email,
+        'password' => 'Password123!',
+    ]);
+
     $response->assertRedirect('/admin/dashboard');
-    $this->assertAuthenticatedAs($this->superAdmin);
+    $this->assertAuthenticatedAs($this->staff);
 });
 
 test('super admin accessing /admin sees dashboard with system-wide stats and stores', function (): void {
@@ -220,4 +229,51 @@ test('inactive or blacklisted admin cannot login', function (): void {
 
     $response->assertSessionHasErrors(['login']);
     $this->assertGuest();
+});
+
+test('admin dashboard provides summary stat cards across all 7 service lines', function (): void {
+    $serviceItem = \App\Models\ServiceItem::create([
+        'service_type' => 'boating',
+        'name' => 'Sunset Sharavathi Boat Ride',
+        'category' => 'Speedboat',
+        'description' => 'Fast boat across Sharavathi backwaters.',
+        'price_base' => 1200.00,
+        'price_unit' => 'per_trip',
+        'status' => 'available',
+        'sort_order' => 1,
+    ]);
+
+    \App\Models\ServiceBooking::create([
+        'booking_number' => 'SB-TEST-001',
+        'service_type' => 'boating',
+        'service_item_id' => $serviceItem->id,
+        'customer_name' => 'Rohan Dev',
+        'customer_phone' => '9876543210',
+        'start_datetime' => Carbon::today()->addHours(2),
+        'end_datetime' => Carbon::today()->addHours(4),
+        'base_amount' => 1200.00,
+        'tax_amount' => 0.00,
+        'discount_amount' => 0.00,
+        'total_amount' => 1200.00,
+        'advance_paid' => 500.00,
+        'balance_due' => 700.00,
+        'payment_status' => 'partial',
+        'status' => 'confirmed',
+        'booking_channel' => 'online',
+    ]);
+
+    $response = $this->actingAs($this->superAdmin)->get('/admin');
+
+    $response->assertOk();
+    $response->assertInertia(
+        fn (Assert $page) => $page
+            ->component('Admin/Dashboard')
+            ->has('service_metrics', 7)
+            ->where('service_metrics.2.type', 'boating')
+            ->where('service_metrics.2.available_items', 1)
+            ->where('service_metrics.2.active_bookings', 1)
+            ->where('service_metrics.2.today_check_ins', 1)
+            ->has('metrics.fleet_booked')
+            ->has('metrics.fleet_maintenance')
+    );
 });

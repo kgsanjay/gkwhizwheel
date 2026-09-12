@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import BoatingBookingModal from '../Components/BookingModals/BoatingBookingModal';
 import {
@@ -52,6 +53,64 @@ const SIGHTSEEING_DISTANCES = [
     { spot: 'Jog Falls (Gersoppa)', dist: '60 km', time: '1 Hr 15 Mins', note: 'Sharavathi river source in Western Ghats' },
 ];
 
+const BOATING_FAQS = [
+    {
+        q: 'What is the best time for pre-wedding and photography shoots on the boat?',
+        a: 'The golden hour sunset slot (4:15 PM – 6:30 PM) is our most sought-after window for pre-wedding shoots. The low-angle sunlight over the Sharavathi sea confluence produces warm, magical portraits. Early morning (7:00 AM – 9:00 AM) is also fantastic for mist over the river and peaceful, quiet reflections.',
+    },
+    {
+        q: 'Are drones and video cameras allowed during boating in Honnavar?',
+        a: 'Yes! Drones and video gear are permitted for personal, creative, and pre-wedding shoots. Our captains are experienced in holding the boat steady in calm backwaters to facilitate safe drone take-off and landing from the deck.',
+    },
+    {
+        q: 'Can the couple take off lifejackets during photoshoot poses?',
+        a: 'Under maritime safety rules, lifejackets are mandatory while the boat is cruising. However, during our private shoot charters, once the captain halts the boat in tranquil, placid backwater bays, the couple may remove lifejackets momentarily for portrait shots under supervision.',
+    },
+    {
+        q: 'Is Sharavathi backwater boating safe for infants and senior citizens?',
+        a: 'Yes! The Sharavathi backwater channels are remarkably calm, tranquil, and shielded from rough ocean waves. The boats are motorized, covered with sun canopies, and equipped with comfortable seating and certified life jackets.',
+    },
+    {
+        q: 'Where is the boat boarding jetty located?',
+        a: 'The primary boarding jetty is located just 5 minutes from Honnavar town center along the Sharavathi riverbank. Exact Google Maps pin coordinates and captain contact details are shared immediately upon booking.',
+    },
+];
+
+const boatingFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: BOATING_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
+
+const boatingTripSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: 'Sharavathi Backwater Boating & Pre-Wedding Shoots',
+    description: 'Experience world-class Sharavathi backwater boating, mangrove safaris, sunset cruises, and pre-wedding photoshoot boat charters in Honnavar.',
+    touristType: 'Nature & Leisure Traveler',
+    offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'INR',
+        lowPrice: '600',
+        highPrice: '4000',
+        offerCount: '6',
+        price: '600',
+    },
+    provider: {
+        '@type': 'LocalBusiness',
+        name: 'GK WhizWheel',
+        telephone: '+918660989586',
+        url: 'https://whizwheels.in',
+    },
+};
+
 export default function BoatingPage({ availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
@@ -73,13 +132,14 @@ export default function BoatingPage({ availableItems = [] }) {
 
     return (
         <AppLayout>
-            <Head>
-                <title>Sharavathi Backwater Boating & Pre-Wedding Shoots in Honnavar | GK WhizWheels</title>
-                <meta
-                    name="description"
-                    content="Experience world-class Sharavathi backwater boating, mangrove safaris, sunset cruises, and pre-wedding photoshoot boat charters in Honnavar. Govt-certified boat captains, life jackets, and transparent booking."
-                />
-            </Head>
+            <PageHead
+                title="Sharavathi Backwater Boating & Mangrove Cruises in Honnavar | GK WhizWheel"
+                description="Experience Sharavathi backwater boating, mangrove safaris & sunset cruises in Honnavar from ₹600. Govt-certified boat captains, life jackets & fast booking."
+                canonicalUrl="https://whizwheels.in/services/boating"
+                ogImage="/images/services/boating.jpg"
+                ogType="website"
+                structuredData={[boatingTripSchema, boatingFaqSchema]}
+            />
 
             <Box component="main" id="main-content" sx={{ width: '100%', overflowX: 'hidden' }}>
                 {/* =========================================================================
@@ -445,7 +505,7 @@ export default function BoatingPage({ availableItems = [] }) {
                                     {/* Card Content & Features directly matching WhatsApp Catalog Flyer */}
                                     <Box sx={{ p: 2.5 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
-                                            <Typography variant="h4" sx={{ fontWeight: 950, color: '#059669', lineHeight: 1 }}>
+                                            <Typography variant="h4" component="span" sx={{ fontWeight: 950, color: '#059669', lineHeight: 1 }}>
                                                 ₹1,500.00
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: '#94A3B8', textDecoration: 'line-through', fontWeight: 600 }}>
@@ -668,6 +728,7 @@ export default function BoatingPage({ availableItems = [] }) {
                                         component="img"
                                         src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80"
                                         alt="Pre Wedding Shoot Boat in Honnavar Mangroves"
+                                        loading="lazy"
                                         sx={{ width: '100%', height: { xs: 260, md: 360 }, objectFit: 'cover', display: 'block' }}
                                     />
                                     <Box
@@ -744,6 +805,7 @@ export default function BoatingPage({ availableItems = [] }) {
                                         component="img"
                                         src="/images/services/honnavar-backwater-boating.jpg"
                                         alt="Honnavar Backwater Boating - Sharavathi River"
+                                        loading="lazy"
                                         sx={{
                                             width: '100%',
                                             height: '100%',
@@ -827,7 +889,7 @@ export default function BoatingPage({ availableItems = [] }) {
                                                 flexWrap: 'wrap',
                                             }}
                                         >
-                                            <Typography variant="h3" sx={{ fontWeight: 950, color: '#059669', lineHeight: 1 }}>
+                                            <Typography variant="h3" component="span" sx={{ fontWeight: 950, color: '#059669', lineHeight: 1 }}>
                                                 ₹1,500.00
                                             </Typography>
                                             <Typography variant="body1" sx={{ textDecoration: 'line-through', color: mutedTextColor, fontWeight: 700 }}>
@@ -1177,28 +1239,7 @@ export default function BoatingPage({ availableItems = [] }) {
                     </Typography>
 
                     <Stack spacing={1.5}>
-                        {[
-                            {
-                                q: 'What is the best time for pre-wedding and photography shoots on the boat?',
-                                a: 'The golden hour sunset slot (4:15 PM – 6:30 PM) is our most sought-after window for pre-wedding shoots. The low-angle sunlight over the Sharavathi sea confluence produces warm, magical portraits. Early morning (7:00 AM – 9:00 AM) is also fantastic for mist over the river and peaceful, quiet reflections.',
-                            },
-                            {
-                                q: 'Are drones and video cameras allowed during boating in Honnavar?',
-                                a: 'Yes! Drones and video gear are permitted for personal, creative, and pre-wedding shoots. Our captains are experienced in holding the boat steady in calm backwaters to facilitate safe drone take-off and landing from the deck.',
-                            },
-                            {
-                                q: 'Can the couple take off lifejackets during photoshoot poses?',
-                                a: 'Under maritime safety rules, lifejackets are mandatory while the boat is cruising. However, during our private shoot charters, once the captain halts the boat in tranquil, placid backwater bays, the couple may remove lifejackets momentarily for portrait shots under supervision.',
-                            },
-                            {
-                                q: 'Is Sharavathi backwater boating safe for infants and senior citizens?',
-                                a: 'Yes! The Sharavathi backwater channels are remarkably calm, tranquil, and shielded from rough ocean waves. The boats are motorized, covered with sun canopies, and equipped with comfortable seating and certified life jackets.',
-                            },
-                            {
-                                q: 'Where is the boat boarding jetty located?',
-                                a: 'The primary boarding jetty is located just 5 minutes from Honnavar town center along the Sharavathi riverbank. Exact Google Maps pin coordinates and captain contact details are shared immediately upon booking.',
-                            },
-                        ].map((faq, fIdx) => (
+                        {BOATING_FAQS.map((faq, fIdx) => (
                             <Accordion
                                 key={fIdx}
                                 defaultExpanded={fIdx === 0}

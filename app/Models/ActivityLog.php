@@ -16,6 +16,22 @@ class ActivityLog extends Model
     public const UPDATED_AT = null;
 
     /**
+     * Bootstrap the model and its traits.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (ActivityLog $log): void {
+            if (is_array($log->old_values)) {
+                $log->old_values = \App\Logging\MaskSensitiveDataProcessor::maskSensitiveArray($log->old_values);
+            }
+
+            if (is_array($log->new_values)) {
+                $log->new_values = \App\Logging\MaskSensitiveDataProcessor::maskSensitiveArray($log->new_values);
+            }
+        });
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

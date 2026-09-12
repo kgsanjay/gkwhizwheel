@@ -161,7 +161,7 @@ test('super admin can execute refund and optionally mark booking as cancelled', 
     $this->assertDatabaseHas('refunds', [
         'booking_id' => $this->booking->id,
         'amount' => 3000.00,
-        'status' => RefundStatus::COMPLETED->value,
+        'status' => RefundStatus::PENDING->value,
     ]);
 
     $this->booking->refresh();

@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import TourBookingModal from '../Components/BookingModals/TourBookingModal';
+import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
     Box,
     Typography,
@@ -198,39 +201,73 @@ const TRANSIT_GATEWAYS = [
     { gateway: 'Bangalore (KSRTC Sleeper / Day Trains)', dist: '440 km', time: 'Overnight (8.5 Hrs)', note: 'Panchaganga Express & daily private sleepers drop right in Honnavar' },
 ];
 
-// FAQs Data
+// FAQs Data (Tour-Specific)
 const TOURS_FAQS = [
     {
-        q: 'Can we customize the days, hotel categories, or sights in these tour packages?',
-        a: 'Yes, 100%! Use our interactive Custom Package Builder right on this page or tell our travel concierge your preferences. You can adjust durations, swap hotels, add Netrani scuba diving, or include two-wheelers instead of a cab.',
+        q: 'What happens if it rains during a waterfall or beach tour?',
+        a: 'Coastal Karnataka and the Western Ghats are breathtaking in green monsoon and post-monsoon months. If torrential rain or local authorities temporarily restrict waterfall bathing (like Vibhooti) or rock climbing (Yana), our chauffeur and guide seamlessly redirect to enchanting heritage forts, covered scenic lookouts, or temple circuits at no extra charge.',
     },
     {
-        q: 'What is included in the package price?',
-        a: 'All our curated packages include private vehicle transportation (fuel, tolls, driver allowance), comfortable handpicked stays with complimentary breakfast, pre-paid boating safari tickets, monument entries, and verified local guides on key circuits.',
+        q: 'What is the pricing policy for solo / single travelers?',
+        a: 'Our listed fixed packages are calculated based on double-occupancy rooms and shared private transport. For solo travelers, we can either offer a solo two-wheeler expedition package or assign a compact private hatchback with a modest single-occupancy room supplement.',
+    },
+    {
+        q: 'What is the booking deposit and payment schedule for multi-day trips?',
+        a: 'You only pay a nominal 20% advance token online to lock in your riverfront stay dates, private cab, and boat safari permits. The remaining 80% balance is payable comfortably upon your arrival in Honnavar after meeting your chauffeur.',
+    },
+    {
+        q: 'Can we customize days, hotel categories, or sights in these tour packages?',
+        a: 'Yes, 100%! Use our interactive Custom Package Builder right on this page or tell our travel concierge your preferences. You can adjust durations, swap homestays for luxury beach resorts, add Netrani scuba diving, or switch from a cab to rental two-wheelers.',
     },
     {
         q: 'How does airport or railway station pickup work?',
-        a: 'Your dedicated chauffeur meets you holding a personalized name placard at Honnavar, Gokarna, Kumta, or Murudeshwar railway stations. We also arrange direct AC cab transfers from Goa or Mangalore airports.',
-    },
-    {
-        q: 'Why are lunch and dinner excluded in most packages?',
-        a: 'We intentionally keep lunches and dinners flexible so you are never trapped eating generic buffet food at a hotel. Coastal Karnataka has extraordinary local culinary treasures (authentic Karavali seafood, pure veg Udupi thalis, beach shacks)—and your guide/driver will recommend the finest spots according to your taste.',
-    },
-    {
-        q: 'What is the booking and payment policy?',
-        a: 'You can reserve any tour package with an advance token of just 20%. The remaining balance is payable comfortably upon your arrival in Honnavar. Cancellations made 48 hours prior to check-in are eligible for a full refund.',
-    },
-    {
-        q: 'Is it suitable for senior citizens and families with children?',
-        a: 'Absolutely. All our itineraries are paced comfortably without rushed scheduling. We provide clean, smooth-riding AC vehicles, safe boating with certified lifejackets, and easy walking alternatives for elderly travelers.',
+        a: 'Your dedicated chauffeur meets you holding a personalized name placard at Honnavar, Gokarna, Kumta, or Murudeshwar railway stations. We also arrange direct AC cab transfers from Goa (Dabolim/Mopa) or Mangalore airports.',
     },
 ];
+
+const toursFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: TOURS_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
 
 export default function ToursPage({ availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
     const [modalOpen, setModalOpen] = useState(false);
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [selectedItemForGallery, setSelectedItemForGallery] = useState(null);
+    const [itineraryExpanded, setItineraryExpanded] = useState(false);
+
+    const primaryTourItem = availableItems.length > 0 ? availableItems[0] : null;
+    const primaryTourMedia = useMemo(() => {
+        return getServiceItemMedia(primaryTourItem, '/images/places/gokarna_beaches.jpg');
+    }, [primaryTourItem]);
+
+    const displayPackages = useMemo(() => {
+        return CURATED_PACKAGES.map((pkg, idx) => {
+            const matchedItem = availableItems.find(ai =>
+                ai.id === pkg.id ||
+                (ai.category?.toLowerCase().includes('tour') && ai.name?.toLowerCase().includes(pkg.title.toLowerCase().split(' ')[1] || '')) ||
+                (ai.name?.toLowerCase().includes('safari') && pkg.title.toLowerCase().includes('safari'))
+            ) || availableItems[idx] || null;
+
+            const media = getServiceItemMedia(matchedItem, pkg.image);
+            return {
+                ...pkg,
+                item: matchedItem,
+                media,
+            };
+        });
+    }, [availableItems]);
 
     // ==========================================
     // INTERACTIVE CUSTOM PACKAGE BUILDER STATE
@@ -329,77 +366,39 @@ export default function ToursPage({ availableItems = [] }) {
 
     return (
         <AppLayout noFooterMargin>
-            <Head>
-                <title>All-Inclusive Karnataka Tour Packages & Custom Trips in Honnavar | GK WhizWheels</title>
-                <meta
-                    name="description"
-                    content="Experience world-class Coastal Karnataka tour packages: Honnavar backwaters, Gokarna beaches, Yana limestone rocks, Vibhooti Falls & Netrani scuba diving. Custom trip builder, chauffeur AC cabs, riverfront stays & native guides."
-                />
-            </Head>
+            <PageHead
+                title="Coastal Karnataka Tour Packages & Custom Trips from Honnavar | GK WhizWheel"
+                description="Book all-inclusive Coastal Karnataka tour packages from ₹2,499. Honnavar backwaters, Gokarna beach treks, Yana rock monoliths & Jog Falls with AC cabs."
+                canonicalUrl="https://whizwheels.in/services/tours"
+                ogImage="/images/services/tours.jpg"
+                ogType="website"
+                structuredData={[
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'TouristTrip',
+                        name: 'All-Inclusive Coastal Karnataka Tour Packages',
+                        description: 'Custom sightseeing tours covering Honnavar, Gokarna, Murudeshwar, Yana Caves, and Jog Falls with dedicated AC cabs and flexible itineraries.',
+                        touristType: 'Tourists & Family Travelers',
+                        offers: {
+                            '@type': 'AggregateOffer',
+                            priceCurrency: 'INR',
+                            lowPrice: '2499',
+                            highPrice: '15000',
+                            offerCount: '6',
+                            price: '2499',
+                        },
+                        provider: {
+                            '@type': 'LocalBusiness',
+                            name: 'GK WhizWheel',
+                            telephone: '+918660989586',
+                            url: 'https://whizwheels.in',
+                        },
+                    },
+                    toursFaqSchema,
+                ]}
+            />
 
             <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                {/* =========================================================================
-                    1. TOP NOTIFICATION BAR / TICKER
-                ========================================================================== */}
-                <Box
-                    sx={{
-                        width: '100%',
-                        bgcolor: isDark ? 'rgba(124, 58, 237, 0.15)' : '#F3E8FF',
-                        borderBottom: isDark ? '1px solid rgba(124, 58, 237, 0.3)' : '1px solid #E9D5FF',
-                        py: 1,
-                        px: { xs: 2, sm: 4 },
-                    }}
-                >
-                    <Stack
-                        direction={{ xs: 'column', md: 'row' }}
-                        spacing={{ xs: 1, md: 3 }}
-                        alignItems="center"
-                        justifyContent="space-between"
-                        sx={{ maxWidth: 1320, mx: 'auto' }}
-                    >
-                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'wrap' }}>
-                            <Chip
-                                size="small"
-                                icon={<VerifiedUserIcon sx={{ fontSize: '14px !important', color: '#7C3AED' }} />}
-                                label="4.96/5 Traveler Rating • Guaranteed Departures"
-                                sx={{
-                                    bgcolor: isDark ? 'rgba(124, 58, 237, 0.25)' : '#E9D5FF',
-                                    color: isDark ? '#E9D5FF' : '#6B21A8',
-                                    fontWeight: 700,
-                                    fontSize: '0.75rem',
-                                }}
-                            />
-                            <Typography variant="caption" sx={{ color: isDark ? '#E9D5FF' : '#581C87', fontWeight: 600 }}>
-                                🌴 All-Inclusive Coastal Karavali & Ghats Packages • Private AC Cabs • Riverfront Stays • 0% Hidden Fees
-                            </Typography>
-                        </Stack>
-
-                        <Stack direction="row" spacing={2} alignItems="center">
-                            <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#475569', display: { xs: 'none', lg: 'block' } }}>
-                                Speak with our Vacation Architect:
-                            </Typography>
-                            <Button
-                                component="a"
-                                href="tel:+918660989586"
-                                size="small"
-                                startIcon={<PhoneIcon sx={{ fontSize: '14px !important' }} />}
-                                sx={{
-                                    color: '#7C3AED',
-                                    fontWeight: 700,
-                                    fontSize: '0.75rem',
-                                    py: 0.2,
-                                    px: 1,
-                                    textTransform: 'none',
-                                    borderRadius: 1.5,
-                                    '&:hover': { bgcolor: isDark ? 'rgba(124, 58, 237, 0.2)' : 'rgba(124, 58, 237, 0.1)' },
-                                }}
-                            >
-                                +91 86609 89586
-                            </Button>
-                        </Stack>
-                    </Stack>
-                </Box>
-
                 {/* =========================================================================
                     2. MODERN 2-COLUMN HERO SECTION
                 ========================================================================== */}
@@ -611,17 +610,31 @@ export default function ToursPage({ availableItems = [] }) {
                                             : '0 20px 40px rgba(124, 58, 237, 0.12)',
                                     }}
                                 >
-                                    <Box sx={{ position: 'relative', height: 260, width: '100%', overflow: 'hidden' }}>
+                                    <Box 
+                                        sx={{ 
+                                            position: 'relative', 
+                                            height: 260, 
+                                            width: '100%', 
+                                            overflow: 'hidden',
+                                            cursor: primaryTourMedia.gallery.length > 0 ? 'pointer' : 'default',
+                                        }}
+                                        onClick={() => {
+                                            if (primaryTourMedia.gallery.length > 0) {
+                                                setSelectedItemForGallery(primaryTourItem);
+                                                setGalleryModalOpen(true);
+                                            }
+                                        }}
+                                    >
                                         <Box
                                             component="img"
-                                            src="/images/places/gokarna_beaches.jpg"
-                                            alt="Complete Coastal Karnataka Safari Tour Package"
+                                            src={primaryTourMedia.primary}
+                                            alt="Complete Coastal Karnataka Safari Tour Package - Honnavar, Gokarna & Murudeshwar sightseeing"
                                             sx={{
                                                 width: '100%',
                                                 height: '100%',
                                                 objectFit: 'cover',
                                                 transition: 'transform 0.5s ease',
-                                                '&:hover': { transform: 'scale(1.04)' },
+                                                '&:hover': primaryTourMedia.gallery.length > 0 ? { transform: 'scale(1.04)' } : {},
                                             }}
                                         />
                                         <Box
@@ -631,24 +644,45 @@ export default function ToursPage({ availableItems = [] }) {
                                                 background: 'linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.2) 60%, transparent 100%)',
                                             }}
                                         />
-                                        <Chip
-                                            icon={<StarIcon sx={{ fontSize: '14px !important', color: '#FFFFFF' }} />}
-                                            label="BESTSELLER VACATION (3D/2N)"
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 16,
-                                                left: 16,
-                                                bgcolor: '#7C3AED',
-                                                color: '#FFFFFF',
-                                                fontWeight: 800,
-                                                fontSize: '0.72rem',
-                                                backdropFilter: 'blur(8px)',
-                                            }}
-                                        />
+                                        <Box sx={{ position: 'absolute', top: 16, left: 16, right: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Chip
+                                                icon={<StarIcon sx={{ fontSize: '14px !important', color: '#FFFFFF' }} />}
+                                                label="BESTSELLER VACATION (3D/2N)"
+                                                sx={{
+                                                    bgcolor: '#7C3AED',
+                                                    color: '#FFFFFF',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.72rem',
+                                                    backdropFilter: 'blur(8px)',
+                                                }}
+                                            />
+                                            {primaryTourMedia.hasMultiple && (
+                                                <Chip
+                                                    icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+                                                    size="small"
+                                                    label={`${primaryTourMedia.count} Photos`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedItemForGallery(primaryTourItem);
+                                                        setGalleryModalOpen(true);
+                                                    }}
+                                                    sx={{
+                                                        bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                        color: '#FFFFFF',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.72rem',
+                                                        backdropFilter: 'blur(8px)',
+                                                        cursor: 'pointer',
+                                                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                        '&:hover': { bgcolor: '#7C3AED' },
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
                                         <Box sx={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
                                             <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
                                                 <Box>
-                                                    <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                                                    <Typography variant="h6" component="p" sx={{ color: '#FFFFFF', fontWeight: 800, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
                                                         Complete Coastal Karnataka Safari
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: '#CBD5E1', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -681,7 +715,7 @@ export default function ToursPage({ availableItems = [] }) {
                                                 <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 700, textTransform: 'uppercase' }}>
                                                     All-Inclusive Package
                                                 </Typography>
-                                                <Typography variant="h4" sx={{ fontWeight: 900, color: '#7C3AED' }}>
+                                                <Typography variant="h4" component="span" sx={{ fontWeight: 900, color: '#7C3AED' }}>
                                                     ₹8,999{' '}
                                                     <Typography component="span" variant="caption" sx={{ color: mutedTextColor, fontWeight: 600 }}>
                                                         / person (Min 2 Pax)
@@ -795,6 +829,7 @@ export default function ToursPage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1074,7 +1109,7 @@ export default function ToursPage({ availableItems = [] }) {
                                         size="small"
                                         sx={{ bgcolor: '#7C3AED', color: '#FFFFFF', fontWeight: 800, mb: 2 }}
                                     />
-                                    <Typography variant="h5" sx={{ fontWeight: 900, color: primaryTextColor, mb: 0.5 }}>
+                                    <Typography variant="h5" component="h3" sx={{ fontWeight: 900, color: primaryTextColor, mb: 0.5 }}>
                                         Estimated Custom Plan
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', mb: 2 }}>
@@ -1116,7 +1151,7 @@ export default function ToursPage({ availableItems = [] }) {
                                             <Typography variant="body2" sx={{ fontWeight: 800, color: '#7C3AED' }}>
                                                 Total Group Price:
                                             </Typography>
-                                            <Typography variant="h4" sx={{ fontWeight: 900, color: '#7C3AED' }}>
+                                            <Typography variant="h4" component="span" sx={{ fontWeight: 900, color: '#7C3AED' }}>
                                                 ₹{customCalculation.totalCost.toLocaleString()}
                                             </Typography>
                                         </Stack>
@@ -1131,17 +1166,27 @@ export default function ToursPage({ availableItems = [] }) {
                                             variant="contained"
                                             size="large"
                                             onClick={() => setModalOpen(true)}
+                                            endIcon={<ArrowForwardIcon sx={{ fontSize: 22 }} />}
                                             sx={{
                                                 bgcolor: '#7C3AED',
                                                 color: '#FFFFFF',
-                                                fontWeight: 800,
-                                                py: 1.4,
-                                                borderRadius: 2.5,
+                                                fontWeight: 900,
+                                                py: 1.6,
+                                                borderRadius: 3,
+                                                fontSize: '1.05rem',
+                                                letterSpacing: '0.01em',
                                                 textTransform: 'none',
-                                                '&:hover': { bgcolor: '#6D28D9' },
+                                                boxShadow: '0 8px 24px rgba(124, 58, 237, 0.45)',
+                                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                transition: 'all 0.25s ease-in-out',
+                                                '&:hover': {
+                                                    bgcolor: '#6D28D9',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 12px 30px rgba(124, 58, 237, 0.55)',
+                                                },
                                             }}
                                         >
-                                            Book This Custom Trip
+                                            Book This Custom Trip Now
                                         </Button>
 
                                         <Button
@@ -1204,6 +1249,7 @@ export default function ToursPage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1232,7 +1278,7 @@ export default function ToursPage({ availableItems = [] }) {
                         </Box>
 
                         <Grid container spacing={3.5}>
-                            {CURATED_PACKAGES.map((pkg) => (
+                            {displayPackages.map((pkg) => (
                                 <Grid size={{ xs: 12, md: 6 }} key={pkg.id}>
                                     <Card
                                         elevation={0}
@@ -1253,12 +1299,31 @@ export default function ToursPage({ availableItems = [] }) {
                                             },
                                         }}
                                     >
-                                        <Box sx={{ position: 'relative', height: 230 }}>
+                                        <Box 
+                                            sx={{ 
+                                                position: 'relative', 
+                                                height: 230,
+                                                cursor: pkg.media.gallery.length > 0 ? 'pointer' : 'default',
+                                            }}
+                                            onClick={() => {
+                                                if (pkg.media.gallery.length > 0) {
+                                                    setSelectedItemForGallery(pkg.item || { name: pkg.title, primary_image_url: pkg.media.primary, gallery_image_urls: pkg.media.gallery });
+                                                    setGalleryModalOpen(true);
+                                                }
+                                            }}
+                                        >
                                             <Box
                                                 component="img"
-                                                src={pkg.image}
-                                                alt={pkg.title}
-                                                sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                src={pkg.media.primary}
+                                                alt={`${pkg.title} - Coastal Karnataka Tour Package from Honnavar`}
+                                                loading="lazy"
+                                                sx={{ 
+                                                    width: '100%', 
+                                                    height: '100%', 
+                                                    objectFit: 'cover',
+                                                    transition: 'transform 0.4s ease',
+                                                    '&:hover': pkg.media.gallery.length > 0 ? { transform: 'scale(1.05)' } : {},
+                                                }}
                                             />
                                             <Box
                                                 sx={{
@@ -1267,19 +1332,40 @@ export default function ToursPage({ availableItems = [] }) {
                                                     background: 'linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.2) 60%, transparent 100%)',
                                                 }}
                                             />
-                                            <Chip
-                                                label={pkg.badge}
-                                                size="small"
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 14,
-                                                    left: 14,
-                                                    bgcolor: pkg.badgeColor,
-                                                    color: '#FFFFFF',
-                                                    fontWeight: 800,
-                                                    fontSize: '0.72rem',
-                                                }}
-                                            />
+                                            <Stack direction="row" spacing={1} sx={{ position: 'absolute', top: 14, left: 14 }}>
+                                                <Chip
+                                                    label={pkg.badge}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: pkg.badgeColor,
+                                                        color: '#FFFFFF',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.72rem',
+                                                    }}
+                                                />
+                                                {pkg.media.hasMultiple && (
+                                                    <Chip
+                                                        icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+                                                        size="small"
+                                                        label={`${pkg.media.count} Photos`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedItemForGallery(pkg.item || { name: pkg.title, primary_image_url: pkg.media.primary, gallery_image_urls: pkg.media.gallery });
+                                                            setGalleryModalOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                            color: '#FFFFFF',
+                                                            fontWeight: 800,
+                                                            fontSize: '0.72rem',
+                                                            backdropFilter: 'blur(8px)',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                            '&:hover': { bgcolor: pkg.badgeColor },
+                                                        }}
+                                                    />
+                                                )}
+                                            </Stack>
                                             <Chip
                                                 label={pkg.duration}
                                                 icon={<AccessTimeIcon sx={{ fontSize: '14px !important', color: '#FFFFFF' }} />}
@@ -1296,7 +1382,7 @@ export default function ToursPage({ availableItems = [] }) {
                                                 }}
                                             />
                                             <Box sx={{ position: 'absolute', bottom: 14, left: 16, right: 16 }}>
-                                                <Typography variant="h5" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2, mb: 0.4 }}>
+                                                <Typography variant="h5" component="h3" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2, mb: 0.4 }}>
                                                     {pkg.title}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: '#E9D5FF', fontWeight: 600 }}>
@@ -1335,7 +1421,7 @@ export default function ToursPage({ availableItems = [] }) {
                                                         <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 0.3 }}>
                                                             Starting From
                                                         </Typography>
-                                                        <Typography variant="h4" sx={{ fontWeight: 900, color: '#7C3AED', lineHeight: 1 }}>
+                                                        <Typography variant="h4" component="span" sx={{ fontWeight: 900, color: '#7C3AED', lineHeight: 1 }}>
                                                             ₹{pkg.startingPrice.toLocaleString()}
                                                             <Typography component="span" variant="body2" sx={{ color: mutedTextColor, fontWeight: 600, ml: 0.8 }}>
                                                                 / {pkg.priceUnit}
@@ -1420,6 +1506,7 @@ export default function ToursPage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1447,55 +1534,90 @@ export default function ToursPage({ availableItems = [] }) {
                             </Typography>
                         </Box>
 
-                        <Stack spacing={3.5}>
-                            {DETAILED_TIMELINE_3D2N.map((item, idx) => (
-                                <Paper
-                                    key={idx}
-                                    elevation={0}
-                                    sx={{
-                                        p: { xs: 2.5, sm: 3.5 },
-                                        borderRadius: 3.5,
-                                        bgcolor: cardBgColor,
-                                        border: `1px solid ${cardBorderColor}`,
-                                    }}
-                                >
-                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: 2 }}>
-                                        <Chip
-                                            label={item.day}
-                                            sx={{
-                                                bgcolor: '#7C3AED',
-                                                color: '#FFFFFF',
-                                                fontWeight: 900,
-                                                fontSize: '0.85rem',
-                                                px: 1,
-                                            }}
-                                        />
-                                        <Box>
-                                            <Typography variant="h6" sx={{ fontWeight: 800, color: primaryTextColor }}>
-                                                {item.title}
-                                            </Typography>
-                                        </Box>
-                                    </Stack>
+                        <Box sx={{ textAlign: 'center', mb: itineraryExpanded ? { xs: 3, md: 4 } : 0 }}>
+                            <Button
+                                variant="outlined"
+                                onClick={() => setItineraryExpanded((prev) => !prev)}
+                                endIcon={
+                                    <ExpandMoreIcon
+                                        sx={{
+                                            transform: itineraryExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.25s ease',
+                                            color: '#7C3AED',
+                                        }}
+                                    />
+                                }
+                                sx={{
+                                    borderColor: '#7C3AED',
+                                    color: isDark ? '#C4B5FD' : '#7C3AED',
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    py: 1.2,
+                                    px: 3,
+                                    borderRadius: 3,
+                                    textTransform: 'none',
+                                    bgcolor: isDark ? 'rgba(124, 58, 237, 0.1)' : 'rgba(124, 58, 237, 0.05)',
+                                    '&:hover': {
+                                        bgcolor: isDark ? 'rgba(124, 58, 237, 0.2)' : 'rgba(124, 58, 237, 0.12)',
+                                        borderColor: '#6D28D9',
+                                    },
+                                }}
+                            >
+                                {itineraryExpanded ? 'Hide Day-by-Day Itinerary' : 'View Full Day-by-Day Itinerary (3D/2N)'}
+                            </Button>
+                        </Box>
 
-                                    <Divider sx={{ mb: 2.5, borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9' }} />
+                        {itineraryExpanded && (
+                            <Stack spacing={3} sx={{ mt: 3.5 }}>
+                                {DETAILED_TIMELINE_3D2N.map((item, idx) => (
+                                    <Paper
+                                        key={idx}
+                                        elevation={0}
+                                        sx={{
+                                            p: { xs: 2.5, sm: 3.5 },
+                                            borderRadius: 3.5,
+                                            bgcolor: cardBgColor,
+                                            border: `1px solid ${cardBorderColor}`,
+                                        }}
+                                    >
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: 2 }}>
+                                            <Chip
+                                                label={item.day}
+                                                sx={{
+                                                    bgcolor: '#7C3AED',
+                                                    color: '#FFFFFF',
+                                                    fontWeight: 900,
+                                                    fontSize: '0.85rem',
+                                                    px: 1,
+                                                }}
+                                            />
+                                            <Box>
+                                                <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: primaryTextColor }}>
+                                                    {item.title}
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
 
-                                    <Grid container spacing={2}>
-                                        {item.highlights.map((point, pi) => (
-                                            <Grid size={{ xs: 12, md: 6 }} key={pi}>
-                                                <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                                                    <Box sx={{ p: 0.5, borderRadius: 1.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', mt: 0.2 }}>
-                                                        <CheckCircleIcon sx={{ fontSize: 16, color: '#7C3AED' }} />
-                                                    </Box>
-                                                    <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.5, fontSize: '0.9rem' }}>
-                                                        {point}
-                                                    </Typography>
-                                                </Stack>
-                                            </Grid>
-                                        ))}
-                                    </Grid>
-                                </Paper>
-                            ))}
-                        </Stack>
+                                        <Divider sx={{ mb: 2.5, borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9' }} />
+
+                                        <Grid container spacing={2}>
+                                            {item.highlights.map((point, pi) => (
+                                                <Grid size={{ xs: 12, md: 6 }} key={pi}>
+                                                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                                                        <Box sx={{ p: 0.5, borderRadius: 1.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', mt: 0.2 }}>
+                                                            <CheckCircleIcon sx={{ fontSize: 16, color: '#7C3AED' }} />
+                                                        </Box>
+                                                        <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.5, fontSize: '0.9rem' }}>
+                                                            {point}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                    </Paper>
+                                ))}
+                            </Stack>
+                        )}
                     </Box>
                 </Box>
 
@@ -1532,6 +1654,7 @@ export default function ToursPage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1571,7 +1694,7 @@ export default function ToursPage({ availableItems = [] }) {
                                         border: `1px solid ${cardBorderColor}`,
                                     }}
                                 >
-                                    <Typography variant="h6" sx={{ fontWeight: 800, color: '#059669', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: '#059669', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <CheckCircleIcon sx={{ fontSize: 22 }} /> 100% COVERED & PRE-PAID:
                                     </Typography>
                                     <Stack spacing={1.5}>
@@ -1606,7 +1729,7 @@ export default function ToursPage({ availableItems = [] }) {
                                         border: `1px solid ${cardBorderColor}`,
                                     }}
                                 >
-                                    <Typography variant="h6" sx={{ fontWeight: 800, color: '#E11D48', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: '#E11D48', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <InfoOutlinedIcon sx={{ fontSize: 22 }} /> NOT INCLUDED (FLEXIBLE DINING):
                                     </Typography>
                                     <Stack spacing={1.5}>
@@ -1633,110 +1756,7 @@ export default function ToursPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    7. SIGHTSEEING DISTANCES & GATEWAY CONNECTIVITY MATRIX
-                ========================================================================== */}
-                <Box
-                    component="section"
-                    sx={{
-                        py: { xs: 6, sm: 8, md: 9 },
-                        px: { xs: 2, sm: 3.5, md: 5, lg: 6 },
-                        bgcolor: isDark ? '#0B1120' : '#F8FAFC',
-                        borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
-                    }}
-                >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
-                        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-                            <Chip
-                                label="TRANSIT & CONNECTIVITY"
-                                size="small"
-                                sx={{
-                                    display: 'inline-flex',
-                                    width: 'auto',
-                                    bgcolor: isDark ? 'rgba(124, 58, 237, 0.15)' : '#F3E8FF',
-                                    color: '#7C3AED',
-                                    fontWeight: 850,
-                                    fontSize: '0.75rem',
-                                    letterSpacing: '0.04em',
-                                    mb: 1.5,
-                                    px: 1.5,
-                                    py: 0.5,
-                                    border: '1px solid',
-                                    borderColor: isDark ? 'rgba(124, 58, 237, 0.3)' : '#E9D5FF',
-                                }}
-                            />
-                            <Typography
-                                variant="h3"
-                                sx={{
-                                    fontWeight: 950,
-                                    color: primaryTextColor,
-                                    fontSize: { xs: '1.85rem', sm: '2.3rem', md: '2.6rem' },
-                                    letterSpacing: '-0.02em',
-                                    textAlign: 'center',
-                                    mb: 1.5,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                How to Reach Honnavar & Travel Matrix
-                            </Typography>
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    color: secondaryTextColor,
-                                    maxWidth: 680,
-                                    mx: 'auto',
-                                    textAlign: 'center',
-                                    fontSize: { xs: '0.95rem', sm: '1.05rem' },
-                                    lineHeight: 1.6,
-                                }}
-                            >
-                                Honnavar is the central gateway to Coastal Karnataka. We provide station pickups or coordinate airport cabs effortlessly.
-                            </Typography>
-                        </Box>
-
-                        <TableContainer
-                            component={Paper}
-                            elevation={0}
-                            sx={{
-                                borderRadius: 3.5,
-                                bgcolor: cardBgColor,
-                                border: `1px solid ${cardBorderColor}`,
-                                overflow: 'hidden',
-                            }}
-                        >
-                            <Table sx={{ minWidth: 650 }} aria-label="transit matrix">
-                                <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Gateway / Arrival Point</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Distance to Honnavar</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Travel Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>GK WhizWheels Pickup Support</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {TRANSIT_GATEWAYS.map((row, idx) => (
-                                        <TableRow
-                                            key={idx}
-                                            sx={{
-                                                '&:last-child td, &:last-child th': { border: 0 },
-                                                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#FAFAFA' },
-                                            }}
-                                        >
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 700, color: primaryTextColor }}>
-                                                {row.gateway}
-                                            </TableCell>
-                                            <TableCell sx={{ color: '#7C3AED', fontWeight: 800 }}>{row.dist}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontWeight: 600 }}>{row.time}</TableCell>
-                                            <TableCell sx={{ color: mutedTextColor }}>{row.note}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Box>
-                </Box>
-
-                {/* =========================================================================
-                    8. FREQUENTLY ASKED QUESTIONS (FAQ)
+                    8. FREQUENTLY ASKED QUESTIONS (FAQ) WITH EMBEDDED TRANSIT MATRIX
                 ========================================================================== */}
                 <Box
                     component="section"
@@ -1768,6 +1788,7 @@ export default function ToursPage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1791,7 +1812,7 @@ export default function ToursPage({ availableItems = [] }) {
                                     lineHeight: 1.6,
                                 }}
                             >
-                                Have queries regarding custom itineraries, advance deposits, or driver allowances? We have answers.
+                                Have queries regarding custom itineraries, weather contingencies, solo pricing, or transit distances? We have answers.
                             </Typography>
                         </Box>
 
@@ -1823,6 +1844,71 @@ export default function ToursPage({ availableItems = [] }) {
                                     </AccordionDetails>
                                 </Accordion>
                             ))}
+
+                            {/* Gateway & Transit Connectivity Matrix as Collapsed FAQ Accordion */}
+                            <Accordion
+                                elevation={0}
+                                sx={{
+                                    borderRadius: '16px !important',
+                                    bgcolor: cardBgColor,
+                                    border: `1px solid ${cardBorderColor}`,
+                                    '&:before': { display: 'none' },
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon sx={{ color: '#7C3AED' }} />}
+                                    sx={{ px: 3, py: 1.5 }}
+                                >
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: primaryTextColor, pr: 2 }}>
+                                        How do we reach Honnavar, and what are travel distances from airports/trains? (Transit Matrix)
+                                    </Typography>
+                                </AccordionSummary>
+                                <AccordionDetails sx={{ px: { xs: 2, sm: 3 }, pb: 3, pt: 0 }}>
+                                    <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2, fontSize: '0.92rem' }}>
+                                        Honnavar is the central gateway to Coastal Karnataka. We provide station pickups or coordinate airport cabs effortlessly:
+                                    </Typography>
+                                    <TableContainer
+                                        component={Paper}
+                                        elevation={0}
+                                        sx={{
+                                            borderRadius: 2.5,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC',
+                                            border: `1px solid ${cardBorderColor}`,
+                                            overflowX: 'auto',
+                                        }}
+                                    >
+                                        <Table size="small" sx={{ minWidth: 550 }} aria-label="transit matrix">
+                                            <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }}>
+                                                <TableRow>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Gateway / Arrival Point</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Distance</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Travel Time</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Pickup Support</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {TRANSIT_GATEWAYS.map((row, idx) => (
+                                                    <TableRow
+                                                        key={idx}
+                                                        sx={{
+                                                            '&:last-child td, &:last-child th': { border: 0 },
+                                                            '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F1F5F9' },
+                                                        }}
+                                                    >
+                                                        <TableCell component="th" scope="row" sx={{ fontWeight: 700, color: primaryTextColor, fontSize: '0.85rem' }}>
+                                                            {row.gateway}
+                                                        </TableCell>
+                                                        <TableCell sx={{ color: '#7C3AED', fontWeight: 800, fontSize: '0.85rem' }}>{row.dist}</TableCell>
+                                                        <TableCell sx={{ color: secondaryTextColor, fontWeight: 600, fontSize: '0.85rem' }}>{row.time}</TableCell>
+                                                        <TableCell sx={{ color: mutedTextColor, fontSize: '0.82rem' }}>{row.note}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </AccordionDetails>
+                            </Accordion>
                         </Stack>
                     </Box>
                 </Box>
@@ -1857,6 +1943,7 @@ export default function ToursPage({ availableItems = [] }) {
                         />
                         <Typography
                             variant="h3"
+                            component="h2"
                             sx={{
                                 fontWeight: 900,
                                 fontSize: { xs: '1.8rem', sm: '2.5rem', md: '2.8rem' },
@@ -1965,6 +2052,17 @@ export default function ToursPage({ availableItems = [] }) {
                 onClose={() => setModalOpen(false)}
                 initialPackageId="2d1n_karavali"
                 availableItems={availableItems}
+            />
+
+            {/* Multi-Image Tour Gallery Lightbox */}
+            <ServiceGalleryModal
+                open={galleryModalOpen}
+                onClose={() => setGalleryModalOpen(false)}
+                item={selectedItemForGallery}
+                onBook={(item) => {
+                    setGalleryModalOpen(false);
+                    setModalOpen(true);
+                }}
             />
         </AppLayout>
     );

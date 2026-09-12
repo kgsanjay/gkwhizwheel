@@ -11,6 +11,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('bookings:release-expired-holds')->everyMinute();
+Schedule::command('services:release-expired-holds')->everyMinute();
 Schedule::command('bookings:send-reminders')->hourly();
 Schedule::command('bikes:check-document-expiry')->dailyAt('06:00');
 Schedule::command('backup:clean')->dailyAt('01:00');

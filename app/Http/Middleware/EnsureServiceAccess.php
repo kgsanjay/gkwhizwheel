@@ -28,6 +28,23 @@ class EnsureServiceAccess
             return redirect()->guest(route('admin.login'));
         }
 
+        $allowedRoles = [
+            UserRole::SUPER_ADMIN,
+            UserRole::STORE_MANAGER,
+            UserRole::STAFF,
+        ];
+
+        if (! in_array($user->role, $allowedRoles, true)) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Staff or Admin privileges required.',
+                ], 403);
+            }
+
+            abort(403, 'Unauthorized. Staff or Admin privileges required.');
+        }
+
         // Super Admin has unrestricted access to all services
         if ($user->role === UserRole::SUPER_ADMIN) {
             return $next($request);

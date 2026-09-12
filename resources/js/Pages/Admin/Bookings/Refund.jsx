@@ -293,6 +293,8 @@ export default function BookingsRefund({
                                             <TableRow>
                                                 <TableCell sx={{ pl: 0, fontWeight: 600 }}>Date</TableCell>
                                                 <TableCell sx={{ fontWeight: 600 }}>Reason</TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>Gateway Ref</TableCell>
                                                 <TableCell align="right" sx={{ pr: 0, fontWeight: 600 }}>Amount</TableCell>
                                             </TableRow>
                                         </TableHead>
@@ -301,7 +303,19 @@ export default function BookingsRefund({
                                                 <TableRow key={r.id}>
                                                     <TableCell sx={{ pl: 0 }}>{r.created_at?.slice(0, 10)}</TableCell>
                                                     <TableCell>{r.reason}</TableCell>
-                                                    <TableCell align="right" sx={{ pr: 0, fontWeight: 600, color: 'error.main' }}>
+                                                    <TableCell>
+                                                        <Chip
+                                                            size="small"
+                                                            label={r.status === 'completed' ? 'Completed' : (r.status === 'failed' ? 'Failed' : 'Pending Confirmation')}
+                                                            color={r.status === 'completed' ? 'success' : (r.status === 'failed' ? 'error' : 'warning')}
+                                                            variant="outlined"
+                                                            sx={{ fontWeight: 600, fontSize: '0.72rem' }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
+                                                        {r.gateway_reference || '—'}
+                                                    </TableCell>
+                                                    <TableCell align="right" sx={{ pr: 0, fontWeight: 600, color: r.status === 'failed' ? 'text.secondary' : 'error.main' }}>
                                                         ₹{r.amount}
                                                     </TableCell>
                                                 </TableRow>

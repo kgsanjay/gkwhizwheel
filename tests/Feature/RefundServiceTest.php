@@ -125,9 +125,9 @@ test('cancellation more than 24 hours before pickup grants 100 percent refund an
         ->and($refund->booking_id)->toBe($this->booking->id)
         ->and($refund->payment_id)->toBe($this->payment->id)
         ->and((float) $refund->amount)->toBe(5000.00)
-        ->and($refund->status)->toBe(RefundStatus::COMPLETED)
+        ->and($refund->status)->toBe(RefundStatus::PENDING)
         ->and($refund->processed_by)->toBe($this->staff->id)
-        ->and($refund->gateway_reference)->toStartWith('stub_rfnd_')
+        ->and($refund->gateway_reference)->toStartWith('rfnd_')
         ->and(Refund::where('booking_id', $this->booking->id)->count())->toBe(1);
 });
 
@@ -151,7 +151,8 @@ test('cancellation within 24 hours before pickup grants partial refund of rental
     );
 
     expect((float) $refund->amount)->toBe(4000.00)
-        ->and($refund->payment_id)->toBe($this->payment->id);
+        ->and($refund->payment_id)->toBe($this->payment->id)
+        ->and($refund->status)->toBe(RefundStatus::PENDING);
 });
 
 test('cancellation threshold and partial percentage are configurable', function (): void {
@@ -197,6 +198,73 @@ test('deposit refund at return calculates correctly with damage and late fee ded
 
     expect((float) $refund->amount)->toBe(2300.00)
         ->and($refund->reason)->toBe('Deposit refund after scratch penalty')
-        ->and($refund->status)->toBe(RefundStatus::COMPLETED)
-        ->and($refund->gateway_reference)->toStartWith('stub_rfnd_');
+        ->and($refund->status)->toBe(RefundStatus::PENDING)
+        ->and($refund->gateway_reference)->toStartWith('rfnd_');
+});
+
+test('manual refund against cash payment sets pending status with cash reference', function (): void {
+    $cashPayment = Payment::create([
+        'booking_id' => $this->booking->id,
+        'type' => PaymentType::ADVANCE,
+        'amount' => 1000.00,
+        'method' => PaymentMethod::CASH,
+        'gateway_reference' => 'rcpt_cash_001',
+        'status' => PaymentStatus::SUCCESS,
+        'collected_by' => $this->staff->id,
+    ]);
+
+    $refund = $this->refundService->processManualRefund(
+        booking: $this->booking,
+        amount: 500.00,
+        reason: 'Customer goodwill partial refund',
+        processedBy: $this->staff->id,
+        paymentId: $cashPayment->id
+    );
+
+    expect($refund->status)->toBe(RefundStatus::PENDING)
+        ->and($refund->gateway_reference)->toStartWith('cash_manual_')
+        ->and((float) $refund->amount)->toBe(500.00);
+});
+
+test('razorpay webhook transitions pending refund to completed', function (): void {
+    $refund = $this->refundService->processCancellationRefund(
+        booking: $this->booking,
+        reason: 'Customer cancelled trip',
+        processedBy: $this->customer->id,
+        paymentId: $this->payment->id,
+        cancellationTime: '2026-10-08 00:00:00'
+    );
+
+    expect($refund->status)->toBe(RefundStatus::PENDING);
+
+    // Simulate incoming Razorpay refund.processed webhook
+    $secret = 'test_webhook_secret';
+    config()->set('services.razorpay.webhook_secret', $secret);
+
+    $payload = [
+        'event' => 'refund.processed',
+        'payload' => [
+            'refund' => [
+                'entity' => [
+                    'id' => $refund->gateway_reference,
+                    'payment_id' => $this->payment->gateway_reference,
+                    'amount' => 500000,
+                    'status' => 'processed',
+                ],
+            ],
+        ],
+    ];
+
+    $rawContent = (string) json_encode($payload);
+    $signature = hash_hmac('sha256', $rawContent, $secret);
+
+    $response = $this->withHeaders([
+        'X-Razorpay-Signature' => $signature,
+        'Content-Type' => 'application/json',
+    ])->postJson('/webhooks/razorpay', $payload);
+
+    $response->assertOk()
+        ->assertJsonPath('success', true);
+
+    expect($refund->fresh()->status)->toBe(RefundStatus::COMPLETED);
 });

@@ -107,6 +107,9 @@ beforeEach(function (): void {
         'status' => BikeStatus::MAINTENANCE,
         'odometer_reading' => 12000,
     ]);
+
+    $this->staff->stores()->attach([$this->store1->id, $this->store2->id]);
+    $this->storeManager->stores()->attach([$this->store1->id, $this->store2->id]);
 });
 
 test('unauthenticated users cannot access staff bikes or sync endpoints', function (): void {

@@ -1,5 +1,6 @@
 import React, { useState, useId } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
 import apiClient from '../../api/client';
@@ -50,6 +51,46 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import SpeedIcon from '@mui/icons-material/Speed';
 import NavigationIcon from '@mui/icons-material/Navigation';
+
+const BIKE_FAQS = [
+    {
+        q: 'What is the average honnavar bike rental price?',
+        a: 'At GK WhizWheels, our honnavar bike rental price is transparent and straightforward: Honda Activa scooters start from ₹350–₹400/day, sporty 125cc scooters start from ₹450–₹500/day, and Royal Enfield Classic 350 / Honda CB350 start from ₹1,000–₹1,200/day. We offer additional discounts of 10% for 3+ days and 15% for weekly rentals, with zero surge fees.',
+    },
+    {
+        q: 'Can I get rental bikes delivered to Honnavar Railway Station?',
+        a: 'Yes! We have an active Honnavar Railway Station Desk located right on Station Road at the Platform 1 exit. When your Konkan Railway train arrives, our representative meets you with your selected vehicle and helmets for an express 5-minute handover.',
+    },
+    {
+        q: 'What documents are required for honnavar bike rent?',
+        a: 'To rent a two-wheeler with GK WhizWheels, you need: (1) An original, valid Indian Driving License for two-wheelers, and (2) One government ID proof (Aadhaar Card, Voter ID, or Passport). You can upload documents during online checkout or present them during vehicle pickup.',
+    },
+    {
+        q: 'Are helmets and vehicle documents provided?',
+        a: 'Yes! Every booking includes one sanitized, ISI-certified rider helmet free of charge. A pillion helmet is available for an extra ₹50/day. All vehicles are registered with valid commercial permits, insurance, and PUC certificates.',
+    },
+    {
+        q: 'Can I ride to Gokarna, Murudeshwar, or Jog Falls?',
+        a: 'Yes! All GK WhizWheels bikes have valid Karnataka road tax and permit to travel anywhere along the coastal belt, including Murudeshwar (27 km), Gokarna (48 km), Yana Caves, and Jog Falls (60 km).',
+    },
+    {
+        q: 'How does the security deposit refund work?',
+        a: 'We offer zero deposit options for verified return tickets. For standard rentals requiring a ₹1,000 security deposit, the refund is initiated immediately to your UPI ID or bank account as soon as the vehicle is returned in good order.',
+    },
+];
+
+const bikeFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: BIKE_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
 
 export default function BikesIndex({ categories = [], stores = [], initialFilters = {} }) {
     const { mode } = useColorMode();
@@ -129,13 +170,14 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
     return (
         <AppLayout>
-            <Head>
-                <title>Browse Fleet & Rates - Bike Rental in Honnavar | GK WhizWheels</title>
-                <meta
-                    name="description"
-                    content="Rent verified Honda Activa scooters, Royal Enfield Classic 350, and commuter bikes in Honnavar from ₹350/day. Zero deposit options, free helmets, and 5-min station pickup."
-                />
-            </Head>
+            <PageHead
+                title="Browse Fleet & Rates - Bike Rental in Honnavar | GK WhizWheel"
+                description="Browse self-drive bike and scooter rental fleet in Honnavar starting ₹350/day. Honda Activa, Royal Enfield, zero deposit option, and station pickup."
+                canonicalUrl="https://whizwheels.in/services/bikes"
+                ogImage="/images/services/two_wheelers.jpg"
+                ogType="website"
+                structuredData={bikeFaqSchema}
+            />
 
             {/* WCAG SC 2.4.1 Main Landmark Container */}
             <Box component="main" id="main-content" sx={{ width: '100%', overflowX: 'hidden' }}>
@@ -464,7 +506,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Box
                                             component="img"
                                             src="/images/services/two_wheelers.jpg"
-                                            alt="Rental Bikes and Scooters in Honnavar"
+                                            alt="Rental Bikes and Scooters Fleet in Honnavar - GK WhizWheel Two Wheeler Rentals"
                                             sx={{
                                                 width: '100%',
                                                 height: '100%',
@@ -516,7 +558,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                 <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.68rem', display: 'block' }}>
                                                     Honnavar • Gokarna • Murudeshwar • Jog Falls
                                                 </Typography>
-                                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.05rem', lineHeight: 1.25, mt: 0.3 }}>
+                                                <Typography variant="h6" component="p" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.05rem', lineHeight: 1.25, mt: 0.3 }}>
                                                     Tour Coastal Karnataka With Full Independence
                                                 </Typography>
                                             </Box>
@@ -834,7 +876,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                             }}
                         >
                             <TwoWheelerIcon aria-hidden="true" sx={{ fontSize: 64, color: isDark ? '#64748B' : '#94A3B8', mb: 2 }} />
-                            <Typography variant="h5" component="h3" sx={{ fontWeight: 850, mb: 1, color: primaryTextColor }}>
+                            <Typography variant="h5" component="h2" sx={{ fontWeight: 850, mb: 1, color: primaryTextColor }}>
                                 No Bikes Found Matching Your Filter
                             </Typography>
                             <Typography variant="body2" sx={{ maxWidth: 480, mx: 'auto', mb: 3, color: secondaryTextColor, lineHeight: 1.6 }}>
@@ -859,6 +901,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                             <Typography
                                 id="fleet-catalog-heading"
                                 variant="h2"
+                                component="h2"
                                 sx={{
                                     fontSize: { xs: '1.4rem', sm: '1.75rem' },
                                     fontWeight: 900,
@@ -925,7 +968,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                     <Box
                                                         component="img"
                                                         src={imageSrc}
-                                                        alt={`${bike.brand} ${bike.model_name} rental scooter/bike in Honnavar`}
+                                                        alt={`${bike.brand || ''} ${bike.model_name || 'Bike'} rental scooter/motorcycle in Honnavar - GK WhizWheel`}
                                                         loading="lazy"
                                                         sx={{
                                                             width: '100%',
@@ -1053,7 +1096,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                             <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750, fontSize: '0.84rem' }}>
                                                                 Mon – Thu <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekday)</Box>
                                                             </Typography>
-                                                            <Typography variant="h6" sx={{ fontWeight: 950, color: weekdayPriceColor, lineHeight: 1 }}>
+                                                            <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekdayPriceColor, lineHeight: 1 }}>
                                                                 ₹{Number(weekdayRate).toLocaleString('en-IN')}{' '}
                                                                 <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
                                                                     /day
@@ -1065,7 +1108,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                             <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750, fontSize: '0.84rem' }}>
                                                                 Fri – Sun <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekend)</Box>
                                                             </Typography>
-                                                            <Typography variant="h6" sx={{ fontWeight: 950, color: weekendPriceColor, lineHeight: 1 }}>
+                                                            <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekendPriceColor, lineHeight: 1 }}>
                                                                 ₹{Number(weekendRate).toLocaleString('en-IN')}{' '}
                                                                 <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
                                                                     /day
@@ -1140,6 +1183,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                             <Typography
                                 id="pricing-heading"
                                 variant="h2"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1528,6 +1572,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                             <Typography
                                 id="how-it-works-heading"
                                 variant="h2"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1680,6 +1725,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                             <Typography
                                 id="scenic-routes-heading"
                                 variant="h2"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1816,6 +1862,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                             <Typography
                                 id="faq-heading"
                                 variant="h2"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1832,32 +1879,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         </Box>
 
                         <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-                            {[
-                                {
-                                    q: 'What is the average honnavar bike rental price?',
-                                    a: 'At GK WhizWheels, our honnavar bike rental price is transparent and straightforward: Honda Activa scooters start from ₹350–₹400/day, sporty 125cc scooters start from ₹450–₹500/day, and Royal Enfield Classic 350 / Honda CB350 start from ₹1,000–₹1,200/day. We offer additional discounts of 10% for 3+ days and 15% for weekly rentals, with zero surge fees.',
-                                },
-                                {
-                                    q: 'Can I get rental bikes delivered to Honnavar Railway Station?',
-                                    a: 'Yes! We have an active Honnavar Railway Station Desk located right on Station Road at the Platform 1 exit. When your Konkan Railway train arrives, our representative meets you with your selected vehicle and helmets for an express 5-minute handover.',
-                                },
-                                {
-                                    q: 'What documents are required for honnavar bike rent?',
-                                    a: 'To rent a two-wheeler with GK WhizWheels, you need: (1) An original, valid Indian Driving License for two-wheelers, and (2) One government ID proof (Aadhaar Card, Voter ID, or Passport). You can upload documents during online checkout or present them during vehicle pickup.',
-                                },
-                                {
-                                    q: 'Are helmets and vehicle documents provided?',
-                                    a: 'Yes! Every booking includes one sanitized, ISI-certified rider helmet free of charge. A pillion helmet is available for an extra ₹50/day. All vehicles are registered with valid commercial permits, insurance, and PUC certificates.',
-                                },
-                                {
-                                    q: 'Can I ride to Gokarna, Murudeshwar, or Jog Falls?',
-                                    a: 'Yes! All GK WhizWheels bikes have valid Karnataka road tax and permit to travel anywhere along the coastal belt, including Murudeshwar (27 km), Gokarna (48 km), Yana Caves, and Jog Falls (60 km).',
-                                },
-                                {
-                                    q: 'How does the security deposit refund work?',
-                                    a: 'We offer zero deposit options for verified return tickets. For standard rentals requiring a ₹1,000 security deposit, the refund is initiated immediately to your UPI ID or bank account as soon as the vehicle is returned in good order.',
-                                },
-                            ].map((faq, index) => (
+                            {BIKE_FAQS.map((faq, index) => (
                                 <Accordion
                                     key={index}
                                     defaultExpanded={index === 0}

@@ -23,7 +23,7 @@ class WhatsAppWebhookController extends Controller
 
         $configuredToken = (string) config('services.whatsapp.webhook_verify_token', 'test_wa_verify_token');
 
-        if ($mode === 'subscribe' && $token === $configuredToken) {
+        if ($mode === 'subscribe' && $token !== null && $configuredToken !== '' && hash_equals($configuredToken, (string) $token)) {
             return response($challenge, 200)->header('Content-Type', 'text/plain');
         }
 
@@ -32,9 +32,22 @@ class WhatsAppWebhookController extends Controller
 
     /**
      * Handle incoming delivery status updates from Meta WhatsApp Cloud API.
+     * Enforces HMAC SHA-256 signature verification (X-Hub-Signature-256) BEFORE processing.
      */
     public function handle(Request $request, WhatsAppService $whatsAppService): JsonResponse
     {
+        $signature = $request->header('X-Hub-Signature-256');
+        $rawPayload = (string) $request->getContent();
+
+        if (! $whatsAppService->verifyWebhookSignature($rawPayload, $signature)) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'message' => 'Invalid webhook signature.',
+                'errors' => null,
+            ], 400);
+        }
+
         $entries = $request->input('entry', []);
         $processedCount = 0;
 

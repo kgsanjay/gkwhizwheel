@@ -69,4 +69,30 @@ class ReturnReminderNotification extends Notification
             ->action('View Booking Details', url("/bookings/{$this->booking->id}"))
             ->line('Thank you for riding with GK WhizWheel!');
     }
+
+    /**
+     * Get the Expo Push representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toExpoPush(object $notifiable): array
+    {
+        $storeName = $this->booking->returnStore?->name ?? 'Honnavar Station Hub';
+        $endDate = $this->booking->end_date ? \Carbon\Carbon::parse($this->booking->end_date)->format('h:i A') : 'scheduled time';
+
+        return [
+            'title' => 'Return Reminder 🏁',
+            'body' => "Reminder to return your bike to {$storeName} by {$endDate}. Please return with 2 helmets.",
+            'data' => [
+                'type' => 'return_reminder',
+                'booking_id' => (int) $this->booking->id,
+                'booking_reference' => $this->booking->booking_reference,
+            ],
+            'options' => [
+                'sound' => 'default',
+                'priority' => 'high',
+                'badge' => 1,
+            ],
+        ];
+    }
 }

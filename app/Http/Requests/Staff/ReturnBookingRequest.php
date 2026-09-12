@@ -40,7 +40,7 @@ class ReturnBookingRequest extends FormRequest
         return [
             'odometer_reading' => ['required', 'integer', 'min:0'],
             'condition_photos' => ['required', 'array', 'min:1'],
-            'condition_photos.*' => ['required', 'file', 'image', 'max:10240'],
+            'condition_photos.*' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:10240'],
             'late_fee_override' => ['nullable', 'numeric', 'min:0'],
             'damage_fee' => ['nullable', 'numeric', 'min:0'],
             'deposit_refund_amount' => ['nullable', 'numeric', 'min:0'],

@@ -78,7 +78,11 @@ class BookingWebController extends Controller
             ]);
         }
 
-        $gateway = $request->input('gateway', 'razorpay');
+        $validated = $request->validate([
+            'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
+        ]);
+
+        $gateway = $validated['gateway'] ?? 'razorpay';
         $paymentMethod = $gateway === 'phonepe' ? PaymentMethod::PHONEPE : PaymentMethod::RAZORPAY;
         $gatewayRef = 'pay_sim_'.bin2hex(random_bytes(6));
 
@@ -118,10 +122,24 @@ class BookingWebController extends Controller
      */
     public function downloadVoucher(int|string $id, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\Http\Response
     {
+        $request->validate([
+            'stream' => ['nullable', 'boolean'],
+        ]);
+
         $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
             ->where('id', $id)
             ->orWhere('booking_number', $id)
             ->firstOrFail();
+
+        $currentUser = $request->user();
+        if ($currentUser !== null) {
+            $isOwner = $currentUser->id === $booking->user_id;
+            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+
+            if (! $isOwner && ! $isStaffOrAdmin) {
+                abort(403, 'You are not authorized to download this booking voucher.');
+            }
+        }
 
         return $voucherService->generateBikeVoucherPdf($booking, $request->boolean('stream'));
     }
@@ -129,12 +147,22 @@ class BookingWebController extends Controller
     /**
      * View print-optimized rental agreement / pass in browser
      */
-    public function printVoucher(int|string $id, \App\Services\VoucherService $voucherService): \Illuminate\View\View
+    public function printVoucher(int|string $id, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\View\View
     {
         $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
             ->where('id', $id)
             ->orWhere('booking_number', $id)
             ->firstOrFail();
+
+        $currentUser = $request->user();
+        if ($currentUser !== null) {
+            $isOwner = $currentUser->id === $booking->user_id;
+            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+
+            if (! $isOwner && ! $isStaffOrAdmin) {
+                abort(403, 'You are not authorized to view this booking voucher.');
+            }
+        }
 
         return $voucherService->renderBikeVoucherHtml($booking);
     }

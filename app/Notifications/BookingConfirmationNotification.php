@@ -74,4 +74,29 @@ class BookingConfirmationNotification extends Notification
             ->action('View Booking Details', url("/bookings/{$this->booking->id}"))
             ->line('Thank you for choosing GK WhizWheel! Please carry your valid Driving License at pickup time.');
     }
+
+    /**
+     * Get the Expo Push representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toExpoPush(object $notifiable): array
+    {
+        $bikeName = trim(($this->booking->bike?->brand ?? '').' '.($this->booking->bike?->model_name ?? 'Bike'));
+        $pickupStore = $this->booking->pickupStore?->name ?? 'Honnavar Station Hub';
+
+        return [
+            'title' => 'Booking Confirmed! 🛵',
+            'body' => "Reservation #{$this->booking->booking_reference} for {$bikeName} at {$pickupStore} is confirmed.",
+            'data' => [
+                'type' => 'booking_confirmation',
+                'booking_id' => (int) $this->booking->id,
+                'booking_reference' => $this->booking->booking_reference,
+            ],
+            'options' => [
+                'sound' => 'default',
+                'badge' => 1,
+            ],
+        ];
+    }
 }

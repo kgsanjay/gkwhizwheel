@@ -11,7 +11,7 @@ A unified online and offline bike & multi-service mobility platform designed for
 - **Digital Handover & Return Inspection Wizards**: Interactive motorcycle damage diagram mapping, odometer & fuel tracking, photo capture, and customer digital signatures.
 - **Native Android APK (`gkwhizwheels.apk`)**: Standalone Android application with hardware camera permissions, GPS store locator, offline PWA cache, and configurable server switcher.
 - **Concurrency-Safe Availability Engine**: Pessimistic database locks (`SELECT ... FOR UPDATE`) preventing double-booking during peak checkout.
-- **Production-Ready & Fully Tested**: 370 automated test suites with 2,775 passing assertions across RBAC, payments, notifications, and offline sync.
+- **Production-Ready & Fully Tested**: 61 automated test suites (385 test cases) with 2,829 passing assertions across RBAC, payments, notifications, and offline sync.
 
 ---
 
@@ -91,25 +91,21 @@ A unified online and offline bike & multi-service mobility platform designed for
 
 ---
 
-## Android Mobile Application (APK)
+## Staff Mobile Application (Expo / React Native)
 
-The repository includes a ready-to-install Android APK package and its native build source.
+The repository includes a dedicated native app for Staff operations in `/mobile-ops`.
 
-- **Pre-built APK**: [`gkwhizwheels.apk`](gkwhizwheels.apk) (Located at project root, 5.2 MB)
-- **Android Source Code**: [`android/`](android/)
+- **Source Code**: [`mobile-ops/`](mobile-ops/)
 
-### Installing on Android Device:
+### Building and Distributing:
+The app uses Expo Application Services (EAS) for internal distribution.
+
 ```bash
-adb install -r gkwhizwheels.apk
+cd mobile-ops
+eas build --profile preview --platform android
 ```
-*Or transfer `gkwhizwheels.apk` to your smartphone and install directly.*
 
-### Rebuilding the Android APK:
-```bash
-cd android
-./gradlew assembleDebug
-# Output generated at: android/app/build/outputs/apk/debug/app-debug.apk
-```
+This will generate an APK URL that can be shared with staff for direct installation. See the [Mobile Ops README](mobile-ops/README.md) for full setup instructions.
 
 ---
 
@@ -130,7 +126,8 @@ The application provides strictly scoped access control for four user roles:
 
 ```
 .
-├── android/              # Native Android build wrapper (Gradle 8.7, Android SDK 34)
+├── archive/android-webview-legacy/ # Legacy Android WebView app (deprecated)
+├── mobile-ops/           # Native Expo/React Native app for staff operations
 ├── app/                  # Laravel core: Models, Controllers, Services, Enums, Policies
 │   ├── Http/Controllers/ # Web, Admin, and API controllers
 │   ├── Models/           # Eloquent models (Bike, Booking, ServiceBooking, Store, User)
@@ -145,7 +142,7 @@ The application provides strictly scoped access control for four user roles:
 │       ├── Layouts/      # AppLayout (Customer) & AdminLayout (Staff/Admin)
 │       └── Pages/        # Customer pages, Admin dashboard, Check-in, Dispatch, Services
 ├── routes/               # Route definitions: web.php, api.php, console.php
-├── tests/                # 370 Pest feature and unit test suites
+├── tests/                # 61 Pest feature and unit test suites (385 test cases, 2,829 assertions)
 ├── DETAILED_FEATURE_SPECIFICATION.md # Deep-dive architectural and state machine spec
 ├── FULL_FEATURE_LIST.md  # Comprehensive module matrix and persona breakdown
 ├── gkwhizwheels.apk      # Compiled Android debug APK
@@ -162,7 +159,7 @@ The application provides strictly scoped access control for four user roles:
 - **[`docs/ENV-VARIABLES.md`](docs/ENV-VARIABLES.md)**: Environment variable catalog and requirement classifications.
 - **[`docs/01-REQUIREMENTS-AND-FEATURES.md`](docs/01-REQUIREMENTS-AND-FEATURES.md)**: Business requirements, booking state machine, and pricing algorithms.
 - **[`docs/02-DATABASE-SCHEMA.md`](docs/02-DATABASE-SCHEMA.md)**: Schema definitions, table relationships, enums, and composite indexes.
-- **[`docs/04-CODING-STANDARDS-AND-STRUCTURE.md`](docs/04-CODING-STANDARDS-AND-STRUCTURE.md)**: Code standards, service boundaries, and review checklists.
+- **[`docs/04-CODING-STANDARDS-AND-STRUCTURE.md`](docs/04-CODING-STANDARDS-AND-STRUCTURE.md)**: Code standards, service boundaries, authorization house standards (`role:...` middleware & policies), and review checklists.
 - **[`docs/05-ENVIRONMENT-SETUP.md`](docs/05-ENVIRONMENT-SETUP.md)**: Server setup guide, cron scheduling, and backup procedures.
 
 ---

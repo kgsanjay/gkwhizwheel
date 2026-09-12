@@ -38,4 +38,33 @@ class AppVersionController extends Controller
             'message' => 'Staff app version information retrieved successfully.',
         ]);
     }
+
+    /**
+     * Return the latest version information for the Customer Mobile App (Block F).
+     */
+    public function customer(Request $request): JsonResponse
+    {
+        $latestVersion = (string) config('app.customer_app_version', '1.0.0');
+        $minRequiredVersion = (string) config('app.customer_app_min_version', '1.0.0');
+        $downloadUrl = (string) config(
+            'app.customer_app_download_url',
+            url('/downloads/gkwhizwheel-customer-v1.0.0.apk')
+        );
+        $releaseNotes = (string) config(
+            'app.customer_app_release_notes',
+            'Initial release with live bike search, instant availability, and KYC verification.'
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'latest_version' => $latestVersion,
+                'min_required_version' => $minRequiredVersion,
+                'download_url' => $downloadUrl,
+                'release_notes' => $releaseNotes,
+                'published_at' => '2026-09-12',
+            ],
+            'message' => 'Customer app version information retrieved successfully.',
+        ]);
+    }
 }

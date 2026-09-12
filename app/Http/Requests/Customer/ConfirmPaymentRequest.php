@@ -25,7 +25,7 @@ class ConfirmPaymentRequest extends FormRequest
     {
         return [
             'gateway_reference' => ['required', 'string', 'max:255'],
-            'payment_method' => ['nullable', 'string'],
+            'payment_method' => ['nullable', 'string', 'max:50'],
         ];
     }
 }

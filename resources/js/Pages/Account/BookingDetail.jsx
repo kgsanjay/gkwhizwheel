@@ -610,12 +610,24 @@ export default function AccountBookingDetail({ booking }) {
                                 {/* Refunds History */}
                                 {refunds.length > 0 && (
                                     <Box sx={{ mt: 2, pt: 2, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#10B981', display: 'block', mb: 1 }}>
-                                            Refunds Processed:
+                                        <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}>
+                                            Refund Status:
                                         </Typography>
                                         {refunds.map((r) => (
-                                            <Alert key={r.id} severity="success" sx={{ mb: 1 }}>
-                                                Refund of <strong>₹{Number(r.amount).toFixed(2)}</strong> ({r.status})
+                                            <Alert
+                                                key={r.id}
+                                                severity={r.status === 'completed' ? 'success' : (r.status === 'failed' ? 'error' : 'warning')}
+                                                sx={{ mb: 1, fontSize: '0.82rem' }}
+                                            >
+                                                {r.status === 'completed' && (
+                                                    <span>Refund of <strong>₹{Number(r.amount).toFixed(2)}</strong> completed & credited to original payment source.</span>
+                                                )}
+                                                {r.status === 'failed' && (
+                                                    <span>Refund of <strong>₹{Number(r.amount).toFixed(2)}</strong> encountered an issue. Our support team is processing it manually.</span>
+                                                )}
+                                                {r.status !== 'completed' && r.status !== 'failed' && (
+                                                    <span>Refund of <strong>₹{Number(r.amount).toFixed(2)}</strong> initiated — pending payment gateway clearance (2–5 business days).</span>
+                                                )}
                                             </Alert>
                                         ))}
                                     </Box>

@@ -1866,22 +1866,25 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 Scenic Attractions
                             </Typography>
                             <Stack spacing={1.3}>
-                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#F59E0B', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
+                                    Explore Honnavar →
+                                </Typography>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
                                     Sharavathi Backwaters
                                 </Typography>
-                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
                                     Honnavar Eco Beach
                                 </Typography>
-                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
                                     Apsarakonda Falls
                                 </Typography>
-                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
                                     Mirjan Fort Citadel
                                 </Typography>
-                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
                                     Murudeshwar Shiva Temple
                                 </Typography>
-                                <Typography component={Link} href="/#routes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
                                     Gokarna Om Beach
                                 </Typography>
                                 <Typography component={Link} href="/services/cabs" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F59E0B' } }}>
@@ -1998,6 +2001,9 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             </Typography>
                             <Typography component={Link} href="/terms" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
                                 Rental Terms & Policies
+                            </Typography>
+                            <Typography component={Link} href="/privacy" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                                Privacy Policy
                             </Typography>
                             <Typography component={Link} href="/contact" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
                                 Contact Us

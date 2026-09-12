@@ -31,33 +31,37 @@ use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
+
     /**
-     * Authorize staff, store manager, or super admin access.
+     * Ensure staff member is authorized for a specific store ID or booking.
+     * Logs an audit record if an explicit cross-store permission was used.
      */
-    protected function authorizeStaff(Request $request): void
+    protected function authorizeStoreAccess(Request $request, int $storeId, ?Booking $booking = null, string $operation = 'access'): void
     {
         $user = $request->user();
+        $authorizedStoreIds = $user->getAuthorizedStoreIds();
 
-        if ($user === null) {
-            abort(401, 'Unauthenticated.');
-        }
-
-        $isStaff = in_array($user->role, [
-            UserRole::STAFF,
-            UserRole::STORE_MANAGER,
-            UserRole::SUPER_ADMIN,
-        ], true);
-
-        if (! $isStaff) {
-            try {
-                $isStaff = $user->hasAnyRole(['staff', 'store_manager', 'super_admin', 'admin']);
-            } catch (\Throwable) {
-                // ignore
+        if ($authorizedStoreIds === null) {
+            // If user is not super admin but has explicit cross-store permission, audit it
+            if ($user->role !== UserRole::SUPER_ADMIN) {
+                ActivityLog::create([
+                    'user_id' => $user->id,
+                    'store_id' => $storeId,
+                    'action' => 'cross_store_access',
+                    'subject_type' => $booking ? Booking::class : Store::class,
+                    'subject_id' => $booking?->id ?? $storeId,
+                    'new_values' => [
+                        'operation' => $operation,
+                        'target_store_id' => $storeId,
+                    ],
+                ]);
             }
+
+            return;
         }
 
-        if (! $isStaff) {
-            abort(403, 'Unauthorized. Staff access required.');
+        if (! in_array($storeId, $authorizedStoreIds, true)) {
+            abort(403, "Unauthorized. You are not assigned to store ID {$storeId}.");
         }
     }
 
@@ -68,12 +72,13 @@ class BookingController extends Controller
         StoreStaffBookingRequest $request,
         AvailabilityService $availabilityService
     ): JsonResponse {
-        $this->authorizeStaff($request);
+        $pickupStoreId = (int) $request->validated('pickup_store_id');
+        $this->authorizeStoreAccess($request, $pickupStoreId, null, 'create_booking');
 
         $booking = $availabilityService->holdBooking([
             'bike_id' => (int) $request->validated('bike_id'),
             'user_id' => (int) $request->validated('user_id'),
-            'pickup_store_id' => (int) $request->validated('pickup_store_id'),
+            'pickup_store_id' => $pickupStoreId,
             'return_store_id' => (int) $request->validated('return_store_id'),
             'start_date' => (string) $request->validated('start_date'),
             'end_date' => (string) $request->validated('end_date'),
@@ -87,7 +92,7 @@ class BookingController extends Controller
         if ($booking->wasRecentlyCreated) {
             ActivityLog::create([
                 'user_id' => $request->user()->id,
-                'store_id' => (int) $request->validated('pickup_store_id'),
+                'store_id' => $pickupStoreId,
                 'action' => 'booking_held_offline',
                 'subject_type' => Booking::class,
                 'subject_id' => $booking->id,
@@ -119,9 +124,14 @@ class BookingController extends Controller
         CollectStaffPaymentRequest $request,
         BookingService $bookingService
     ): JsonResponse {
-        $this->authorizeStaff($request);
-
         $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'addons', 'payments'])->findOrFail($id);
+
+        $authorizedStoreIds = $request->user()->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null
+            && ! in_array($booking->pickup_store_id, $authorizedStoreIds, true)
+            && ! in_array($booking->return_store_id, $authorizedStoreIds, true)) {
+            abort(403, "Unauthorized. You are not assigned to store for booking {$booking->booking_reference}.");
+        }
 
         if (! in_array($booking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT, BookingStatus::CONFIRMED], true)) {
             return response()->json([
@@ -132,9 +142,31 @@ class BookingController extends Controller
             ], 422);
         }
 
+        // Server-side outstanding balance validation
+        $totalPaid = (float) $booking->payments->where('status', PaymentStatus::SUCCESS)->sum('amount');
+        $outstandingBalance = max(0.0, round((float) $booking->total_amount - $totalPaid, 2));
+
         $amount = $request->filled('amount')
             ? (float) $request->validated('amount')
-            : (float) $booking->total_amount;
+            : $outstandingBalance;
+
+        if ($amount <= 0.0) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'message' => 'Payment amount must be greater than zero.',
+                'errors' => ['amount' => ['Payment amount must be greater than zero.']],
+            ], 422);
+        }
+
+        if ($amount > $outstandingBalance + 0.01) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'message' => "Submitted payment amount of ₹{$amount} exceeds remaining outstanding balance of ₹{$outstandingBalance}.",
+                'errors' => ['amount' => ["Amount exceeds outstanding balance of ₹{$outstandingBalance}."]],
+            ], 422);
+        }
 
         $method = PaymentMethod::from((string) $request->validated('payment_method'));
         $gatewayRef = $request->validated('gateway_reference');
@@ -185,9 +217,8 @@ class BookingController extends Controller
         HandoverBookingRequest $request,
         BookingService $bookingService
     ): JsonResponse {
-        $this->authorizeStaff($request);
-
         $booking = Booking::with(['bike', 'pickupStore', 'returnStore'])->findOrFail($id);
+        $this->authorizeStoreAccess($request, $booking->pickup_store_id, $booking, 'handover');
 
         if ($booking->status !== BookingStatus::CONFIRMED) {
             return response()->json([
@@ -253,14 +284,30 @@ class BookingController extends Controller
      */
     public function active(Request $request): JsonResponse
     {
-        $this->authorizeStaff($request);
+        $request->validate([
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
 
         $query = Booking::query()
             ->with(['bike.images', 'pickupStore', 'returnStore', 'addons', 'user', 'payments', 'conditionLogs.photos'])
             ->whereIn('status', [BookingStatus::HANDED_OVER, BookingStatus::CONFIRMED]);
 
+        $authorizedStoreIds = $request->user()->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null) {
+            $query->where(function ($q) use ($authorizedStoreIds): void {
+                $q->whereIn('pickup_store_id', $authorizedStoreIds)
+                    ->orWhereIn('return_store_id', $authorizedStoreIds);
+            });
+        }
+
         if ($request->filled('store_id')) {
             $storeId = (int) $request->query('store_id');
+            if ($authorizedStoreIds !== null && ! in_array($storeId, $authorizedStoreIds, true)) {
+                abort(403, "Unauthorized. You are not assigned to store ID {$storeId}.");
+            }
             $query->where(function ($q) use ($storeId): void {
                 $q->where('pickup_store_id', $storeId)
                     ->orWhere('return_store_id', $storeId);
@@ -316,9 +363,13 @@ class BookingController extends Controller
         BookingService $bookingService,
         RefundService $refundService
     ): JsonResponse {
-        $this->authorizeStaff($request);
-
         $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'user'])->findOrFail($id);
+
+        $returnStoreId = $request->filled('return_store_id')
+            ? (int) $request->validated('return_store_id')
+            : $booking->return_store_id;
+
+        $this->authorizeStoreAccess($request, $returnStoreId, $booking, 'return_bike');
 
         if ($booking->status !== BookingStatus::HANDED_OVER) {
             return response()->json([
@@ -345,9 +396,6 @@ class BookingController extends Controller
 
         $damageFee = max(0.0, (float) $request->validated('damage_fee', 0.0));
         $odometerReading = (int) $request->validated('odometer_reading');
-        $returnStoreId = $request->filled('return_store_id')
-            ? (int) $request->validated('return_store_id')
-            : $booking->return_store_id;
 
         // Store condition photos
         $photoPaths = [];

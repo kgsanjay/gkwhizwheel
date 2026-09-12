@@ -11,7 +11,6 @@ use App\Http\Requests\Admin\AssignStaffStoresRequest;
 use App\Http\Requests\Admin\StoreStaffRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -19,29 +18,10 @@ use Illuminate\Support\Facades\Hash;
 class StaffController extends Controller
 {
     /**
-     * Authorize that the current authenticated user has admin privileges.
-     */
-    protected function authorizeAdmin(Request $request): void
-    {
-        $user = $request->user();
-        $isAuthorized = $user !== null && (
-            $user->role === UserRole::SUPER_ADMIN
-            || $user->hasRole('super_admin')
-            || $user->hasRole('admin')
-        );
-
-        if (! $isAuthorized) {
-            throw new AuthorizationException('This action is unauthorized.');
-        }
-    }
-
-    /**
      * Display a listing of staff and store manager accounts.
      */
     public function index(Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         $query = User::query()
             ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
             ->with('stores');
@@ -107,8 +87,6 @@ class StaffController extends Controller
      */
     public function show(int $id, Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         $staff = User::query()
             ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
             ->with('stores')
@@ -146,8 +124,6 @@ class StaffController extends Controller
      */
     public function unassignStore(int $id, int $storeId, Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         $staff = User::query()
             ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
             ->findOrFail($id);

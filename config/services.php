@@ -58,6 +58,7 @@ return [
         'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID', 'test_wa_phone_id'),
         'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID', 'test_wa_business_id'),
         'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'test_wa_verify_token'),
+        'app_secret' => env('WHATSAPP_APP_SECRET', 'test_wa_app_secret'),
         'api_version' => env('WHATSAPP_API_VERSION', 'v19.0'),
     ],
 

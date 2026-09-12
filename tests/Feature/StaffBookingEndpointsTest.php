@@ -86,6 +86,9 @@ beforeEach(function (): void {
         'status' => BikeStatus::AVAILABLE,
         'odometer_reading' => 5200,
     ]);
+
+    $this->staff->stores()->attach($this->store->id);
+    $this->storeManager->stores()->attach($this->store->id);
 });
 
 test('unauthenticated users cannot access staff booking endpoints', function (): void {

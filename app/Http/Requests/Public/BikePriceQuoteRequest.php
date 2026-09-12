@@ -30,7 +30,7 @@ class BikePriceQuoteRequest extends FormRequest
             'return_store_id' => ['required', 'integer', 'exists:stores,id'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
             'addons' => ['nullable', 'array'],
-            'addons.*.addon_type' => ['required_with:addons', 'string'],
+            'addons.*.addon_type' => ['required_with:addons', 'string', 'max:50'],
             'addons.*.quantity' => ['required_with:addons', 'integer', 'min:1'],
             'addons.*.unit_price' => ['required_with:addons', 'numeric', 'min:0'],
         ];

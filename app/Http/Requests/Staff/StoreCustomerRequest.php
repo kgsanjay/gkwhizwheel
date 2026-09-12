@@ -50,13 +50,13 @@ class StoreCustomerRequest extends FormRequest
             // Structured documents array
             'documents' => ['nullable', 'array'],
             'documents.*.document_type' => ['required_with:documents', 'string', Rule::in(KycDocumentType::values())],
-            'documents.*.file' => ['required_with:documents', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'documents.*.file' => ['required_with:documents', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
             'documents.*.verified' => ['nullable', 'boolean'],
 
             // Shortcut direct file fields
-            'driving_license' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-            'national_id' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-            'passport' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'driving_license' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
+            'national_id' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
+            'passport' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
         ];
     }
 

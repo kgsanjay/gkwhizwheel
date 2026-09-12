@@ -1,0 +1,80 @@
+{
+  "expo": {
+    "name": "GK WhizWheel Operations",
+    "slug": "gkwhizwheel-ops",
+    "scheme": "gkwhizwheel-ops",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "bundleIdentifier": "com.gkwhizwheel.ops",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "GK WhizWheel Operations requires camera access to scan customer booking QR codes, photograph returned vehicle condition, and record odometer readings.",
+        "NSPhotoLibraryUsageDescription": "GK WhizWheel Operations requires photo library access to upload handover inspection photos.",
+        "NSLocationWhenInUseUsageDescription": "GK WhizWheel Operations requires location access to verify station hub presence during vehicle dispatch and return check-in."
+      }
+    },
+    "android": {
+      "package": "com.gkwhizwheel.ops",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "GK WhizWheel Operations requires photo library access to upload inspection photos.",
+          "cameraPermission": "GK WhizWheel Operations requires camera access to scan QR codes and inspect vehicles."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "GK WhizWheel Operations requires location access to verify station hub presence."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "GK WhizWheel Operations requires camera access to scan customer booking QR codes."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#F59E0B",
+          "sounds": []
+        }
+      ],
+      "expo-sharing",
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}

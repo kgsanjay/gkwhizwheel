@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+import PageHead from '../Components/SEO/PageHead';
 import { useColorMode } from '../theme/ColorModeContext';
 import {
     Box,
@@ -69,9 +70,76 @@ export default function Contact() {
         window.open(`https://wa.me/918660989586?text=${text}`, '_blank');
     };
 
+    const structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'LocalBusiness',
+        name: 'GK WhizWheel - Bike Rental & Travel Services Honnavar',
+        alternateName: ['GK WhizWheels', 'G.K. WhizWheel', 'Whizwheels Honnavar'],
+        url: 'https://whizwheels.in/contact',
+        logo: 'https://whizwheels.in/images/logo.png',
+        image: 'https://whizwheels.in/images/logo.png',
+        description: 'Contact GK WhizWheels for verified bike rentals, taxi cabs, backwater boating, and coastal homestays in Honnavar, Karavali coast.',
+        telephone: '+918660989586',
+        email: 'contact@whizwheels.in',
+        priceRange: '₹350 - ₹5000',
+        contactPoint: [
+            {
+                '@type': 'ContactPoint',
+                telephone: '+918660989586',
+                contactType: 'customer service',
+                areaServed: ['Honnavar', 'Karavali coast', 'Uttara Kannada district'],
+                availableLanguage: ['en', 'kn', 'hi', 'kok'],
+            },
+            {
+                '@type': 'ContactPoint',
+                telephone: '+919731699125',
+                contactType: 'reservations',
+                areaServed: ['Honnavar Railway Station', 'Honnavar', 'Karavali coast'],
+                availableLanguage: ['en', 'kn', 'hi', 'kok'],
+            },
+        ],
+        areaServed: [
+            { '@type': 'City', name: 'Honnavar' },
+            { '@type': 'AdministrativeArea', name: 'Karavali coast' },
+            { '@type': 'AdministrativeArea', name: 'Uttara Kannada district' },
+        ],
+        sameAs: [
+            'https://share.google/GoM4iOgiuUIa7ZfwV',
+            'https://wa.me/918660989586',
+        ],
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: 'Palya Main Rd, near Honnavar Railway Station',
+            addressLocality: 'Honnavar',
+            addressRegion: 'Karnataka',
+            postalCode: '581334',
+            addressCountry: 'IN',
+        },
+        geo: {
+            '@type': 'GeoCoordinates',
+            latitude: 14.2802,
+            longitude: 74.4437,
+        },
+        openingHoursSpecification: [
+            {
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                opens: '00:00',
+                closes: '23:59',
+            },
+        ],
+    };
+
     return (
         <AppLayout>
-            <Head title="Contact Us - GK WhizWheels Honnavar" />
+            <PageHead
+                title="Contact GK WhizWheel Honnavar | 24/7 Station & Main Rd Hub"
+                description="Contact GK WhizWheels in Honnavar: 24/7 Railway Station counter and Palya Main Rd hub. Call +91 8660989586 or WhatsApp for instant bike & tour booking."
+                canonicalUrl="https://whizwheels.in/contact"
+                ogImage="/images/logo.png"
+                ogType="website"
+                structuredData={structuredData}
+            />
 
             {/* Standardized Hero Banner (Full Width with Ambient Glow) */}
             <Box

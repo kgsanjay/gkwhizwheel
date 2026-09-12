@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Staff;
 
 use App\Enums\BikeStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\ToggleBikeMaintenanceRequest;
 use App\Http\Resources\BikeResource;
@@ -17,41 +16,10 @@ use Illuminate\Http\Request;
 class BikeController extends Controller
 {
     /**
-     * Authorize staff, store manager, or super admin access.
-     */
-    protected function authorizeStaff(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null) {
-            abort(401, 'Unauthenticated.');
-        }
-
-        $isStaff = in_array($user->role, [
-            UserRole::STAFF,
-            UserRole::STORE_MANAGER,
-            UserRole::SUPER_ADMIN,
-        ], true);
-
-        if (! $isStaff) {
-            try {
-                $isStaff = $user->hasAnyRole(['staff', 'store_manager', 'super_admin', 'admin']);
-            } catch (\Throwable) {
-                // ignore
-            }
-        }
-
-        if (! $isStaff) {
-            abort(403, 'Unauthorized. Staff access required.');
-        }
-    }
-
-    /**
      * List bikes at a specific store with live status.
      */
     public function index(Request $request): JsonResponse
     {
-        $this->authorizeStaff($request);
 
         $query = Bike::query()
             ->with(['category', 'currentStore', 'homeStore', 'images', 'documents']);
@@ -95,12 +63,17 @@ class BikeController extends Controller
      */
     public function maintenance(int $id, ToggleBikeMaintenanceRequest $request): JsonResponse
     {
-        $this->authorizeStaff($request);
-
         $notes = $request->validated('notes') ?? $request->validated('reason');
 
         $result = \Illuminate\Support\Facades\DB::transaction(function () use ($id, $request, $notes): array {
             $bike = Bike::where('id', $id)->lockForUpdate()->firstOrFail();
+
+            $authorizedStoreIds = $request->user()->getAuthorizedStoreIds();
+            if ($authorizedStoreIds !== null
+                && ! in_array($bike->current_store_id, $authorizedStoreIds, true)
+                && ! in_array($bike->home_store_id, $authorizedStoreIds, true)) {
+                abort(403, "Unauthorized. You are not assigned to the store for bike {$bike->registration_number}.");
+            }
 
             $oldStatus = $bike->status instanceof BikeStatus ? $bike->status : BikeStatus::from((string) $bike->status);
 

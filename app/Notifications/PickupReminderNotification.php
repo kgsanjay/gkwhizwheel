@@ -78,4 +78,30 @@ class PickupReminderNotification extends Notification
             ->action('View Pickup Details', url("/bookings/{$this->booking->id}"))
             ->line('Our store executive will walk you through the bike condition inspection and digital handover agreement.');
     }
+
+    /**
+     * Get the Expo Push representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toExpoPush(object $notifiable): array
+    {
+        $bikeName = trim(($this->booking->bike?->brand ?? '').' '.($this->booking->bike?->model_name ?? 'Bike'));
+        $storeName = $this->booking->pickupStore?->name ?? 'Honnavar Station Hub';
+
+        return [
+            'title' => 'Pickup Reminder (2 Hours) ⏰',
+            'body' => "Your {$bikeName} is ready at {$storeName}. Please carry your original Driving License.",
+            'data' => [
+                'type' => 'pickup_reminder',
+                'booking_id' => (int) $this->booking->id,
+                'booking_reference' => $this->booking->booking_reference,
+            ],
+            'options' => [
+                'sound' => 'default',
+                'priority' => 'high',
+                'badge' => 1,
+            ],
+        ];
+    }
 }

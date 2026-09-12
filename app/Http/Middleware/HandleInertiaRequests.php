@@ -47,6 +47,8 @@ class HandleInertiaRequests extends Middleware
                     'phone' => $request->user()->phone,
                     'role' => $request->user()->role?->value ?? (string) $request->user()->role,
                     'assigned_services' => $request->user()->assignedServicesList(),
+                    'has_two_factor_enabled' => $request->user()->hasTwoFactorEnabled(),
+                    'requires_two_factor' => $request->user()->requiresTwoFactor(),
                 ] : null,
             ],
             'sidebar_counts' => fn () => ($user = $request->user()) && in_array($user->role?->value ?? (string) $user->role, ['super_admin', 'store_manager', 'staff'], true) ? [

@@ -88,3 +88,20 @@ Before merging any feature:
 - [ ] Does any money/availability-affecting endpoint use a DB transaction with locking?
 - [ ] Is there an `Idempotency-Key` check on any booking-creation endpoint?
 - [ ] Are bike documents/KYC documents served via signed temporary URLs, not public paths?
+
+---
+
+## 8. Authorization House Standard
+
+Authorization is consolidated onto two distinct layers to prevent silent bypasses and repetitive boilerplate:
+
+1. **Route-Level Role Boundaries (`role:...` Middleware)**:
+   - All role-based access gates are declared directly in route definitions (`routes/web.php` and `routes/api.php`) using the `role:...` middleware alias (`App\Http\Middleware\EnsureRole`).
+   - Admin routes: `Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('admin')`
+   - Staff routes: `Route::middleware(['auth:sanctum', 'role:staff,store_manager,super_admin'])->prefix('staff')`
+   - Controllers **must not** implement hand-rolled `authorizeAdmin()` or `authorizeStaff()` helpers.
+
+2. **Resource-Level & Domain Scoping (Policies & Store Scoping)**:
+   - For entity-specific rules (e.g. can user cancel booking #123), use Laravel Model Policies via `Gate::authorize()` or controller `$this->authorize('action', $model)`.
+   - For store isolation, staff endpoints use `$user->getAuthorizedStoreIds()` or `authorizeStoreAccess()` to enforce store assignment and audit cross-store administrative actions.
+

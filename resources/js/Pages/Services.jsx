@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+import PageHead from '../Components/SEO/PageHead';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
+import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
     Box,
     Typography,
@@ -36,20 +39,59 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import DirectionsIcon from '@mui/icons-material/Directions';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ShieldIcon from '@mui/icons-material/Shield';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import TrainIcon from '@mui/icons-material/Train';
 import EmailIcon from '@mui/icons-material/Email';
 
-export default function Services() {
+const SERVICES_FAQS = [
+    {
+        q: 'Should I choose a self-drive bike or a chauffeured private cab?',
+        a: 'For solo travelers or couples looking for maximum freedom, exploring backroads, beaches, and scenic coastal highway stretches at their own pace, a self-drive scooter or motorcycle is ideal. For families, groups with elderly members, heavy luggage straight from Honnavar station, or full-day trips to Jog Falls and Murudeshwar, a chauffeured AC cab provides comfort, local route expertise, and zero driving fatigue.',
+    },
+    {
+        q: 'What is the difference between a guided tour and exploring independently?',
+        a: 'Self-drive rentals let you navigate on your own schedule using maps. Our guided trails pair you with a knowledgeable local insider who reveals hidden freshwater streams, unmapped clifftops, and historical stories at Mirjan Fort that tourists typically miss, without worrying about navigation.',
+    },
+    {
+        q: 'Can I bundle multiple services into an all-in-one vacation package?',
+        a: 'Yes! Through our custom Karavali packages, you can combine bike or cab rentals with riverfront homestays, Sharavathi backwater boat cruises, and Netrani scuba diving into a single coordinated itinerary. All multi-service combo bookings receive an automatic 10% discount and a dedicated trip coordinator.',
+    },
+    {
+        q: 'What documents are required for two-wheelers versus cabs and activities?',
+        a: 'Self-drive two-wheeler rentals require an original valid Indian Driving License and government ID proof (Aadhaar or Passport). For chauffeured cabs, Sharavathi boat cruises, Netrani scuba diving, and homestay bookings, no driving license is needed—only basic government photo ID verification for each guest.',
+    },
+];
+
+const servicesFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: SERVICES_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
+
+export default function Services({ availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
     const [modalOpen, setModalOpen] = useState(false);
     const [activeServiceId, setActiveServiceId] = useState('two_wheelers');
     const [selectedHeroService, setSelectedHeroService] = useState('bikes');
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [selectedItemForGallery, setSelectedItemForGallery] = useState(null);
+
+    const handleOpenGallery = (item, e) => {
+        if (e) e.stopPropagation();
+        setSelectedItemForGallery(item);
+        setGalleryModalOpen(true);
+    };
 
     const heroServicePreviews = {
         bikes: {
@@ -253,6 +295,53 @@ export default function Services() {
         },
     ];
 
+    const serviceTypeMap = {
+        bikes: 'two_wheelers',
+        two_wheelers: 'two_wheelers',
+        cabs: 'taxi',
+        taxi: 'taxi',
+        homestays: 'homestay',
+        homestay: 'homestay',
+        boating: 'boating',
+        scuba: 'scuba',
+        guide: 'guide',
+        tours: 'tours',
+    };
+
+    const getItemForService = (serviceKey) => {
+        const targetType = serviceTypeMap[serviceKey] || serviceKey;
+        return availableItems.find((item) => item.service_type === targetType);
+    };
+
+    const heroPreviewsWithMedia = React.useMemo(() => {
+        const enhanced = {};
+        Object.entries(heroServicePreviews).forEach(([key, preview]) => {
+            const item = getItemForService(key);
+            const media = getServiceItemMedia(item, preview.image);
+            enhanced[key] = {
+                ...preview,
+                item,
+                media,
+            };
+        });
+        return enhanced;
+    }, [availableItems]);
+
+    const servicesWithMedia = React.useMemo(() => {
+        return services.map((srv) => {
+            const item = getItemForService(srv.id);
+            const media = getServiceItemMedia(item, srv.image);
+            return {
+                ...srv,
+                item,
+                media,
+            };
+        });
+    }, [availableItems]);
+
+    const tourItem = getItemForService('tours');
+    const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
+
     // Popular Combos
     const combos = [
         {
@@ -262,7 +351,7 @@ export default function Services() {
             duration: 'Half Day (4-5 Hours)',
             color: '#059669',
             items: ['Activa 6G Scooter Rental', '1-Hour Sharavathi Mangrove Cruise', 'Eco Beach Boardwalk Sunset'],
-            description: 'The definitive Honnavar experience. Ride to the river jetty, cruise through emerald mangroves, and finish with sunset at Eco Beach.',
+            description: 'Ride to the river jetty, cruise emerald mangrove channels, and catch sunset at Eco Beach.',
             serviceId: 'boating',
         },
         {
@@ -272,7 +361,7 @@ export default function Services() {
             duration: 'Full Day (06:00 AM - 04:00 PM)',
             color: '#6366F1',
             items: ['Chilled AC Taxi from Honnavar', 'PADI Netrani Scuba Dive with 4K Video', 'Murudeshwar Shiva Statue Visit'],
-            description: 'Experience India’s top coral dive site followed by the majestic coastal Murudeshwar temple, with private cab pick-and-drop.',
+            description: 'Dive India’s premier coral reef with 1:1 certified dive masters, plus private cab transfer to Murudeshwar.',
             serviceId: 'scuba',
         },
         {
@@ -282,7 +371,7 @@ export default function Services() {
             duration: 'Full Day (8-10 Hours)',
             color: '#F59E0B',
             items: ['Royal Enfield Classic 350 / Activa', 'Historic Mirjan Fort Walkthrough', 'Om Beach & Kudle Cliff Trail'],
-            description: 'Feel the coastal breeze along NH66. Stop at Queen Chennabhairadevi’s 16th-century fortress, then hit Gokarna’s sacred beaches.',
+            description: 'Cruise scenic NH66 coastal highway, explore 16th-century Mirjan Fort, and trek Om Beach cliffs.',
             serviceId: 'two_wheelers',
         },
         {
@@ -292,32 +381,21 @@ export default function Services() {
             duration: '3 Days / 2 Nights',
             color: '#8B5CF6',
             items: ['Sharavathi Riverfront Homestay', '2-Day Unlimited Two-Wheeler', 'Backwater Cruise & Station Transfer'],
-            description: 'Zero stress, zero planning. We handle your stay, ride, cruise, and station handover with a dedicated local trip manager.',
+            description: 'All-in-one coastal getaway with riverfront stay, unlimited bike rental, backwater cruise, and station transfers.',
             serviceId: 'tours',
         },
     ];
 
-    // Distance matrix
-    const distances = [
-        { destination: 'Honnavar Railway Station', distance: '0 km', time: 'Direct Handover', mode: 'Bikes & Cabs Available' },
-        { destination: 'Sharavathi River Boating Jetty', distance: '1.5 km', time: '5 Mins', mode: 'Scooter / Cab' },
-        { destination: 'Honnavar Eco Beach & Boardwalk', distance: '4.2 km', time: '10 Mins', mode: 'Scooter / Bike' },
-        { destination: 'Apsarakonda Falls & Marine Cliff', distance: '6.5 km', time: '15 Mins', mode: 'Scooter / Bike' },
-        { destination: 'Historic Mirjan Fort', distance: '21 km', time: '25 Mins', mode: 'NH66 Coastal Highway' },
-        { destination: 'Murudeshwar Shiva Temple & Beach', distance: '27 km', time: '35 Mins', mode: 'Direct Highway Cab / Bike' },
-        { destination: 'Gokarna Om Beach & Mahabaleshwar', distance: '48 km', time: '55 Mins', mode: 'Scenic Coastal Ride' },
-        { destination: 'Jog Falls (Highest Plunge Falls)', distance: '60 km', time: '1 Hr 20 Mins', mode: 'Ghat Highway Cab / Cruiser' },
-    ];
-
     return (
         <AppLayout>
-            <Head>
-                <title>All Travel & Rental Services in Honnavar | Bikes, Cabs, Stays, Boating & Scuba - GK WhizWheel</title>
-                <meta
-                    name="description"
-                    content="Complete coastal travel services in Honnavar: Two-wheeler and bike rentals from ₹350/day, AC taxis and station cabs, Sharavathi backwater boat cruises, Netrani scuba diving, riverside homestays, local guides, and tour packages. Dual pickup hubs at Honnavar Railway Station & Palya Main Rd."
-                />
-            </Head>
+            <PageHead
+                title="Honnavar Travel & Rental Services Hub | GK WhizWheel"
+                description="Explore all 7 travel services in Honnavar: self-drive bike rentals, AC cabs, backwater boating, Netrani scuba diving, homestays, and tour packages."
+                canonicalUrl="https://whizwheels.in/services"
+                ogImage="/images/logo.png"
+                ogType="website"
+                structuredData={servicesFaqSchema}
+            />
 
             {/* Accessibility: Skip to main content */}
             <Box
@@ -417,6 +495,7 @@ export default function Services() {
                                 <Typography
                                     id="services-hero-title"
                                     variant="h1"
+                                    component="h1"
                                     sx={{
                                         fontWeight: 950,
                                         color: isDark ? '#FFFFFF' : '#0F172A',
@@ -454,13 +533,13 @@ export default function Services() {
                                     Skip coordinating with 5 separate middlemen. Book verified self-drive two-wheelers, AC station cabs, Sharavathi mangrove boat cruises, Netrani coral scuba diving, and authentic beachfront homestays under one trusted local roof with 5-minute express train pickup.
                                 </Typography>
 
-                                {/* 4 Feature Value Chips */}
+                                {/* 4 Feature Value Chips (Core Differentiators) */}
                                 <Grid container spacing={1.5} sx={{ mb: 3.5, maxWidth: 660 }}>
                                     {[
                                         { icon: <TrainIcon sx={{ fontSize: 16 }} />, label: '5-Min Station Handover' },
-                                        { icon: <ShieldIcon sx={{ fontSize: 16 }} />, label: 'Zero Deposit Options' },
-                                        { icon: <StarIcon sx={{ fontSize: 16 }} />, label: '5.0 Google Rating (324+ Reviews)' },
-                                        { icon: <SupportAgentIcon sx={{ fontSize: 16 }} />, label: '24/7 Roadside Assistance' },
+                                        { icon: <VerifiedUserIcon sx={{ fontSize: 16 }} />, label: 'Verified Local Operators' },
+                                        { icon: <ShieldIcon sx={{ fontSize: 16 }} />, label: 'Zero Deposit & Flat Rates' },
+                                        { icon: <SupportAgentIcon sx={{ fontSize: 16 }} />, label: '24/7 Coastal Support' },
                                     ].map((pill, pIdx) => (
                                         <Grid key={pIdx} size={{ xs: 6, sm: 6 }}>
                                             <Box
@@ -705,8 +784,8 @@ export default function Services() {
                                     </Box>
 
                                     {/* Dynamic Active Service Preview Box */}
-                                    {heroServicePreviews[selectedHeroService] && (() => {
-                                        const active = heroServicePreviews[selectedHeroService];
+                                    {heroPreviewsWithMedia[selectedHeroService] && (() => {
+                                        const active = heroPreviewsWithMedia[selectedHeroService];
                                         return (
                                             <Box sx={{ p: 2.5, pt: 1 }}>
                                                 <Box
@@ -721,10 +800,32 @@ export default function Services() {
                                                 >
                                                     <Box
                                                         component="img"
-                                                        src={active.image}
-                                                        alt={active.title}
+                                                        src={active.media?.primary || active.image}
+                                                        alt={`${active.title} - ${active.tagline || 'Coastal tourism & rentals in Honnavar by GK WhizWheel'}`}
                                                         sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     />
+                                                    {active.media?.hasMultiple && (
+                                                        <Chip
+                                                            icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#FFFFFF !important' }} />}
+                                                            label={`${active.media.count} Photos`}
+                                                            size="small"
+                                                            onClick={(e) => handleOpenGallery(active.item, e)}
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                top: 10,
+                                                                right: 10,
+                                                                bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                                backdropFilter: 'blur(8px)',
+                                                                color: '#FFFFFF',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.7rem',
+                                                                cursor: 'pointer',
+                                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                                zIndex: 2,
+                                                                '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.95)' },
+                                                            }}
+                                                        />
+                                                    )}
                                                     <Box
                                                         sx={{
                                                             position: 'absolute',
@@ -889,6 +990,7 @@ export default function Services() {
                                         >
                                             <Typography
                                                 variant="h4"
+                                                component="p"
                                                 sx={{
                                                     fontWeight: 950,
                                                     fontSize: { xs: '1.4rem', sm: '1.8rem', md: '2rem' },
@@ -957,6 +1059,7 @@ export default function Services() {
                         <Typography
                             id="service-catalog-heading"
                             variant="h2"
+                            component="h2"
                             sx={{
                                 fontWeight: 950,
                                 color: isDark ? '#FFFFFF' : '#0F172A',
@@ -984,7 +1087,7 @@ export default function Services() {
 
                     {/* 7 Services Grid (Cards 1 to 6 in 3-column responsive grid, Card 7 as Flagship Widescreen Showcase) */}
                     <Grid container spacing={3.5}>
-                        {services.map((srv) => (
+                        {servicesWithMedia.map((srv) => (
                             <Grid key={srv.id} id={`service-${srv.id}`} size={{ xs: 12, sm: 6, lg: 4 }}>
                                 <Card
                                     sx={{
@@ -1021,8 +1124,9 @@ export default function Services() {
                                         <Box
                                             component="img"
                                             className="card-img"
-                                            src={srv.image}
-                                            alt={srv.title}
+                                            src={srv.media?.primary || srv.image}
+                                            alt={`${srv.title} - ${srv.tagline || 'Travel and rental services in Honnavar by GK WhizWheel'}`}
+                                            loading="lazy"
                                             sx={{
                                                 width: '100%',
                                                 height: '100%',
@@ -1074,22 +1178,42 @@ export default function Services() {
                                                 {srv.tag}
                                             </Box>
 
-                                            <Box
-                                                sx={{
-                                                    width: 38,
-                                                    height: 38,
-                                                    borderRadius: '50%',
-                                                    bgcolor: 'rgba(15, 23, 42, 0.82)',
-                                                    backdropFilter: 'blur(12px)',
-                                                    border: `1.5px solid ${srv.color}`,
-                                                    boxShadow: `0 0 16px ${srv.color}50`,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: srv.color,
-                                                }}
-                                            >
-                                                {srv.icon}
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                {srv.media?.hasMultiple && (
+                                                    <Chip
+                                                        icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#FFFFFF !important' }} />}
+                                                        label={`${srv.media.count} Photos`}
+                                                        size="small"
+                                                        onClick={(e) => handleOpenGallery(srv.item, e)}
+                                                        sx={{
+                                                            bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                            backdropFilter: 'blur(8px)',
+                                                            color: '#FFFFFF',
+                                                            fontWeight: 800,
+                                                            fontSize: '0.7rem',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid rgba(255,255,255,0.2)',
+                                                            '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.95)' },
+                                                        }}
+                                                    />
+                                                )}
+                                                <Box
+                                                    sx={{
+                                                        width: 38,
+                                                        height: 38,
+                                                        borderRadius: '50%',
+                                                        bgcolor: 'rgba(15, 23, 42, 0.82)',
+                                                        backdropFilter: 'blur(12px)',
+                                                        border: `1.5px solid ${srv.color}`,
+                                                        boxShadow: `0 0 16px ${srv.color}50`,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: srv.color,
+                                                    }}
+                                                >
+                                                    {srv.icon}
+                                                </Box>
                                             </Box>
                                         </Box>
 
@@ -1294,8 +1418,9 @@ export default function Services() {
                                             <Box
                                                 component="img"
                                                 className="tour-img"
-                                                src="/images/services/tour.jpg"
-                                                alt="Custom Karavali Tour Packages in Honnavar"
+                                                src={tourMedia.primary || "/images/services/tour.jpg"}
+                                                alt="Custom Karavali and Honnavar sightseeing tour packages with private cab and boat charter"
+                                                loading="lazy"
                                                 sx={{
                                                     width: '100%',
                                                     height: '100%',
@@ -1337,22 +1462,42 @@ export default function Services() {
                                                         boxShadow: '0 4px 14px rgba(139, 92, 246, 0.5)',
                                                     }}
                                                 />
-                                                <Box
-                                                    sx={{
-                                                        width: 40,
-                                                        height: 40,
-                                                        borderRadius: '50%',
-                                                        bgcolor: 'rgba(15, 23, 42, 0.85)',
-                                                        backdropFilter: 'blur(12px)',
-                                                        border: '1.5px solid #8B5CF6',
-                                                        boxShadow: '0 0 18px rgba(139, 92, 246, 0.6)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        color: '#A78BFA',
-                                                    }}
-                                                >
-                                                    <AutoAwesomeIcon sx={{ fontSize: 20 }} />
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    {tourMedia.hasMultiple && (
+                                                        <Chip
+                                                            icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#FFFFFF !important' }} />}
+                                                            label={`${tourMedia.count} Photos`}
+                                                            size="small"
+                                                            onClick={(e) => handleOpenGallery(tourItem, e)}
+                                                            sx={{
+                                                                bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                                backdropFilter: 'blur(8px)',
+                                                                color: '#FFFFFF',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.7rem',
+                                                                cursor: 'pointer',
+                                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                                '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.95)' },
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <Box
+                                                        sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: '50%',
+                                                            bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                            backdropFilter: 'blur(12px)',
+                                                            border: '1.5px solid #8B5CF6',
+                                                            boxShadow: '0 0 18px rgba(139, 92, 246, 0.6)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: '#A78BFA',
+                                                        }}
+                                                    >
+                                                        <AutoAwesomeIcon sx={{ fontSize: 20 }} />
+                                                    </Box>
                                                 </Box>
                                             </Box>
 
@@ -1555,118 +1700,6 @@ export default function Services() {
                     </Grid>
                 </Box>
 
-                {/* =========================================================================
-                    3. WHY CHOOSE GK WHIZWHEEL (Core Differentiators)
-                ========================================================================== */}
-                <Box
-                    component="section"
-                    aria-labelledby="why-choose-heading"
-                    sx={{
-                        maxWidth: '1240px',
-                        width: '100%',
-                        mx: 'auto',
-                        px: { xs: 2, sm: 3, md: 4 },
-                        mt: { xs: 9, md: 13 },
-                    }}
-                >
-                    <Box sx={{ textAlign: 'center', mb: 6 }}>
-                        <Chip
-                            label="THE GK WHIZWHEEL ADVANTAGE"
-                            sx={{
-                                bgcolor: 'rgba(16, 185, 129, 0.12)',
-                                color: isDark ? '#34D399' : '#047857',
-                                fontWeight: 800,
-                                letterSpacing: '0.08em',
-                                fontSize: '0.75rem',
-                                mb: 1.5,
-                                border: '1px solid rgba(16, 185, 129, 0.25)',
-                            }}
-                        />
-                        <Typography
-                            id="why-choose-heading"
-                            variant="h3"
-                            component="h2"
-                            sx={{ fontWeight: 950, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.025em', mb: 1.5 }}
-                        >
-                            Why Book All Your Services With GK WhizWheel?
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155', maxWidth: 680, mx: 'auto' }}>
-                            We are not an anonymous aggregators platform. We own vehicles, coordinate directly with boat captains, and operate active physical hubs in Honnavar.
-                        </Typography>
-                    </Box>
-
-                    <Grid container spacing={3}>
-                        {[
-                            {
-                                icon: <TrainIcon sx={{ fontSize: 28 }} />,
-                                color: '#F59E0B',
-                                title: 'Dual Physical Pickup Hubs',
-                                desc: 'Collect your rental bike or board your AC cab right at Honnavar Railway Station exit or our Palya Main Rd center in under 5 minutes.',
-                            },
-                            {
-                                icon: <VerifiedUserIcon sx={{ fontSize: 28 }} />,
-                                color: '#10B981',
-                                title: '100% Verified Local Operators',
-                                desc: 'PADI-certified scuba dive masters, licensed boat captains with lifejackets, and experienced commercial drivers who live locally.',
-                            },
-                            {
-                                icon: <ShieldIcon sx={{ fontSize: 28 }} />,
-                                color: '#0284C7',
-                                title: 'Transparent Pricing Guarantee',
-                                desc: 'Zero surge pricing, exact 24-hour block billing, transparent fuel terms, and security deposits returned within 2 hours of handover.',
-                            },
-                            {
-                                icon: <SupportAgentIcon sx={{ fontSize: 28 }} />,
-                                color: '#8B5CF6',
-                                title: '24/7 Roadside & Trip Care',
-                                desc: 'Flat tire or route change? Our local mobile team covers Honnavar, Kumta, Murudeshwar, and Gokarna around the clock.',
-                            },
-                        ].map((feature, fIdx) => (
-                            <Grid key={fIdx} size={{ xs: 12, sm: 6, lg: 3 }}>
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 3.5,
-                                        height: '100%',
-                                        borderRadius: 4,
-                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                        transition: 'all 0.3s ease',
-                                        boxShadow: isDark ? 'none' : '0 2px 10px rgba(0,0,0,0.03)',
-                                        '&:hover': {
-                                            transform: 'translateY(-4px)',
-                                            borderColor: feature.color,
-                                            boxShadow: isDark ? `0 12px 30px -8px ${feature.color}25` : '0 12px 30px -8px rgba(15, 23, 42, 0.08)',
-                                        },
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 52,
-                                            height: 52,
-                                            borderRadius: 3,
-                                            bgcolor: `${feature.color}15`,
-                                            border: `1.5px solid ${feature.color}35`,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: feature.color,
-                                            mb: 2.5,
-                                        }}
-                                    >
-                                        {feature.icon}
-                                    </Box>
-                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1, fontSize: '1.1rem' }}>
-                                        {feature.title}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', lineHeight: 1.65 }}>
-                                        {feature.desc}
-                                    </Typography>
-                                </Paper>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
 
                 {/* =========================================================================
                     4. POPULAR KARAVALI DAY TRIPS & COMBO PACKAGES
@@ -1793,7 +1826,7 @@ export default function Services() {
                                             <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', display: 'block', fontWeight: 600 }}>
                                                 Combo Rate (Save 10%)
                                             </Typography>
-                                            <Typography variant="h6" sx={{ fontWeight: 900, color: combo.color, lineHeight: 1.1 }}>
+                                            <Typography variant="h6" component="span" sx={{ fontWeight: 900, color: combo.color, lineHeight: 1.1 }}>
                                                 {combo.price}
                                             </Typography>
                                         </Box>
@@ -1828,255 +1861,7 @@ export default function Services() {
                 </Box>
 
                 {/* =========================================================================
-                    5. CREATIVE HOW BOOKING WORKS ROADMAP TIMELINE
-                ========================================================================== */}
-                <Box
-                    id="how-it-works"
-                    component="section"
-                    aria-labelledby="how-it-works-heading"
-                    sx={{
-                        maxWidth: '1240px',
-                        width: '100%',
-                        mx: 'auto',
-                        px: { xs: 2, sm: 3, md: 4 },
-                        mt: { xs: 9, md: 13 },
-                    }}
-                >
-                    <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
-                        <Chip
-                            label="EFFORTLESS 4-STEP JOURNEY"
-                            sx={{
-                                bgcolor: 'rgba(245, 158, 11, 0.12)',
-                                color: '#F59E0B',
-                                fontWeight: 800,
-                                letterSpacing: '0.08em',
-                                fontSize: '0.75rem',
-                                mb: 1.5,
-                            }}
-                        />
-                        <Typography
-                            id="how-it-works-heading"
-                            variant="h3"
-                            component="h2"
-                            sx={{ fontWeight: 950, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.025em', mb: 1.5 }}
-                        >
-                            How Booking Works Across All Services
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155', maxWidth: 640, mx: 'auto' }}>
-                            A connected, transparent booking pipeline ensuring zero delays from the moment you plan until you return home.
-                        </Typography>
-                    </Box>
-
-                    {/* Timeline Container */}
-                    <Box sx={{ position: 'relative' }}>
-                        {/* Desktop Connector Line */}
-                        <Box
-                            sx={{
-                                display: { xs: 'none', md: 'block' },
-                                position: 'absolute',
-                                top: 56,
-                                left: '12%',
-                                right: '12%',
-                                height: 3,
-                                background: 'linear-gradient(90deg, #F59E0B 0%, #0284C7 33%, #059669 66%, #8B5CF6 100%)',
-                                zIndex: 0,
-                                opacity: 0.6,
-                            }}
-                        />
-
-                        <Grid container spacing={3}>
-                            {[
-                                {
-                                    step: '01',
-                                    title: 'Choose Service or Combo',
-                                    desc: 'Pick your preferred ride (Activa, Classic 350, AC Cab), river boat cruise, scuba dive, or custom vacation package.',
-                                    color: '#F59E0B',
-                                    badge: '⚡ Real-Time Fleet',
-                                },
-                                {
-                                    step: '02',
-                                    title: 'Digital KYC & Fair Quote',
-                                    desc: 'Enter your travel dates, verify license or ID proof online in 60 seconds, and receive an itemized, upfront price breakdown.',
-                                    color: '#0284C7',
-                                    badge: '🔒 Confirmed < 60s',
-                                },
-                                {
-                                    step: '03',
-                                    title: 'Station or Jetty Meetup',
-                                    desc: 'Our team greets you directly outside Honnavar Railway Station or at the boat jetty with pre-inspected keys and sanitised helmets.',
-                                    color: '#059669',
-                                    badge: '🚉 Dual Station Hub',
-                                },
-                                {
-                                    step: '04',
-                                    title: 'Explore with 24/7 Care',
-                                    desc: 'Enjoy scenic coastal highways backed by our continuous roadside support, insider beach tips, and instant return inspection.',
-                                    color: '#8B5CF6',
-                                    badge: '🤝 Dedicated Care',
-                                },
-                            ].map((st, sIdx) => (
-                                <Grid key={sIdx} size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <Paper
-                                        elevation={0}
-                                        sx={{
-                                            position: 'relative',
-                                            zIndex: 1,
-                                            p: 3.5,
-                                            height: '100%',
-                                            borderRadius: 4,
-                                            bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                            textAlign: 'center',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            transition: 'transform 0.3s ease, border-color 0.3s ease',
-                                            '&:hover': {
-                                                transform: 'translateY(-6px)',
-                                                borderColor: st.color,
-                                                boxShadow: isDark ? `0 14px 30px -6px ${st.color}30` : '0 12px 28px -6px rgba(15, 23, 42, 0.08)',
-                                            },
-                                        }}
-                                    >
-                                        {/* Floating Circular Step Orb */}
-                                        <Box
-                                            sx={{
-                                                width: 58,
-                                                height: 58,
-                                                borderRadius: '50%',
-                                                bgcolor: isDark ? '#0F172A' : '#FFFFFF',
-                                                border: `3px solid ${st.color}`,
-                                                color: st.color,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontWeight: 900,
-                                                fontSize: '1.25rem',
-                                                mb: 2,
-                                                boxShadow: `0 0 20px ${st.color}40`,
-                                            }}
-                                        >
-                                            {st.step}
-                                        </Box>
-
-                                        <Chip
-                                            label={st.badge}
-                                            size="small"
-                                            sx={{
-                                                bgcolor: `${st.color}15`,
-                                                color: st.color,
-                                                fontWeight: 800,
-                                                fontSize: '0.7rem',
-                                                mb: 1.5,
-                                                border: `1px solid ${st.color}30`,
-                                            }}
-                                        />
-
-                                        <Typography variant="h6" component="h3" sx={{ fontWeight: 850, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1.2, fontSize: '1.05rem', lineHeight: 1.3 }}>
-                                            {st.title}
-                                        </Typography>
-
-                                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', lineHeight: 1.6, fontSize: '0.86rem' }}>
-                                            {st.desc}
-                                        </Typography>
-                                    </Paper>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Box>
-                </Box>
-
-                {/* =========================================================================
-                    6. TRAVEL DISTANCE & COVERAGE MATRIX FROM HONNAVAR
-                ========================================================================== */}
-                <Box
-                    id="coverage"
-                    component="section"
-                    aria-labelledby="coverage-heading"
-                    sx={{
-                        maxWidth: '1240px',
-                        width: '100%',
-                        mx: 'auto',
-                        px: { xs: 2, sm: 3, md: 4 },
-                        mt: { xs: 9, md: 13 },
-                    }}
-                >
-                    <Box sx={{ textAlign: 'center', mb: 6 }}>
-                        <Chip
-                            label="COASTAL KARNATAKA CONNECTIVITY"
-                            sx={{
-                                bgcolor: 'rgba(2, 132, 199, 0.12)',
-                                color: '#0284C7',
-                                fontWeight: 800,
-                                letterSpacing: '0.08em',
-                                fontSize: '0.75rem',
-                                mb: 1.5,
-                                border: '1px solid rgba(2, 132, 199, 0.25)',
-                            }}
-                        />
-                        <Typography
-                            id="coverage-heading"
-                            variant="h3"
-                            component="h2"
-                            sx={{ fontWeight: 950, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.025em', mb: 1.5 }}
-                        >
-                            Distances from GK WhizWheel Honnavar Hub
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155', maxWidth: 640, mx: 'auto' }}>
-                            Honnavar is the central gateway to Uttara Kannada. Plan your travel easily with our quick transit guide.
-                        </Typography>
-                    </Box>
-
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            overflow: 'hidden',
-                            bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                            boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.04)',
-                        }}
-                    >
-                        <Grid container>
-                            {distances.map((dst, dIdx) => (
-                                <Grid
-                                    key={dIdx}
-                                    size={{ xs: 12, sm: 6, md: 3 }}
-                                    sx={{
-                                        p: 3,
-                                        borderRight: { sm: dIdx % 2 !== 1 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #F1F5F9') : 'none', md: dIdx % 4 !== 3 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #F1F5F9') : 'none' },
-                                        borderBottom: { xs: '1px solid rgba(255, 255, 255, 0.06)', md: dIdx < 4 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #F1F5F9') : 'none' },
-                                        transition: 'background-color 0.2s ease',
-                                        '&:hover': {
-                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.04)' : '#FFFBEB',
-                                        },
-                                    }}
-                                >
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18 }} />
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                            {dst.destination}
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.5 }}>
-                                        <Typography variant="h5" sx={{ fontWeight: 900, color: '#0284C7' }}>
-                                            {dst.distance}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600 }}>
-                                            • {dst.time}
-                                        </Typography>
-                                    </Box>
-                                    <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', display: 'block', fontWeight: 500 }}>
-                                        {dst.mode}
-                                    </Typography>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Paper>
-                </Box>
-
-                {/* =========================================================================
-                    7. FREQUENTLY ASKED QUESTIONS (Complete Services FAQ)
+                    7. FREQUENTLY ASKED QUESTIONS (Cross-Service Decision Guide)
                 ========================================================================== */}
                 <Box
                     id="faq"
@@ -2111,37 +1896,12 @@ export default function Services() {
                             Frequently Asked Questions
                         </Typography>
                         <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155' }}>
-                            Everything you need to know about booking vehicles, private cabs, boat cruises, scuba diving, and stays in Honnavar.
+                            Need help deciding between self-drive, cabs, guided tours, or bundled packages? Here is how our services compare.
                         </Typography>
                     </Box>
 
                     <Box>
-                        {[
-                            {
-                                q: 'Can I pick up my rental bike or taxi at Honnavar Railway Station?',
-                                a: 'Yes! We maintain an active Station Desk on Station Road. When you reserve online or via WhatsApp, simply provide your train number and arrival time. Our executive meets you right outside the platform with your vehicle keys and helmets in under 5 minutes.',
-                            },
-                            {
-                                q: 'What documents are required for two-wheelers vs. cabs and activities?',
-                                a: 'For two-wheeler self-drive rentals, you need an original valid Indian Driving License and one government ID proof (Aadhaar or Passport). For cabs, boat cruises, scuba diving, and homestays, only standard government ID verification is needed. Digital KYC can be completed in advance.',
-                            },
-                            {
-                                q: 'Can I combine multiple services into an All-in-One Vacation Package?',
-                                a: 'Yes! With our custom Karavali Vacation Packages, you can bundle bikes or cabs + riverfront homestay + Sharavathi sunset cruise + Netrani scuba diving into one seamless itinerary. All combo bookings receive a 10% package discount and a dedicated trip coordinator.',
-                            },
-                            {
-                                q: 'Can beginners or non-swimmers participate in Netrani Scuba Diving?',
-                                a: 'Absolutely! Our Netrani Island scuba expeditions are conducted 1:1 with certified PADI dive masters. Non-swimmers and first-time divers are fully welcome. Packages include safety briefing, complete gear, life jacket, boat transfer, and free underwater 4K GoPro videos.',
-                            },
-                            {
-                                q: 'What are the timing options for Sharavathi Backwater Boating?',
-                                a: 'Boats operate daily between 08:00 AM and 06:00 PM from our Honnavar jetty. The most popular cruise is the 04:30 PM Golden Sunset Estuary Cruise, where you can watch the sun sink into the Arabian Sea while gliding past mangrove islands. Prior booking is recommended on weekends.',
-                            },
-                            {
-                                q: 'How are payments, security deposits, and refunds processed?',
-                                a: 'We believe in 100% transparent pricing with zero surprise charges. Security deposits (for two-wheeler rentals) are refundable and credited directly back to your UPI or bank account within 2 hours of vehicle return following a quick inspection. All bookings can be initiated online.',
-                            },
-                        ].map((faqItem, qIdx) => (
+                        {SERVICES_FAQS.map((faqItem, qIdx) => (
                             <Accordion
                                 key={qIdx}
                                 defaultExpanded={qIdx === 0}
@@ -2464,6 +2224,18 @@ export default function Services() {
                 open={modalOpen}
                 onClose={() => setModalOpen(false)}
                 initialServiceId={activeServiceId}
+            />
+
+            {/* Service Item Multi-Image Gallery Lightbox Modal */}
+            <ServiceGalleryModal
+                open={galleryModalOpen}
+                onClose={() => setGalleryModalOpen(false)}
+                item={selectedItemForGallery}
+                onBook={(item) => {
+                    setGalleryModalOpen(false);
+                    setActiveServiceId(item?.service_type || 'two_wheelers');
+                    setModalOpen(true);
+                }}
             />
         </AppLayout>
     );

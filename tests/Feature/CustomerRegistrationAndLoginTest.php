@@ -25,7 +25,7 @@ class CustomerRegistrationAndLoginTest extends TestCase
             'name' => 'sanjay',
             'email' => 'kgsanjay.kallabbe@gmail.com',
             'phone' => '7975365475',
-            'password' => 'Admin@123',
+            'password' => 'SecureP@ssw0rd2026!',
             'whatsapp_opt_in' => true,
         ]);
 
@@ -37,7 +37,7 @@ class CustomerRegistrationAndLoginTest extends TestCase
         $this->assertSame('sanjay', $user->name);
         $this->assertSame('7975365475', $user->phone);
         $this->assertSame(UserRole::CUSTOMER, $user->role);
-        $this->assertTrue(Hash::check('Admin@123', $user->password));
+        $this->assertTrue(Hash::check('SecureP@ssw0rd2026!', $user->password));
     }
 
     public function test_customer_can_login_with_phone(): void

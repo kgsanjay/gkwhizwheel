@@ -11,6 +11,9 @@ Route::prefix('v1')->group(function (): void {
         Route::middleware('throttle:auth')->group(function (): void {
             Route::post('/register', [AuthController::class, 'register']);
             Route::post('/login', [AuthController::class, 'login']);
+        });
+
+        Route::middleware('throttle:otp')->group(function (): void {
             Route::post('/otp/request', [AuthController::class, 'requestOtp']);
             Route::post('/otp/verify', [AuthController::class, 'verifyOtp']);
         });
@@ -18,14 +21,20 @@ Route::prefix('v1')->group(function (): void {
         Route::middleware('auth:sanctum')->group(function (): void {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', [AuthController::class, 'me']);
+            Route::put('/profile', [AuthController::class, 'updateProfile']);
         });
     });
+
+    // Public Inquiries
+    Route::post('/contact', [\App\Http\Controllers\Web\ContactWebController::class, 'store'])
+        ->middleware('throttle:contact');
 
     // Public Bikes & Meta
     Route::get('/bikes', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'index']);
     Route::get('/bikes/{id}', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'show']);
     Route::get('/bikes/{id}/availability', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'availability']);
-    Route::match(['get', 'post'], '/bikes/{id}/price-quote', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'priceQuote']);
+    Route::match(['get', 'post'], '/bikes/{id}/price-quote', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'priceQuote'])
+        ->middleware('throttle:coupons');
     Route::get('/stores', function () {
         return response()->json([
             'success' => true,
@@ -37,6 +46,53 @@ Route::prefix('v1')->group(function (): void {
         return response()->json([
             'success' => true,
             'data' => \App\Models\BikeCategory::orderBy('name')->get(),
+            'message' => '',
+        ]);
+    });
+
+    // Public Services
+    Route::get('/services', function (\Illuminate\Http\Request $request) {
+        $query = \App\Models\ServiceItem::whereIn('status', ['available', 'active'])
+            ->with(['images' => fn ($q) => $q->orderBy('sort_order')]);
+
+        if ($serviceType = $request->query('service_type')) {
+            $query->where('service_type', $serviceType);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $query->orderBy('sort_order')->get(),
+            'message' => '',
+        ]);
+    });
+
+    Route::get('/services/{slug}', function (string $slug) {
+        $serviceTypeMap = [
+            'two-wheelers' => 'two_wheelers',
+            'bikes' => 'two_wheelers',
+            'taxi' => 'taxi',
+            'cabs' => 'taxi',
+            'boating' => 'boating',
+            'scuba' => 'scuba',
+            'homestay' => 'homestay',
+            'homestays' => 'homestay',
+            'guide' => 'guide',
+            'tours' => 'tours',
+        ];
+        $mappedType = $serviceTypeMap[$slug] ?? $slug;
+        $items = \App\Models\ServiceItem::where('service_type', $mappedType)
+            ->whereIn('status', ['available', 'active'])
+            ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'slug' => $slug,
+                'service_type' => $mappedType,
+                'items' => $items,
+            ],
             'message' => '',
         ]);
     });
@@ -54,14 +110,19 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/{id}/documents', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'documents']);
     });
 
-    // Customer KYC Documents
-    Route::middleware('auth:sanctum')->prefix('customer')->group(function (): void {
+    // Customer KYC Documents & Push Tokens
+    Route::middleware(['auth:sanctum', 'throttle:uploads'])->prefix('customer')->group(function (): void {
         Route::get('/kyc-documents', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'index']);
         Route::post('/kyc-documents', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'store']);
+        Route::get('/kyc-documents/{id}/download', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'download'])->name('customer.kyc-documents.download');
+
+        // Native Expo Push Token Registration
+        Route::post('/push-token', [\App\Http\Controllers\Api\V1\Customer\PushTokenController::class, 'store']);
+        Route::delete('/push-token', [\App\Http\Controllers\Api\V1\Customer\PushTokenController::class, 'destroy']);
     });
 
     // Admin Routes
-    Route::middleware('auth:sanctum')->prefix('admin')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('admin')->group(function (): void {
         // Bikes
         Route::prefix('bikes')->group(function (): void {
             Route::post('/', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'store']);
@@ -97,8 +158,8 @@ Route::prefix('v1')->group(function (): void {
             Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\StoreController::class, 'update']);
         });
 
-        // Staff
-        Route::prefix('staff')->group(function (): void {
+        // Staff (Admin & Store Manager)
+        Route::prefix('staff')->middleware('role:super_admin,store_manager')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'index']);
             Route::post('/', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'store']);
             Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'show']);
@@ -111,11 +172,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'index']);
             Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'show']);
             Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'update']);
-            Route::post('/{id}/refund', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'refund']);
         });
 
-        // Reports
-        Route::prefix('reports')->group(function (): void {
+        // Refunds (Admin & Store Manager)
+        Route::post('bookings/{id}/refund', [\App\Http\Controllers\Api\V1\Admin\BookingController::class, 'refund'])
+            ->middleware('role:super_admin,store_manager');
+
+        // Reports (Admin & Store Manager)
+        Route::prefix('reports')->middleware('role:super_admin,store_manager')->group(function (): void {
             Route::get('/revenue', [\App\Http\Controllers\Api\V1\Admin\ReportController::class, 'revenue']);
             Route::get('/utilization', [\App\Http\Controllers\Api\V1\Admin\ReportController::class, 'utilization']);
         });
@@ -124,8 +188,19 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/activity-logs', [\App\Http\Controllers\Api\V1\Admin\ActivityLogController::class, 'index']);
     });
 
-    // Staff & Store Manager Operations (Offline / Walk-in)
-    Route::middleware('auth:sanctum')->prefix('staff')->group(function (): void {
+    // Admin & Store Manager Service Items
+    Route::middleware(['auth:sanctum', 'role:super_admin,store_manager'])->prefix('admin/service-items')->group(function (): void {
+        Route::get('/', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'store']);
+        Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'show']);
+        Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'update']);
+        Route::patch('/{id}/status', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'updateStatus']);
+        Route::put('/{id}/status', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'updateStatus']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'destroy']);
+    });
+
+    // Staff & Store Manager Operations (Offline / Walk-in Mobile App - Block G)
+    Route::middleware(['auth:sanctum', 'role:staff,store_manager,super_admin', 'throttle:mobile-api'])->prefix('staff')->group(function (): void {
         Route::prefix('customers')->group(function (): void {
             Route::get('/lookup', [\App\Http\Controllers\Api\V1\Staff\CustomerController::class, 'lookup']);
             Route::post('/', [\App\Http\Controllers\Api\V1\Staff\CustomerController::class, 'store']);
@@ -133,12 +208,20 @@ Route::prefix('v1')->group(function (): void {
 
         Route::prefix('bookings')->group(function (): void {
             Route::get('/active', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'active']);
-            Route::middleware('throttle:bookings')->group(function (): void {
-                Route::post('/', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'store']);
-                Route::post('/{id}/collect-payment', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'collectPayment'])->middleware('throttle:payments');
-                Route::post('/{id}/handover', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'handover']);
-                Route::post('/{id}/return', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'returnBike']);
-            });
+            Route::post('/', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'store']);
+            Route::post('/{id}/collect-payment', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'collectPayment']);
+            Route::post('/{id}/handover', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'handover']);
+            Route::post('/{id}/return', [\App\Http\Controllers\Api\V1\Staff\BookingController::class, 'returnBike']);
+        });
+
+        Route::prefix('service-bookings')->group(function (): void {
+            Route::get('/', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'index']);
+            Route::post('/', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'store']);
+            Route::get('/{id}', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'show']);
+            Route::put('/{id}/status', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'updateStatus']);
+            Route::patch('/{id}/status', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'updateStatus']);
+            Route::post('/{id}/mark-in-progress', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'markInProgress']);
+            Route::post('/{id}/mark-completed', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'markCompleted']);
         });
 
         Route::prefix('bikes')->group(function (): void {
@@ -149,8 +232,11 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/sync', [\App\Http\Controllers\Api\V1\Staff\SyncController::class, 'sync']);
     });
 
-    // Staff App Version & Update Check (Accessible on Launch)
-    Route::get('/staff/app-version', [\App\Http\Controllers\Api\V1\Staff\AppVersionController::class, 'show']);
+    // Mobile App Version & Deprecation Check (Block F & Block G)
+    Route::get('/staff/app-version', [\App\Http\Controllers\Api\V1\Staff\AppVersionController::class, 'show'])
+        ->middleware('throttle:mobile-api');
+    Route::get('/customer/app-version', [\App\Http\Controllers\Api\V1\Staff\AppVersionController::class, 'customer'])
+        ->middleware('throttle:mobile-api');
 
     // Signed Bike Document Download
     Route::get('/bike-documents/{id}', \App\Http\Controllers\Api\V1\Public\BikeDocumentDownloadController::class)

@@ -37,6 +37,8 @@ class ServiceBooking extends Model
         'payment_status',
         'payment_method',
         'status',
+        'held_until',
+        'idempotency_key',
         'customer_notes',
         'admin_notes',
         'created_by',
@@ -47,6 +49,7 @@ class ServiceBooking extends Model
         return [
             'start_datetime' => 'datetime',
             'end_datetime' => 'datetime',
+            'held_until' => 'datetime',
             'quantity' => 'integer',
             'base_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',

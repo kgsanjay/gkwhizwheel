@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/sitemap.xml', [\App\Http\Controllers\Web\SitemapController::class, 'index'])->name('sitemap');
+
 Route::get('/', function () {
     $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
         ->where('status', \App\Enums\BikeStatus::AVAILABLE)
@@ -34,7 +36,16 @@ Route::redirect('/bikes', '/services/bikes', 301);
 Route::redirect('/services/two-wheelers', '/services/bikes', 301);
 Route::get('/bikes/{id}', [\App\Http\Controllers\Web\BikeWebController::class, 'show'])->name('bikes.show');
 
-Route::get('/services', fn () => Inertia::render('Services'))->name('services');
+Route::get('/services', function () {
+    $availableItems = \App\Models\ServiceItem::whereIn('status', ['available', 'active'])
+        ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
+        ->orderBy('sort_order')
+        ->get();
+
+    return Inertia::render('Services', [
+        'availableItems' => $availableItems,
+    ]);
+})->name('services');
 Route::get('/services/{slug}', function (string $slug) {
     $serviceTypeMap = [
         'two-wheelers' => 'two_wheelers',
@@ -51,6 +62,7 @@ Route::get('/services/{slug}', function (string $slug) {
     $mappedType = $serviceTypeMap[$slug] ?? $slug;
     $availableItems = \App\Models\ServiceItem::where('service_type', $mappedType)
         ->whereIn('status', ['available', 'active'])
+        ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
         ->orderBy('sort_order')
         ->get();
 
@@ -101,19 +113,65 @@ Route::get('/services/{slug}', function (string $slug) {
         'availableItems' => $availableItems,
     ]);
 })->name('services.show');
-Route::post('/services/book', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'store'])->name('services.book');
-Route::post('/services/quote', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'calculateQuote'])->name('services.quote');
+
+Route::get('/services/{slug}/{id}', function (string $slug, int $id) {
+    $serviceTypeMap = [
+        'two-wheelers' => 'two_wheelers',
+        'bikes' => 'two_wheelers',
+        'taxi' => 'taxi',
+        'cabs' => 'taxi',
+        'boating' => 'boating',
+        'scuba' => 'scuba',
+        'homestay' => 'homestay',
+        'homestays' => 'homestay',
+        'guide' => 'guide',
+        'tours' => 'tours',
+    ];
+    $mappedType = $serviceTypeMap[$slug] ?? $slug;
+    $item = \App\Models\ServiceItem::where('service_type', $mappedType)
+        ->whereIn('status', ['available', 'active'])
+        ->findOrFail($id);
+
+    $availableItems = \App\Models\ServiceItem::where('service_type', $mappedType)
+        ->whereIn('status', ['available', 'active'])
+        ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
+        ->orderBy('sort_order')
+        ->get();
+
+    return Inertia::render('ServiceDetail', [
+        'slug' => $slug,
+        'item' => $item,
+        'availableItems' => $availableItems,
+    ]);
+})->name('services.items.show');
+Route::post('/services/book', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'store'])
+    ->middleware('throttle:bookings')
+    ->name('services.book');
+Route::post('/services/quote', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'calculateQuote'])
+    ->middleware('throttle:coupons')
+    ->name('services.quote');
 Route::get('/services/bookings/{bookingNumber}/confirmation', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'confirmation'])->name('services.booking.confirmation');
-Route::post('/services/bookings/{bookingNumber}/initiate-payment', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'initiatePayment'])->name('services.booking.initiate-payment');
-Route::post('/services/bookings/{bookingNumber}/verify-payment', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'verifyPayment'])->name('services.booking.verify-payment');
+Route::post('/services/bookings/{bookingNumber}/initiate-payment', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'initiatePayment'])
+    ->middleware('throttle:payments')
+    ->name('services.booking.initiate-payment');
+Route::post('/services/bookings/{bookingNumber}/verify-payment', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'verifyPayment'])
+    ->middleware('throttle:payments')
+    ->name('services.booking.verify-payment');
 Route::get('/services/bookings/{bookingNumber}/voucher', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'downloadVoucher'])->name('services.booking.voucher');
 Route::get('/services/bookings/{bookingNumber}/print', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'printVoucher'])->name('services.booking.print');
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
 Route::get('/about-us', fn () => Inertia::render('About'));
+Route::get('/explore', fn () => Inertia::render('ExplorePage'))->name('explore');
+Route::get('/explore-honnavar', fn () => Inertia::render('ExplorePage'));
 Route::get('/how-it-works', fn () => Inertia::render('HowItWorks'))->name('how-it-works');
 Route::get('/contact', fn () => Inertia::render('Contact'))->name('contact');
+Route::post('/contact', [\App\Http\Controllers\Web\ContactWebController::class, 'store'])
+    ->middleware('throttle:contact')
+    ->name('contact.store');
 Route::get('/terms', fn () => Inertia::render('Terms'))->name('terms');
 Route::get('/rental-terms', fn () => Inertia::render('Terms'));
+Route::get('/privacy', fn () => Inertia::render('Privacy'))->name('privacy');
+Route::get('/privacy-policy', fn () => Inertia::render('Privacy'));
 
 Route::get('/bookings/{id}/confirmation', [\App\Http\Controllers\Web\BookingWebController::class, 'confirmation'])->name('bookings.confirmation');
 Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\BookingWebController::class, 'downloadVoucher'])->name('bookings.voucher');
@@ -123,6 +181,8 @@ Route::post('/dev/bookings/{id}/simulate-payment', [\App\Http\Controllers\Web\Bo
 Route::get('/account', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'index'])->name('account.index');
 Route::get('/account/bookings/{id}', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'show'])->name('account.bookings.show');
 Route::get('/account/kyc', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'kyc'])->name('account.kyc');
+Route::post('/account/kyc/upload', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'store'])->middleware(['auth', 'throttle:uploads'])->name('account.kyc.upload');
+Route::get('/account/kyc/{id}/download', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'download'])->middleware('auth')->name('account.kyc.download');
 
 // Authentication
 Route::get('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('login');
@@ -136,6 +196,14 @@ Route::get('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController:
 Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])->middleware('throttle:auth')->name('admin.login.store');
 Route::match(['get', 'post'], '/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('logout');
 Route::match(['get', 'post'], '/admin/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('admin.logout');
+
+// Two-Factor Authentication (TOTP)
+Route::get('/admin/2fa/challenge', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorChallenge'])->name('admin.2fa.challenge');
+Route::post('/admin/2fa/challenge', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorAuthenticate'])->middleware('throttle:auth')->name('admin.2fa.verify');
+Route::get('/admin/2fa/setup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorSetup'])->name('admin.2fa.setup');
+Route::post('/admin/2fa/confirm', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorConfirm'])->middleware('throttle:auth')->name('admin.2fa.confirm');
+Route::get('/admin/2fa/recovery-codes', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorRecoveryCodes'])->name('admin.2fa.recovery-codes');
+Route::post('/admin/2fa/disable', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorDisable'])->middleware('auth')->name('admin.2fa.disable');
 
 // Admin & Staff Portal Shell
 Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
@@ -184,12 +252,14 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::match(['post', 'put'], '/stores/{id}', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'update'])->name('admin.stores.update');
     Route::match(['post', 'patch'], '/stores/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'toggle'])->name('admin.stores.toggle');
 
-    // Staff Management
-    Route::get('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'index'])->name('admin.staff.index');
-    Route::post('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'store'])->name('admin.staff.store');
-    Route::match(['post', 'put'], '/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'update'])->name('admin.staff.update');
-    Route::post('/staff/{id}/assign-stores', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'assignStores'])->name('admin.staff.assign-stores');
-    Route::delete('/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'destroy'])->name('admin.staff.destroy');
+    // Staff Management (Super Admin only)
+    Route::middleware('role:super_admin')->group(function (): void {
+        Route::get('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'index'])->name('admin.staff.index');
+        Route::post('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'store'])->name('admin.staff.store');
+        Route::match(['post', 'put'], '/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'update'])->name('admin.staff.update');
+        Route::post('/staff/{id}/assign-stores', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'assignStores'])->name('admin.staff.assign-stores');
+        Route::delete('/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'destroy'])->name('admin.staff.destroy');
+    });
 
     // Unified Bookings Calendar & Management
     Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'index'])->name('admin.bookings.index');
@@ -202,6 +272,17 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/bookings/{id}/return', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'processReturn'])->name('admin.bookings.return');
 
 
+    // Service Categories CRUD
+    Route::prefix('services/categories')->group(function (): void {
+        Route::get('/', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'index'])->name('admin.services.categories.index');
+        Route::post('/', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'store'])->name('admin.services.categories.store');
+        Route::match(['post', 'put'], '/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'update'])->name('admin.services.categories.update');
+        Route::delete('/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'destroy'])->name('admin.services.categories.destroy');
+    });
+    Route::get('/services/{serviceType}/categories', function (string $serviceType) {
+        return redirect()->route('admin.services.categories.index', ['service_type' => $serviceType]);
+    })->middleware(['service.access'])->name('admin.services.type.categories.index');
+
     // Multi-Service Items & Bookings (Online & Offline)
     Route::prefix('services/{serviceType}')->middleware(['service.access'])->group(function (): void {
         Route::get('/items', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'items'])->name('admin.services.items.index');
@@ -210,6 +291,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
         Route::get('/items/{id}/edit', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'editItem'])->name('admin.services.items.edit');
         Route::match(['post', 'put'], '/items/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'updateItem'])->name('admin.services.items.update');
         Route::delete('/items/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'destroyItem'])->name('admin.services.items.destroy');
+        Route::delete('/items/{itemId}/documents/{documentId}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'destroyDocument'])->name('admin.services.items.documents.destroy');
 
         Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'bookings'])->name('admin.services.bookings.index');
         Route::get('/bookings/create', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'createBooking'])->name('admin.services.bookings.create');

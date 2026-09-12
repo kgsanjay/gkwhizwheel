@@ -37,6 +37,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import GroupsIcon from '@mui/icons-material/Groups';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import CategoryIcon from '@mui/icons-material/Category';
 
 export default function ServiceItemsIndex({
     serviceConfig = {},
@@ -116,6 +117,15 @@ export default function ServiceItemsIndex({
                     </Box>
 
                     <Stack direction="row" spacing={1.5}>
+                        <Button
+                            variant="outlined"
+                            component={Link}
+                            href={`/admin/services/categories?service_type=${serviceConfig.slug}`}
+                            startIcon={<CategoryIcon />}
+                            sx={{ fontWeight: 700, textTransform: 'none' }}
+                        >
+                            Categories
+                        </Button>
                         <Button
                             variant="outlined"
                             component={Link}

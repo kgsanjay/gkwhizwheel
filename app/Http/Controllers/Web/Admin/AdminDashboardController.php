@@ -77,6 +77,12 @@ class AdminDashboardController extends Controller
         $fleetAvailableCount = (clone $bikeQuery)
             ->where('status', BikeStatus::AVAILABLE)
             ->count();
+        $fleetBookedCount = (clone $bikeQuery)
+            ->where('status', BikeStatus::ON_RENT)
+            ->count();
+        $fleetMaintenanceCount = (clone $bikeQuery)
+            ->where('status', BikeStatus::MAINTENANCE)
+            ->count();
 
         $unverifiedKycCount = KycDocument::where('verified', false)->count();
 
@@ -105,7 +111,7 @@ class AdminDashboardController extends Controller
         // Multi-Service Operational Metrics (Scoped by Manager's Assigned Services or All for Super Admin)
         $assignedServices = $user->assignedServicesList();
         $allServices = ['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'];
-        $servicesScope = $isSuperAdmin ? $allServices : $assignedServices;
+        $servicesScope = $isSuperAdmin ? $allServices : (! empty($assignedServices) ? $assignedServices : $allServices);
 
         $serviceMetrics = [];
         $serviceLabels = [
@@ -120,17 +126,60 @@ class AdminDashboardController extends Controller
 
         if (! empty($servicesScope)) {
             foreach ($servicesScope as $st) {
+                $serviceItemQuery = \App\Models\ServiceItem::where('service_type', $st);
+                $serviceBookingQuery = \App\Models\ServiceBooking::where('service_type', $st);
+
+                $availableItems = (clone $serviceItemQuery)->whereIn('status', ['available', 'active'])->count();
+                $totalItems = (clone $serviceItemQuery)->count();
+                $bookedItems = (clone $serviceItemQuery)->where('status', 'booked')->count();
+                $maintenanceItems = (clone $serviceItemQuery)->where('status', 'maintenance')->count();
+
+                // If two_wheelers, also incorporate the dedicated bike fleet counts
+                if ($st === 'two_wheelers') {
+                    $bikeTotal = (clone $bikeQuery)->count();
+                    if ($bikeTotal > 0) {
+                        $availableItems += (clone $bikeQuery)->where('status', BikeStatus::AVAILABLE)->count();
+                        $totalItems += $bikeTotal;
+                        $bookedItems += (clone $bikeQuery)->where('status', BikeStatus::ON_RENT)->count();
+                        $maintenanceItems += (clone $bikeQuery)->where('status', BikeStatus::MAINTENANCE)->count();
+                    }
+                }
+
+                $activeBookings = (clone $serviceBookingQuery)
+                    ->whereIn('status', ['confirmed', 'in_progress'])
+                    ->count();
+
+                $pendingBookings = (clone $serviceBookingQuery)
+                    ->where('status', 'pending')
+                    ->count();
+
+                // Today's service check-ins (start_datetime falls on today)
+                $todayCheckIns = (clone $serviceBookingQuery)
+                    ->whereDate('start_datetime', $today)
+                    ->whereIn('status', ['confirmed', 'in_progress', 'completed'])
+                    ->count();
+
+                if ($st === 'two_wheelers') {
+                    $todayCheckIns += (clone $bookingQuery)
+                        ->whereDate('start_date', $today)
+                        ->whereIn('status', [BookingStatus::CONFIRMED, BookingStatus::HANDED_OVER])
+                        ->count();
+                    $activeBookings += (clone $bookingQuery)
+                        ->whereIn('status', [BookingStatus::CONFIRMED, BookingStatus::HANDED_OVER])
+                        ->count();
+                }
+
                 $serviceMetrics[$st] = [
                     'type' => $st,
                     'label' => $serviceLabels[$st] ?? ucfirst($st),
-                    'items_count' => \App\Models\ServiceItem::where('service_type', $st)->count(),
-                    'active_bookings' => \App\Models\ServiceBooking::where('service_type', $st)
-                        ->whereIn('status', ['confirmed', 'in_progress'])
-                        ->count(),
-                    'pending_bookings' => \App\Models\ServiceBooking::where('service_type', $st)
-                        ->where('status', 'pending')
-                        ->count(),
-                    'month_revenue' => (float) \App\Models\ServiceBooking::where('service_type', $st)
+                    'items_count' => $totalItems,
+                    'available_items' => $availableItems,
+                    'booked_items' => $bookedItems,
+                    'maintenance_items' => $maintenanceItems,
+                    'active_bookings' => $activeBookings,
+                    'today_check_ins' => $todayCheckIns,
+                    'pending_bookings' => $pendingBookings,
+                    'month_revenue' => (float) (clone $serviceBookingQuery)
                         ->whereIn('payment_status', ['partial', 'paid'])
                         ->where('created_at', '>=', $monthStart)
                         ->sum('advance_paid'),
@@ -169,6 +218,8 @@ class AdminDashboardController extends Controller
                 'expected_returns' => $expectedReturnsCount,
                 'fleet_total' => $fleetTotalCount,
                 'fleet_available' => $fleetAvailableCount,
+                'fleet_booked' => $fleetBookedCount,
+                'fleet_maintenance' => $fleetMaintenanceCount,
                 'unverified_kyc' => $unverifiedKycCount,
                 'month_revenue' => $monthRevenue,
             ],

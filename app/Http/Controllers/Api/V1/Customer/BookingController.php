@@ -9,6 +9,7 @@ use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\CancelBookingRequest;
+use App\Http\Requests\Customer\ConfirmPaymentRequest;
 use App\Http\Requests\Customer\ExtendBookingRequest;
 use App\Http\Requests\Customer\HoldBookingRequest;
 use App\Http\Resources\BookingResource;
@@ -89,10 +90,15 @@ class BookingController extends Controller
             $booking = $bookingService->markPendingPayment($booking);
         }
 
-        $gateway = strtolower((string) ($request->input('gateway') ?? $request->query('gateway', 'razorpay')));
+        $validated = $request->validate([
+            'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
+            'redirect_url' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $gateway = strtolower((string) ($validated['gateway'] ?? $request->query('gateway', 'razorpay')));
 
         if ($gateway === 'phonepe') {
-            $paymentData = $phonePeService->createPayment($booking, $request->input('redirect_url'));
+            $paymentData = $phonePeService->createPayment($booking, $validated['redirect_url'] ?? null);
 
             $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
             $breakdown['phonepe_transaction_id'] = $paymentData['merchant_transaction_id'];
@@ -160,7 +166,7 @@ class BookingController extends Controller
      */
     public function confirmPayment(
         int $id,
-        Request $request
+        ConfirmPaymentRequest $request
     ): JsonResponse {
         $booking = Booking::where('user_id', $request->user()->id)
             ->with(['bike.images', 'pickupStore', 'returnStore', 'addons', 'payments', 'refunds'])

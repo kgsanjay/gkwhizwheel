@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import GuideBookingModal from '../Components/BookingModals/GuideBookingModal';
+import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
     Box,
     Typography,
@@ -285,45 +288,74 @@ const SIGHTSEEING_DISTANCES = [
     { spot: 'Jog Falls (Gersoppa River Source)', dist: '60 km', time: '1 Hr 25 Mins', road: 'Ghat Ascent via NH-69', guideTime: '3.5 to 5 Hours' },
 ];
 
-// FAQs Data
+// FAQs Data (Guide-specific)
 const GUIDE_FAQS = [
     {
+        q: 'What languages do your local guides speak?',
+        a: 'All our guides are fluent in Kannada and English. Many are also fluent in Hindi and Konkani. You can specify your preferred language when making your booking so we match the perfect companion for your family or group.',
+    },
+    {
+        q: 'What is the maximum group size per guide?',
+        a: 'To guarantee personal attention and safe trail navigation, our standard flat-rate tariff covers private groups up to 6–8 persons. For larger family reunions, bus tours, or corporate retreats, we can assign a second co-guide at a discounted rate.',
+    },
+    {
+        q: 'What is your tipping expectation and hidden charge policy?',
+        a: 'Zero hidden fees. Our upfront tariff (₹800 Half-Day / ₹1,500 Full-Day) is completely inclusive of the guide’s service. Tipping is 100% voluntary and never solicited. Furthermore, guides operate under a strict zero-commission policy—no detour into commercial kickback gift shops.',
+    },
+    {
         q: 'How does the guide accompany us during the tour?',
-        a: 'Our guides can easily accompany you inside your own private vehicle, rental car, or taxi. If you rented two-wheelers through GK WhizWheels, your guide can either ride pillion with you or ride alongside on their own two-wheeler to lead the trail.',
+        a: 'Our guides can accompany you inside your own private vehicle, rental car, or taxi. If you rented two-wheelers through GK WhizWheels, your guide can either ride pillion with you or ride alongside on their own two-wheeler to lead the trail.',
     },
     {
-        q: 'What is the difference between Half-Day and Full-Day guide services?',
-        a: 'A Half-Day booking covers up to 4 hours (ideal for Mirjan Fort, Honnavar Mangroves & Apsarakonda, or a specific temple circuit). A Full-Day booking covers up to 8 hours (ideal for Yana Caves & Vibhooti Waterfalls, Gokarna 5-Beach trek, or multi-spot coastal explorations).',
-    },
-    {
-        q: 'Are monument and forest entry tickets included in the guide fee?',
-        a: 'No. The fee covers your dedicated, certified local guide and storyteller. Monument tickets (e.g. nominal ASI fees or Eco-park entry of ₹10–₹30) and personal meals are paid directly by you at actuals.',
-    },
-    {
-        q: 'Do your guides earn shopping commissions or take us to tourist trap stores?',
-        a: 'STRICT ZERO-COMMISSION POLICY: Our guides are strictly forbidden from steering guests into commercial commission shops, fake spice outlets, or kickback handicraft stores. Our recommendations are 100% genuine local artisan cooperatives and authentic food stalls.',
-    },
-    {
-        q: 'Is it safe for solo female travelers and families with young kids?',
-        a: 'Absolutely. All GK WhizWheels guides undergo thorough police background checks, carry official identification badges, and follow strict traveler safety codes of conduct. We also have experienced female cultural hosts upon advance request.',
-    },
-    {
-        q: 'What languages do the guides speak?',
-        a: 'All our guides are fluent in Kannada and English. Many are also fluent in Hindi and Konkani. You can specify your preferred language when making your booking so we match the perfect companion.',
-    },
-    {
-        q: 'What happens if it rains during a waterfall or forest trek?',
-        a: 'Uttara Kannada is lush and gorgeous during monsoon and post-monsoon months. If weather conditions make a particular jungle trail slippery or unsafe, your guide will recommend an equally captivating heritage or coastal scenic alternative to ensure safety.',
+        q: 'What happens in bad weather or forest trail closures?',
+        a: 'If sudden rain or forest department advisories close a steep jungle trail (like Yana or Vibhooti), your guide immediately suggests safe alternate coastal heritage circuits (Mirjan Fort, Apsarakonda, or estuary temples), or we reschedule at no penalty.',
     },
 ];
+
+const guideFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: GUIDE_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
 
 export default function GuidePage({ availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
     const [modalOpen, setModalOpen] = useState(false);
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [selectedItemForGallery, setSelectedItemForGallery] = useState(null);
     const [selectedDuration, setSelectedDuration] = useState('half_day'); // 'half_day' | 'full_day'
     const [activeCircuitTab, setActiveCircuitTab] = useState('all'); // 'all', 'heritage', 'nature'
+
+    const primaryGuideItem = availableItems.length > 0 ? availableItems[0] : null;
+    const primaryGuideMedia = useMemo(() => {
+        return getServiceItemMedia(primaryGuideItem, '/images/services/guide.jpg');
+    }, [primaryGuideItem]);
+
+    const displaySpecializations = useMemo(() => {
+        return GUIDE_SPECIALIZATIONS.map((spec, idx) => {
+            const matchedItem = availableItems.find(ai =>
+                ai.id === spec.id ||
+                ai.category?.toLowerCase() === spec.id ||
+                ai.name?.toLowerCase().includes(spec.badge.toLowerCase().split(' ')[0])
+            ) || availableItems[idx] || null;
+
+            const media = getServiceItemMedia(matchedItem, spec.image);
+            return {
+                ...spec,
+                item: matchedItem,
+                media,
+            };
+        });
+    }, [availableItems]);
 
     // UI Color tokens
     const primaryTextColor = isDark ? '#FFFFFF' : '#0F172A';
@@ -341,77 +373,39 @@ export default function GuidePage({ availableItems = [] }) {
 
     return (
         <AppLayout noFooterMargin>
-            <Head>
-                <title>Certified Local Tour Guides & Hidden Trail Companions in Honnavar | GK WhizWheels</title>
-                <meta
-                    name="description"
-                    content="Book verified native travel guides in Honnavar & Coastal Karnataka. Explore Mirjan Fort, Yana Caves, Vibhooti Falls, Sharavathi mangroves & Gokarna with certified local storytellers. Zero commissions, multilingual, transparent flat pricing."
-                />
-            </Head>
+            <PageHead
+                title="Certified Local Tour Guides in Honnavar & Coastal Trails | GK WhizWheel"
+                description="Hire verified native tour guides in Honnavar from ₹800/day. Discover Mirjan Fort, Yana Caves, Vibhooti Falls & secret trails with local storytellers."
+                canonicalUrl="https://whizwheels.in/services/guide"
+                ogImage="/images/services/guide.jpg"
+                ogType="website"
+                structuredData={[
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: 'Local Tour Guide Service Honnavar',
+                        description: 'Certified multilingual local tour guides for heritage trails, waterfalls, temples, and coastal expeditions across Honnavar, Gokarna, and Yana.',
+                        category: 'Travel Guide',
+                        offers: {
+                            '@type': 'AggregateOffer',
+                            priceCurrency: 'INR',
+                            lowPrice: '800',
+                            highPrice: '2500',
+                            offerCount: '5',
+                            price: '800',
+                        },
+                        provider: {
+                            '@type': 'LocalBusiness',
+                            name: 'GK WhizWheel',
+                            telephone: '+918660989586',
+                            url: 'https://whizwheels.in',
+                        },
+                    },
+                    guideFaqSchema,
+                ]}
+            />
 
             <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                {/* =========================================================================
-                    1. TOP NOTIFICATION BAR / TICKER
-                ========================================================================== */}
-                <Box
-                    sx={{
-                        width: '100%',
-                        bgcolor: isDark ? 'rgba(217, 119, 6, 0.15)' : '#FEF3C7',
-                        borderBottom: isDark ? '1px solid rgba(217, 119, 6, 0.3)' : '1px solid #FDE68A',
-                        py: 1,
-                        px: { xs: 2, sm: 4 },
-                    }}
-                >
-                    <Stack
-                        direction={{ xs: 'column', md: 'row' }}
-                        spacing={{ xs: 1, md: 3 }}
-                        alignItems="center"
-                        justifyContent="space-between"
-                        sx={{ maxWidth: 1300, mx: 'auto' }}
-                    >
-                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'wrap' }}>
-                            <Chip
-                                size="small"
-                                icon={<VerifiedUserIcon sx={{ fontSize: '14px !important', color: '#B45309' }} />}
-                                label="4 Native Guides Available Today"
-                                sx={{
-                                    bgcolor: isDark ? 'rgba(217, 119, 6, 0.25)' : '#FDE68A',
-                                    color: isDark ? '#FDE68A' : '#92400E',
-                                    fontWeight: 700,
-                                    fontSize: '0.75rem',
-                                }}
-                            />
-                            <Typography variant="caption" sx={{ color: isDark ? '#FDE68A' : '#78350F', fontWeight: 600 }}>
-                                🧭 Honnavar • Kumta • Gokarna • Yana • 100% Police-Verified • Zero Shopping Commissions
-                            </Typography>
-                        </Stack>
-
-                        <Stack direction="row" spacing={2} alignItems="center">
-                            <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#475569', display: { xs: 'none', lg: 'block' } }}>
-                                Need a guide in 1 hour? Call our concierge:
-                            </Typography>
-                            <Button
-                                component="a"
-                                href="tel:+918660989586"
-                                size="small"
-                                startIcon={<PhoneIcon sx={{ fontSize: '14px !important' }} />}
-                                sx={{
-                                    color: '#B45309',
-                                    fontWeight: 700,
-                                    fontSize: '0.75rem',
-                                    py: 0.2,
-                                    px: 1,
-                                    textTransform: 'none',
-                                    borderRadius: 1.5,
-                                    '&:hover': { bgcolor: isDark ? 'rgba(217, 119, 6, 0.2)' : 'rgba(180, 83, 9, 0.1)' },
-                                }}
-                            >
-                                +91 86609 89586
-                            </Button>
-                        </Stack>
-                    </Stack>
-                </Box>
-
                 {/* =========================================================================
                     2. MODERN 2-COLUMN HERO SECTION
                 ========================================================================== */}
@@ -623,17 +617,31 @@ export default function GuidePage({ availableItems = [] }) {
                                     }}
                                 >
                                     {/* Image with overlay badge */}
-                                    <Box sx={{ position: 'relative', height: 260, width: '100%', overflow: 'hidden' }}>
+                                    <Box 
+                                        sx={{ 
+                                            position: 'relative', 
+                                            height: 260, 
+                                            width: '100%', 
+                                            overflow: 'hidden',
+                                            cursor: primaryGuideMedia.gallery.length > 0 ? 'pointer' : 'default',
+                                        }}
+                                        onClick={() => {
+                                            if (primaryGuideMedia.gallery.length > 0) {
+                                                setSelectedItemForGallery(primaryGuideItem);
+                                                setGalleryModalOpen(true);
+                                            }
+                                        }}
+                                    >
                                         <Box
                                             component="img"
-                                            src="/images/services/guide.jpg"
-                                            alt="Native Certified Local Guide in Honnavar"
+                                            src={primaryGuideMedia.primary}
+                                            alt="Certified local tour guide exploring heritage trails in Honnavar"
                                             sx={{
                                                 width: '100%',
                                                 height: '100%',
                                                 objectFit: 'cover',
                                                 transition: 'transform 0.5s ease',
-                                                '&:hover': { transform: 'scale(1.04)' },
+                                                '&:hover': primaryGuideMedia.gallery.length > 0 ? { transform: 'scale(1.04)' } : {},
                                             }}
                                         />
                                         <Box
@@ -643,24 +651,45 @@ export default function GuidePage({ availableItems = [] }) {
                                                 background: 'linear-gradient(to top, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.2) 60%, transparent 100%)',
                                             }}
                                         />
-                                        <Chip
-                                            icon={<VerifiedUserIcon sx={{ fontSize: '14px !important', color: '#FFFFFF' }} />}
-                                            label="VERIFIED LOCAL COMPANION"
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 16,
-                                                left: 16,
-                                                bgcolor: 'rgba(217, 119, 6, 0.95)',
-                                                color: '#FFFFFF',
-                                                fontWeight: 800,
-                                                fontSize: '0.72rem',
-                                                backdropFilter: 'blur(8px)',
-                                            }}
-                                        />
+                                        <Box sx={{ position: 'absolute', top: 16, left: 16, right: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Chip
+                                                icon={<VerifiedUserIcon sx={{ fontSize: '14px !important', color: '#FFFFFF' }} />}
+                                                label="VERIFIED LOCAL COMPANION"
+                                                sx={{
+                                                    bgcolor: 'rgba(217, 119, 6, 0.95)',
+                                                    color: '#FFFFFF',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.72rem',
+                                                    backdropFilter: 'blur(8px)',
+                                                }}
+                                            />
+                                            {primaryGuideMedia.hasMultiple && (
+                                                <Chip
+                                                    icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+                                                    size="small"
+                                                    label={`${primaryGuideMedia.count} Photos`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedItemForGallery(primaryGuideItem);
+                                                        setGalleryModalOpen(true);
+                                                    }}
+                                                    sx={{
+                                                        bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                        color: '#FFFFFF',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.72rem',
+                                                        backdropFilter: 'blur(8px)',
+                                                        cursor: 'pointer',
+                                                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                        '&:hover': { bgcolor: 'rgba(217, 119, 6, 0.9)' },
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
                                         <Box sx={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
                                             <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
                                                 <Box>
-                                                    <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                                                    <Typography variant="h6" component="p" sx={{ color: '#FFFFFF', fontWeight: 800, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
                                                         Dedicated Native Storyteller
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: '#CBD5E1', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -836,6 +865,7 @@ export default function GuidePage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -864,7 +894,7 @@ export default function GuidePage({ availableItems = [] }) {
                         </Box>
 
                         <Grid container spacing={3.5}>
-                            {GUIDE_SPECIALIZATIONS.map((spec) => (
+                            {displaySpecializations.map((spec) => (
                                 <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={spec.id}>
                                     <Card
                                         elevation={0}
@@ -885,17 +915,31 @@ export default function GuidePage({ availableItems = [] }) {
                                             },
                                         }}
                                     >
-                                        <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+                                        <Box 
+                                            sx={{ 
+                                                position: 'relative', 
+                                                height: 180, 
+                                                overflow: 'hidden',
+                                                cursor: spec.media.gallery.length > 0 ? 'pointer' : 'default',
+                                            }}
+                                            onClick={() => {
+                                                if (spec.media.gallery.length > 0) {
+                                                    setSelectedItemForGallery(spec.item || { name: spec.title, primary_image_url: spec.media.primary, gallery_image_urls: spec.media.gallery });
+                                                    setGalleryModalOpen(true);
+                                                }
+                                            }}
+                                        >
                                             <Box
                                                 component="img"
-                                                src={spec.image}
-                                                alt={spec.title}
+                                                src={spec.media.primary}
+                                                alt={`${spec.title} - Certified local tour guide service in Honnavar`}
+                                                loading="lazy"
                                                 sx={{
                                                     width: '100%',
                                                     height: '100%',
                                                     objectFit: 'cover',
                                                     transition: 'transform 0.4s ease',
-                                                    '&:hover': { transform: 'scale(1.05)' },
+                                                    '&:hover': spec.media.gallery.length > 0 ? { transform: 'scale(1.05)' } : {},
                                                 }}
                                             />
                                             <Chip
@@ -911,6 +955,31 @@ export default function GuidePage({ availableItems = [] }) {
                                                     fontSize: '0.68rem',
                                                 }}
                                             />
+                                            {spec.media.hasMultiple && (
+                                                <Chip
+                                                    icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+                                                    size="small"
+                                                    label={`${spec.media.count} Photos`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedItemForGallery(spec.item || { name: spec.title, primary_image_url: spec.media.primary, gallery_image_urls: spec.media.gallery });
+                                                        setGalleryModalOpen(true);
+                                                    }}
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        bottom: 12,
+                                                        left: 12,
+                                                        bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                        color: '#FFFFFF',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.72rem',
+                                                        backdropFilter: 'blur(8px)',
+                                                        cursor: 'pointer',
+                                                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                        '&:hover': { bgcolor: 'rgba(217, 119, 6, 0.9)' },
+                                                    }}
+                                                />
+                                            )}
                                         </Box>
 
                                         <CardContent sx={{ p: 2.8, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -918,7 +987,7 @@ export default function GuidePage({ availableItems = [] }) {
                                                 <Box sx={{ p: 1, borderRadius: 2, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }}>
                                                     {spec.icon}
                                                 </Box>
-                                                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: primaryTextColor, lineHeight: 1.25 }}>
+                                                <Typography variant="h6" component="h3" sx={{ fontWeight: 800, fontSize: '1.05rem', color: primaryTextColor, lineHeight: 1.25 }}>
                                                     {spec.title}
                                                 </Typography>
                                             </Stack>
@@ -1026,6 +1095,7 @@ export default function GuidePage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1109,7 +1179,8 @@ export default function GuidePage({ availableItems = [] }) {
                                             <Box
                                                 component="img"
                                                 src={circuit.image}
-                                                alt={circuit.title}
+                                                alt={`${circuit.title} - Guided sightseeing circuit trail in Coastal Karnataka`}
+                                                loading="lazy"
                                                 sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                             />
                                             <Box
@@ -1148,7 +1219,7 @@ export default function GuidePage({ availableItems = [] }) {
                                                 }}
                                             />
                                             <Box sx={{ position: 'absolute', bottom: 14, left: 16, right: 16 }}>
-                                                <Typography variant="h5" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2, mb: 0.4 }}>
+                                                <Typography variant="h5" component="h3" sx={{ color: '#FFFFFF', fontWeight: 800, lineHeight: 1.2, mb: 0.4 }}>
                                                     {circuit.title}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: '#FDE68A', fontWeight: 600 }}>
@@ -1199,7 +1270,7 @@ export default function GuidePage({ availableItems = [] }) {
                                                         <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 700, textTransform: 'uppercase', display: 'block', mb: 0.3 }}>
                                                             Guide Fee (Flat Rate)
                                                         </Typography>
-                                                        <Typography variant="h4" sx={{ fontWeight: 900, color: '#D97706', lineHeight: 1 }}>
+                                                        <Typography variant="h4" component="span" sx={{ fontWeight: 900, color: '#D97706', lineHeight: 1 }}>
                                                             {circuit.price}{' '}
                                                             <Typography component="span" variant="body2" sx={{ color: mutedTextColor, fontWeight: 600, ml: 0.8 }}>
                                                                 / {circuit.priceUnit}
@@ -1284,6 +1355,7 @@ export default function GuidePage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1342,7 +1414,7 @@ export default function GuidePage({ availableItems = [] }) {
                                                 {guide.avatarInitials}
                                             </Avatar>
                                             <Box>
-                                                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: '1.05rem', color: primaryTextColor, lineHeight: 1.2 }}>
+                                                <Typography variant="h6" component="h3" sx={{ fontWeight: 800, fontSize: '1.05rem', color: primaryTextColor, lineHeight: 1.2 }}>
                                                     {guide.name}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 700, display: 'block' }}>
@@ -1420,130 +1492,151 @@ export default function GuidePage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    6. HOW GUIDE BOOKING WORKS (4-STEP PROCESS)
+                    6. HOW GUIDE BOOKING WORKS (COMPACT STRIP)
                 ========================================================================== */}
                 <Box
                     component="section"
                     sx={{
-                        py: { xs: 6, sm: 8, md: 9 },
+                        py: { xs: 4, sm: 5 },
                         px: { xs: 2, sm: 3.5, md: 5, lg: 6 },
                         bgcolor: isDark ? '#0F172A' : '#FFFFFF',
+                        borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                     }}
                 >
                     <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
-                        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-                            <Chip
-                                label="EFFORTLESS RENDEZVOUS"
-                                size="small"
-                                sx={{
-                                    display: 'inline-flex',
-                                    width: 'auto',
-                                    bgcolor: isDark ? 'rgba(217, 119, 6, 0.15)' : '#FEF3C7',
-                                    color: '#B45309',
-                                    fontWeight: 850,
-                                    fontSize: '0.75rem',
-                                    letterSpacing: '0.04em',
-                                    mb: 1.5,
-                                    px: 1.5,
-                                    py: 0.5,
-                                    border: '1px solid',
-                                    borderColor: isDark ? 'rgba(217, 119, 6, 0.3)' : '#FDE68A',
-                                }}
-                            />
+                        <Stack
+                            direction={{ xs: 'column', md: 'row' }}
+                            alignItems={{ xs: 'flex-start', md: 'center' }}
+                            justifyContent="space-between"
+                            spacing={2}
+                            sx={{ mb: 3 }}
+                        >
+                            <Box>
+                                <Typography
+                                    variant="overline"
+                                    sx={{
+                                        color: '#B45309',
+                                        fontWeight: 850,
+                                        letterSpacing: '0.08em',
+                                        fontSize: '0.75rem',
+                                    }}
+                                >
+                                    EFFORTLESS RENDEZVOUS
+                                </Typography>
+                                <Typography
+                                    variant="h5"
+                                    sx={{
+                                        fontWeight: 900,
+                                        color: primaryTextColor,
+                                        fontSize: { xs: '1.3rem', sm: '1.5rem' },
+                                    }}
+                                >
+                                    How Guide Booking & Meetup Works
+                                </Typography>
+                            </Box>
                             <Typography
-                                variant="h3"
-                                sx={{
-                                    fontWeight: 950,
-                                    color: primaryTextColor,
-                                    fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.6rem' },
-                                    letterSpacing: '-0.02em',
-                                    textAlign: 'center',
-                                    mb: 1.5,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                How Guide Booking & Meetup Works
-                            </Typography>
-                            <Typography
-                                variant="body1"
+                                variant="body2"
                                 sx={{
                                     color: secondaryTextColor,
-                                    maxWidth: 680,
-                                    mx: 'auto',
-                                    textAlign: 'center',
-                                    fontSize: { xs: '0.95rem', sm: '1.05rem' },
-                                    lineHeight: 1.6,
+                                    maxWidth: 540,
+                                    fontSize: '0.88rem',
                                 }}
                             >
-                                From submitting your request to meeting your native storyteller at your hotel or station, our booking process takes under 2 minutes.
+                                Submit your trail preference, get matched with a verified storyteller in under 30 minutes, and meet right at your hotel or station.
                             </Typography>
-                        </Box>
+                        </Stack>
 
-                        <Grid container spacing={3}>
+                        <Grid container spacing={2}>
                             {[
                                 {
                                     step: '01',
                                     title: 'Choose Trail & Date',
-                                    desc: 'Select your preferred circuit or tell us your custom itinerary. Choose Half-Day (₹800) or Full-Day (₹1,500).',
-                                    icon: <MapIcon sx={{ fontSize: 28, color: '#D97706' }} />,
+                                    desc: 'Select your preferred circuit or custom date. Half-Day (₹800) or Full-Day (₹1,500).',
+                                    icon: <MapIcon sx={{ fontSize: 20, color: '#D97706' }} />,
                                 },
                                 {
                                     step: '02',
                                     title: 'Instant Guide Assignment',
-                                    desc: 'Within 30 minutes, our concierge matches you with a certified guide fluent in your language and sends their contact card.',
-                                    icon: <SupportAgentIcon sx={{ fontSize: 28, color: '#059669' }} />,
+                                    desc: 'Our concierge matches you with a verified guide fluent in your language within 30 mins.',
+                                    icon: <SupportAgentIcon sx={{ fontSize: 20, color: '#059669' }} />,
                                 },
                                 {
                                     step: '03',
                                     title: 'Hotel or Trail Rendezvous',
-                                    desc: 'Your guide meets you directly at your Honnavar homestay, the railway station, or the historical trailhead at the agreed time.',
-                                    icon: <DirectionsWalkIcon sx={{ fontSize: 28, color: '#0284C7' }} />,
+                                    desc: 'Your guide meets you directly at your Honnavar homestay, the railway station, or trailhead.',
+                                    icon: <DirectionsWalkIcon sx={{ fontSize: 20, color: '#0284C7' }} />,
                                 },
                                 {
                                     step: '04',
-                                    title: 'Immersive Local Discovery',
-                                    desc: 'Enjoy authentic folklore, peaceful secret viewpoints, photography assistance, and zero tourist trap commercial pressure.',
-                                    icon: <AutoAwesomeIcon sx={{ fontSize: 28, color: '#7C3AED' }} />,
+                                    title: 'Immersive Discovery',
+                                    desc: 'Authentic folklore, hidden viewpoint access, photo assistance, and zero tourist-trap shopping.',
+                                    icon: <AutoAwesomeIcon sx={{ fontSize: 20, color: '#7C3AED' }} />,
                                 },
                             ].map((item, idx) => (
                                 <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={idx}>
                                     <Paper
                                         elevation={0}
                                         sx={{
-                                            p: 3.5,
+                                            p: 2.2,
                                             height: '100%',
-                                            borderRadius: 3.5,
+                                            borderRadius: 2.5,
                                             bgcolor: cardBgColor,
                                             border: `1px solid ${cardBorderColor}`,
-                                            position: 'relative',
-                                            overflow: 'hidden',
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: 1.5,
                                         }}
                                     >
-                                        <Typography
-                                            variant="h2"
+                                        <Box
                                             sx={{
-                                                position: 'absolute',
-                                                top: 10,
-                                                right: 14,
-                                                fontWeight: 900,
-                                                color: isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9',
-                                                fontSize: '3.5rem',
-                                                lineHeight: 1,
-                                                userSelect: 'none',
+                                                p: 1,
+                                                borderRadius: 2,
+                                                bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flexShrink: 0,
                                             }}
                                         >
-                                            {item.step}
-                                        </Typography>
-
-                                        <Box sx={{ p: 1.2, borderRadius: 2.5, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', width: 'fit-content', mb: 2 }}>
                                             {item.icon}
                                         </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 800, color: primaryTextColor, mb: 1, fontSize: '1.1rem' }}>
-                                            {item.title}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.55 }}>
-                                            {item.desc}
-                                        </Typography>
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                            <Stack direction="row" alignItems="center" spacing={0.8} sx={{ mb: 0.3 }}>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        fontWeight: 900,
+                                                        color: '#D97706',
+                                                        fontSize: '0.75rem',
+                                                    }}
+                                                >
+                                                    {item.step}
+                                                </Typography>
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        color: primaryTextColor,
+                                                        fontSize: '0.92rem',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                    }}
+                                                >
+                                                    {item.title}
+                                                </Typography>
+                                            </Stack>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: secondaryTextColor,
+                                                    fontSize: '0.8rem',
+                                                    lineHeight: 1.45,
+                                                }}
+                                            >
+                                                {item.desc}
+                                            </Typography>
+                                        </Box>
                                     </Paper>
                                 </Grid>
                             ))}
@@ -1584,6 +1677,7 @@ export default function GuidePage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1673,7 +1767,7 @@ export default function GuidePage({ availableItems = [] }) {
                                             )}
                                             <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1} sx={{ mb: 1.5 }}>
                                                 <Box>
-                                                    <Typography variant="h6" sx={{ fontWeight: 800, color: primaryTextColor }}>
+                                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: primaryTextColor }}>
                                                         {plan.name}
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 700 }}>
@@ -1681,7 +1775,7 @@ export default function GuidePage({ availableItems = [] }) {
                                                     </Typography>
                                                 </Box>
                                                 <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-                                                    <Typography variant="h4" sx={{ fontWeight: 900, color: '#D97706' }}>
+                                                    <Typography variant="h4" component="span" sx={{ fontWeight: 900, color: '#D97706' }}>
                                                         {plan.price}
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 600 }}>
@@ -1709,7 +1803,7 @@ export default function GuidePage({ availableItems = [] }) {
                                         border: `1px solid ${cardBorderColor}`,
                                     }}
                                 >
-                                    <Typography variant="h6" sx={{ fontWeight: 800, color: primaryTextColor, mb: 2 }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: primaryTextColor, mb: 2 }}>
                                         What is Included & What is Not
                                     </Typography>
 
@@ -1816,6 +1910,7 @@ export default function GuidePage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -1898,7 +1993,7 @@ export default function GuidePage({ availableItems = [] }) {
                                                 }}
                                             />
                                         </Stack>
-                                        <Typography variant="h6" sx={{ fontWeight: 800, color: primaryTextColor, mb: 1, fontSize: '1.1rem' }}>
+                                        <Typography variant="h6" component="h3" sx={{ fontWeight: 800, color: primaryTextColor, mb: 1, fontSize: '1.1rem' }}>
                                             {code.title}
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.6 }}>
@@ -1912,112 +2007,7 @@ export default function GuidePage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    9. SIGHTSEEING DISTANCE & TRAVEL TIME MATRIX
-                ========================================================================== */}
-                <Box
-                    component="section"
-                    sx={{
-                        py: { xs: 6, sm: 8, md: 9 },
-                        px: { xs: 2, sm: 3.5, md: 5, lg: 6 },
-                        bgcolor: isDark ? '#0B1120' : '#F8FAFC',
-                        borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
-                    }}
-                >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
-                        <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
-                            <Chip
-                                label="REGIONAL TRAVEL LOGISTICS"
-                                size="small"
-                                sx={{
-                                    display: 'inline-flex',
-                                    width: 'auto',
-                                    bgcolor: isDark ? 'rgba(217, 119, 6, 0.15)' : '#FEF3C7',
-                                    color: '#B45309',
-                                    fontWeight: 850,
-                                    fontSize: '0.75rem',
-                                    letterSpacing: '0.04em',
-                                    mb: 1.5,
-                                    px: 1.5,
-                                    py: 0.5,
-                                    border: '1px solid',
-                                    borderColor: isDark ? 'rgba(217, 119, 6, 0.3)' : '#FDE68A',
-                                }}
-                            />
-                            <Typography
-                                variant="h3"
-                                sx={{
-                                    fontWeight: 950,
-                                    color: primaryTextColor,
-                                    fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.6rem' },
-                                    letterSpacing: '-0.02em',
-                                    textAlign: 'center',
-                                    mb: 1.5,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                Sightseeing Distance & Tour Planning Matrix
-                            </Typography>
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    color: secondaryTextColor,
-                                    maxWidth: 680,
-                                    mx: 'auto',
-                                    textAlign: 'center',
-                                    fontSize: { xs: '0.95rem', sm: '1.05rem' },
-                                    lineHeight: 1.6,
-                                }}
-                            >
-                                Distances and recommended guide time allocation from Honnavar central hub to top attractions across Uttara Kannada.
-                            </Typography>
-                        </Box>
-
-                        <TableContainer
-                            component={Paper}
-                            elevation={0}
-                            sx={{
-                                borderRadius: 3.5,
-                                bgcolor: cardBgColor,
-                                border: `1px solid ${cardBorderColor}`,
-                                overflow: 'hidden',
-                            }}
-                        >
-                            <Table sx={{ minWidth: 650 }} aria-label="sightseeing distance matrix">
-                                <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Sightseeing Destination</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Distance from Honnavar</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Driving Time</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Road Condition</TableCell>
-                                        <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Guide Recommended Time</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {SIGHTSEEING_DISTANCES.map((row, idx) => (
-                                        <TableRow
-                                            key={idx}
-                                            sx={{
-                                                '&:last-child td, &:last-child th': { border: 0 },
-                                                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#FAFAFA' },
-                                            }}
-                                        >
-                                            <TableCell component="th" scope="row" sx={{ fontWeight: 700, color: primaryTextColor }}>
-                                                {row.spot}
-                                            </TableCell>
-                                            <TableCell sx={{ color: '#D97706', fontWeight: 800 }}>{row.dist}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontWeight: 600 }}>{row.time}</TableCell>
-                                            <TableCell sx={{ color: mutedTextColor }}>{row.road}</TableCell>
-                                            <TableCell sx={{ color: '#059669', fontWeight: 700 }}>{row.guideTime}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Box>
-                </Box>
-
-                {/* =========================================================================
-                    10. FREQUENTLY ASKED QUESTIONS (FAQ)
+                    10. FREQUENTLY ASKED QUESTIONS (FAQ) WITH EMBEDDED DISTANCE MATRIX
                 ========================================================================== */}
                 <Box
                     component="section"
@@ -2049,6 +2039,7 @@ export default function GuidePage({ availableItems = [] }) {
                             />
                             <Typography
                                 variant="h3"
+                                component="h2"
                                 sx={{
                                     fontWeight: 950,
                                     color: primaryTextColor,
@@ -2072,7 +2063,7 @@ export default function GuidePage({ availableItems = [] }) {
                                     lineHeight: 1.6,
                                 }}
                             >
-                                Everything you need to know about booking our native guides, transport logistics, and cancellation.
+                                Everything you need to know about booking our native guides, transport logistics, and travel distances.
                             </Typography>
                         </Box>
 
@@ -2104,6 +2095,71 @@ export default function GuidePage({ availableItems = [] }) {
                                     </AccordionDetails>
                                 </Accordion>
                             ))}
+
+                            {/* Distance & Travel Time Matrix as Collapsed FAQ Accordion */}
+                            <Accordion
+                                elevation={0}
+                                sx={{
+                                    borderRadius: '16px !important',
+                                    bgcolor: cardBgColor,
+                                    border: `1px solid ${cardBorderColor}`,
+                                    '&:before': { display: 'none' },
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon sx={{ color: '#D97706' }} />}
+                                    sx={{ px: 3, py: 1.5 }}
+                                >
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: primaryTextColor, pr: 2 }}>
+                                        How far are popular guided trails and monuments from Honnavar? (Distance Matrix)
+                                    </Typography>
+                                </AccordionSummary>
+                                <AccordionDetails sx={{ px: { xs: 2, sm: 3 }, pb: 3, pt: 0 }}>
+                                    <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2, fontSize: '0.92rem' }}>
+                                        Distances, driving times, and guide time allocations from our Honnavar hub:
+                                    </Typography>
+                                    <TableContainer
+                                        component={Paper}
+                                        elevation={0}
+                                        sx={{
+                                            borderRadius: 2.5,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC',
+                                            border: `1px solid ${cardBorderColor}`,
+                                            overflowX: 'auto',
+                                        }}
+                                    >
+                                        <Table size="small" sx={{ minWidth: 550 }} aria-label="sightseeing distance matrix">
+                                            <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }}>
+                                                <TableRow>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Sightseeing Spot</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Distance</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Driving Time</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>Guide Time</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {SIGHTSEEING_DISTANCES.map((row, idx) => (
+                                                    <TableRow
+                                                        key={idx}
+                                                        sx={{
+                                                            '&:last-child td, &:last-child th': { border: 0 },
+                                                            '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F1F5F9' },
+                                                        }}
+                                                    >
+                                                        <TableCell component="th" scope="row" sx={{ fontWeight: 700, color: primaryTextColor, fontSize: '0.85rem' }}>
+                                                            {row.spot}
+                                                        </TableCell>
+                                                        <TableCell sx={{ color: '#D97706', fontWeight: 800, fontSize: '0.85rem' }}>{row.dist}</TableCell>
+                                                        <TableCell sx={{ color: secondaryTextColor, fontWeight: 600, fontSize: '0.85rem' }}>{row.time}</TableCell>
+                                                        <TableCell sx={{ color: '#059669', fontWeight: 700, fontSize: '0.85rem' }}>{row.guideTime}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                </AccordionDetails>
+                            </Accordion>
                         </Stack>
                     </Box>
                 </Box>
@@ -2138,6 +2194,7 @@ export default function GuidePage({ availableItems = [] }) {
                         />
                         <Typography
                             variant="h3"
+                            component="h2"
                             sx={{
                                 fontWeight: 900,
                                 fontSize: { xs: '1.8rem', sm: '2.5rem', md: '2.8rem' },
@@ -2246,6 +2303,17 @@ export default function GuidePage({ availableItems = [] }) {
                 onClose={() => setModalOpen(false)}
                 initialTrailId="mirjan_heritage"
                 availableItems={availableItems}
+            />
+
+            {/* Multi-Image Guide Gallery Lightbox */}
+            <ServiceGalleryModal
+                open={galleryModalOpen}
+                onClose={() => setGalleryModalOpen(false)}
+                item={selectedItemForGallery}
+                onBook={(item) => {
+                    setGalleryModalOpen(false);
+                    setModalOpen(true);
+                }}
             />
         </AppLayout>
     );

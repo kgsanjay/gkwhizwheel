@@ -1,2 +1,29 @@
 User-agent: *
-Disallow:
+
+# Explicitly allow customer-facing marketing and booking pages
+Allow: /$
+Allow: /services$
+Allow: /services/
+Allow: /explore$
+Allow: /explore-honnavar$
+Allow: /about$
+Allow: /about-us$
+Allow: /how-it-works$
+Allow: /contact$
+Allow: /terms$
+Allow: /rental-terms$
+
+# Disallow internal admin, API, staff, and authenticated customer account routes
+Disallow: /admin/
+Disallow: /admin
+Disallow: /api/
+Disallow: /api
+Disallow: /staff/
+Disallow: /staff
+Disallow: /account/
+Disallow: /account
+Disallow: /webhooks/
+Disallow: /dev/
+
+# Dynamic Sitemap Reference
+Sitemap: https://whizwheels.in/sitemap.xml

@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
+import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import ScubaBookingModal from '../Components/BookingModals/ScubaBookingModal';
+import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
     Box,
     Typography,
@@ -182,12 +185,152 @@ const SIGHTSEEING_DISTANCES = [
     { spot: 'Gokarna Om Beach & Mahabaleshwar Temple', dist: '78 km to dock', time: '1 Hr 35 Mins', note: 'Popular post-scuba pilgrimage & cliff-beach trail' },
 ];
 
+const SCUBA_FAQS = [
+    {
+        q: 'Do I need to know swimming to do scuba diving at Netrani Island?',
+        a: 'No, swimming is NOT required! Over 80% of our discovery divers are complete non-swimmers. For beginner discovery dives, each diver is paired with a dedicated 1-on-1 certified PADI/SSI divemaster who holds you and controls all buoyancy equipment underwater throughout the entire dive.',
+    },
+    {
+        q: 'What is the government age limit for Netrani Island scuba diving?',
+        a: 'The strict minimum age under Karnataka maritime regulations and PADI standards is 10 years old. There is no upper age limit provided you are physically active and healthy; participants over 50 or those with medical history require a fitness clearance from a registered physician.',
+    },
+    {
+        q: 'What medical conditions disqualify me from scuba diving?',
+        a: 'Diving is strictly contraindicated for individuals with heart conditions, high blood pressure, asthma, epilepsy, recent major surgeries, ear/sinus operations, severe back issues, or pregnancy. All participants must sign the standard PADI medical declaration before boarding.',
+    },
+    {
+        q: 'What government ID and certification is required before boarding?',
+        a: "Every diver must present an original Government Photo ID with address (Aadhaar, Passport, or Driver's License) for mandatory Indian Coast Guard vessel manifests. Prior dive certification is NOT required for beginner Discovery Scuba Dives; licensed divers booking deep wall dives must present their PADI/SSI C-card.",
+    },
+    {
+        q: 'What happens if bad weather causes trip cancellation?',
+        a: 'Safety is our highest priority. If the port authority or Coast Guard restricts vessel departures due to rough sea swells or adverse weather, you are entitled to a 100% free reschedule or an immediate, full refund without any cancellation fee or deduction.',
+    },
+    {
+        q: 'Staying in Honnavar? How do transfers and travel times to Murudeshwar Harbor work?',
+        a: 'Murudeshwar Harbor is just 27 km (35 minutes) south of Honnavar along 4-lane NH-66. GK WhizWheels arranges early morning cab pickups (or self-drive rental Activas from ₹450/day) delivered right to your Honnavar homestay or hotel so you arrive relaxed before the 06:30 AM harbor batch.',
+    },
+];
+
+const scubaFaqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: SCUBA_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.q,
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.a,
+        },
+    })),
+};
+
 export default function ScubaPage({ availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
     // State for booking modal
     const [modalOpen, setModalOpen] = useState(false);
+    const [galleryModalOpen, setGalleryModalOpen] = useState(false);
+    const [selectedItemForGallery, setSelectedItemForGallery] = useState(null);
+
+    const primaryScubaItem = availableItems.length > 0 ? availableItems[0] : null;
+    const primaryScubaMedia = useMemo(() => {
+        return getServiceItemMedia(primaryScubaItem, '/images/services/netrani_scuba_dive.jpg');
+    }, [primaryScubaItem]);
+
+    const scubaPackages = useMemo(() => {
+        const defaultPkgs = [
+            {
+                id: 10,
+                title: 'Netrani Island PADI Discovery Scuba',
+                category: 'Most Popular • Non-Swimmers Welcome',
+                rate: '₹2,999',
+                originalRate: '₹3,499',
+                badge: '🔥 BESTSELLER FOR BEGINNERS',
+                isPopular: true,
+                fallbackImage: '/images/services/netrani_scuba_dive.jpg',
+                duration: 'Full Day (06:30 AM – 02:00 PM)',
+                depth: 'Up to 12 Meters (Max Legal Depth)',
+                equipment: ['🤿 Mask & Snorkel', '🦺 BCD Buoyancy Jacket', '🫁 12L O2 Cylinder', '👟 Scuba Fins', '📹 4K GoPro'],
+                features: [
+                    '1-on-1 Dedicated PADI/SSI Divemaster (holds your hand)',
+                    'Free 4K GoPro Underwater Video & Photo Pack',
+                    'Complete Scuba Gear, Wetsuit & Regulators',
+                    'Speedboat Transit from Murudeshwar Harbor',
+                    'Shallow Water Breathing Practice & Briefing',
+                    'Fresh Fruits, Snacks & Drinking Water on Boat',
+                ],
+            },
+            {
+                id: 11,
+                title: 'Netrani Snorkeling & Speedboat Safari',
+                category: 'Surface Marine Safari • Non-Swimmers',
+                rate: '₹1,499',
+                originalRate: '₹1,799',
+                badge: '👨‍👩‍👧‍👦 FAMILY & KIDS FAVORITE',
+                isPopular: false,
+                fallbackImage: '/images/services/netrani_boat_departure.jpg',
+                duration: 'Full Day (06:30 AM – 01:30 PM)',
+                depth: 'Surface & Shallow Reef (Floating Vest)',
+                equipment: ['🤿 Snorkel Mask', '🦺 Floating Safety Vest', '🐬 Dolphin Watch Deck'],
+                features: [
+                    'High-buoyancy Safety Floating Vest & Snorkel',
+                    'Speedboat Cruise to Netrani Island Bay & Back',
+                    'Guided Surface Snorkeling over Living Coral Gardens',
+                    'Playful Dolphin Pod Spotting along the Route',
+                    'Safe for Children (10+) & Senior Family Members',
+                    'Purified Drinking Water & Light Refreshments',
+                ],
+            },
+            {
+                id: 12,
+                title: 'Certified Diver Fun Dive (2-Tank Dives)',
+                category: 'For PADI / SSI / CMAS Card Holders',
+                rate: '₹3,499',
+                originalRate: '₹3,999',
+                badge: '🏆 CERTIFIED DIVERS ONLY',
+                isPopular: false,
+                fallbackImage: '/images/services/scuba.jpg',
+                duration: '2 Dives (Grand Central + Outcrops)',
+                depth: '18 – 30 Meters (Based on Certification)',
+                equipment: ['🫁 Twin 12L Tanks', '⚖️ Weight Belt', '🧭 Dive Computer Guide'],
+                features: [
+                    '2 Guided Deep Coral Reef & Pelagic Boat Dives',
+                    'Twin 12L Aluminum Tanks & Weight Belts',
+                    'Certified Dive Guide & Surface Marker Buoy',
+                    'Speedboat Transit & Surface Interval with Snacks',
+                    'Explore Barracuda Schools, Morays & Ray Caves',
+                    'Official Dive Logbook Verification & Seal',
+                ],
+            },
+        ];
+
+        if (!availableItems || availableItems.length === 0) {
+            return defaultPkgs.map(pkg => ({
+                ...pkg,
+                item: null,
+                media: getServiceItemMedia(null, pkg.fallbackImage),
+            }));
+        }
+
+        return defaultPkgs.map((pkg, idx) => {
+            const matchedItem = availableItems.find(ai =>
+                ai.id === pkg.id ||
+                (ai.name?.toLowerCase().includes('scuba') && pkg.title.toLowerCase().includes('scuba')) ||
+                (ai.name?.toLowerCase().includes('snorkel') && pkg.title.toLowerCase().includes('snorkel'))
+            ) || availableItems[idx] || null;
+
+            const media = getServiceItemMedia(matchedItem, pkg.fallbackImage);
+            return {
+                ...pkg,
+                item: matchedItem,
+                title: matchedItem?.name || pkg.title,
+                rate: matchedItem?.price_base ? `₹${Number(matchedItem.price_base).toLocaleString('en-IN')}` : pkg.rate,
+                media,
+            };
+        });
+    }, [availableItems]);
 
     // State for interactive medical eligibility checker
     const [eligibility, setEligibility] = useState({
@@ -208,13 +351,37 @@ export default function ScubaPage({ availableItems = [] }) {
 
     return (
         <AppLayout>
-            <Head>
-                <title>Netrani Island Scuba Diving & Snorkeling from Murudeshwar | GK WhizWheels</title>
-                <meta
-                    name="description"
-                    content="Book PADI-certified Netrani Island scuba diving and snorkeling from Murudeshwar near Honnavar. Govt rules, age limits, medical criteria, 4K GoPro videos, and 1-on-1 divemaster guidance."
-                />
-            </Head>
+            <PageHead
+                title="Netrani Island Scuba Diving from Honnavar | PADI Certified – GK WhizWheel"
+                description="Book PADI-certified Netrani Island scuba diving & snorkeling from Murudeshwar/Honnavar starting ₹3,500. 1-on-1 divemaster, 4K GoPro video & gear included."
+                canonicalUrl="https://whizwheels.in/services/scuba"
+                ogImage="/images/services/scuba.jpg"
+                ogType="website"
+                structuredData={[
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'TouristTrip',
+                        name: 'Netrani Island Scuba Diving & Snorkeling',
+                        description: 'PADI certified scuba diving and snorkeling trip to Netrani Island from Murudeshwar and Honnavar with 1-on-1 divemaster supervision and 4K underwater video.',
+                        touristType: 'Adventure Traveler',
+                        offers: {
+                            '@type': 'AggregateOffer',
+                            priceCurrency: 'INR',
+                            lowPrice: '3500',
+                            highPrice: '5500',
+                            offerCount: '4',
+                            price: '3500',
+                        },
+                        provider: {
+                            '@type': 'LocalBusiness',
+                            name: 'GK WhizWheel',
+                            telephone: '+918660989586',
+                            url: 'https://whizwheels.in',
+                        },
+                    },
+                    scubaFaqSchema,
+                ]}
+            />
 
             <Box sx={{ bgcolor: isDark ? '#090D16' : '#F8FAFC', minHeight: '100vh', pb: 10 }}>
                 {/* =========================================================================
@@ -377,6 +544,7 @@ export default function ScubaPage({ availableItems = [] }) {
 
                                     <Typography
                                         variant="h1"
+                                        component="h1"
                                         id="scuba-hero-heading"
                                         sx={{
                                             fontWeight: 950,
@@ -533,11 +701,24 @@ export default function ScubaPage({ availableItems = [] }) {
                                     }}
                                 >
                                     {/* Image Container with Badges */}
-                                    <Box sx={{ position: 'relative', height: { xs: 240, sm: 280 }, overflow: 'hidden' }}>
+                                    <Box 
+                                        sx={{ 
+                                            position: 'relative', 
+                                            height: { xs: 240, sm: 280 }, 
+                                            overflow: 'hidden',
+                                            cursor: primaryScubaMedia.gallery.length > 0 ? 'pointer' : 'default',
+                                        }}
+                                        onClick={() => {
+                                            if (primaryScubaMedia.gallery.length > 0) {
+                                                setSelectedItemForGallery(primaryScubaItem);
+                                                setGalleryModalOpen(true);
+                                            }
+                                        }}
+                                    >
                                         <Box
                                             component="img"
-                                            src="/images/services/netrani_scuba_dive.jpg"
-                                            alt="Scuba diving with coral reefs at Netrani Island"
+                                            src={primaryScubaMedia.primary}
+                                            alt="PADI certified scuba diving with coral reefs and marine life at Netrani Island near Murudeshwar & Honnavar"
                                             sx={{
                                                 width: '100%',
                                                 height: '100%',
@@ -569,16 +750,39 @@ export default function ScubaPage({ availableItems = [] }) {
                                                         border: '1px solid rgba(14, 165, 233, 0.6)',
                                                     }}
                                                 />
-                                                <Chip
-                                                    label="⭐ 4.9/5 (1,240+ Dives)"
-                                                    size="small"
-                                                    sx={{
-                                                        bgcolor: 'rgba(245, 158, 11, 0.95)',
-                                                        color: '#0F172A',
-                                                        fontWeight: 900,
-                                                        fontSize: '0.72rem',
-                                                    }}
-                                                />
+                                                {primaryScubaMedia.hasMultiple ? (
+                                                    <Chip
+                                                        icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+                                                        size="small"
+                                                        label={`${primaryScubaMedia.count} Photos`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedItemForGallery(primaryScubaItem);
+                                                            setGalleryModalOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                            color: '#FFFFFF',
+                                                            fontWeight: 800,
+                                                            fontSize: '0.72rem',
+                                                            backdropFilter: 'blur(8px)',
+                                                            cursor: 'pointer',
+                                                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                                                            '&:hover': { bgcolor: 'rgba(2, 132, 199, 0.9)' },
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Chip
+                                                        label="⭐ 4.9/5 (1,240+ Dives)"
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: 'rgba(245, 158, 11, 0.95)',
+                                                            color: '#0F172A',
+                                                            fontWeight: 900,
+                                                            fontSize: '0.72rem',
+                                                        }}
+                                                    />
+                                                )}
                                             </Box>
 
                                             <Box>
@@ -606,7 +810,7 @@ export default function ScubaPage({ availableItems = [] }) {
                                                         }}
                                                     />
                                                 </Box>
-                                                <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.2rem', lineHeight: 1.25 }}>
+                                                <Typography variant="h6" component="p" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: '1.2rem', lineHeight: 1.25 }}>
                                                     PADI Beginner Scuba + 4K GoPro Video
                                                 </Typography>
                                             </Box>
@@ -616,7 +820,7 @@ export default function ScubaPage({ availableItems = [] }) {
                                     {/* Card Content & Features */}
                                     <Box sx={{ p: 2.8 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
-                                            <Typography variant="h4" sx={{ fontWeight: 950, color: '#0284C7', lineHeight: 1 }}>
+                                            <Typography variant="h4" component="span" sx={{ fontWeight: 950, color: '#0284C7', lineHeight: 1 }}>
                                                 ₹2,999.00
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: '#94A3B8', textDecoration: 'line-through', fontWeight: 600 }}>
@@ -737,7 +941,7 @@ export default function ScubaPage({ availableItems = [] }) {
                             />
                         </Box>
 
-                        <Typography variant="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', fontSize: { xs: '1.8rem', sm: '2.4rem', md: '2.8rem' }, mb: 1.5 }}>
+                        <Typography variant="h2" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', fontSize: { xs: '1.8rem', sm: '2.4rem', md: '2.8rem' }, mb: 1.5 }}>
                             Official Government Scuba Diving Rules for Netrani
                         </Typography>
                         <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 780, mx: 'auto' }}>
@@ -762,7 +966,7 @@ export default function ScubaPage({ availableItems = [] }) {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <FactCheckIcon sx={{ fontSize: 28, color: '#059669' }} />
                                 <Box>
-                                    <Typography variant="h6" sx={{ fontWeight: 900, color: primaryTextColor, fontSize: '1.08rem' }}>
+                                    <Typography variant="h6" component="h3" sx={{ fontWeight: 900, color: primaryTextColor, fontSize: '1.08rem' }}>
                                         Instant Diver Eligibility Self-Check
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: secondaryTextColor, fontSize: '0.78rem' }}>
@@ -879,7 +1083,7 @@ export default function ScubaPage({ availableItems = [] }) {
                                         />
                                     </Box>
 
-                                    <Typography variant="h5" sx={{ fontWeight: 900, color: primaryTextColor, mb: 2, fontSize: '1.25rem' }}>
+                                    <Typography variant="h5" component="h3" sx={{ fontWeight: 900, color: primaryTextColor, mb: 2, fontSize: '1.25rem' }}>
                                         {cat.title}
                                     </Typography>
 
@@ -975,7 +1179,7 @@ export default function ScubaPage({ availableItems = [] }) {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 4 }}>
                         <Box>
                             <Chip label="TRANSPARENT TARIFFS • NO HIDDEN CHARGES" size="small" sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1 }} />
-                            <Typography variant="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.6rem' } }}>
+                            <Typography variant="h2" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.6rem' } }}>
                                 Netrani Scuba & Snorkeling Packages
                             </Typography>
                             <Typography variant="body2" sx={{ color: secondaryTextColor, mt: 0.5 }}>
@@ -985,71 +1189,7 @@ export default function ScubaPage({ availableItems = [] }) {
                     </Box>
 
                     <Grid container spacing={3.5}>
-                        {[
-                            {
-                                id: 10,
-                                title: 'Netrani Island PADI Discovery Scuba',
-                                category: 'Most Popular • Non-Swimmers Welcome',
-                                rate: '₹2,999',
-                                originalRate: '₹3,499',
-                                badge: '🔥 BESTSELLER FOR BEGINNERS',
-                                isPopular: true,
-                                image: '/images/services/netrani_scuba_dive.jpg',
-                                duration: 'Full Day (06:30 AM – 02:00 PM)',
-                                depth: 'Up to 12 Meters (Max Legal Depth)',
-                                equipment: ['🤿 Mask & Snorkel', '🦺 BCD Buoyancy Jacket', '🫁 12L O2 Cylinder', '👟 Scuba Fins', '📹 4K GoPro'],
-                                features: [
-                                    '1-on-1 Dedicated PADI/SSI Divemaster (holds your hand)',
-                                    'Free 4K GoPro Underwater Video & Photo Pack',
-                                    'Complete Scuba Gear, Wetsuit & Regulators',
-                                    'Speedboat Transit from Murudeshwar Harbor',
-                                    'Shallow Water Breathing Practice & Briefing',
-                                    'Fresh Fruits, Snacks & Drinking Water on Boat',
-                                ],
-                            },
-                            {
-                                id: 11,
-                                title: 'Netrani Snorkeling & Speedboat Safari',
-                                category: 'Surface Marine Safari • Non-Swimmers',
-                                rate: '₹1,499',
-                                originalRate: '₹1,799',
-                                badge: '👨‍👩‍👧‍👦 FAMILY & KIDS FAVORITE',
-                                isPopular: false,
-                                image: '/images/services/netrani_boat_departure.jpg',
-                                duration: 'Full Day (06:30 AM – 01:30 PM)',
-                                depth: 'Surface & Shallow Reef (Floating Vest)',
-                                equipment: ['🤿 Snorkel Mask', '🦺 Floating Safety Vest', '🐬 Dolphin Watch Deck'],
-                                features: [
-                                    'High-buoyancy Safety Floating Vest & Snorkel',
-                                    'Speedboat Cruise to Netrani Island Bay & Back',
-                                    'Guided Surface Snorkeling over Living Coral Gardens',
-                                    'Playful Dolphin Pod Spotting along the Route',
-                                    'Safe for Children (10+) & Senior Family Members',
-                                    'Purified Drinking Water & Light Refreshments',
-                                ],
-                            },
-                            {
-                                id: 12,
-                                title: 'Certified Diver Fun Dive (2-Tank Dives)',
-                                category: 'For PADI / SSI / CMAS Card Holders',
-                                rate: '₹3,499',
-                                originalRate: '₹3,999',
-                                badge: '🏆 CERTIFIED DIVERS ONLY',
-                                isPopular: false,
-                                image: '/images/services/scuba.jpg',
-                                duration: '2 Dives (Grand Central + Outcrops)',
-                                depth: '18 – 30 Meters (Based on Certification)',
-                                equipment: ['🫁 Twin 12L Tanks', '⚖️ Weight Belt', '🧭 Dive Computer Guide'],
-                                features: [
-                                    '2 Guided Deep Coral Reef & Pelagic Boat Dives',
-                                    'Twin 12L Aluminum Tanks & Weight Belts',
-                                    'Certified Dive Guide & Surface Marker Buoy',
-                                    'Speedboat Transit & Surface Interval with Snacks',
-                                    'Explore Barracuda Schools, Morays & Ray Caves',
-                                    'Official Dive Logbook Verification & Seal',
-                                ],
-                            },
-                        ].map((pkg, pIdx) => (
+                        {scubaPackages.map((pkg, pIdx) => (
                             <Grid key={pIdx} size={{ xs: 12, md: 4 }}>
                                 <Card
                                     sx={{
@@ -1089,12 +1229,33 @@ export default function ScubaPage({ availableItems = [] }) {
                                         </Box>
                                     )}
 
-                                    <Box sx={{ position: 'relative', height: 210, bgcolor: '#0F172A', overflow: 'hidden' }}>
+                                    <Box 
+                                        sx={{ 
+                                            position: 'relative', 
+                                            height: 210, 
+                                            bgcolor: '#0F172A', 
+                                            overflow: 'hidden',
+                                            cursor: pkg.media.gallery.length > 0 ? 'pointer' : 'default',
+                                        }}
+                                        onClick={() => {
+                                            if (pkg.media.gallery.length > 0) {
+                                                setSelectedItemForGallery(pkg.item || { name: pkg.title, primary_image_url: pkg.media.primary, gallery_image_urls: pkg.media.gallery });
+                                                setGalleryModalOpen(true);
+                                            }
+                                        }}
+                                    >
                                         <Box
                                             component="img"
-                                            src={pkg.image}
-                                            alt={pkg.title}
-                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            src={pkg.media.primary}
+                                            loading="lazy"
+                                            alt={`${pkg.title} - Netrani Island Scuba Diving Package from Honnavar`}
+                                            sx={{ 
+                                                width: '100%', 
+                                                height: '100%', 
+                                                objectFit: 'cover',
+                                                transition: 'transform 0.4s ease',
+                                                '&:hover': pkg.media.gallery.length > 0 ? { transform: 'scale(1.05)' } : {},
+                                            }}
                                         />
                                         <Chip
                                             size="small"
@@ -1111,6 +1272,31 @@ export default function ScubaPage({ availableItems = [] }) {
                                                 fontSize: '0.68rem',
                                             }}
                                         />
+                                        {pkg.media.hasMultiple && (
+                                            <Chip
+                                                icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#fff !important' }} />}
+                                                size="small"
+                                                label={`${pkg.media.count} Photos`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedItemForGallery(pkg.item || { name: pkg.title, primary_image_url: pkg.media.primary, gallery_image_urls: pkg.media.gallery });
+                                                    setGalleryModalOpen(true);
+                                                }}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: 12,
+                                                    left: 12,
+                                                    bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                    color: '#FFFFFF',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.72rem',
+                                                    backdropFilter: 'blur(8px)',
+                                                    cursor: 'pointer',
+                                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                    '&:hover': { bgcolor: 'rgba(2, 132, 199, 0.9)' },
+                                                }}
+                                            />
+                                        )}
                                         <Chip
                                             size="small"
                                             label={pkg.depth}
@@ -1129,7 +1315,7 @@ export default function ScubaPage({ availableItems = [] }) {
 
                                     <CardContent sx={{ p: 2.8, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                         <Box>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 900, color: primaryTextColor, mb: 0.5, lineHeight: 1.3 }}>
+                                            <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 900, color: primaryTextColor, mb: 0.5, lineHeight: 1.3 }}>
                                                 {pkg.title}
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: '#0284C7', fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 1.5 }}>
@@ -1181,7 +1367,7 @@ export default function ScubaPage({ availableItems = [] }) {
                                                     <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', fontSize: '0.7rem' }}>
                                                         All-Inclusive Tariff
                                                     </Typography>
-                                                    <Typography variant="h6" sx={{ fontWeight: 950, color: '#0284C7', lineHeight: 1.1 }}>
+                                                    <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: '#0284C7', lineHeight: 1.1 }}>
                                                         {pkg.rate}
                                                         <Typography component="span" variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, ml: 0.5 }}>
                                                             / person
@@ -1243,115 +1429,118 @@ export default function ScubaPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    4. DIVE DAY TIMELINE: HOW NETRANI EXPEDITION WORKS (Interactive Connected Pipeline)
+                    4. DIVE DAY TIMELINE: HOW NETRANI EXPEDITION WORKS (Compact Strip)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
+                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 7 } }}>
+                    <Box sx={{ textAlign: 'center', mb: 3 }}>
                         <Chip
                             label="STEP-BY-STEP DIVE DAY SCHEDULE"
-                            sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1.5 }}
+                            sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1 }}
                         />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
+                        <Typography variant="h4" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em' }}>
                             What to Expect on Your Scuba Day
                         </Typography>
-                        <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto' }}>
+                        <Typography variant="body2" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto', mt: 0.5 }}>
                             A seamless, professionally guided maritime expedition from Murudeshwar Harbor to Netrani Island and back.
                         </Typography>
                     </Box>
 
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                         {[
                             {
                                 step: '01',
                                 time: '06:30 AM',
-                                title: 'Harbor Reporting & Document Verification',
-                                desc: 'Assemble at Murudeshwar Harbor Dive Center. Submit your Government Photo ID, complete the PADI medical self-declaration, and get fitted for your wetsuit & dive mask.',
+                                title: 'Harbor Reporting & Briefing',
+                                desc: 'Assemble at Murudeshwar Harbor. Verify Govt ID, complete PADI declaration, and suit up.',
                                 color: '#0284C7',
-                                badge: '📍 Harbor Assembly',
                             },
                             {
                                 step: '02',
                                 time: '07:15 AM',
-                                title: 'Speedboat Cruise to Netrani Island',
-                                desc: 'Board the twin-engine registered dive vessel. Enjoy a 75 to 90-minute scenic cruise into the Arabian Sea with frequent sightings of playful dolphin pods.',
+                                title: 'Speedboat Cruise to Island',
+                                desc: 'Twin-engine registered vessel cruise into the Arabian Sea with playful dolphin pods.',
                                 color: '#059669',
-                                badge: '🐬 Dolphin Spotting',
                             },
                             {
                                 step: '03',
                                 time: '09:30 AM',
-                                title: 'Safety Briefing & 1-on-1 Guided Coral Dive',
-                                desc: 'Practice basic regulator breathing in calm shallow water. Your dedicated PADI divemaster holds your hand for a 30 to 40-minute guided dive up to 12 meters along the coral gardens.',
+                                title: '1-on-1 Guided Coral Dive',
+                                desc: 'Dedicated certified divemaster guides your 30-40 min underwater dive up to 12 meters.',
                                 color: '#4F46E5',
-                                badge: '🤿 1-on-1 Guided Dive',
                             },
                             {
                                 step: '04',
                                 time: '01:30 PM',
-                                title: 'Return to Harbor & Instant 4K Media Transfer',
-                                desc: 'Enjoy fresh fruits and refreshments on the return cruise. Once back at the dive center, our team transfers your full HD/4K GoPro underwater videos directly to your phone.',
+                                title: 'Return & 4K Media Transfer',
+                                desc: 'Enjoy fresh fruits on return. HD/4K underwater GoPro videos transferred to your phone.',
                                 color: '#D97706',
-                                badge: '📹 Instant 4K Video',
                             },
                         ].map((step, sIdx) => (
                             <Grid key={sIdx} size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Paper
                                     elevation={0}
                                     sx={{
-                                        p: 3,
+                                        p: 2.2,
                                         height: '100%',
-                                        borderRadius: 3.5,
+                                        borderRadius: 2.5,
                                         bgcolor: cardBgColor,
                                         border: `1px solid ${cardBorderColor}`,
                                         display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'space-between',
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                        transition: 'all 0.2s ease',
-                                        '&:hover': {
-                                            transform: 'translateY(-4px)',
-                                            borderColor: step.color,
-                                        },
+                                        alignItems: 'flex-start',
+                                        gap: 1.5,
                                     }}
                                 >
-                                    {/* Number watermark */}
-                                    <Typography
+                                    <Box
                                         sx={{
-                                            position: 'absolute',
-                                            top: 8,
-                                            right: 12,
-                                            fontSize: '3rem',
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: '50%',
+                                            bgcolor: `${step.color}15`,
+                                            color: step.color,
                                             fontWeight: 950,
-                                            color: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.04)',
-                                            lineHeight: 1,
-                                            userSelect: 'none',
+                                            fontSize: '0.9rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: `1.5px solid ${step.color}`,
+                                            flexShrink: 0,
                                         }}
                                     >
                                         {step.step}
-                                    </Typography>
-
-                                    <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                    </Box>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
+                                            <Typography
+                                                variant="subtitle2"
+                                                component="h3"
+                                                sx={{
+                                                    fontWeight: 800,
+                                                    color: primaryTextColor,
+                                                    fontSize: '0.88rem',
+                                                }}
+                                            >
+                                                {step.title}
+                                            </Typography>
                                             <Chip
                                                 label={step.time}
-                                                sx={{ bgcolor: step.color, color: '#FFFFFF', fontWeight: 900, fontSize: '0.78rem' }}
-                                            />
-                                            <Chip
-                                                label={step.badge}
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
-                                                    color: primaryTextColor,
-                                                    fontWeight: 750,
-                                                    fontSize: '0.68rem',
+                                                    height: 18,
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 800,
+                                                    bgcolor: `${step.color}18`,
+                                                    color: step.color,
                                                 }}
                                             />
                                         </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 850, color: primaryTextColor, mb: 1, fontSize: '1rem', lineHeight: 1.3 }}>
-                                            {step.title}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: secondaryTextColor, fontSize: '0.84rem', lineHeight: 1.6 }}>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: secondaryTextColor,
+                                                fontSize: '0.8rem',
+                                                lineHeight: 1.45,
+                                            }}
+                                        >
                                             {step.desc}
                                         </Typography>
                                     </Box>
@@ -1367,7 +1556,7 @@ export default function ScubaPage({ availableItems = [] }) {
                 <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                         <Chip label="UNDERWATER BIODIVERSITY" size="small" sx={{ bgcolor: 'rgba(5, 150, 105, 0.12)', color: '#059669', fontWeight: 850, mb: 1 }} />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
+                        <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
                             Famous Dive Sites Around Netrani Island
                         </Typography>
                         <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 640, mx: 'auto' }}>
@@ -1439,7 +1628,7 @@ export default function ScubaPage({ availableItems = [] }) {
                                 >
                                     <Box>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
-                                            <Typography variant="h6" sx={{ fontWeight: 900, color: primaryTextColor, fontSize: '1.1rem' }}>
+                                            <Typography variant="h6" component="h3" sx={{ fontWeight: 900, color: primaryTextColor, fontSize: '1.1rem' }}>
                                                 {spot.name}
                                             </Typography>
                                             <Chip
@@ -1515,153 +1704,21 @@ export default function ScubaPage({ availableItems = [] }) {
                 </Box>
 
                 {/* =========================================================================
-                    6. HONNAVAR TO MURUDESHWAR TRANSIT & DISTANCE MATRIX
-                ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
-                    <Card
-                        elevation={0}
-                        sx={{
-                            borderRadius: 4,
-                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#FFFFFF',
-                            border: `1px solid ${cardBorderColor}`,
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <Grid container>
-                            <Grid size={{ xs: 12, md: 5 }}>
-                                <Box sx={{ p: { xs: 3, sm: 4, md: 5 }, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', bgcolor: isDark ? 'rgba(15, 23, 42, 0.5)' : '#F0F9FF' }}>
-                                    <Box>
-                                        <Chip label="HONNAVAR ➔ MURUDESHWAR TRANSFERS" size="small" sx={{ bgcolor: '#0284C7', color: '#FFFFFF', fontWeight: 850, mb: 1.5 }} />
-                                        <Typography variant="h4" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 2 }}>
-                                            Staying in Honnavar? We’ll Take You to the Dock!
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.65, mb: 3 }}>
-                                            Murudeshwar Harbor is just <strong>27 km (35 minutes)</strong> from Honnavar. GK WhizWheels provides early morning cab pickups right from your hotel/homestay or rental bike drop-offs so you never miss the 06:30 AM harbor batch.
-                                        </Typography>
-
-                                        <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0', mb: 3 }}>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 850, color: primaryTextColor, mb: 0.5 }}>
-                                                🛵 Self-Drive Scooter Option
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: secondaryTextColor }}>
-                                                Rent an Activa 6G (₹450/day) in Honnavar and enjoy a scenic coastal highway ride on NH-66 to Murudeshwar Harbor.
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-
-                                    <Button
-                                        variant="contained"
-                                        onClick={() => setModalOpen(true)}
-                                        sx={{
-                                            bgcolor: '#0284C7',
-                                            color: '#FFFFFF',
-                                            fontWeight: 850,
-                                            py: 1.3,
-                                            borderRadius: 2.5,
-                                            '&:hover': { bgcolor: '#0369A1' },
-                                        }}
-                                    >
-                                        Add Harbor Transfer (+₹300)
-                                    </Button>
-                                </Box>
-                            </Grid>
-
-                            <Grid size={{ xs: 12, md: 7 }}>
-                                <Box sx={{ p: { xs: 3, sm: 4, md: 5 } }}>
-                                    <Typography variant="h6" sx={{ fontWeight: 900, color: primaryTextColor, mb: 2.5 }}>
-                                        Key Distances from Murudeshwar Harbor
-                                    </Typography>
-                                    <Stack spacing={1.8}>
-                                        {SIGHTSEEING_DISTANCES.map((dist, dIdx) => (
-                                            <Box
-                                                key={dIdx}
-                                                sx={{
-                                                    p: 1.8,
-                                                    borderRadius: 2,
-                                                    bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC',
-                                                    border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #E2E8F0',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    gap: 2,
-                                                    flexWrap: 'wrap',
-                                                }}
-                                            >
-                                                <Box sx={{ flex: 1, minWidth: 200 }}>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 850, color: primaryTextColor, fontSize: '0.88rem' }}>
-                                                        {dist.spot}
-                                                    </Typography>
-                                                    <Typography variant="caption" sx={{ color: secondaryTextColor, fontSize: '0.75rem' }}>
-                                                        {dist.note}
-                                                    </Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: 'right' }}>
-                                                    <Chip
-                                                        size="small"
-                                                        label={dist.dist}
-                                                        sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, fontSize: '0.74rem' }}
-                                                    />
-                                                    <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', mt: 0.3 }}>
-                                                        {dist.time}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                    </Stack>
-                                </Box>
-                            </Grid>
-                        </Grid>
-                    </Card>
-                </Box>
-
-                {/* =========================================================================
-                    7. SCUBA FAQS (Accordion)
+                    6. SCUBA FAQS (Accordion)
                 ========================================================================== */}
                 <Box sx={{ maxWidth: '1000px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 8, md: 12 } }}>
                     <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                         <Chip label="FREQUENTLY ASKED QUESTIONS" size="small" sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1 }} />
-                        <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
+                        <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
                             Everything You Need to Know About Netrani Diving
                         </Typography>
                     </Box>
 
                     <Stack spacing={1.5}>
-                        {[
-                            {
-                                q: 'Do I need to know swimming to do scuba diving at Netrani Island?',
-                                a: 'No, swimming is NOT required! More than 80% of our discovery divers are complete non-swimmers. For beginner discovery dives, each diver is assigned a dedicated 1-on-1 certified PADI/SSI divemaster who holds you and controls all buoyancy equipment underwater throughout the dive.',
-                            },
-                            {
-                                q: 'What is the government age limit for Netrani Island scuba diving?',
-                                a: 'The strict minimum age under Karnataka government and PADI regulations is 10 years old. There is no upper age limit provided you are physically healthy; participants above 50 or those with medical history need a fitness certificate from a physician.',
-                            },
-                            {
-                                q: 'Can we step foot or land on Netrani Island?',
-                                a: 'No. Setting foot on Netrani Island is strictly prohibited by the Indian Navy, Coast Guard, and Karnataka Forest Department. All briefings, gearing up, diving, and snorkeling take place directly from certified dive boats anchored in the safe bay waters.',
-                            },
-                            {
-                                q: 'What government ID is required before boarding?',
-                                a: 'Every diver must submit a valid Government-issued photo ID that contains their residential address (Aadhaar card, Passport, or Driver’s License). This is required for mandatory Coast Guard vessel manifests.',
-                            },
-                            {
-                                q: 'When is Netrani Island closed for scuba diving?',
-                                a: 'Diving operations are entirely closed during the southwest monsoon season (June 1st through September 30th) every year due to rough seas. The official diving season operates from October through May when water is calm and visibility reaches 15 to 25 meters.',
-                            },
-                            {
-                                q: 'When and how do I receive my underwater 4K GoPro videos and photos?',
-                                a: 'Your underwater photos and 4K video clips are transferred directly to your smartphone via card reader or high-speed cable at the dive center right after returning to Murudeshwar Harbor.',
-                            },
-                            {
-                                q: 'What medical conditions disqualify me from scuba diving?',
-                                a: 'Diving is contraindicated for anyone with heart conditions, high blood pressure, asthma, chronic lung disorders, recent surgeries, ear/sinus surgery, severe back issues, or pregnancy. You must sign a standard medical declaration before the dive.',
-                            },
-                            {
-                                q: 'What happens if bad weather causes trip cancellation?',
-                                a: 'Safety is paramount. If the port authority or Coast Guard restricts vessel departures due to rough sea swells or weather, you are entitled to a 100% free reschedule or full refund without deduction.',
-                            },
-                        ].map((faq, fIdx) => (
+                        {SCUBA_FAQS.slice(0, 5).map((faq, fIdx) => (
                             <Accordion
                                 key={fIdx}
+                                defaultExpanded={fIdx === 0}
                                 elevation={0}
                                 sx={{
                                     borderRadius: '16px !important',
@@ -1683,6 +1740,68 @@ export default function ScubaPage({ availableItems = [] }) {
                                 </AccordionDetails>
                             </Accordion>
                         ))}
+
+                        {/* Embedded Honnavar-Murudeshwar Transit & Distances Accordion */}
+                        <Accordion
+                            elevation={0}
+                            sx={{
+                                borderRadius: '16px !important',
+                                bgcolor: cardBgColor,
+                                border: `1px solid ${cardBorderColor}`,
+                                '&:before': { display: 'none' },
+                                overflow: 'hidden',
+                            }}
+                        >
+                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#0284C7' }} />} sx={{ p: 2.2 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 850, color: primaryTextColor, fontSize: '0.98rem' }}>
+                                    Staying in Honnavar? How do transfers and travel times to Murudeshwar Harbor work?
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails sx={{ px: 2.5, pb: 2.5, pt: 0 }}>
+                                <Typography variant="body2" sx={{ color: secondaryTextColor, lineHeight: 1.7, fontSize: '0.88rem', mb: 2 }}>
+                                    Murudeshwar Harbor is just <strong>27 km (35 minutes)</strong> south of Honnavar along 4-lane NH-66. GK WhizWheels arranges early morning cab pickups (or self-drive rental Activas from ₹450/day) delivered right to your Honnavar homestay or hotel so you arrive relaxed before the 06:30 AM harbor batch.
+                                </Typography>
+                                <Grid container spacing={1.5}>
+                                    {SIGHTSEEING_DISTANCES.map((dist, dIdx) => (
+                                        <Grid key={dIdx} size={{ xs: 12, sm: 6 }}>
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: 1.5,
+                                                    borderRadius: 2,
+                                                    bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC',
+                                                    border: `1px solid ${cardBorderColor}`,
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    gap: 1.5,
+                                                    height: '100%',
+                                                }}
+                                            >
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 850, color: primaryTextColor, fontSize: '0.84rem' }}>
+                                                        {dist.spot}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: secondaryTextColor, fontSize: '0.72rem', display: 'block' }}>
+                                                        {dist.note}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                                                    <Chip
+                                                        size="small"
+                                                        label={dist.dist}
+                                                        sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, fontSize: '0.7rem', height: 20 }}
+                                                    />
+                                                    <Typography variant="caption" sx={{ color: mutedTextColor, display: 'block', mt: 0.3, fontSize: '0.7rem' }}>
+                                                        {dist.time}
+                                                    </Typography>
+                                                </Box>
+                                            </Paper>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </AccordionDetails>
+                        </Accordion>
                     </Stack>
                 </Box>
 
@@ -1721,7 +1840,7 @@ export default function ScubaPage({ availableItems = [] }) {
 
                         <Box sx={{ position: 'relative', zIndex: 1 }}>
                             <Chip label="24x7 DIVE DESK ASSISTANCE" size="small" sx={{ bgcolor: '#0284C7', color: '#FFFFFF', fontWeight: 900, mb: 1.5 }} />
-                            <Typography variant="h3" sx={{ fontWeight: 950, color: '#FFFFFF', letterSpacing: '-0.02em', mb: 1.5 }}>
+                            <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: '#FFFFFF', letterSpacing: '-0.02em', mb: 1.5 }}>
                                 Ready to Explore the Magic of Netrani Island?
                             </Typography>
                             <Typography variant="body1" sx={{ color: '#94A3B8', maxWidth: 640, mx: 'auto', mb: 3.5, fontSize: '1.05rem' }}>
@@ -1777,6 +1896,17 @@ export default function ScubaPage({ availableItems = [] }) {
                     onClose={() => setModalOpen(false)}
                     initialProgramId="discovery_scuba"
                     availableItems={availableItems}
+                />
+
+                {/* Multi-Image Scuba Gallery Lightbox */}
+                <ServiceGalleryModal
+                    open={galleryModalOpen}
+                    onClose={() => setGalleryModalOpen(false)}
+                    item={selectedItemForGallery}
+                    onBook={(item) => {
+                        setGalleryModalOpen(false);
+                        setModalOpen(true);
+                    }}
                 />
             </Box>
         </AppLayout>

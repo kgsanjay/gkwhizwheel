@@ -23,54 +23,15 @@ use Illuminate\Support\Facades\DB;
 class CustomerController extends Controller
 {
     /**
-     * Authorize staff, store manager, or super admin access.
-     */
-    protected function authorizeStaff(Request $request): void
-    {
-        $user = $request->user();
-
-        if ($user === null) {
-            abort(401, 'Unauthenticated.');
-        }
-
-        $isStaff = in_array($user->role, [
-            UserRole::STAFF,
-            UserRole::STORE_MANAGER,
-            UserRole::SUPER_ADMIN,
-        ], true);
-
-        if (! $isStaff) {
-            try {
-                $isStaff = $user->hasAnyRole(['staff', 'store_manager', 'super_admin', 'admin']);
-            } catch (\Throwable) {
-                // ignore
-            }
-        }
-
-        if (! $isStaff) {
-            abort(403, 'Unauthorized. Staff access required.');
-        }
-    }
-
-    /**
      * Look up existing customer by phone number (Walk-in Flow Step 1).
      */
     public function lookup(Request $request): JsonResponse
     {
-        $this->authorizeStaff($request);
+        $validated = $request->validate([
+            'phone' => ['required', 'string', 'max:20'],
+        ]);
 
-        $rawPhone = (string) $request->query('phone');
-
-        if (trim($rawPhone) === '') {
-            return response()->json([
-                'success' => false,
-                'data' => null,
-                'message' => 'The phone query parameter is required.',
-                'errors' => [
-                    'phone' => ['The phone query parameter is required.'],
-                ],
-            ], 422);
-        }
+        $rawPhone = (string) $validated['phone'];
 
         $cleanPhone = trim($rawPhone);
         $digitsOnly = preg_replace('/[^0-9]/', '', $cleanPhone);
@@ -137,8 +98,6 @@ class CustomerController extends Controller
      */
     public function store(StoreCustomerRequest $request): JsonResponse
     {
-        $this->authorizeStaff($request);
-
         $customer = DB::transaction(function () use ($request) {
             $customer = User::create([
                 'name' => $request->validated('name'),
@@ -192,7 +151,7 @@ class CustomerController extends Controller
 
             $createdCount = 0;
             foreach ($docsToProcess as $doc) {
-                $path = $doc['file']->store('documents/kyc');
+                $path = $doc['file']->store('documents/kyc', 'local');
                 KycDocument::create([
                     'user_id' => $customer->id,
                     'document_type' => $doc['type'],

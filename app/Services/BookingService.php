@@ -47,6 +47,8 @@ class BookingService
             'status' => BookingStatus::CONFIRMED,
         ]);
 
+        $booking->user?->notify(new \App\Notifications\BookingConfirmationNotification($booking));
+
         return $booking->refresh();
     }
 

@@ -27,7 +27,7 @@ class UploadBikeDocumentRequest extends FormRequest
     {
         return [
             'document_type' => ['required', new Enum(BikeDocumentType::class)],
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
             'issue_date' => ['nullable', 'date'],
             'expiry_date' => ['nullable', 'date'],
             'verified' => ['nullable', 'boolean'],

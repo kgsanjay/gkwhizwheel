@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '../../../../Layouts/AdminLayout';
+import MultiImageUploader from '../../../../Components/MultiImageUploader';
 import {
     Box,
     Typography,
@@ -13,15 +14,32 @@ import {
     Stack,
     Divider,
     InputAdornment,
+    Alert,
+    Chip,
+    Paper,
+    FormControlLabel,
+    Checkbox,
+    IconButton,
+    Tooltip,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import ArticleIcon from '@mui/icons-material/Article';
+import DeleteIcon from '@mui/icons-material/Delete';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
     const [featureInput, setFeatureInput] = useState('');
 
-    const { data, setData, put, processing, errors } = useForm({
+    const docTypes = serviceConfig.document_types || {};
+    const hasDocRequirements = Object.keys(docTypes).length > 0;
+
+    const { data, setData, post, processing, errors } = useForm({
+        _method: 'put',
         name: item.name || '',
         category: item.category || '',
         description: item.description || '',
@@ -29,6 +47,21 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
         price_unit: item.price_unit || Object.keys(serviceConfig.units || {})[0] || 'per_day',
         capacity: item.capacity || '',
         image_url: item.image_url || '',
+        images: [],
+        primary_image_id: null,
+        primary_image_index: null,
+        image_order: [],
+        delete_image_ids: [],
+        documents: (item.documents || []).map((doc) => ({
+            id: doc.id,
+            document_type: doc.document_type,
+            file: null,
+            file_url: doc.file_url,
+            expiry_date: doc.expiry_date ? doc.expiry_date.substring(0, 10) : '',
+            verified: Boolean(doc.verified),
+            uploader: doc.uploader?.name || null,
+        })),
+        delete_document_ids: [],
         badge: item.badge || '',
         features: item.features || [],
         status: item.status || 'available',
@@ -49,9 +82,77 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
         setData('features', data.features.filter((_, idx) => idx !== indexToRemove));
     };
 
+    const handleDocFileChange = (docType, file) => {
+        const existing = [...data.documents];
+        const idx = existing.findIndex((d) => d.document_type === docType);
+        if (idx >= 0) {
+            existing[idx] = { ...existing[idx], file, new_file_name: file.name };
+        } else {
+            existing.push({
+                document_type: docType,
+                file,
+                new_file_name: file.name,
+                expiry_date: '',
+                verified: true,
+            });
+        }
+        setData('documents', existing);
+    };
+
+    const handleDocClearNewFile = (docType) => {
+        const existing = [...data.documents];
+        const idx = existing.findIndex((d) => d.document_type === docType);
+        if (idx >= 0) {
+            if (existing[idx].id) {
+                existing[idx] = { ...existing[idx], file: null, new_file_name: null };
+                setData('documents', existing);
+            } else {
+                setData('documents', existing.filter((d) => d.document_type !== docType));
+            }
+        }
+    };
+
+    const handleDocExpiryChange = (docType, expiry_date) => {
+        const existing = [...data.documents];
+        const idx = existing.findIndex((d) => d.document_type === docType);
+        if (idx >= 0) {
+            existing[idx] = { ...existing[idx], expiry_date };
+        } else {
+            existing.push({ document_type: docType, file: null, expiry_date, verified: true });
+        }
+        setData('documents', existing);
+    };
+
+    const handleDocVerifiedChange = (docType, verified) => {
+        const existing = [...data.documents];
+        const idx = existing.findIndex((d) => d.document_type === docType);
+        if (idx >= 0) {
+            existing[idx] = { ...existing[idx], verified };
+        } else {
+            existing.push({ document_type: docType, file: null, expiry_date: '', verified });
+        }
+        setData('documents', existing);
+    };
+
+    const handleDocDelete = (docType) => {
+        const docEntry = data.documents.find((d) => d.document_type === docType);
+        if (docEntry?.id) {
+            if (window.confirm(`Delete ${docTypes[docType]?.label || 'document'}?`)) {
+                router.delete(`/admin/services/${serviceConfig.slug}/items/${item.id}/documents/${docEntry.id}`, {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setData('documents', data.documents.filter((d) => d.document_type !== docType));
+                    },
+                });
+            }
+        } else if (docEntry) {
+            setData('documents', data.documents.filter((d) => d.document_type !== docType));
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(`/admin/services/${serviceConfig.slug}/items/${item.id}`);
+        post(`/admin/services/${serviceConfig.slug}/items/${item.id}`);
     };
 
     return (
@@ -183,27 +284,16 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                     />
                                 </Grid>
 
-                                {/* Image URL */}
+                                {/* Multi-Image Showcase & Gallery */}
                                 <Grid item xs={12}>
-                                    <TextField
-                                        label="Image URL"
-                                        fullWidth
-                                        value={data.image_url}
-                                        onChange={(e) => setData('image_url', e.target.value)}
-                                        error={Boolean(errors.image_url)}
-                                        helperText={errors.image_url}
+                                    <MultiImageUploader
+                                        existingImages={item.images || []}
+                                        data={data}
+                                        setData={setData}
+                                        errors={errors}
+                                        title={`${serviceConfig.item_label || 'Service'} Photos & Gallery`}
+                                        helperText="Upload photos. Drag & drop to reorder, and click 'Make Primary' to choose the cover image."
                                     />
-                                    {data.image_url && (
-                                        <Box sx={{ mt: 1.5 }}>
-                                            <Box
-                                                component="img"
-                                                src={data.image_url}
-                                                alt="Preview"
-                                                sx={{ height: 120, borderRadius: 2, objectFit: 'cover' }}
-                                                onError={(e) => { e.target.style.display = 'none'; }}
-                                            />
-                                        </Box>
-                                    )}
                                 </Grid>
 
                                 {/* Description */}
@@ -303,6 +393,155 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                         ))}
                                     </Stack>
                                 </Grid>
+
+                                {/* Certifications & Regulatory Documents (Only for services that need it) */}
+                                {hasDocRequirements && (
+                                    <Grid item xs={12}>
+                                        <Divider sx={{ my: 1.5 }} />
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <VerifiedUserIcon color="primary" /> Certifications & Compliance Documents
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                Manage official licenses, permits, and certifications required for this {serviceConfig.item_label.toLowerCase()}.
+                                            </Typography>
+                                        </Box>
+
+                                        <Stack spacing={2}>
+                                            {Object.entries(docTypes).map(([typeKey, cfg]) => {
+                                                const docEntry = data.documents.find((d) => d.document_type === typeKey);
+                                                const hasUploadedDoc = Boolean(docEntry?.id && docEntry?.file_url);
+                                                const hasNewFile = Boolean(docEntry?.file);
+
+                                                return (
+                                                    <Paper
+                                                        key={typeKey}
+                                                        variant="outlined"
+                                                        sx={{
+                                                            p: 2,
+                                                            borderRadius: 2,
+                                                            bgcolor: (hasUploadedDoc || hasNewFile) ? 'action.hover' : 'background.paper',
+                                                            borderColor: (hasUploadedDoc && docEntry?.verified) ? 'success.light' : 'divider',
+                                                        }}
+                                                    >
+                                                        <Grid container spacing={2} alignItems="center">
+                                                            <Grid item xs={12} sm={5}>
+                                                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                                        {cfg.label}
+                                                                    </Typography>
+                                                                    {hasUploadedDoc && (
+                                                                        <Chip
+                                                                            size="small"
+                                                                            icon={docEntry.verified ? <CheckCircleIcon fontSize="small" /> : undefined}
+                                                                            label={docEntry.verified ? 'Verified' : 'Pending Verification'}
+                                                                            color={docEntry.verified ? 'success' : 'warning'}
+                                                                            variant="outlined"
+                                                                            sx={{ height: 22, fontSize: '0.7rem' }}
+                                                                        />
+                                                                    )}
+                                                                </Stack>
+                                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                                                                    {cfg.description}
+                                                                </Typography>
+
+                                                                {hasUploadedDoc && (
+                                                                    <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1 }}>
+                                                                        <Button
+                                                                            component="a"
+                                                                            href={docEntry.file_url}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            size="small"
+                                                                            variant="text"
+                                                                            startIcon={<OpenInNewIcon fontSize="small" />}
+                                                                            sx={{ textTransform: 'none', fontWeight: 600, p: 0, minWidth: 0 }}
+                                                                        >
+                                                                            View Current Document
+                                                                        </Button>
+                                                                        {docEntry.uploader && (
+                                                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                                                • Uploaded by {docEntry.uploader}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Stack>
+                                                                )}
+
+                                                                {hasNewFile && (
+                                                                    <Chip
+                                                                        icon={<ArticleIcon />}
+                                                                        label={`New file: ${docEntry.new_file_name || docEntry.file.name}`}
+                                                                        size="small"
+                                                                        color="primary"
+                                                                        onDelete={() => handleDocClearNewFile(typeKey)}
+                                                                        sx={{ mt: 1, maxWidth: '100%' }}
+                                                                    />
+                                                                )}
+                                                            </Grid>
+
+                                                            <Grid item xs={12} sm={3}>
+                                                                <Button
+                                                                    variant={hasUploadedDoc ? 'outlined' : 'contained'}
+                                                                    component="label"
+                                                                    size="small"
+                                                                    startIcon={<UploadFileIcon />}
+                                                                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                                                                >
+                                                                    {hasUploadedDoc ? 'Replace Document' : 'Upload Document'}
+                                                                    <input
+                                                                        type="file"
+                                                                        hidden
+                                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                                        onChange={(e) => {
+                                                                            if (e.target.files?.[0]) {
+                                                                                handleDocFileChange(typeKey, e.target.files[0]);
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </Button>
+                                                            </Grid>
+
+                                                            <Grid item xs={12} sm={4}>
+                                                                <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+                                                                    <TextField
+                                                                        type="date"
+                                                                        size="small"
+                                                                        label="Expiry Date"
+                                                                        InputLabelProps={{ shrink: true }}
+                                                                        value={docEntry?.expiry_date || ''}
+                                                                        onChange={(e) => handleDocExpiryChange(typeKey, e.target.value)}
+                                                                        sx={{ minWidth: 140 }}
+                                                                    />
+                                                                    <FormControlLabel
+                                                                        control={
+                                                                            <Checkbox
+                                                                                size="small"
+                                                                                checked={docEntry?.verified ?? false}
+                                                                                onChange={(e) => handleDocVerifiedChange(typeKey, e.target.checked)}
+                                                                            />
+                                                                        }
+                                                                        label={<Typography variant="caption" sx={{ fontWeight: 700 }}>Verified</Typography>}
+                                                                    />
+                                                                    {(hasUploadedDoc || hasNewFile) && (
+                                                                        <Tooltip title="Delete Document">
+                                                                            <IconButton
+                                                                                size="small"
+                                                                                color="error"
+                                                                                onClick={() => handleDocDelete(typeKey)}
+                                                                            >
+                                                                                <DeleteIcon fontSize="small" />
+                                                                            </IconButton>
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </Stack>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Paper>
+                                                );
+                                            })}
+                                        </Stack>
+                                    </Grid>
+                                )}
 
                                 {/* Status & Sorting */}
                                 <Grid item xs={12} sm={6}>

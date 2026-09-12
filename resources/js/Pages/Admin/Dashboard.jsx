@@ -97,6 +97,7 @@ export default function AdminDashboard({
 
     const getServiceMeta = (type) => {
         switch (type) {
+            case 'two_wheelers': return { label: 'Two Wheelers', color: '#0284C7', bg: isDark ? 'rgba(2, 132, 199, 0.16)' : '#E0F2FE', border: isDark ? 'rgba(2, 132, 199, 0.35)' : '#BAE6FD' };
             case 'taxi': return { label: 'Cab & Taxi', color: '#D97706', bg: isDark ? 'rgba(217, 119, 6, 0.16)' : '#FEF3C7', border: isDark ? 'rgba(217, 119, 6, 0.35)' : '#FDE68A' };
             case 'boating': return { label: 'Boating', color: '#0284C7', bg: isDark ? 'rgba(2, 132, 199, 0.16)' : '#E0F2FE', border: isDark ? 'rgba(2, 132, 199, 0.35)' : '#BAE6FD' };
             case 'scuba': return { label: 'Scuba Diving', color: '#0D9488', bg: isDark ? 'rgba(13, 148, 136, 0.16)' : '#CCFBF1', border: isDark ? 'rgba(13, 148, 136, 0.35)' : '#99F6E4' };
@@ -466,6 +467,17 @@ export default function AdminDashboard({
                                     / {metrics.fleet_total ?? 0} total ({fleetPercent}%)
                                 </Typography>
                             </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.6, flexWrap: 'wrap' }}>
+                                <Typography sx={{ fontSize: '0.72rem', color: isDark ? '#34D399' : '#059669', fontWeight: 700 }}>
+                                    ● {metrics.fleet_available ?? 0} Avail
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.72rem', color: isDark ? '#60A5FA' : '#2563EB', fontWeight: 600 }}>
+                                    · {metrics.fleet_booked ?? 0} On Rent
+                                </Typography>
+                                <Typography sx={{ fontSize: '0.72rem', color: isDark ? '#F87171' : '#DC2626', fontWeight: 600 }}>
+                                    · {metrics.fleet_maintenance ?? 0} Maint
+                                </Typography>
+                            </Box>
                             <Box sx={{ mt: 1.2 }}>
                                 <LinearProgress
                                     variant="determinate"
@@ -520,16 +532,16 @@ export default function AdminDashboard({
                 )}
             </Grid>
 
-            {/* Service Fleet Capacity Grid (6 Cards) */}
+            {/* 7 Multi-Service Summary & Operations Deck */}
             {service_metrics.length > 0 && (
                 <Box sx={{ mb: 4 }}>
-                    <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                Multi-Service Hub Capacity
+                                Multi-Service Operations & Fleet Capacity
                             </Typography>
                             <Chip
-                                label={`${service_metrics.length} Services`}
+                                label={`${service_metrics.length} Service Lines Active`}
                                 size="small"
                                 sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', color: 'text.secondary' }}
                             />
@@ -548,8 +560,23 @@ export default function AdminDashboard({
                     <Grid container spacing={2}>
                         {service_metrics.map((sm) => {
                             const meta = getServiceMeta(sm.type);
+                            const isTwoWheeler = sm.type === 'two_wheelers';
+                            const availPct = sm.items_count > 0
+                                ? Math.round(((sm.available_items ?? 0) / sm.items_count) * 100)
+                                : 0;
+
+                            const walkInUrl = isTwoWheeler
+                                ? '/admin/bookings/create'
+                                : `/admin/services/${sm.type}/bookings/create`;
+                            const bookingsUrl = isTwoWheeler
+                                ? '/admin/bookings'
+                                : `/admin/services/${sm.type}/bookings`;
+                            const itemsUrl = isTwoWheeler
+                                ? '/admin/bikes'
+                                : `/admin/services/${sm.type}/items`;
+
                             return (
-                                <Grid key={sm.type} size={{ xs: 12, sm: 6, md: service_metrics.length <= 4 ? 3 : 2 }}>
+                                <Grid key={sm.type} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                                     <Card
                                         sx={{
                                             borderRadius: 2.5,
@@ -565,48 +592,159 @@ export default function AdminDashboard({
                                         }}
                                     >
                                         <Box sx={{ height: 3, bgcolor: meta.color }} />
-                                        <CardContent sx={{ p: 2, flexGrow: 1 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                        <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                            {/* Header: Service Name & Availability Pill */}
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <Box sx={{ p: 0.5, bgcolor: meta.bg, color: meta.color, borderRadius: 1.5, display: 'flex' }}>
+                                                    <Box sx={{ p: 0.6, bgcolor: meta.bg, color: meta.color, borderRadius: 1.5, display: 'flex' }}>
                                                         {getServiceIcon(sm.type)}
                                                     </Box>
-                                                    <Typography sx={{ fontWeight: 800, fontSize: '0.82rem', color: 'text.primary' }}>
+                                                    <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: 'text.primary' }}>
                                                         {sm.label}
                                                     </Typography>
                                                 </Box>
                                                 <Chip
-                                                    label={`${sm.items_count} Listed`}
+                                                    label={`${sm.available_items ?? 0}/${sm.items_count ?? 0} Avail`}
                                                     size="small"
-                                                    sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', border: '1px solid', borderColor: 'divider', color: 'text.secondary' }}
+                                                    sx={{
+                                                        height: 20,
+                                                        fontSize: '0.68rem',
+                                                        fontWeight: 700,
+                                                        bgcolor: (sm.available_items ?? 0) > 0
+                                                            ? (isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5')
+                                                            : (isDark ? 'rgba(239,68,68,0.15)' : '#FEF2F2'),
+                                                        color: (sm.available_items ?? 0) > 0
+                                                            ? (isDark ? '#34D399' : '#059669')
+                                                            : (isDark ? '#F87171' : '#DC2626'),
+                                                        border: '1px solid',
+                                                        borderColor: (sm.available_items ?? 0) > 0
+                                                            ? (isDark ? 'rgba(16,185,129,0.3)' : '#A7F3D0')
+                                                            : (isDark ? 'rgba(239,68,68,0.3)' : '#FECACA'),
+                                                    }}
                                                 />
                                             </Box>
 
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', my: 1.5 }}>
-                                                <Box>
-                                                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
-                                                        Active Trips
+                                            {/* 3 Core Summary Stats: Available Items, Active Bookings, Today's Check-ins */}
+                                            <Grid container spacing={1} sx={{ mb: 1.5 }}>
+                                                {/* 1. Available Items */}
+                                                <Grid size={{ xs: 4 }}>
+                                                    <Box
+                                                        sx={{
+                                                            p: 1,
+                                                            borderRadius: 2,
+                                                            bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                                                            border: '1px solid',
+                                                            borderColor: 'divider',
+                                                            textAlign: 'center',
+                                                        }}
+                                                    >
+                                                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                                            Available
+                                                        </Typography>
+                                                        <Typography variant="h6" sx={{ fontWeight: 900, color: (sm.available_items ?? 0) > 0 ? (isDark ? '#34D399' : '#059669') : 'text.disabled', lineHeight: 1.2, my: 0.3 }}>
+                                                            {sm.available_items ?? 0}
+                                                        </Typography>
+                                                        <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', fontWeight: 600 }}>
+                                                            / {sm.items_count ?? 0} items
+                                                        </Typography>
+                                                    </Box>
+                                                </Grid>
+
+                                                {/* 2. Active Bookings */}
+                                                <Grid size={{ xs: 4 }}>
+                                                    <Box
+                                                        sx={{
+                                                            p: 1,
+                                                            borderRadius: 2,
+                                                            bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                                                            border: '1px solid',
+                                                            borderColor: 'divider',
+                                                            textAlign: 'center',
+                                                        }}
+                                                    >
+                                                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                                            Active
+                                                        </Typography>
+                                                        <Typography variant="h6" sx={{ fontWeight: 900, color: (sm.active_bookings ?? 0) > 0 ? (isDark ? '#60A5FA' : '#2563EB') : 'text.disabled', lineHeight: 1.2, my: 0.3 }}>
+                                                            {sm.active_bookings ?? 0}
+                                                        </Typography>
+                                                        <Typography sx={{ fontSize: '0.62rem', color: 'text.disabled', fontWeight: 600 }}>
+                                                            on trip/run
+                                                        </Typography>
+                                                    </Box>
+                                                </Grid>
+
+                                                {/* 3. Today's Service Check-ins */}
+                                                <Grid size={{ xs: 4 }}>
+                                                    <Box
+                                                        sx={{
+                                                            p: 1,
+                                                            borderRadius: 2,
+                                                            bgcolor: (sm.today_check_ins ?? 0) > 0
+                                                                ? (isDark ? 'rgba(245,158,11,0.1)' : '#FFFBEB')
+                                                                : (isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC'),
+                                                            border: '1px solid',
+                                                            borderColor: (sm.today_check_ins ?? 0) > 0
+                                                                ? (isDark ? 'rgba(245,158,11,0.3)' : '#FDE68A')
+                                                                : 'divider',
+                                                            textAlign: 'center',
+                                                        }}
+                                                    >
+                                                        <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: (sm.today_check_ins ?? 0) > 0 ? (isDark ? '#FBBF24' : '#D97706') : 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                                            Today's In
+                                                        </Typography>
+                                                        <Typography variant="h6" sx={{ fontWeight: 900, color: (sm.today_check_ins ?? 0) > 0 ? (isDark ? '#FBBF24' : '#D97706') : 'text.disabled', lineHeight: 1.2, my: 0.3 }}>
+                                                            {sm.today_check_ins ?? 0}
+                                                        </Typography>
+                                                        <Typography sx={{ fontSize: '0.62rem', color: (sm.today_check_ins ?? 0) > 0 ? (isDark ? '#FBBF24' : '#D97706') : 'text.disabled', fontWeight: 600 }}>
+                                                            check-ins
+                                                        </Typography>
+                                                    </Box>
+                                                </Grid>
+                                            </Grid>
+
+                                            {/* Capacity Utilization Progress Bar */}
+                                            <Box sx={{ mb: 1.5 }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                    <Typography sx={{ fontSize: '0.68rem', color: 'text.secondary', fontWeight: 600 }}>
+                                                        Capacity Ready
                                                     </Typography>
-                                                    <Typography sx={{ fontSize: '1.25rem', fontWeight: 900, color: 'text.primary' }}>
-                                                        {sm.active_bookings}
+                                                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: availPct > 30 ? (isDark ? '#34D399' : '#059669') : '#EF4444' }}>
+                                                        {availPct}%
                                                     </Typography>
                                                 </Box>
-                                                <Box sx={{ textAlign: 'right' }}>
-                                                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
-                                                        Revenue
-                                                    </Typography>
-                                                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#34D399' : '#059669' }}>
-                                                        ₹{Number(sm.month_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                                                    </Typography>
-                                                </Box>
+                                                <LinearProgress
+                                                    variant="determinate"
+                                                    value={availPct}
+                                                    sx={{
+                                                        height: 5,
+                                                        borderRadius: 2.5,
+                                                        bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+                                                        '& .MuiLinearProgress-bar': {
+                                                            borderRadius: 2.5,
+                                                            bgcolor: availPct > 30 ? meta.color : '#EF4444',
+                                                        },
+                                                    }}
+                                                />
                                             </Box>
 
-                                            <Divider sx={{ my: 1 }} />
+                                            {/* Detailed Fleet Status & Revenue Row */}
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, px: 0.5 }}>
+                                                <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', fontWeight: 600 }}>
+                                                    ● {sm.booked_items || 0} Booked · {sm.maintenance_items || 0} Maint
+                                                </Typography>
+                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 800, color: isDark ? '#34D399' : '#059669' }}>
+                                                    ₹{Number(sm.month_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                                </Typography>
+                                            </Box>
 
-                                            <Stack direction="row" spacing={0.8} sx={{ mt: 1 }}>
+                                            <Divider sx={{ my: 0.5 }} />
+
+                                            {/* Action Buttons */}
+                                            <Stack direction="row" spacing={0.8} sx={{ mt: 'auto', pt: 1.2 }}>
                                                 <Button
                                                     component={Link}
-                                                    href={`/admin/services/${sm.type}/bookings/create`}
+                                                    href={walkInUrl}
                                                     variant="contained"
                                                     size="small"
                                                     sx={{
@@ -614,7 +752,7 @@ export default function AdminDashboard({
                                                         fontWeight: 700,
                                                         borderRadius: 1.5,
                                                         fontSize: '0.72rem',
-                                                        py: 0.3,
+                                                        py: 0.4,
                                                         px: 1,
                                                         flexGrow: 1,
                                                         bgcolor: isDark ? '#2563EB' : '#0F172A',
@@ -626,7 +764,7 @@ export default function AdminDashboard({
                                                 </Button>
                                                 <Button
                                                     component={Link}
-                                                    href={`/admin/services/${sm.type}/bookings`}
+                                                    href={bookingsUrl}
                                                     variant="outlined"
                                                     size="small"
                                                     sx={{
@@ -634,14 +772,33 @@ export default function AdminDashboard({
                                                         fontWeight: 600,
                                                         borderRadius: 1.5,
                                                         fontSize: '0.72rem',
-                                                        py: 0.3,
+                                                        py: 0.4,
                                                         px: 1,
                                                         color: 'text.primary',
                                                         borderColor: 'divider',
                                                         '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC' },
                                                     }}
                                                 >
-                                                    List
+                                                    Bookings
+                                                </Button>
+                                                <Button
+                                                    component={Link}
+                                                    href={itemsUrl}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    sx={{
+                                                        textTransform: 'none',
+                                                        fontWeight: 600,
+                                                        borderRadius: 1.5,
+                                                        fontSize: '0.72rem',
+                                                        py: 0.4,
+                                                        px: 1,
+                                                        color: 'text.primary',
+                                                        borderColor: 'divider',
+                                                        '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC' },
+                                                    }}
+                                                >
+                                                    Items
                                                 </Button>
                                             </Stack>
                                         </CardContent>

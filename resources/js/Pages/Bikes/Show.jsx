@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
 import DirectionsIcon from '@mui/icons-material/Directions';
@@ -116,9 +117,47 @@ export default function BikeShow({ bike, stores = [] }) {
         setCheckoutModalOpen(true);
     };
 
+    const bikePrice = bike.daily_rate ?? bike.price_per_day ?? bike.weekday_rate ?? 350;
+    const bikeImageUrl = bike.primary_image_url || bike.image_url || (bike.images && bike.images[0]?.image_url) || '/images/services/two_wheelers.jpg';
+    const absoluteImageUrl = bikeImageUrl.startsWith('http') ? bikeImageUrl : `https://whizwheels.in${bikeImageUrl.startsWith('/') ? '' : '/'}${bikeImageUrl}`;
+    const isAvailable = bike.status === 'available';
+
+    const bikeStructuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: `${bike.brand} ${bike.model_name}`,
+        image: absoluteImageUrl,
+        description: `Rent verified ${bike.brand} ${bike.model_name} in Honnavar starting ₹${bikePrice}/day. Zero deposit option, 2 sanitized helmets & station pickup.`,
+        brand: {
+            '@type': 'Brand',
+            name: bike.brand,
+        },
+        offers: {
+            '@type': 'Offer',
+            price: String(bikePrice),
+            priceCurrency: 'INR',
+            availability: isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            url: `https://whizwheels.in/services/bikes/${bike.id}`,
+        },
+        ...(bike.rating || bike.average_rating || (bike.reviews && bike.reviews.length > 0) ? {
+            aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: String(bike.rating || bike.average_rating || (bike.reviews.reduce((acc, r) => acc + (r.rating || 5), 0) / bike.reviews.length)),
+                reviewCount: String(bike.review_count || bike.reviews_count || (bike.reviews ? bike.reviews.length : 1)),
+            },
+        } : {}),
+    };
+
     return (
         <AppLayout>
-            <Head title={`${bike.brand} ${bike.model_name} - Bike Rental in Honnavar`} />
+            <PageHead
+                title={`${bike.brand} ${bike.model_name} Rental in Honnavar | GK WhizWheel`}
+                description={`Rent the ${bike.brand} ${bike.model_name} in Honnavar starting ₹${bikePrice}/day. Zero deposit option, 2 sanitized helmets & station pickup.`}
+                canonicalUrl={`https://whizwheels.in/services/bikes/${bike.id}`}
+                ogImage={absoluteImageUrl}
+                ogType="product"
+                structuredData={bikeStructuredData}
+            />
 
             <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
                 {/* Back Navigation */}
@@ -154,7 +193,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             <Box
                                 component="img"
                                 src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
-                                alt={`${bike.brand} ${bike.model_name}`}
+                                alt={`${bike.brand || ''} ${bike.model_name || 'Bike'} rental in Honnavar - GK WhizWheel`}
                                 sx={{
                                     width: '100%',
                                     height: '100%',
@@ -221,7 +260,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             <Divider sx={{ my: 2 }} />
 
                             {/* Specifications Table */}
-                            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                            <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2 }}>
                                 Vehicle Specifications & Official Tariff
                             </Typography>
                             <Table size="small">
@@ -273,7 +312,7 @@ export default function BikeShow({ bike, stores = [] }) {
 
                     {/* Rental Policies Card */}
                     <Paper elevation={0} sx={{ p: 3, border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0', borderRadius: 3, bgcolor: isDark ? '#131D2F' : '#FFFFFF' }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <SecurityIcon color="primary" fontSize="small" />
                             Rental & Compliance Guarantees
                         </Typography>
@@ -317,7 +356,7 @@ export default function BikeShow({ bike, stores = [] }) {
                         <Box sx={{ p: 3, bgcolor: '#0F172A', color: '#FFFFFF' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                 <ReceiptLongIcon sx={{ color: '#F59E0B' }} />
-                                <Typography variant="h5" sx={{ fontWeight: 800, color: '#FFFFFF' }}>
+                                <Typography variant="h5" component="h2" sx={{ fontWeight: 800, color: '#FFFFFF' }}>
                                     Reserve & Price Quote
                                 </Typography>
                             </Box>
@@ -513,7 +552,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                                     Combined checkout charge
                                                 </Typography>
                                             </Box>
-                                            <Typography variant="h5" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                            <Typography variant="h5" component="span" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                                 ₹{Number(quote.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </Typography>
                                         </Box>

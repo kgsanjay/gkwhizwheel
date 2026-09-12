@@ -458,7 +458,7 @@ class AdminBookingWebController extends Controller
         $policyCalculation = $refundService->calculateRefundAmount($booking);
 
         $totalPaid = (float) $booking->payments->where('status', PaymentStatus::SUCCESS)->sum('amount');
-        $totalRefunded = (float) $booking->refunds->where('status', RefundStatus::COMPLETED)->sum('amount');
+        $totalRefunded = (float) $booking->refunds->whereIn('status', [RefundStatus::COMPLETED, RefundStatus::PENDING])->sum('amount');
         $maxRefundable = max(0.0, round($totalPaid - $totalRefunded, 2));
 
         return Inertia::render('Admin/Bookings/Refund', [
@@ -521,7 +521,7 @@ class AdminBookingWebController extends Controller
         $refundAmount = (float) $validated['amount'];
 
         $totalPaid = (float) $booking->payments->where('status', PaymentStatus::SUCCESS)->sum('amount');
-        $totalRefunded = (float) $booking->refunds->where('status', RefundStatus::COMPLETED)->sum('amount');
+        $totalRefunded = (float) $booking->refunds->whereIn('status', [RefundStatus::COMPLETED, RefundStatus::PENDING])->sum('amount');
         $maxRefundable = max(0.0, round($totalPaid - $totalRefunded, 2));
 
         if ($refundAmount > $maxRefundable) {
@@ -558,12 +558,19 @@ class AdminBookingWebController extends Controller
                 'refund_id' => $refund->id,
                 'amount' => $refundAmount,
                 'reason' => $validated['reason'],
+                'refund_status' => $refund->status?->value ?? (string) $refund->status,
                 'status' => $booking->fresh()->status?->value ?? (string) $booking->status,
             ],
         ]);
 
+        $statusMsg = match ($refund->status) {
+            RefundStatus::COMPLETED => "Refund of ₹{$refund->amount} processed successfully for booking '{$booking->booking_reference}'.",
+            RefundStatus::PENDING => "Refund of ₹{$refund->amount} submitted to payment gateway (Status: Pending Confirmation) for booking '{$booking->booking_reference}'.",
+            RefundStatus::FAILED => "Payment gateway rejected refund of ₹{$refund->amount} for booking '{$booking->booking_reference}'. Please review error logs.",
+        };
+
         return redirect()->route('admin.bookings.index')
-            ->with('success', "Refund of ₹{$refund->amount} processed successfully for booking '{$booking->booking_reference}'.");
+            ->with($refund->status === RefundStatus::FAILED ? 'error' : 'success', $statusMsg);
     }
 
     /**
@@ -571,10 +578,16 @@ class AdminBookingWebController extends Controller
      */
     public function downloadVoucher(int|string $id, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\Http\Response
     {
+        $request->validate([
+            'stream' => ['nullable', 'boolean'],
+        ]);
+
         $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
             ->where('id', $id)
             ->orWhere('booking_reference', $id)
             ->firstOrFail();
+
+        Gate::authorize('view', $booking);
 
         return $voucherService->generateBikeVoucherPdf($booking, $request->boolean('stream'));
     }
@@ -596,7 +609,7 @@ class AdminBookingWebController extends Controller
         $validated = $request->validate([
             'odometer_reading' => ['required', 'integer', 'min:0'],
             'condition_photos' => ['nullable', 'array', 'max:6'],
-            'condition_photos.*' => ['image', 'max:10240'],
+            'condition_photos.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:10240'],
             'signature' => ['nullable', 'string'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'helmets_issued' => ['nullable', 'integer', 'min:1', 'max:2'],
@@ -688,7 +701,7 @@ class AdminBookingWebController extends Controller
             'deposit_refund_amount' => ['nullable', 'numeric', 'min:0'],
             'return_store_id' => ['nullable', 'exists:stores,id'],
             'condition_photos' => ['nullable', 'array', 'max:6'],
-            'condition_photos.*' => ['image', 'max:10240'],
+            'condition_photos.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:10240'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'fuel_level' => ['nullable', 'string', 'max:20'],
         ]);

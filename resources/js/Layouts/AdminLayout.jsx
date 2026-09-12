@@ -57,6 +57,7 @@ import HomeWorkIcon from '@mui/icons-material/HomeWork';
 import ExploreIcon from '@mui/icons-material/Explore';
 import LuggageIcon from '@mui/icons-material/Luggage';
 import SearchIcon from '@mui/icons-material/Search';
+import CategoryIcon from '@mui/icons-material/Category';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CloseIcon from '@mui/icons-material/Close';
@@ -309,6 +310,12 @@ const MENU_SECTIONS = [
                 path: '/admin/staff',
                 icon: <BadgeIcon sx={{ fontSize: 20 }} />,
                 roles: ['super_admin'],
+            },
+            {
+                label: 'Service Categories',
+                path: '/admin/services/categories',
+                icon: <CategoryIcon sx={{ fontSize: 20 }} />,
+                roles: ['super_admin', 'store_manager'],
             },
             {
                 label: 'Reports & Analytics',

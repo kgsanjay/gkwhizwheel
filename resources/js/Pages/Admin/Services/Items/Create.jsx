@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '../../../../Layouts/AdminLayout';
+import MultiImageUploader from '../../../../Components/MultiImageUploader';
 import {
     Box,
     Typography,
@@ -14,10 +15,17 @@ import {
     Divider,
     InputAdornment,
     Alert,
+    Chip,
+    Paper,
+    FormControlLabel,
+    Checkbox,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import ArticleIcon from '@mui/icons-material/Article';
 
 export default function ServiceItemCreate({ serviceConfig = {} }) {
     const [featureInput, setFeatureInput] = useState('');
@@ -30,11 +38,54 @@ export default function ServiceItemCreate({ serviceConfig = {} }) {
         price_unit: Object.keys(serviceConfig.units || {})[0] || 'per_day',
         capacity: '',
         image_url: '',
+        images: [],
+        primary_image_index: null,
+        documents: [],
         badge: '',
         features: [],
         status: 'available',
         sort_order: 0,
     });
+
+    const docTypes = serviceConfig.document_types || {};
+    const hasDocRequirements = Object.keys(docTypes).length > 0;
+
+    const handleDocFileChange = (docType, file) => {
+        const existing = [...data.documents];
+        const idx = existing.findIndex((d) => d.document_type === docType);
+        if (idx >= 0) {
+            existing[idx] = { ...existing[idx], file };
+        } else {
+            existing.push({ document_type: docType, file, expiry_date: '', verified: true });
+        }
+        setData('documents', existing);
+    };
+
+    const handleDocExpiryChange = (docType, expiry_date) => {
+        const existing = [...data.documents];
+        const idx = existing.findIndex((d) => d.document_type === docType);
+        if (idx >= 0) {
+            existing[idx] = { ...existing[idx], expiry_date };
+        } else {
+            existing.push({ document_type: docType, file: null, expiry_date, verified: true });
+        }
+        setData('documents', existing);
+    };
+
+    const handleDocVerifiedChange = (docType, verified) => {
+        const existing = [...data.documents];
+        const idx = existing.findIndex((d) => d.document_type === docType);
+        if (idx >= 0) {
+            existing[idx] = { ...existing[idx], verified };
+        } else {
+            existing.push({ document_type: docType, file: null, expiry_date: '', verified });
+        }
+        setData('documents', existing);
+    };
+
+    const handleDocRemove = (docType) => {
+        setData('documents', data.documents.filter((d) => d.document_type !== docType));
+    };
 
     const handleAddFeature = (e) => {
         if (e.key === 'Enter' || e.type === 'click') {
@@ -184,27 +235,15 @@ export default function ServiceItemCreate({ serviceConfig = {} }) {
                                     />
                                 </Grid>
 
-                                {/* Image URL */}
+                                {/* Multi-Image Showcase & Gallery */}
                                 <Grid item xs={12}>
-                                    <TextField
-                                        label="Image URL"
-                                        fullWidth
-                                        value={data.image_url}
-                                        onChange={(e) => setData('image_url', e.target.value)}
-                                        error={Boolean(errors.image_url)}
-                                        helperText={errors.image_url || 'High quality photo URL (Unsplash or direct asset)'}
+                                    <MultiImageUploader
+                                        data={data}
+                                        setData={setData}
+                                        errors={errors}
+                                        title={`${serviceConfig.item_label || 'Service'} Photos & Gallery`}
+                                        helperText="Upload photos. Drag & drop to reorder, and click 'Make Primary' to choose the cover image."
                                     />
-                                    {data.image_url && (
-                                        <Box sx={{ mt: 1.5 }}>
-                                            <Box
-                                                component="img"
-                                                src={data.image_url}
-                                                alt="Preview"
-                                                sx={{ height: 120, borderRadius: 2, objectFit: 'cover' }}
-                                                onError={(e) => { e.target.style.display = 'none'; }}
-                                            />
-                                        </Box>
-                                    )}
                                 </Grid>
 
                                 {/* Description */}
@@ -303,6 +342,99 @@ export default function ServiceItemCreate({ serviceConfig = {} }) {
                                         ))}
                                     </Stack>
                                 </Grid>
+
+                                {/* Certifications & Regulatory Documents (Only for services that need it) */}
+                                {hasDocRequirements && (
+                                    <Grid item xs={12}>
+                                        <Divider sx={{ my: 1.5 }} />
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <VerifiedUserIcon color="primary" /> Certifications & Compliance Documents
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                Upload official permits, licenses, or insurance documentation for this {serviceConfig.item_label.toLowerCase()}.
+                                            </Typography>
+                                        </Box>
+
+                                        <Stack spacing={2}>
+                                            {Object.entries(docTypes).map(([typeKey, cfg]) => {
+                                                const docEntry = data.documents.find((d) => d.document_type === typeKey);
+                                                return (
+                                                    <Paper
+                                                        key={typeKey}
+                                                        variant="outlined"
+                                                        sx={{ p: 2, borderRadius: 2, bgcolor: docEntry?.file ? 'action.hover' : 'background.paper' }}
+                                                    >
+                                                        <Grid container spacing={2} alignItems="center">
+                                                            <Grid item xs={12} sm={5}>
+                                                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                                    {cfg.label}
+                                                                </Typography>
+                                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                                    {cfg.description}
+                                                                </Typography>
+                                                                {docEntry?.file && (
+                                                                    <Chip
+                                                                        icon={<ArticleIcon />}
+                                                                        label={docEntry.file.name}
+                                                                        size="small"
+                                                                        color="primary"
+                                                                        onDelete={() => handleDocRemove(typeKey)}
+                                                                        sx={{ mt: 1, maxWidth: '100%' }}
+                                                                    />
+                                                                )}
+                                                            </Grid>
+                                                            <Grid item xs={12} sm={3}>
+                                                                <Button
+                                                                    variant={docEntry?.file ? 'outlined' : 'contained'}
+                                                                    component="label"
+                                                                    size="small"
+                                                                    startIcon={<UploadFileIcon />}
+                                                                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                                                                >
+                                                                    {docEntry?.file ? 'Replace File' : 'Choose Document'}
+                                                                    <input
+                                                                        type="file"
+                                                                        hidden
+                                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                                        onChange={(e) => {
+                                                                            if (e.target.files?.[0]) {
+                                                                                handleDocFileChange(typeKey, e.target.files[0]);
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </Button>
+                                                            </Grid>
+                                                            <Grid item xs={12} sm={4}>
+                                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                                    <TextField
+                                                                        type="date"
+                                                                        size="small"
+                                                                        label="Expiry Date"
+                                                                        InputLabelProps={{ shrink: true }}
+                                                                        value={docEntry?.expiry_date || ''}
+                                                                        onChange={(e) => handleDocExpiryChange(typeKey, e.target.value)}
+                                                                        sx={{ minWidth: 140 }}
+                                                                    />
+                                                                    <FormControlLabel
+                                                                        control={
+                                                                            <Checkbox
+                                                                                size="small"
+                                                                                checked={docEntry?.verified ?? true}
+                                                                                onChange={(e) => handleDocVerifiedChange(typeKey, e.target.checked)}
+                                                                            />
+                                                                        }
+                                                                        label={<Typography variant="caption" sx={{ fontWeight: 700 }}>Verified</Typography>}
+                                                                    />
+                                                                </Stack>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Paper>
+                                                );
+                                            })}
+                                        </Stack>
+                                    </Grid>
+                                )}
 
                                 {/* Status & Sorting */}
                                 <Grid item xs={12} sm={6}>

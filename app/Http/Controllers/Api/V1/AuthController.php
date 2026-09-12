@@ -39,7 +39,7 @@ class AuthController extends Controller
             'whatsapp_opt_in' => $request->boolean('whatsapp_opt_in'),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $this->issueToken($user);
 
         return response()->json([
             'success' => true,
@@ -83,7 +83,7 @@ class AuthController extends Controller
         }
 
         $this->loadUserStores($user);
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $this->issueToken($user);
 
         return response()->json([
             'success' => true,
@@ -186,7 +186,7 @@ class AuthController extends Controller
         }
 
         $this->loadUserStores($user);
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $this->issueToken($user);
 
         return response()->json([
             'success' => true,
@@ -232,6 +232,39 @@ class AuthController extends Controller
     }
 
     /**
+     * Update authenticated user profile fields.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if ($user === null) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'phone' => ['sometimes', 'string', 'max:20'],
+            'whatsapp_opt_in' => ['sometimes', 'boolean'],
+        ]);
+
+        $user->update($validated);
+
+        $this->loadUserStores($user);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'user' => new UserResource($user),
+            ],
+            'message' => 'Profile updated successfully.',
+        ]);
+    }
+
+    /**
      * Eager load active assigned stores for staff or all active stores for super admin.
      */
     private function loadUserStores(User $user): User
@@ -243,5 +276,19 @@ class AuthController extends Controller
         }
 
         return $user;
+    }
+
+    /**
+     * Issue a personal access token with role-scoped abilities and defined expiration.
+     */
+    protected function issueToken(User $user, string $name = 'auth_token'): string
+    {
+        $expirationMinutes = (int) config('sanctum.expiration', 43200);
+
+        return $user->createToken(
+            name: $name,
+            abilities: $user->tokenAbilities(),
+            expiresAt: now()->addMinutes($expirationMinutes)
+        )->plainTextToken;
     }
 }

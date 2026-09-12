@@ -4,39 +4,28 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ActivityLogResource;
 use App\Models\ActivityLog;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ActivityLogController extends Controller
 {
     /**
-     * Authorize that the current authenticated user has admin privileges.
-     */
-    protected function authorizeAdmin(Request $request): void
-    {
-        $user = $request->user();
-        $isAuthorized = $user !== null && (
-            $user->role === UserRole::SUPER_ADMIN
-            || $user->hasRole('super_admin')
-            || $user->hasRole('admin')
-        );
-
-        if (! $isAuthorized) {
-            throw new AuthorizationException('This action is unauthorized.');
-        }
-    }
-
-    /**
      * Display a filterable, paginated audit trail of activity logs.
      */
     public function index(Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
+        $request->validate([
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'action' => ['nullable', 'string', 'max:100'],
+            'subject_type' => ['nullable', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
 
         $query = ActivityLog::query()->with(['user', 'store']);
 

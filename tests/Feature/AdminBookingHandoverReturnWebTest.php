@@ -269,11 +269,11 @@ test('staff can process return with multi-store relocation and automatic deposit
         'odometer_reading' => 1460,
     ]);
 
-    // Security deposit refund settled (2000 deposit - 300 damage = 1700)
+    // Security deposit refund settled as pending gateway processing (2000 deposit - 300 damage = 1700)
     $this->assertDatabaseHas('refunds', [
         'booking_id' => $booking->id,
         'amount' => 1700.00,
-        'status' => RefundStatus::COMPLETED->value,
+        'status' => RefundStatus::PENDING->value,
     ]);
 
     $this->assertDatabaseHas('activity_logs', [

@@ -12,7 +12,6 @@ use App\Http\Requests\Admin\AssignStaffStoresRequest;
 use App\Http\Requests\Admin\StoreStaffRequest;
 use App\Models\Store;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -23,29 +22,10 @@ use Inertia\Response;
 class AdminStaffWebController extends Controller
 {
     /**
-     * Authorize that the current authenticated user has admin privileges.
-     */
-    protected function authorizeAdmin(Request $request): void
-    {
-        $user = $request->user();
-        $isAuthorized = $user !== null && (
-            $user->role === UserRole::SUPER_ADMIN
-            || $user->hasRole('super_admin')
-            || $user->hasRole('admin')
-        );
-
-        if (! $isAuthorized) {
-            throw new AuthorizationException('This action is unauthorized.');
-        }
-    }
-
-    /**
      * Display a listing of staff and store managers.
      */
     public function index(Request $request): Response
     {
-        $this->authorizeAdmin($request);
-
         $query = User::query()
             ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
             ->with('stores');
@@ -159,8 +139,6 @@ class AdminStaffWebController extends Controller
      */
     public function update(int $id, Request $request): RedirectResponse
     {
-        $this->authorizeAdmin($request);
-
         $staff = User::whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])->findOrFail($id);
 
         $validated = $request->validate([
@@ -230,8 +208,6 @@ class AdminStaffWebController extends Controller
      */
     public function destroy(int $id, Request $request): RedirectResponse
     {
-        $this->authorizeAdmin($request);
-
         $staff = User::whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])->findOrFail($id);
         $name = $staff->name;
         $staff->delete();

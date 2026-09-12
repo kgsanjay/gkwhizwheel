@@ -18,6 +18,18 @@ use InvalidArgumentException;
 class PricingService
 {
     /**
+     * Canonical server-side addon pricing catalog.
+     *
+     * @var array<string, float>
+     */
+    public const ADDON_RATES = [
+        'helmet' => 100.00,
+        'extra_rider' => 150.00,
+        'insurance' => 250.00,
+        'gps' => 100.00,
+    ];
+
+    /**
      * Calculate an itemized price breakdown for a bike booking.
      *
      * @param  int|Bike  $bike
@@ -210,18 +222,20 @@ class PricingService
             }
         }
 
-        // 5. Add-ons Calculation
+        // 5. Add-ons Calculation (Enforce server-side unit prices for known addons to prevent client manipulation)
         $addonsBreakdown = [];
         $totalAddonsAmount = 0.0;
 
         foreach ($addons as $addon) {
-            $qty = (int) ($addon['quantity'] ?? 1);
-            $unitPrice = (float) ($addon['unit_price'] ?? 0.0);
+            $type = (string) ($addon['addon_type'] ?? 'addon');
+            $qty = max(1, (int) ($addon['quantity'] ?? 1));
+            // ponytail: Always resolve unit price server-side from standard catalog if known
+            $unitPrice = self::ADDON_RATES[$type] ?? (float) ($addon['unit_price'] ?? 0.0);
             $addonTotal = round($qty * $unitPrice, 2);
             $totalAddonsAmount += $addonTotal;
 
             $addonsBreakdown[] = [
-                'addon_type' => (string) ($addon['addon_type'] ?? 'addon'),
+                'addon_type' => $type,
                 'quantity' => $qty,
                 'unit_price' => round($unitPrice, 2),
                 'total' => $addonTotal,

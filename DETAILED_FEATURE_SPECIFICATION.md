@@ -64,7 +64,7 @@ There is **no split inventory**. Whether a customer books a bike on the website 
 ### 1.2 Concurrency & Race-Condition Elimination
 To eliminate double-bookings across concurrent website users and counter staff:
 - All state transitions acquire a database row-level lock (`lockForUpdate()`) inside an ACID database transaction.
-- When a customer begins checkout, the system places a temporary 15-minute `HELD` lock on the bike.
+- When a customer begins checkout, the system places a temporary 10-minute `HELD` lock on the bike.
 - If payment fails or is abandoned, an automated scheduler releases the hold, restoring the bike to `AVAILABLE`.
 - Date range overlap checks use strict SQL boundary logic:
   $$\text{Overlap} \iff (\text{Existing Start} < \text{Requested End}) \land (\text{Existing End} > \text{Requested Start})$$
@@ -74,7 +74,7 @@ To eliminate double-bookings across concurrent website users and counter staff:
                  ┌────────────────────────────────────────────────┐
                  │                                                │
                  ▼                                                │
-[ AVAILABLE ] ──────► [ HELD ] (15-min hold) ──────► [ CONFIRMED ] (Paid / Approved)
+[ AVAILABLE ] ──────► [ HELD ] (10-min hold) ──────► [ CONFIRMED ] (Paid / Approved)
       ▲                     │                              │
       │                     ▼ (Timeout)                    ▼
       │               [ EXPIRED ]                    [ HANDED_OVER ] (On Rent / In Use)
@@ -131,7 +131,7 @@ The system implements four distinct user personas, enforced via Laravel Policies
 
 ## 3.2 Bike Fleet Catalog & Live Filter System
 - **Target URL:** `/bikes`
-- **Controller:** `app/Http/Controllers/Web/Customer/BikeListingWebController.php`
+- **Controller:** `app/Http/Controllers/Web/BikeWebController.php`
 - **View:** `resources/js/Pages/Bikes/Index.jsx`
 - **Detailed Explanation:**
   - **Dynamic Multi-Criteria Filtering:**
@@ -158,7 +158,7 @@ The system implements four distinct user personas, enforced via Laravel Policies
             AND end_date > :start_date
       );
     ```
-  - **Concurrency Hold:** When checkout begins, `BookingService::hold()` inserts a record with status `HELD` and an `expires_at` timestamp set to 15 minutes into the future. A database row lock prevents any other customer or counter staff from selecting that bike during the hold window.
+  - **Concurrency Hold:** When checkout begins, `AvailabilityService::holdBooking()` inserts a record with status `HELD` and a `held_until` timestamp set to 10 minutes into the future. A database row lock prevents any other customer or counter staff from selecting that bike during the hold window.
 
 ## 3.4 Transparent Pricing Calculator & Dynamic Rate Breakdown
 - **Service:** `app/Services/PricingService.php`
@@ -168,7 +168,7 @@ The system implements four distinct user personas, enforced via Laravel Policies
   - **Seasonal Surge:** Matches booking dates against active seasonal peak rules (e.g., Diwali, Christmas/New Year, Coastal Temple festivals).
   - **Duration Discounts:** Automatically rewards multi-day bookings (e.g., 3–6 days = 10% off; 7+ days = 20% off).
   - **Security Deposit:** Transparently listed as a refundable deposit (held in escrow, not counted as revenue).
-  - **GST & Taxes:** Calculates statutory GST on rental services while keeping the security deposit tax-exempt.
+  - **GST & Taxes (Planned / Not Yet Implemented):** Statutory GST breakdown on rental services (with security deposits remaining tax-exempt) is planned for a future release; current rental tariffs are all-inclusive without an explicit tax line item in `PricingService::calculateQuote()` output.
 
 ## 3.5 Rental Add-Ons Allocation System
 - **Models:** `Addon`, `BookingAddon`
@@ -193,7 +193,7 @@ The system implements four distinct user personas, enforced via Laravel Policies
 
 ## 3.7 Dual Payment Gateway Integration (Razorpay & PhonePe)
 - **Services:** `app/Services/RazorpayService.php`, `app/Services/PhonePeService.php`
-- **Controllers:** `RazorpayPaymentController.php`, `PhonePePaymentController.php`
+- **Controllers:** `app/Http/Controllers/Web/BookingWebController.php` (Web Checkout & Simulation), `app/Http/Controllers/Api/V1/Customer/BookingController.php` (API Checkout & Verification), `app/Http/Controllers/Api/V1/Webhooks/RazorpayWebhookController.php`, `app/Http/Controllers/Api/V1/Webhooks/PhonePeWebhookController.php`
 - **Detailed Explanation:**
   - **Razorpay Checkout:** Generates cryptographic Razorpay Orders; renders unified modal supporting UPI Intent, Cards, Net Banking, and Wallets. Webhook listener verifies `X-Razorpay-Signature` using HMAC-SHA256.
   - **PhonePe Direct SDK:** Initiates server-to-server UPI intent payload for mobile devices; decodes PhonePe webhook responses with base64 SHA256 checksum validation.
@@ -236,7 +236,7 @@ The system implements four distinct user personas, enforced via Laravel Policies
 
 ## 3.11 Customer Authentication & Social Sign-In
 - **Routes:** `/login`, `/register`, `/auth/google`
-- **Controllers:** `AuthenticatedSessionController.php`, `RegisteredUserController.php`
+- **Controllers:** `app/Http/Controllers/Api/V1/AuthController.php` (API OTP & Password Auth), `app/Http/Controllers/Web/Auth/GoogleAuthController.php` (Customer Google OAuth), `app/Http/Controllers/Web/Admin/AdminAuthController.php` (Admin Session Auth)
 - **Detailed Explanation:**
   - Support for Email & Password authentication with strong password rules.
   - Mobile OTP login for fast field registration.
@@ -379,7 +379,7 @@ The system implements four distinct user personas, enforced via Laravel Policies
 - **Detailed Explanation:**
   - Allows managers to adjust booking dates, change assigned bikes, or modify pickup/return store hubs upon customer request.
   - **Collision Prevention Guard:** Validates whether the newly selected bike has any overlapping reservations during the revised date window; strictly rejects conflicts with clear error messages.
-  - Recomputes base amounts, taxes, and security deposits when rental duration changes.
+  - Recomputes base amounts and security deposits when rental duration changes (statutory tax itemization planned / not yet implemented).
 
 ## 5.3 Dispatch & Fleet Turnaround Board
 - **Route:** `/admin/dispatch`
@@ -525,7 +525,7 @@ The system implements four distinct user personas, enforced via Laravel Policies
 ## 7.3 Automated Cron Commands & Background Tasks
 - **Scheduled in:** `routes/console.php` / `app/Console/Kernel.php`
 - **Detailed Explanation:**
-  1. `bookings:release-expired-holds`: Runs every minute to find bookings with status `HELD` whose 15-minute hold window has elapsed, restoring the bikes to `AVAILABLE`.
+  1. `bookings:release-expired-holds`: Runs every minute to find bookings with status `HELD` whose 10-minute hold window has elapsed, restoring the bikes to `AVAILABLE`.
   2. `bikes:check-document-expiry`: Runs daily at midnight to scan vehicle insurance, PUC, and FC expiry dates; flags expiring vehicles and generates admin console alerts.
 
 ## 7.4 Staff Mobile REST API
@@ -543,8 +543,8 @@ The system implements four distinct user personas, enforced via Laravel Policies
 ## 7.5 Automated Test Suite & Quality Verification
 - **Framework:** Pest PHP & PHPUnit
 - **Detailed Explanation:**
-  - 57 dedicated feature and unit test suites covering the entire platform.
-  - Over 2,770 automated test assertions validating:
+  - 61 dedicated feature and unit test suites (385 test cases) covering the entire platform.
+  - 2,829 automated test assertions validating:
     - Full customer booking journey (Search ➔ Hold ➔ Pay ➔ Confirm).
     - Concurrency lock integrity and collision prevention.
     - Ground QR pass lookup, boarding, and offline queue synchronization.

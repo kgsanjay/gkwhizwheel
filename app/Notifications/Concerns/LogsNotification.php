@@ -21,27 +21,35 @@ trait LogsNotification
      */
     public function via(object $notifiable): array
     {
+        $channels = ['mail'];
+
         $phone = (method_exists($notifiable, 'routeNotificationFor') ? $notifiable->routeNotificationFor('whatsapp', $this) : null)
             ?? ($notifiable->phone ?? null);
 
-        if (empty($phone)) {
-            return ['mail'];
-        }
+        if (! empty($phone)) {
+            $userId = $notifiable->id ?? null;
+            $hasFailed = false;
+            if ($userId) {
+                $hasFailed = NotificationLog::where('user_id', $userId)
+                    ->where('channel', NotificationChannel::WHATSAPP)
+                    ->where('template', $this->template())
+                    ->where('status', NotificationStatus::FAILED)
+                    ->exists();
+            }
 
-        $userId = $notifiable->id ?? null;
-        if ($userId) {
-            $hasFailed = NotificationLog::where('user_id', $userId)
-                ->where('channel', NotificationChannel::WHATSAPP)
-                ->where('template', $this->template())
-                ->where('status', NotificationStatus::FAILED)
-                ->exists();
-
-            if ($hasFailed) {
-                return ['mail'];
+            if (! $hasFailed) {
+                $channels[] = \App\Channels\WhatsAppChannel::class;
             }
         }
 
-        return [\App\Channels\WhatsAppChannel::class, 'mail'];
+        $pushToken = (method_exists($notifiable, 'routeNotificationFor') ? $notifiable->routeNotificationFor('expo_push', $this) : null)
+            ?? ($notifiable->expo_push_token ?? null);
+
+        if (! empty($pushToken) && method_exists($this, 'toExpoPush')) {
+            $channels[] = \App\Channels\ExpoPushChannel::class;
+        }
+
+        return $channels;
     }
 
     public function bookingId(): ?int

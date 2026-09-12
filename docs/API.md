@@ -218,3 +218,14 @@ Registered at both `/api/v1/webhooks/*` and root `/webhooks/*` for payment gatew
 | `PUT` | `/admin/services/{type}/items/{id}` | `[BUILT - ADDED]` | Update service catalog item attributes. |
 | `DELETE` | `/admin/services/{type}/items/{id}` | `[BUILT - ADDED]` | Soft-delete service catalog item. |
 
+---
+
+## 11. Mobile Apps API Integration & Rate Limiting
+
+Dedicated rate limiting tier `throttle:mobile-api` is enforced for:
+* **Block F:** Customer Mobile App (120 requests/minute)
+* **Block G:** Store Operations Mobile App (180 requests/minute)
+* **Guest / App Launch Checks:** 60 requests/minute (`/api/v1/staff/app-version`, `/api/v1/customer/app-version`)
+
+Detailed versioning, deprecation handling, client headers, and offline retry policies are documented in [`MOBILE_INTEGRATION_NOTES.md`](MOBILE_INTEGRATION_NOTES.md).
+

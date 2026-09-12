@@ -40,8 +40,27 @@ class HandoverBookingRequest extends FormRequest
         return [
             'odometer_reading' => ['required', 'integer', 'min:0'],
             'condition_photos' => ['required', 'array', 'min:1'],
-            'condition_photos.*' => ['required', 'file', 'image', 'max:10240'],
-            'signature' => ['required'],
+            'condition_photos.*' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:10240'],
+            'signature' => [
+                'required',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        if ($value->getSize() > 10240 * 1024) {
+                            $fail('The signature file must not exceed 10MB.');
+                        }
+                        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+                        if (! in_array($value->getMimeType(), $allowedMimes, true)) {
+                            $fail('The signature must be a valid image (JPEG, PNG, WEBP).');
+                        }
+                    } elseif (is_string($value)) {
+                        if (strlen($value) > 500000) {
+                            $fail('The signature string must not exceed 500KB.');
+                        }
+                    } else {
+                        $fail('The signature must be a valid file or string.');
+                    }
+                },
+            ],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

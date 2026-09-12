@@ -35,6 +35,7 @@ beforeEach(function (): void {
     config()->set('services.whatsapp.token', 'test_meta_wa_token');
     config()->set('services.whatsapp.phone_number_id', '109876543210');
     config()->set('services.whatsapp.webhook_verify_token', 'whizwheel_verify_secret_123');
+    config()->set('services.whatsapp.app_secret', 'whizwheel_wa_app_secret_test');
 
     $this->store = Store::create([
         'name' => 'Koramangala Hub',
@@ -265,7 +266,21 @@ test('POST /webhooks/whatsapp updates notification_log delivery status to delive
         ],
     ];
 
-    $response = $this->postJson('/webhooks/whatsapp', $payload);
+    $rawPayload = (string) json_encode($payload, JSON_THROW_ON_ERROR);
+    $signature = 'sha256='.hash_hmac('sha256', $rawPayload, 'whizwheel_wa_app_secret_test');
+
+    $response = $this->call(
+        'POST',
+        '/webhooks/whatsapp',
+        [],
+        [],
+        [],
+        [
+            'HTTP_X-Hub-Signature-256' => $signature,
+            'CONTENT_TYPE' => 'application/json',
+        ],
+        $rawPayload
+    );
 
     $response->assertStatus(200)
         ->assertJson([
@@ -319,7 +334,21 @@ test('POST /webhooks/whatsapp updates notification_log status to failed with err
         ],
     ];
 
-    $response = $this->postJson('/webhooks/whatsapp', $payload);
+    $rawPayload = (string) json_encode($payload, JSON_THROW_ON_ERROR);
+    $signature = 'sha256='.hash_hmac('sha256', $rawPayload, 'whizwheel_wa_app_secret_test');
+
+    $response = $this->call(
+        'POST',
+        '/webhooks/whatsapp',
+        [],
+        [],
+        [],
+        [
+            'HTTP_X-Hub-Signature-256' => $signature,
+            'CONTENT_TYPE' => 'application/json',
+        ],
+        $rawPayload
+    );
 
     $response->assertStatus(200);
 
@@ -327,3 +356,37 @@ test('POST /webhooks/whatsapp updates notification_log status to failed with err
     expect($log->status)->toBe(NotificationStatus::FAILED);
     expect($log->error_message)->toContain('131026');
 });
+
+test('POST /webhooks/whatsapp without signature is rejected with 400', function (): void {
+    $response = $this->postJson('/webhooks/whatsapp', [
+        'object' => 'whatsapp_business_account',
+    ]);
+
+    $response->assertStatus(400)
+        ->assertJson([
+            'success' => false,
+            'message' => 'Invalid webhook signature.',
+        ]);
+});
+
+test('POST /webhooks/whatsapp with invalid signature is rejected with 400', function (): void {
+    $response = $this->call(
+        'POST',
+        '/webhooks/whatsapp',
+        [],
+        [],
+        [],
+        [
+            'HTTP_X-Hub-Signature-256' => 'sha256=invalid_hash_signature_value',
+            'CONTENT_TYPE' => 'application/json',
+        ],
+        '{"object":"whatsapp_business_account"}'
+    );
+
+    $response->assertStatus(400)
+        ->assertJson([
+            'success' => false,
+            'message' => 'Invalid webhook signature.',
+        ]);
+});
+

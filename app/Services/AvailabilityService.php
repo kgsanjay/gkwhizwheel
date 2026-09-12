@@ -7,8 +7,11 @@ namespace App\Services;
 use App\Enums\BookingChannel;
 use App\Enums\BookingStatus;
 use App\Exceptions\BikeNotAvailableException;
+use App\Exceptions\ServiceItemNotAvailableException;
 use App\Models\Bike;
 use App\Models\Booking;
+use App\Models\ServiceBooking;
+use App\Models\ServiceItem;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -249,4 +252,169 @@ class AvailabilityService
 
         return $reference;
     }
+
+    /**
+     * Create a concurrency-safe ServiceBooking with row-level locking on the ServiceItem.
+     *
+     * @param array<string, mixed> $params
+     * @throws ServiceItemNotAvailableException
+     */
+    public function createServiceBooking(array $params): ServiceBooking
+    {
+        $serviceItemId = $params['service_item_id'] ?? null;
+        $serviceType = (string) $params['service_type'];
+        $startDateTime = $params['start_datetime'];
+        $endDateTime = $params['end_datetime'] ?? null;
+        $quantity = (int) ($params['quantity'] ?? 1);
+
+        return DB::transaction(function () use (
+            $serviceItemId,
+            $serviceType,
+            $startDateTime,
+            $endDateTime,
+            $quantity,
+            $params
+        ): ServiceBooking {
+            $item = null;
+            if (! empty($serviceItemId)) {
+                // Acquire row-level lock on the specific ServiceItem
+                $item = ServiceItem::where('id', (int) $serviceItemId)->lockForUpdate()->firstOrFail();
+            } else {
+                // If no specific item ID, lock the first available item matching this service type
+                $item = ServiceItem::where('service_type', $serviceType)
+                    ->where('status', 'available')
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            if ($item !== null) {
+                // 1. Check status
+                if (! $item->isAvailable()) {
+                    throw new ServiceItemNotAvailableException(
+                        "Service item '{$item->name}' is currently unavailable ({$item->status})."
+                    );
+                }
+
+                // 2. Check live availability and capacity for requested datetime window
+                $isAvailable = $item->checkAvailability(
+                    startDateTime: $startDateTime,
+                    endDateTime: $endDateTime,
+                    requestedQuantity: $quantity
+                );
+
+                if (! $isAvailable) {
+                    throw new ServiceItemNotAvailableException(
+                        "Service item '{$item->name}' is not available for the requested time or capacity is exhausted."
+                    );
+                }
+
+                $params['service_item_id'] = $item->id;
+            }
+
+            // Generate booking number if not provided
+            if (empty($params['booking_number'])) {
+                $prefix = match ($serviceType) {
+                    'two_wheelers' => 'TW',
+                    'taxi' => 'TX',
+                    'boating' => 'BT',
+                    'scuba' => 'SC',
+                    'homestay' => 'HS',
+                    'guide' => 'GD',
+                    'tours' => 'TR',
+                    default => 'SRV',
+                };
+                $dateCode = Carbon::now()->format('ymd');
+                $randomCode = strtoupper(Str::random(4));
+                $params['booking_number'] = "GKW-{$prefix}-{$dateCode}-{$randomCode}";
+            }
+
+            $booking = ServiceBooking::create($params);
+
+            // Decrement availability / update live status for discrete items if booking covers the current moment
+            if ($item !== null && ($booking->status === 'confirmed' || $booking->status === 'in_progress')) {
+                $now = now();
+                $start = Carbon::parse($startDateTime);
+                $end = $endDateTime ? Carbon::parse($endDateTime) : $start->copy()->endOfDay();
+                if ($now->between($start, $end)) {
+                    $item->decrementAvailability($quantity);
+                }
+            }
+
+            return $booking;
+        });
+    }
+
+    /**
+     * Check if a service item is available for a given datetime window.
+     */
+    public function checkServiceItemAvailability(
+        int|ServiceItem $serviceItem,
+        CarbonInterface|string $startDateTime,
+        CarbonInterface|string|null $endDateTime = null,
+        int $quantity = 1,
+        ?int $excludeBookingId = null
+    ): bool {
+        $item = $serviceItem instanceof ServiceItem ? $serviceItem : ServiceItem::findOrFail($serviceItem);
+
+        return $item->checkAvailability(
+            startDateTime: $startDateTime,
+            endDateTime: $endDateTime,
+            requestedQuantity: $quantity,
+            excludeBookingId: $excludeBookingId
+        );
+    }
+
+    /**
+     * Confirm a service booking with row-level locking on the ServiceItem.
+     *
+     * @throws ServiceItemNotAvailableException
+     */
+    public function confirmServiceBooking(int|ServiceBooking $booking): ServiceBooking
+    {
+        $bookingModel = $booking instanceof ServiceBooking ? $booking : ServiceBooking::findOrFail($booking);
+
+        return DB::transaction(function () use ($bookingModel): ServiceBooking {
+            if ($bookingModel->service_item_id) {
+                $item = ServiceItem::where('id', $bookingModel->service_item_id)->lockForUpdate()->firstOrFail();
+
+                if (! $item->isAvailable() && $bookingModel->status !== 'confirmed') {
+                    throw new ServiceItemNotAvailableException("Service item '{$item->name}' is currently unavailable ({$item->status}).");
+                }
+
+                $isAvailable = $item->checkAvailability(
+                    startDateTime: $bookingModel->start_datetime,
+                    endDateTime: $bookingModel->end_datetime,
+                    requestedQuantity: (int) $bookingModel->quantity,
+                    excludeBookingId: $bookingModel->id
+                );
+
+                if (! $isAvailable && $bookingModel->status !== 'confirmed') {
+                    throw new ServiceItemNotAvailableException("Service item '{$item->name}' has no available capacity for the requested booking window.");
+                }
+
+                $item->decrementAvailability((int) $bookingModel->quantity);
+            }
+
+            $bookingModel->update(['status' => 'confirmed']);
+
+            return $bookingModel->refresh();
+        });
+    }
+
+    /**
+     * Create a concurrency-safe hold on a service booking.
+     */
+    public function holdServiceBooking(array $params): ServiceBooking
+    {
+        return app(ServiceAvailabilityService::class)->holdServiceBooking($params);
+    }
+
+    /**
+     * Release expired held service bookings.
+     */
+    public function releaseExpiredServiceHolds(): int
+    {
+        return app(ServiceAvailabilityService::class)->releaseExpiredServiceHolds();
+    }
 }
+
