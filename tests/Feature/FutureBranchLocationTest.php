@@ -219,3 +219,67 @@ test('expired holds do not affect future branch projection', function (): void {
         null, $this->murudeshwar->id, $this->murudeshwar->id
     ))->toBeTrue();
 });
+
+
+test('public quote shows 1000 for same-branch return and 1200 for Murudeshwar to Honnavar', function (): void {
+    $params = [
+        'start_date' => $this->dates['earlyStart'],
+        'end_date' => $this->dates['earlyEnd'],
+        'pickup_store_id' => $this->murudeshwar->id,
+        'return_store_id' => $this->murudeshwar->id,
+    ];
+
+    $this->postJson("/api/v1/bikes/{$this->bike->id}/price-quote", $params)
+        ->assertOk()
+        ->assertJsonPath('data.total_amount', 1000)
+        ->assertJsonPath('data.one_way_fee_amount', 0);
+
+    $this->postJson("/api/v1/bikes/{$this->bike->id}/price-quote", [
+        ...$params,
+        'return_store_id' => $this->honnavar->id,
+    ])->assertOk()
+        ->assertJsonPath('data.total_amount', 1200)
+        ->assertJsonPath('data.one_way_fee_amount', 200);
+});
+
+test('public quote rejects a pickup branch after a scheduled one-way return moves the bike', function (): void {
+    scheduleReservation(
+        $this->bike, $this->customer,
+        $this->murudeshwar->id, $this->honnavar->id,
+        $this->dates['earlyStart'], $this->dates['earlyEnd']
+    );
+
+    $request = [
+        'start_date' => $this->dates['lateStart'],
+        'end_date' => $this->dates['lateEnd'],
+        'pickup_store_id' => $this->murudeshwar->id,
+        'return_store_id' => $this->murudeshwar->id,
+    ];
+
+    $this->postJson("/api/v1/bikes/{$this->bike->id}/price-quote", $request)
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('pickup_store_id');
+
+    $this->postJson("/api/v1/bikes/{$this->bike->id}/price-quote", [
+        ...$request,
+        'pickup_store_id' => $this->honnavar->id,
+        'return_store_id' => $this->honnavar->id,
+    ])->assertOk();
+});
+
+test('return branch filters remove bikes when new one-way return would strand a later pickup', function (): void {
+    scheduleReservation(
+        $this->bike, $this->customer,
+        $this->murudeshwar->id, $this->murudeshwar->id,
+        $this->dates['lateStart'], $this->dates['lateEnd']
+    );
+
+    $url = '/api/v1/bikes?store_id='.$this->murudeshwar->id
+        .'&start_date='.$this->dates['earlyStart']
+        .'&end_date='.$this->dates['earlyEnd'];
+
+    $this->getJson($url.'&return_store_id='.$this->murudeshwar->id)
+        ->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson($url.'&return_store_id='.$this->honnavar->id)
+        ->assertOk()->assertJsonCount(0, 'data');
+});

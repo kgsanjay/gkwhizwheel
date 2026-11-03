@@ -74,7 +74,9 @@ class BikeController extends Controller
                         (string) $request->validated('end_date'),
                         null,
                         $pickupStoreId,
-                        $pickupStoreId
+                        $request->filled('return_store_id')
+                            ? (int) $request->validated('return_store_id')
+                            : $pickupStoreId
                     );
                 }
 
@@ -142,9 +144,33 @@ class BikeController extends Controller
     public function priceQuote(
         int $id,
         BikePriceQuoteRequest $request,
-        PricingService $pricingService
+        PricingService $pricingService,
+        AvailabilityService $availabilityService
     ): JsonResponse {
         $bike = Bike::with('category')->findOrFail($id);
+
+        $pickupId = (int) $request->validated('pickup_store_id');
+        $returnId = (int) $request->validated('return_store_id');
+
+        // A price alone must never imply a vehicle is rentable at this branch.
+        // The hold endpoint performs the same checks again under a bike row lock.
+        $pickupStore = \App\Models\Store::findOrFail($pickupId);
+        $returnStore = \App\Models\Store::findOrFail($returnId);
+        if ($bike->status !== BikeStatus::AVAILABLE
+            || $pickupStore->status !== \App\Enums\StoreStatus::ACTIVE
+            || $returnStore->status !== \App\Enums\StoreStatus::ACTIVE
+            || ! $availabilityService->checkAvailability(
+                $bike,
+                (string) $request->validated('start_date'),
+                (string) $request->validated('end_date'),
+                null,
+                $pickupId,
+                $returnId
+            )) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'pickup_store_id' => 'This bike is not available for the selected branch and dates.',
+            ]);
+        }
 
         $quote = $pricingService->calculateQuote(
             bike: $bike,

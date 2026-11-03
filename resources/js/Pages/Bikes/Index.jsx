@@ -99,6 +99,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     // Form control unique IDs for SC 1.3.1 (Info & Relationships)
     const categoryInputId = useId();
     const storeInputId = useId();
+    const returnStoreInputId = useId();
     const startDateInputId = useId();
     const endDateInputId = useId();
     const minPriceInputId = useId();
@@ -107,6 +108,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     const [filters, setFilters] = useState({
         category_id: initialFilters.category_id || '',
         store_id: initialFilters.store_id || '',
+        return_store_id: initialFilters.return_store_id || '',
         min_price: initialFilters.min_price || '',
         max_price: initialFilters.max_price || '',
         start_date: initialFilters.start_date || '',
@@ -114,7 +116,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     });
 
     const handleFilterChange = (field, value) => {
-        setFilters((prev) => ({ ...prev, [field]: value }));
+        setFilters((prev) => ({
+            ...prev,
+            [field]: value,
+            ...(field === 'store_id' && (!prev.return_store_id || String(prev.return_store_id) === String(prev.store_id)) ? { return_store_id: value } : {}),
+        }));
     };
 
     const handleCategoryChip = (catId) => {
@@ -128,6 +134,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
         setFilters({
             category_id: '',
             store_id: '',
+            return_store_id: '',
             min_price: '',
             max_price: '',
             start_date: '',
@@ -718,7 +725,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     name="store_id"
                                     select
                                     fullWidth
-                                    label="Pickup & Return Hub"
+                                    label="Pickup Branch"
                                     value={filters.store_id}
                                     onChange={(e) => handleFilterChange('store_id', e.target.value)}
                                     size="small"
@@ -733,7 +740,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         },
                                     }}
                                 >
-                                    <MenuItem value="">All Hubs (Honnavar)</MenuItem>
+                                    <MenuItem value="">All Pickup Branches</MenuItem>
                                     {stores.map((store) => (
                                         <MenuItem key={store.id} value={store.id}>
                                             {store.name} ({store.city})
@@ -741,6 +748,36 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     ))}
                                 </TextField>
                             </Grid>
+
+                            {/* Return branch is independent from pickup location. */}
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                <TextField
+                                    id={returnStoreInputId}
+                                    name="return_store_id"
+                                    select
+                                    fullWidth
+                                    label="Return Branch"
+                                    value={filters.return_store_id}
+                                    onChange={(e) => handleFilterChange('return_store_id', e.target.value)}
+                                    size="small"
+                                    slotProps={{ inputLabel: { htmlFor: returnStoreInputId } }}
+                                >
+                                    <MenuItem value="">Same as Pickup</MenuItem>
+                                    {stores.map((store) => (
+                                        <MenuItem key={store.id} value={store.id}>
+                                            {store.name} ({store.city})
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Grid>
+                            {filters.store_id && filters.return_store_id && String(filters.store_id) !== String(filters.return_store_id) && (
+                                <Grid size={{ xs: 12 }}>
+                                    <Alert severity="info">
+                                        Different-branch return selected. The extra fee will be calculated from admin pricing rules
+                                        before checkout. Unavailable one-way routes cannot be booked.
+                                    </Alert>
+                                </Grid>
+                            )}
 
                             {/* Pickup Date */}
                             <Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
@@ -910,13 +947,14 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     mb: 3,
                                 }}
                             >
-                                Available Fleet & Models in Honnavar
+                                {stores.find((store) => String(store.id) === String(filters.store_id))?.city
+                                    ? `Available Bikes in ${stores.find((store) => String(store.id) === String(filters.store_id)).city}`
+                                    : 'Explore Available Bikes Across Our Branches'}
                             </Typography>
 
                             <Grid container spacing={3}>
                                 {bikes.map((bike) => {
-                                    const weekdayRate = bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || bike.category?.base_daily_rate || '350.00';
-                                    const weekendRate = bike.weekend_rate || (Number(weekdayRate) + (Number(weekdayRate) >= 1000 ? (Number(weekdayRate) >= 1200 ? 300 : 200) : (Number(weekdayRate) === 450 ? 50 : 100)));
+                                    const weekdayRate = bike.daily_rate ?? bike.weekday_rate ?? bike.category?.base_daily_rate ?? 0;
                                     const isElectric = bike.fuel_type === 'electric';
 
                                     // Build forward query params to retain user dates
@@ -924,6 +962,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     if (filters.start_date) queryParams.set('start_date', filters.start_date);
                                     if (filters.end_date) queryParams.set('end_date', filters.end_date);
                                     if (filters.store_id) queryParams.set('pickup_store_id', filters.store_id);
+                                    if (filters.return_store_id) queryParams.set('return_store_id', filters.return_store_id);
                                     const detailUrl = `/bikes/${bike.id}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
                                     const imageSrc = bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || '/storage/bikes/honda-activa.jpg';
@@ -1078,52 +1117,30 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 2 }}>
                                                         <LocationOnIcon aria-hidden="true" sx={{ fontSize: 16, color: isDark ? '#F59E0B' : '#D97706' }} />
                                                         <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                            {bike.current_store?.name || 'Honnavar Main Hub (Palya & Railway Stn)'}
+                                                            {bike.current_store?.name || 'Contact us to confirm pickup location'}
                                                         </Typography>
                                                     </Box>
 
-                                                    {/* Pricing Box (Mon-Thu vs Fri-Sun) */}
-                                                    <Box
-                                                        sx={{
-                                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
-                                                            p: 1.8,
-                                                            borderRadius: 2.5,
-                                                            mb: 2.5,
-                                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                                        }}
-                                                    >
+                                                    {/* Actual admin-managed starting rate; dates and branch define final total. */}
+                                                    <Box sx={{
+                                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                                                        p: 1.8, borderRadius: 2.5, mb: 2.5,
+                                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                    }}>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                                            <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750, fontSize: '0.84rem' }}>
-                                                                Mon – Thu <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekday)</Box>
+                                                            <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750 }}>
+                                                                Starting daily rate
                                                             </Typography>
-                                                            <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekdayPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekdayRate).toLocaleString('en-IN')}{' '}
-                                                                <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                    /day
-                                                                </Typography>
+                                                            <Typography component="span" variant="h6" sx={{ fontWeight: 900, color: weekdayPriceColor }}>
+                                                                {Number(weekdayRate) > 0 ? `₹${Number(weekdayRate).toLocaleString('en-IN')} /day` : 'Request quote'}
                                                             </Typography>
                                                         </Box>
-
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                                            <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750, fontSize: '0.84rem' }}>
-                                                                Fri – Sun <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekend)</Box>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                                                            <Typography variant="caption" sx={{ color: secondaryTextColor }}>
+                                                                Deposit: ₹{Number(bike.deposit_amount || 0).toLocaleString('en-IN')}
                                                             </Typography>
-                                                            <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekendPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekendRate).toLocaleString('en-IN')}{' '}
-                                                                <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                    /day
-                                                                </Typography>
-                                                            </Typography>
-                                                        </Box>
-
-                                                        <Divider sx={{ my: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }} />
-
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                            <Typography variant="caption" sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800 }}>
-                                                                ✓ Zero Deposit Option
-                                                            </Typography>
-                                                            <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                Instant 5-Min Pickup
+                                                            <Typography variant="caption" sx={{ color: secondaryTextColor, textAlign: 'right' }}>
+                                                                Return-branch fee shown in live quote
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -1136,7 +1153,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         color="secondary"
                                                         fullWidth
                                                         endIcon={<ArrowForwardIcon aria-hidden="true" />}
-                                                        aria-label={`Book ${bike.brand} ${bike.model_name} starting at ₹${weekdayRate} per day`}
+                                                        aria-label={`Check dates and price for ${bike.brand} ${bike.model_name}`}
                                                         sx={{
                                                             mt: 'auto',
                                                             fontWeight: 900,

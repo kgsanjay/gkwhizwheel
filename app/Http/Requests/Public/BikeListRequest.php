@@ -25,6 +25,7 @@ class BikeListRequest extends FormRequest
     {
         return [
             'store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'return_store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'category_id' => ['nullable', 'integer', 'exists:bike_categories,id'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'required_with:start_date', 'after_or_equal:start_date'],

@@ -192,3 +192,15 @@ test('GET /api/v1/bike-categories returns list of bike categories', function ():
         ])
         ->assertJsonCount(1, 'data');
 });
+
+
+test('bike catalog preserves selected return branch for multi-location checkout', function (): void {
+    $this->get('/services/bikes?store_id='.$this->store1->id
+        .'&return_store_id='.$this->store2->id)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Bikes/Index')
+            ->where('initialFilters.store_id', (string) $this->store1->id)
+            ->where('initialFilters.return_store_id', (string) $this->store2->id)
+        );
+});
