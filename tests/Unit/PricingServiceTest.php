@@ -312,3 +312,72 @@ test('throws exception when start date is after end date', function (): void {
         returnStore: $this->storeA
     );
 })->throws(InvalidArgumentException::class);
+
+
+test('Murudeshwar to Honnavar adds a configurable 200 rupee return fee once', function (): void {
+    $this->category->update(['default_deposit_amount' => 0]);
+
+    PricingRule::create([
+        'rule_type' => PricingRuleType::ONE_WAY_FEE,
+        'from_store_id' => $this->storeA->id,
+        'to_store_id' => $this->storeB->id,
+        'rate_type' => PricingRateType::FLAT_ADDON,
+        'value' => 200,
+        'priority' => 1,
+        'is_active' => true,
+    ]);
+
+    $sameBranch = $this->pricingService->calculateQuote(
+        $this->bike, '2026-09-08', '2026-09-09', $this->storeA, $this->storeA
+    );
+    $oneWay = $this->pricingService->calculateQuote(
+        $this->bike, '2026-09-08', '2026-09-09', $this->storeA, $this->storeB
+    );
+
+    expect($sameBranch['total_amount'])->toBe(1000.00)
+        ->and($sameBranch['one_way_fee_amount'])->toBe(0.00)
+        ->and($oneWay['one_way_fee_amount'])->toBe(200.00)
+        ->and($oneWay['total_amount'])->toBe(1200.00)
+        ->and($oneWay['price_breakdown_json']['one_way_details']['fee'])->toBe(200.00);
+});
+
+test('one-way return is rejected unless that direction has an active pricing rule', function (): void {
+    PricingRule::create([
+        'rule_type' => PricingRuleType::ONE_WAY_FEE,
+        'from_store_id' => $this->storeA->id,
+        'to_store_id' => $this->storeB->id,
+        'rate_type' => PricingRateType::FLAT_ADDON,
+        'value' => 200,
+        'priority' => 1,
+        'is_active' => true,
+    ]);
+
+    $this->pricingService->calculateQuote(
+        $this->bike, '2026-09-08', '2026-09-09', $this->storeB, $this->storeA
+    );
+})->throws(\Illuminate\Validation\ValidationException::class);
+
+test('an exact directional rule takes precedence over a generic fallback rule', function (): void {
+    PricingRule::create([
+        'rule_type' => PricingRuleType::ONE_WAY_FEE,
+        'rate_type' => PricingRateType::FLAT_ADDON,
+        'value' => 500,
+        'priority' => 255,
+        'is_active' => true,
+    ]);
+    PricingRule::create([
+        'rule_type' => PricingRuleType::ONE_WAY_FEE,
+        'from_store_id' => $this->storeA->id,
+        'to_store_id' => $this->storeB->id,
+        'rate_type' => PricingRateType::FLAT_ADDON,
+        'value' => 200,
+        'priority' => 1,
+        'is_active' => true,
+    ]);
+
+    $quote = $this->pricingService->calculateQuote(
+        $this->bike, '2026-09-08', '2026-09-08', $this->storeA, $this->storeB
+    );
+
+    expect($quote['one_way_fee_amount'])->toBe(200.00);
+});
