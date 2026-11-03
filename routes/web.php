@@ -5,6 +5,9 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/locations', [\App\Http\Controllers\Web\PublicBranchController::class, 'index'])->name('locations.index');
+Route::get('/locations/{slug}', [\App\Http\Controllers\Web\PublicBranchController::class, 'show'])->name('locations.show');
+
 Route::get('/sitemap.xml', [\App\Http\Controllers\Web\SitemapController::class, 'index'])->name('sitemap');
 
 Route::get('/', function () {
@@ -17,14 +20,30 @@ Route::get('/', function () {
         $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
     }])->get();
 
+    // Only completed, published physical branches are promoted publicly.
     $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+        ->where('publication_status', 'published')
+        ->whereNotNull('slug')
         ->withCount(['bikes' => function ($query) {
             $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
         }])
+        ->orderBy('city')
         ->get();
 
+    // Public hero data must never expose registration numbers, odometer
+    // readings or internal fleet identifiers beyond the public bike ID.
+    $publicBikes = $bikes->map(function (\App\Models\Bike $bike): array {
+        $resource = (new \App\Http\Resources\BikeResource($bike))->resolve();
+
+        return array_intersect_key($resource, array_flip([
+            'id', 'brand', 'model_name', 'daily_rate',
+            'deposit_amount', 'primary_image_url', 'current_store',
+            'category', 'transmission',
+        ]));
+    })->values();
+
     return Inertia::render('Welcome', [
-        'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
+        'featuredBikes' => $publicBikes,
         'categories' => $categories,
         'stores' => $stores,
     ]);
