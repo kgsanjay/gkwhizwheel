@@ -120,3 +120,56 @@ test('admin can create draft branch and publish only after adding original conte
 
     $this->get('/locations/kumta')->assertOk();
 });
+
+
+test('slug generation avoids duplicate city URLs for multiple hubs', function (): void {
+    $admin = User::create([
+        'name' => 'Super Admin', 'email' => 'branchadmin2@example.com',
+        'phone' => '9000000042', 'password' => bcrypt('Password123!'),
+        'role' => UserRole::SUPER_ADMIN, 'status' => UserStatus::ACTIVE,
+    ]);
+
+    $this->actingAs($admin)->post('/admin/stores', [
+        'name' => 'Honnavar Railway Hub', 'city' => 'Honnavar',
+        'address_line' => 'Railway Road', 'state' => 'Karnataka', 'pincode' => '581334',
+        'latitude' => 14.27, 'longitude' => 74.45,
+    ])->assertRedirect('/admin/stores');
+
+    expect(Store::where('name', 'Honnavar Railway Hub')->firstOrFail()->slug)->toBe('honnavar-2');
+});
+
+test('staging pages return noindex header while normal production requests do not', function (): void {
+    $this->withServerVariables(['HTTP_HOST' => 'staging.whizwheels.in'])
+        ->get('/locations/honnavar')
+        ->assertOk()
+        ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+
+    $this->withServerVariables(['HTTP_HOST' => 'whizwheels.in'])
+        ->get('/locations/honnavar')
+        ->assertOk()
+        ->assertHeaderMissing('X-Robots-Tag');
+});
+
+test('branch landing pages do not expose customer-irrelevant bike registration numbers', function (): void {
+    $category = BikeCategory::create([
+        'name' => 'Scooter', 'base_daily_rate' => 500,
+        'default_deposit_amount' => 0,
+    ]);
+    Bike::create([
+        'category_id' => $category->id,
+        'home_store_id' => $this->murudeshwar->id,
+        'current_store_id' => $this->murudeshwar->id,
+        'brand' => 'Honda', 'model_name' => 'Activa',
+        'registration_number' => 'KA-47-AB-9876',
+        'fuel_type' => FuelType::PETROL,
+        'transmission' => Transmission::AUTOMATIC,
+        'status' => BikeStatus::AVAILABLE,
+    ]);
+
+    $this->get('/locations/murudeshwar')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Locations/Show')
+            ->has('bikes', 1)
+            ->missing('bikes.0.registration_number')
+            ->missing('bikes.0.odometer_reading'));
+});
