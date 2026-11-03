@@ -5,11 +5,15 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/locations', [\App\Http\Controllers\Web\PublicBranchController::class, 'index'])->name('locations.index');
+Route::get('/locations/{slug}', [\App\Http\Controllers\Web\PublicBranchController::class, 'show'])->name('locations.show');
+
 Route::get('/sitemap.xml', [\App\Http\Controllers\Web\SitemapController::class, 'index'])->name('sitemap');
 
 Route::get('/', function () {
     $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
         ->where('status', \App\Enums\BikeStatus::AVAILABLE)
+        ->whereDoesntHave('transfers', fn ($q) => $q->whereIn('status', ['approved', 'in_transit']))
         ->orderBy('id')
         ->get();
 
@@ -17,16 +21,40 @@ Route::get('/', function () {
         $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
     }])->get();
 
+    // Only completed, published physical branches are promoted publicly.
     $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+        ->where('publication_status', 'published')
+        ->whereNotNull('slug')
         ->withCount(['bikes' => function ($query) {
             $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
         }])
+        ->orderBy('city')
+        ->get();
+
+    // Public hero data must never expose registration numbers, odometer
+    // readings or internal fleet identifiers beyond the public bike ID.
+    $publicBikes = $bikes->map(function (\App\Models\Bike $bike): array {
+        $resource = (new \App\Http\Resources\BikeResource($bike))->resolve();
+
+        return array_intersect_key($resource, array_flip([
+            'id', 'brand', 'model_name', 'daily_rate',
+            'deposit_amount', 'primary_image_url', 'current_store',
+            'category', 'transmission',
+        ]));
+    })->values();
+
+    $availableServices = \App\Models\ServiceItem::query()
+        ->whereIn('status', ['available', 'active'])
+        ->where('service_type', '!=', 'two_wheelers')
+        ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
+        ->orderBy('sort_order')
         ->get();
 
     return Inertia::render('Welcome', [
-        'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
+        'featuredBikes' => $publicBikes,
         'categories' => $categories,
         'stores' => $stores,
+        'availableItems' => $availableServices,
     ]);
 })->name('home');
 
@@ -38,12 +66,20 @@ Route::get('/bikes/{id}', [\App\Http\Controllers\Web\BikeWebController::class, '
 
 Route::get('/services', function () {
     $availableItems = \App\Models\ServiceItem::whereIn('status', ['available', 'active'])
+        ->where('service_type', '!=', 'two_wheelers')
         ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
         ->orderBy('sort_order')
         ->get();
 
+    $availableBikes = \App\Models\Bike::where('status', \App\Enums\BikeStatus::AVAILABLE)
+        ->whereDoesntHave('transfers', fn ($q) => $q->whereIn('status', ['approved', 'in_transit']))
+        ->with('category')->get();
+
     return Inertia::render('Services', [
         'availableItems' => $availableItems,
+        'bikeStartingRate' => $availableBikes->isEmpty()
+            ? null
+            : $availableBikes->min(fn ($bike) => (float) ($bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 0)),
     ]);
 })->name('services');
 Route::get('/services/{slug}', function (string $slug) {
@@ -218,6 +254,14 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/check-in/lookup', [\App\Http\Controllers\Web\Admin\AdminCheckInWebController::class, 'lookup'])->name('admin.check-in.lookup');
     Route::post('/check-in/sync', [\App\Http\Controllers\Web\Admin\AdminCheckInWebController::class, 'sync'])->name('admin.check-in.sync');
     Route::post('/check-in/{type}/{id}/process', [\App\Http\Controllers\Web\Admin\AdminCheckInWebController::class, 'process'])->name('admin.check-in.process');
+
+    // Audited cross-branch bike transfers
+    Route::get('/bike-transfers', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'index'])->name('admin.bike-transfers.index');
+    Route::post('/bike-transfers', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'store'])->name('admin.bike-transfers.store');
+    Route::post('/bike-transfers/{id}/approve', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'approve'])->name('admin.bike-transfers.approve');
+    Route::post('/bike-transfers/{id}/dispatch', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'dispatch'])->name('admin.bike-transfers.dispatch');
+    Route::post('/bike-transfers/{id}/receive', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'receive'])->name('admin.bike-transfers.receive');
+    Route::post('/bike-transfers/{id}/cancel', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'cancel'])->name('admin.bike-transfers.cancel');
 
     // Bike Inventory
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');

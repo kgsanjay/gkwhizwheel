@@ -240,3 +240,43 @@ test('resubmitting with the same idempotency key returns the existing booking sa
         ->and($bookingA->booking_reference)->toBe($bookingB->booking_reference)
         ->and(Booking::where('idempotency_key', 'idemp-duplicate-safe')->count())->toBe(1);
 });
+
+
+test('booking hold rejects a bike assigned to another pickup branch', function (): void {
+    $otherStore = Store::create([
+        'name' => 'Honnavar Hub',
+        'address_line' => 'Main Road',
+        'city' => 'Honnavar',
+        'state' => 'Karnataka',
+        'pincode' => '581334',
+        'latitude' => 14.2802,
+        'longitude' => 74.4437,
+        'status' => StoreStatus::ACTIVE,
+    ]);
+
+    $this->availabilityService->holdBooking([
+        'bike_id' => $this->bike->id,
+        'user_id' => $this->customer1->id,
+        'pickup_store_id' => $otherStore->id,
+        'return_store_id' => $otherStore->id,
+        'start_date' => '2026-12-15',
+        'end_date' => '2026-12-16',
+        'channel' => BookingChannel::ONLINE,
+        'idempotency_key' => 'mismatched-pickup-store',
+    ]);
+})->throws(BikeNotAvailableException::class);
+
+test('booking hold rejects a bike that is marked as under maintenance', function (): void {
+    $this->bike->update(['status' => BikeStatus::MAINTENANCE]);
+
+    $this->availabilityService->holdBooking([
+        'bike_id' => $this->bike->id,
+        'user_id' => $this->customer1->id,
+        'pickup_store_id' => $this->store->id,
+        'return_store_id' => $this->store->id,
+        'start_date' => '2026-12-15',
+        'end_date' => '2026-12-16',
+        'channel' => BookingChannel::ONLINE,
+        'idempotency_key' => 'maintenance-bike-hold',
+    ]);
+})->throws(BikeNotAvailableException::class);

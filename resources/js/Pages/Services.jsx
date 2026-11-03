@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
+import { getServiceDisplayRate } from '../utils/publicCatalog';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
 import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
@@ -77,7 +78,7 @@ const servicesFaqSchema = {
     })),
 };
 
-export default function Services({ availableItems = [] }) {
+export default function Services({ availableItems = [], bikeStartingRate = null }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -157,6 +158,10 @@ export default function Services({ availableItems = [] }) {
     };
 
     const handleOpenBooking = (serviceId) => {
+        if (serviceId === 'bikes' || serviceId === 'two_wheelers') {
+            router.visit('/services/bikes');
+            return;
+        }
         // Map slug/card id to ServiceBookingModal id
         const serviceModalMap = {
             bikes: 'two_wheelers',
@@ -178,7 +183,7 @@ export default function Services({ availableItems = [] }) {
             order: '01',
             title: 'Bike & Scooter Rentals',
             tag: 'Self-Drive Fleet',
-            tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with zero deposit options and instant station delivery.',
+            tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with upfront deposit information and available pickup options.',
             rate: 'Starts ₹350 / Day',
             image: '/images/services/two_wheelers.jpg',
             color: '#F59E0B',
@@ -187,7 +192,7 @@ export default function Services({ availableItems = [] }) {
             cta: 'Explore Bikes & Rent',
             icon: <TwoWheelerIcon sx={{ fontSize: 20 }} />,
             highlights: [
-                '19+ Fleet (Activa 6G, Classic 350, CB350)',
+                'Check Live Fleet Availability',
                 '2 Sanitized ISI Helmets & Phone Mount Free',
                 'Honnavar Railway Station Delivery Available',
             ],
@@ -320,12 +325,13 @@ export default function Services({ availableItems = [] }) {
             const media = getServiceItemMedia(item, preview.image);
             enhanced[key] = {
                 ...preview,
+                rate: getServiceDisplayRate(key, availableItems, bikeStartingRate !== null ? [{ daily_rate: bikeStartingRate }] : []),
                 item,
                 media,
             };
         });
         return enhanced;
-    }, [availableItems]);
+    }, [availableItems, bikeStartingRate]);
 
     const servicesWithMedia = React.useMemo(() => {
         return services.map((srv) => {
@@ -333,11 +339,12 @@ export default function Services({ availableItems = [] }) {
             const media = getServiceItemMedia(item, srv.image);
             return {
                 ...srv,
+                rate: getServiceDisplayRate(srv.id, availableItems, bikeStartingRate !== null ? [{ daily_rate: bikeStartingRate }] : []),
                 item,
                 media,
             };
         });
-    }, [availableItems]);
+    }, [availableItems, bikeStartingRate]);
 
     const tourItem = getItemForService('tours');
     const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
@@ -347,7 +354,7 @@ export default function Services({ availableItems = [] }) {
         {
             title: 'Honnavar Estuary & Mangrove Explorer',
             badge: 'Most Popular Day Trip',
-            price: '₹750 / person',
+            price: 'Request custom quote',
             duration: 'Half Day (4-5 Hours)',
             color: '#059669',
             items: ['Activa 6G Scooter Rental', '1-Hour Sharavathi Mangrove Cruise', 'Eco Beach Boardwalk Sunset'],
@@ -357,7 +364,7 @@ export default function Services({ availableItems = [] }) {
         {
             title: 'Netrani Scuba & Murudeshwar Temple Expedition',
             badge: 'Adventure Special',
-            price: '₹3,800 / person',
+            price: 'Request custom quote',
             duration: 'Full Day (06:00 AM - 04:00 PM)',
             color: '#6366F1',
             items: ['Chilled AC Taxi from Honnavar', 'PADI Netrani Scuba Dive with 4K Video', 'Murudeshwar Shiva Statue Visit'],
@@ -367,7 +374,7 @@ export default function Services({ availableItems = [] }) {
         {
             title: 'Gokarna Beach Trail & Fort Heritage Ride',
             badge: 'Biker & Explorer Favorite',
-            price: '₹1,200 / day',
+            price: 'Request custom quote',
             duration: 'Full Day (8-10 Hours)',
             color: '#F59E0B',
             items: ['Royal Enfield Classic 350 / Activa', 'Historic Mirjan Fort Walkthrough', 'Om Beach & Kudle Cliff Trail'],
@@ -377,7 +384,7 @@ export default function Services({ availableItems = [] }) {
         {
             title: 'Karavali 3D/2N Complete Coastal Retreat',
             badge: 'All-Inclusive Vacation',
-            price: '₹3,499 / person',
+            price: 'Request custom quote',
             duration: '3 Days / 2 Nights',
             color: '#8B5CF6',
             items: ['Sharavathi Riverfront Homestay', '2-Day Unlimited Two-Wheeler', 'Backwater Cruise & Station Transfer'],
@@ -636,7 +643,7 @@ export default function Services({ availableItems = [] }) {
                                     </Typography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                         {[
-                                            { name: '🛵 Bikes (₹350)', href: '#service-bikes', color: '#F59E0B' },
+                                            { name: '🛵 Bikes', href: '#service-bikes', color: '#F59E0B' },
                                             { name: '🚖 Cabs', href: '#service-cabs', color: '#0284C7' },
                                             { name: '🏡 Stays', href: '#service-homestays', color: '#E11D48' },
                                             { name: '🚤 Boating', href: '#service-boating', color: '#059669' },

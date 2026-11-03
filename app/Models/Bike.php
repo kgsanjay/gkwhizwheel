@@ -117,6 +117,14 @@ class Bike extends Model
     }
 
     /**
+     * Audited branch transfers for this bike.
+     */
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(BikeTransfer::class, 'bike_id');
+    }
+
+    /**
      * Reviews written for this bike.
      */
     public function reviews(): HasMany

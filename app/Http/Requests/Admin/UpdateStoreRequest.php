@@ -8,6 +8,7 @@ use App\Enums\StoreStatus;
 use App\Models\Store;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\Rule;
 
 class UpdateStoreRequest extends FormRequest
 {
@@ -37,6 +38,14 @@ class UpdateStoreRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'operating_hours' => ['nullable', 'array'],
             'status' => ['sometimes', new Enum(StoreStatus::class)],
+            'slug' => ['nullable', 'string', 'max:160', 'alpha_dash:ascii', Rule::unique('stores', 'slug')->ignore($this->route('id'))],
+            'public_name' => ['nullable', 'string', 'max:160'],
+            'hero_image_url' => ['nullable', 'url:http,https', 'max:2048'],
+            'public_description' => ['nullable', 'string', 'max:5000'],
+            'pickup_instructions' => ['nullable', 'string', 'max:3000'],
+            'seo_title' => ['nullable', 'string', 'max:160'],
+            'seo_description' => ['nullable', 'string', 'max:320'],
+            'publication_status' => ['sometimes', 'in:draft,published'],
         ];
     }
 

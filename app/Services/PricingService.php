@@ -191,6 +191,8 @@ class PricingService
         $oneWayRuleDetails = null;
 
         if ($pickupStoreModel->id !== $returnStoreModel->id) {
+            // Different-branch returns are opt-in: never silently give away an
+            // unconfigured relocation. The reverse direction needs its own rule.
             $oneWayRule = PricingRule::where('is_active', true)
                 ->where('rule_type', PricingRuleType::ONE_WAY_FEE)
                 ->where(function ($q) use ($pickupStoreModel, $returnStoreModel) {
@@ -202,8 +204,16 @@ class PricingService
                             ->whereNull('to_store_id');
                     });
                 })
+                ->orderByRaw('CASE WHEN from_store_id IS NOT NULL AND to_store_id IS NOT NULL THEN 1 ELSE 0 END DESC')
                 ->orderByDesc('priority')
+                ->orderByDesc('id')
                 ->first();
+
+            if ($oneWayRule === null) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'return_store_id' => 'One-way return is not available between the selected branches.',
+                ]);
+            }
 
             if ($oneWayRule !== null) {
                 $oneWayFee = match ($oneWayRule->rate_type) {

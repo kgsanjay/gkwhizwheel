@@ -24,6 +24,7 @@ class BikeWebController extends Controller
         $request->validate([
             'category_id' => ['nullable', 'integer'],
             'store_id' => ['nullable', 'integer'],
+            'return_store_id' => ['nullable', 'integer'],
             'min_price' => ['nullable', 'numeric', 'min:0'],
             'max_price' => ['nullable', 'numeric', 'min:0'],
             'start_date' => ['nullable', 'date'],
@@ -39,6 +40,7 @@ class BikeWebController extends Controller
             'initialFilters' => [
                 'category_id' => $request->query('category_id', ''),
                 'store_id' => $request->query('store_id', ''),
+                'return_store_id' => $request->query('return_store_id', ''),
                 'min_price' => $request->query('min_price', ''),
                 'max_price' => $request->query('max_price', ''),
                 'start_date' => $request->query('start_date', ''),

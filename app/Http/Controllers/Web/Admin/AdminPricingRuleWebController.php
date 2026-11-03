@@ -274,6 +274,8 @@ class AdminPricingRuleWebController extends Controller
             'service_type' => ['nullable', 'string'],
             'service_item_id' => ['nullable', 'integer'],
             'bike_id' => ['nullable', 'integer'],
+            'pickup_store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'return_store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date'],
             'quantity' => ['nullable', 'integer', 'min:1'],
@@ -320,6 +322,17 @@ class AdminPricingRuleWebController extends Controller
         }
 
         $store = $bike->currentStore ?? Store::first();
+        $pickupStore = ! empty($validated['pickup_store_id'])
+            ? Store::findOrFail($validated['pickup_store_id'])
+            : $store;
+        $returnStore = ! empty($validated['return_store_id'])
+            ? Store::findOrFail($validated['return_store_id'])
+            : $pickupStore;
+
+        if (! $pickupStore || ! $returnStore) {
+            return response()->json(['success' => false, 'message' => 'Choose valid pickup and return branches.'], 422);
+        }
+
         $startDate = $validated['start_date'];
         $endDate = $validated['end_date'] ?? $validated['start_date'];
 
@@ -327,8 +340,8 @@ class AdminPricingRuleWebController extends Controller
             $bike,
             $startDate,
             $endDate,
-            $store,
-            $store
+            $pickupStore,
+            $returnStore
         );
 
         return response()->json([

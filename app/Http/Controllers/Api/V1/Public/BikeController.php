@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Enums\BikeStatus;
-use App\Enums\BookingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Public\BikeAvailabilityRequest;
 use App\Http\Requests\Public\BikeListRequest;
@@ -14,7 +13,6 @@ use App\Http\Resources\BikeResource;
 use App\Models\Bike;
 use App\Services\AvailabilityService;
 use App\Services\PricingService;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
 class BikeController extends Controller
@@ -22,13 +20,14 @@ class BikeController extends Controller
     /**
      * List bikes with optional filters and date availability check.
      */
-    public function index(BikeListRequest $request): JsonResponse
+    public function index(BikeListRequest $request, AvailabilityService $availabilityService): JsonResponse
     {
         $query = Bike::query()
             ->where('status', BikeStatus::AVAILABLE)
             ->with(['category', 'currentStore', 'homeStore', 'images']);
 
-        if ($request->filled('store_id')) {
+        $hasDates = $request->filled('start_date') && $request->filled('end_date');
+        if ($request->filled('store_id') && ! $hasDates) {
             $query->where('current_store_id', (int) $request->validated('store_id'));
         }
 
@@ -60,29 +59,43 @@ class BikeController extends Controller
             });
         }
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $start = Carbon::parse($request->validated('start_date'))->startOfDay()->toDateTimeString();
-            $end = Carbon::parse($request->validated('end_date'))->endOfDay()->toDateTimeString();
-
-            $query->whereDoesntHave('bookings', function ($bq) use ($start, $end): void {
-                $bq->where(function ($q): void {
-                    $q->whereIn('status', [
-                        BookingStatus::CONFIRMED->value,
-                        BookingStatus::HANDED_OVER->value,
-                    ])->orWhere(function ($hq): void {
-                        $hq->where('status', BookingStatus::HELD->value)
-                            ->where(function ($hqq): void {
-                                $hqq->whereNull('held_until')
-                                    ->orWhere('held_until', '>', now());
-                            });
-                    });
-                })
-                ->where('start_date', '<=', $end)
-                ->where('end_date', '>=', $start);
-            });
-        }
-
+        // Suppress bikes reserved for transfer even before a date is selected.
+        $query->whereDoesntHave('transfers', function ($transferQuery): void {
+            $transferQuery->whereIn('status', ['approved', 'in_transit']);
+        });
         $bikes = $query->orderBy('id', 'asc')->get();
+
+        if ($hasDates) {
+            $pickupStoreId = $request->filled('store_id')
+                ? (int) $request->validated('store_id')
+                : null;
+
+            $bikes = $bikes->filter(function (Bike $bike) use ($request, $availabilityService, $pickupStoreId): bool {
+                if ($pickupStoreId !== null) {
+                    return $availabilityService->checkAvailability(
+                        $bike,
+                        (string) $request->validated('start_date'),
+                        (string) $request->validated('end_date'),
+                        null,
+                        $pickupStoreId,
+                        $request->filled('return_store_id')
+                            ? (int) $request->validated('return_store_id')
+                            : $pickupStoreId
+                    );
+                }
+
+                // Without an explicit pickup branch, do not promise where a bike
+                // will be at a future date. Show only bikes in their current branch.
+                return $availabilityService->checkAvailability(
+                    $bike,
+                    (string) $request->validated('start_date'),
+                    (string) $request->validated('end_date'),
+                    null,
+                    (int) $bike->current_store_id,
+                    (int) $bike->current_store_id
+                );
+            })->values();
+        }
 
         return response()->json([
             'success' => true,
@@ -135,9 +148,33 @@ class BikeController extends Controller
     public function priceQuote(
         int $id,
         BikePriceQuoteRequest $request,
-        PricingService $pricingService
+        PricingService $pricingService,
+        AvailabilityService $availabilityService
     ): JsonResponse {
         $bike = Bike::with('category')->findOrFail($id);
+
+        $pickupId = (int) $request->validated('pickup_store_id');
+        $returnId = (int) $request->validated('return_store_id');
+
+        // A price alone must never imply a vehicle is rentable at this branch.
+        // The hold endpoint performs the same checks again under a bike row lock.
+        $pickupStore = \App\Models\Store::findOrFail($pickupId);
+        $returnStore = \App\Models\Store::findOrFail($returnId);
+        if ($bike->status !== BikeStatus::AVAILABLE
+            || $pickupStore->status !== \App\Enums\StoreStatus::ACTIVE
+            || $returnStore->status !== \App\Enums\StoreStatus::ACTIVE
+            || ! $availabilityService->checkAvailability(
+                $bike,
+                (string) $request->validated('start_date'),
+                (string) $request->validated('end_date'),
+                null,
+                $pickupId,
+                $returnId
+            )) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'pickup_store_id' => 'This bike is not available for the selected branch and dates.',
+            ]);
+        }
 
         $quote = $pricingService->calculateQuote(
             bike: $bike,

@@ -192,3 +192,70 @@ test('GET /api/v1/bike-categories returns list of bike categories', function ():
         ])
         ->assertJsonCount(1, 'data');
 });
+
+
+test('bike catalog preserves selected return branch for multi-location checkout', function (): void {
+    $this->get('/services/bikes?store_id='.$this->store1->id
+        .'&return_store_id='.$this->store2->id)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Bikes/Index')
+            ->where('initialFilters.store_id', (string) $this->store1->id)
+            ->where('initialFilters.return_store_id', (string) $this->store2->id)
+        );
+});
+
+test('homepage shows available admin-managed service listings alongside available bikes', function (): void {
+    \App\Models\ServiceItem::create([
+        'service_type' => 'boating',
+        'name' => 'Admin Published Sunset Cruise',
+        'price_base' => 750,
+        'price_unit' => 'per_person',
+        'status' => 'available',
+        'sort_order' => 1,
+    ]);
+    \App\Models\ServiceItem::create([
+        'service_type' => 'boating',
+        'name' => 'Inactive Cruise',
+        'price_base' => 150,
+        'price_unit' => 'per_person',
+        'status' => 'inactive',
+        'sort_order' => 2,
+    ]);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Welcome')
+            ->has('featuredBikes', 1)
+            ->where('featuredBikes.0.daily_rate', 850)
+            ->has('availableItems', 1)
+            ->where('availableItems.0.name', 'Admin Published Sunset Cruise')
+        );
+});
+
+test('services directory gets bike prices from Bike inventory not duplicate service items', function (): void {
+    \App\Models\ServiceItem::create([
+        'service_type' => 'two_wheelers',
+        'name' => 'Legacy Duplicate Bike Listing',
+        'price_base' => 100,
+        'price_unit' => 'per_day',
+        'status' => 'available',
+    ]);
+    \App\Models\ServiceItem::create([
+        'service_type' => 'taxi',
+        'name' => 'Admin Published Cab',
+        'price_base' => 1300,
+        'price_unit' => 'per_trip',
+        'status' => 'available',
+    ]);
+
+    $this->get('/services')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Services')
+            ->where('bikeStartingRate', 850)
+            ->has('availableItems', 1)
+            ->where('availableItems.0.name', 'Admin Published Cab')
+        );
+});
