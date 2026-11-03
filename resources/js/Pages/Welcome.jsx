@@ -125,7 +125,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         <AppLayout>
             <PageHead
                 title="Bike Rentals in Honnavar & Murudeshwar | G.K. WhizWheel"
-                description="Explore bike and scooter rentals at G.K. WhizWheel pickup branches in Honnavar, Murudeshwar and coastal Karnataka. Compare bikes, choose dates and book online."
+                description="Rent bikes and scooters with G.K. WhizWheel in Honnavar and Murudeshwar. Choose your pickup branch, select dates and check live rental prices."
                 canonicalUrl="https://whizwheels.in/"
                 ogImage="/images/logo.png"
                 ogType="website"
