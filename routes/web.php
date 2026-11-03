@@ -23,10 +23,17 @@ Route::get('/', function () {
         }])
         ->get();
 
+    $availableServices = \App\Models\ServiceItem::whereIn('status', ['available', 'active'])
+        ->where('service_type', '!=', 'two_wheelers')
+        ->with(['images' => fn ($query) => $query->orderBy('sort_order')])
+        ->orderBy('sort_order')
+        ->get();
+
     return Inertia::render('Welcome', [
         'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
         'categories' => $categories,
         'stores' => $stores,
+        'availableItems' => $availableServices,
     ]);
 })->name('home');
 
@@ -38,12 +45,20 @@ Route::get('/bikes/{id}', [\App\Http\Controllers\Web\BikeWebController::class, '
 
 Route::get('/services', function () {
     $availableItems = \App\Models\ServiceItem::whereIn('status', ['available', 'active'])
+        ->where('service_type', '!=', 'two_wheelers')
         ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
         ->orderBy('sort_order')
         ->get();
 
+    $availableBikes = \App\Models\Bike::where('status', \App\Enums\BikeStatus::AVAILABLE)
+        ->with('category')
+        ->get();
+
     return Inertia::render('Services', [
         'availableItems' => $availableItems,
+        'bikeStartingRate' => $availableBikes->isEmpty()
+            ? null
+            : $availableBikes->min(fn ($bike) => (float) ($bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 0)),
     ]);
 })->name('services');
 Route::get('/services/{slug}', function (string $slug) {
