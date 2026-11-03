@@ -111,6 +111,7 @@ const MENU_SECTIONS = [
                 children: [
                     { label: 'All Fleet Inventory', path: '/admin/bikes', roles: ['super_admin', 'store_manager', 'staff'] },
                     { label: 'Add New Bike', path: '/admin/bikes/create', roles: ['super_admin', 'store_manager'] },
+                    { label: 'Bike Branch Transfers', path: '/admin/bike-transfers', roles: ['super_admin', 'store_manager', 'staff'] },
                     { label: 'Dynamic Tariffs', path: '/admin/pricing', roles: ['super_admin'] },
                     { label: 'Discount Coupons', path: '/admin/coupons', roles: ['super_admin'] },
                 ],
