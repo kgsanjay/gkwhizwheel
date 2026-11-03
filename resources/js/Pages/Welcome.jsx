@@ -653,7 +653,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             cta: 'Explore Bikes & Rent',
                             icon: <TwoWheelerIcon sx={{ fontSize: 20 }} />,
                             highlights: [
-                                `\${featuredBikes.length} bikes available to explore`,
+                                `${featuredBikes.length} bikes available to explore`,
                                 '2 Sanitized ISI Helmets & Phone Mount Free',
                                 'Honnavar Railway Station Delivery Available',
                             ],
