@@ -1,0 +1,22 @@
+name: Staging Public Smoke Test
+
+on:
+  push:
+    branches:
+      - test/staging-public-smoke-20261104
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-read-only:
+    name: External Staging HTTP Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only public pages, APIs and access control
+        env:
+          STAGING_BASE_URL: https://staging.whizwheels.in
+        run: python3 scripts/staging_public_smoke.py
