@@ -378,8 +378,6 @@ export default function BikeShow({ bike, stores = [] }) {
                                         fullWidth
                                         type="date"
                                         label="Pickup Date"
-                                        slotProps={{ inputLabel: { shrink: true } }}
-                                        InputLabelProps={{ shrink: true }}
                                         value={startDate}
                                         slotProps={{ htmlInput: { min: localToday }, inputLabel: { shrink: true } }}
                                         onChange={(e) => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(e.target.value); }}
@@ -390,8 +388,6 @@ export default function BikeShow({ bike, stores = [] }) {
                                         fullWidth
                                         type="date"
                                         label="Return Date"
-                                        slotProps={{ inputLabel: { shrink: true } }}
-                                        InputLabelProps={{ shrink: true }}
                                         value={endDate}
                                         slotProps={{ htmlInput: { min: startDate || localToday }, inputLabel: { shrink: true } }}
                                         onChange={(e) => setEndDate(e.target.value)}
