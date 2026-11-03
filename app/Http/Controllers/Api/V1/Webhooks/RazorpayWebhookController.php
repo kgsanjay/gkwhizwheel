@@ -130,12 +130,16 @@ class RazorpayWebhookController extends Controller
         $notes = $paymentEntity['notes'] ?? $orderEntity['notes'] ?? [];
         $bookingId = $notes['booking_id'] ?? null;
         $bookingReference = $notes['booking_reference'] ?? $orderEntity['receipt'] ?? null;
+        $gatewayOrderId = (string) ($paymentEntity['order_id'] ?? $orderEntity['id'] ?? '');
+        $currency = strtoupper((string) ($paymentEntity['currency'] ?? $orderEntity['currency'] ?? ''));
 
         try {
             return DB::transaction(function () use (
                 $bookingId,
                 $bookingReference,
                 $gatewayPaymentId,
+                $gatewayOrderId,
+                $currency,
                 $amount,
                 $eventType,
                 $bookingService
@@ -145,6 +149,9 @@ class RazorpayWebhookController extends Controller
                     $bookingQuery->where('id', (int) $bookingId);
                 } elseif ($bookingReference) {
                     $bookingQuery->where('booking_reference', (string) $bookingReference);
+                }
+                if (! $bookingId && ! $bookingReference) {
+                    return response()->json(['success' => false, 'message' => 'Missing booking reference.'], 422);
                 }
                 $booking = $bookingQuery->lockForUpdate()->first();
 
@@ -157,11 +164,21 @@ class RazorpayWebhookController extends Controller
                     ], 404);
                 }
 
+                $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
+                if ($gatewayPaymentId === '' || $gatewayOrderId === '' ||
+                    ! hash_equals((string) ($breakdown['razorpay_order_id'] ?? ''), $gatewayOrderId) ||
+                    $currency !== 'INR' || (int) round($amount * 100) !== (int) round((float) $booking->total_amount * 100)) {
+                    return response()->json(['success' => false, 'message' => 'Payment does not match the checkout order.'], 422);
+                }
+
                 // Idempotency: if already confirmed and payment exists, return 200
                 $existingPayment = $gatewayPaymentId !== ''
                     ? Payment::where('gateway_reference', $gatewayPaymentId)->lockForUpdate()->first()
                     : null;
 
+                if ($existingPayment && (int) $existingPayment->booking_id !== (int) $booking->id) {
+                    return response()->json(['success' => false, 'message' => 'Payment reference belongs to another booking.'], 409);
+                }
                 if ($existingPayment && $booking->status === BookingStatus::CONFIRMED) {
                     return response()->json([
                         'success' => true,
@@ -181,7 +198,7 @@ class RazorpayWebhookController extends Controller
                     [
                         'booking_id' => $booking->id,
                         'type' => PaymentType::ADVANCE,
-                        'amount' => $amount > 0 ? $amount : (float) $booking->total_amount,
+                        'amount' => $amount,
                         'method' => PaymentMethod::RAZORPAY,
                         'status' => PaymentStatus::SUCCESS,
                         'collected_by' => null,
