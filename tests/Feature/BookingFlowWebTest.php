@@ -164,6 +164,7 @@ test('customer can hold booking with client-generated UUID Idempotency-Key and a
         ]);
 
     expect($response->json('data.status'))->toBe('held');
+    expect($response->json('data.one_way_fee_amount'))->toEqual(200);
     expect($response->json('data.addon_amount'))->toEqual(450); // (2 * 100) + (1 * 250)
     expect($response->json('data.addons'))->toHaveCount(2);
 
