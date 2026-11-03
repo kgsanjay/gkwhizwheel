@@ -332,6 +332,13 @@ class AdminBikeWebController extends Controller
         Gate::authorize('update', $bike);
 
         $validated = $request->validated();
+        if (array_key_exists('current_store_id', $validated)
+            && (int) $validated['current_store_id'] !== (int) $bike->current_store_id) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'current_store_id' => 'Use Bike Branch Transfers to move a bike between locations.',
+            ]);
+        }
+
         $bikeData = collect($validated)->except(['primary_image', 'documents'])->all();
 
         if ($request->hasFile('primary_image')) {
