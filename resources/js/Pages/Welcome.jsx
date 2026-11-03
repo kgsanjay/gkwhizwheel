@@ -306,6 +306,71 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     Explore All 7 Services ↓
                                 </Button>
                             </Stack>
+
+                            <Paper component="form" onSubmit={handleSearch} elevation={0} sx={{
+                                mt: 3, p: { xs: 2, sm: 2.5 }, borderRadius: 3,
+                                bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+                                border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+                            }}>
+                                <Typography component="h2" variant="h6" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 2 }}>
+                                    Find a Bike by Branch
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                        <TextField select required fullWidth size="small" label="Pickup Branch"
+                                            value={searchStore}
+                                            onChange={(e) => {
+                                                const previous = searchStore;
+                                                const selected = e.target.value;
+                                                setSearchStore(selected);
+                                                if (!returnStore || returnStore === previous) setReturnStore(selected);
+                                            }}>
+                                            <MenuItem value="">Select a branch</MenuItem>
+                                            {stores.map((store) => (
+                                                <MenuItem key={store.id} value={String(store.id)}>
+                                                    {store.public_name || store.name} ({store.city})
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                        <TextField select fullWidth size="small" label="Return Branch" value={returnStore}
+                                            onChange={(e) => setReturnStore(e.target.value)}>
+                                            <MenuItem value="">Same as Pickup</MenuItem>
+                                            {stores.map((store) => (
+                                                <MenuItem key={store.id} value={String(store.id)}>
+                                                    {store.public_name || store.name} ({store.city})
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                        <TextField type="date" fullWidth size="small" label="Pickup Date"
+                                            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: today } }}
+                                            value={startDate}
+                                            onChange={(e) => {
+                                                setStartDate(e.target.value);
+                                                if (endDate < e.target.value) setEndDate(e.target.value);
+                                            }} />
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                        <TextField type="date" fullWidth size="small" label="Return Date"
+                                            slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: startDate || today } }}
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)} />
+                                    </Grid>
+                                    <Grid size={{ xs: 12 }}>
+                                        <Button type="submit" variant="contained" fullWidth
+                                            disabled={!searchStore || !startDate || endDate < startDate || startDate < today}
+                                            sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800 }}>
+                                            Check Available Bikes and Prices
+                                        </Button>
+                                        <Typography variant="caption" sx={{ display: 'block', mt: 1, color: isDark ? '#CBD5E1' : '#475569' }}>
+                                            Different-branch returns are subject to availability and an additional one-way fee where configured.
+                                        </Typography>
+                                    </Grid>
+                                </Grid>
+                            </Paper>
                         </Grid>
 
                         {/* Right Hero Showcase — Official Emblem & Direct Contact Card */}
