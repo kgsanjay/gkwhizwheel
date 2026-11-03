@@ -59,6 +59,10 @@ class BikeController extends Controller
             });
         }
 
+        // Suppress bikes reserved for transfer even before a date is selected.
+        $query->whereDoesntHave('transfers', function ($transferQuery): void {
+            $transferQuery->whereIn('status', ['approved', 'in_transit']);
+        });
         $bikes = $query->orderBy('id', 'asc')->get();
 
         if ($hasDates) {
