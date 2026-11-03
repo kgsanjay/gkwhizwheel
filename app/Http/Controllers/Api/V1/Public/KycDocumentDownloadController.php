@@ -24,9 +24,22 @@ class KycDocumentDownloadController extends Controller
 
         $user = $request->user() ?? auth('sanctum')->user();
 
-        if ($user !== null) {
+        if ($user === null) {
+            abort(403, 'Authentication is required to access identity documents.');
+        }
+
+        {
             $isOwner = (int) $document->user_id === (int) $user->id;
-            $isStaffOrAdmin = in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+            $isStaffOrAdmin = $user->role === UserRole::SUPER_ADMIN;
+            if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+                $storeIds = $user->getAuthorizedStoreIds();
+                $isStaffOrAdmin = $storeIds !== null && \App\Models\Booking::query()
+                    ->where('user_id', $document->user_id)
+                    ->where(function ($query) use ($storeIds): void {
+                        $query->whereIn('pickup_store_id', $storeIds)
+                            ->orWhereIn('return_store_id', $storeIds);
+                    })->exists();
+            }
 
             if (! $isOwner && ! $isStaffOrAdmin) {
                 abort(403, 'Unauthorized access to KYC document.');
@@ -42,16 +55,6 @@ class KycDocumentDownloadController extends Controller
         }
 
         // Return JSON document descriptor response for testing/placeholder records
-        return new JsonResponse([
-            'success' => true,
-            'data' => [
-                'id' => $document->id,
-                'user_id' => $document->user_id,
-                'document_type' => $document->document_type?->value ?? (string) $document->document_type,
-                'file_path' => $document->file_path,
-                'verified' => (bool) $document->verified,
-            ],
-            'message' => 'KYC document access verified via signed URL.',
-        ]);
+        abort(404, 'KYC document file not found.');
     }
 }
