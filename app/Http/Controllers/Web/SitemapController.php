@@ -8,6 +8,8 @@ use App\Enums\BikeStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Bike;
 use App\Models\ServiceItem;
+use App\Models\Store;
+use App\Enums\StoreStatus;
 use Illuminate\Http\Response;
 
 class SitemapController extends Controller
@@ -23,6 +25,7 @@ class SitemapController extends Controller
         // 1. Static marketing pages
         $staticPages = [
             ['loc' => url('/'), 'priority' => '1.0', 'changefreq' => 'daily'],
+            ['loc' => url('/locations'), 'priority' => '0.9', 'changefreq' => 'weekly'],
             ['loc' => url('/services'), 'priority' => '0.9', 'changefreq' => 'daily'],
             ['loc' => url('/services/bikes'), 'priority' => '0.9', 'changefreq' => 'daily'],
             ['loc' => url('/services/cabs'), 'priority' => '0.8', 'changefreq' => 'weekly'],
@@ -43,6 +46,16 @@ class SitemapController extends Controller
                 'lastmod' => $now,
                 'changefreq' => $page['changefreq'],
                 'priority' => $page['priority'],
+            ];
+        }
+
+        // Only published and operational branches are publicly indexable.
+        foreach (Store::where('status', StoreStatus::ACTIVE)->where('publication_status', 'published')->whereNotNull('slug')->get() as $branch) {
+            $urls[] = [
+                'loc' => url('/locations/'.$branch->slug),
+                'lastmod' => $branch->updated_at?->toAtomString() ?? $now,
+                'changefreq' => 'weekly',
+                'priority' => '0.9',
             ];
         }
 
