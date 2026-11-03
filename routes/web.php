@@ -5,6 +5,9 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/locations', [\App\Http\Controllers\Web\PublicBranchController::class, 'index'])->name('locations.index');
+Route::get('/locations/{slug}', [\App\Http\Controllers\Web\PublicBranchController::class, 'show'])->name('locations.show');
+
 Route::get('/sitemap.xml', [\App\Http\Controllers\Web\SitemapController::class, 'index'])->name('sitemap');
 
 Route::get('/', function () {
