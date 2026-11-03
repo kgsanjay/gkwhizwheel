@@ -137,6 +137,10 @@ class BikeTransferService
             throw ValidationException::withMessages(['bike_id' => 'The bike must be available and the destination must differ from its current branch.']);
         }
 
+        if (! Store::whereKey((int) $bike->current_store_id)->where('status', StoreStatus::ACTIVE)->exists()) {
+            throw ValidationException::withMessages(['bike_id' => 'Source branch must be active.']);
+        }
+
         if (! Store::whereKey($destinationId)->where('status', StoreStatus::ACTIVE)->exists()) {
             throw ValidationException::withMessages(['to_store_id' => 'Choose an active destination branch.']);
         }
