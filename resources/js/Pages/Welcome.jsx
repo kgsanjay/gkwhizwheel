@@ -63,10 +63,12 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     const isDark = theme.palette.mode === 'dark';
 
     // Quick search form state
-    const today = new Date().toISOString().split('T')[0];
-    const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+    const dateLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const today = dateLocal(new Date());
+    const dayAfter = dateLocal(new Date(Date.now() + 2 * 86400000));
 
     const [searchStore, setSearchStore] = useState('');
+    const [returnStore, setReturnStore] = useState('');
     const [searchCategory, setSearchCategory] = useState('');
     const [startDate, setStartDate] = useState(today);
     const [endDate, setEndDate] = useState(dayAfter);
@@ -100,6 +102,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         e.preventDefault();
         const params = new URLSearchParams();
         if (searchStore) params.append('store_id', searchStore);
+        if (returnStore) params.append('return_store_id', returnStore);
         if (searchCategory) params.append('category_id', searchCategory);
         if (startDate) params.append('start_date', startDate);
         if (endDate) params.append('end_date', endDate);
@@ -107,181 +110,26 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     };
 
 
-    // Structured JSON-LD for local SEO & search engine rich snippets
+    // Brand homepage describes the organization; physical branch schema
+    // belongs on the corresponding published /locations/{slug} page.
     const structuredData = {
-        "@context": "https://schema.org",
-        "@type": "LocalBusiness",
-        "name": "GK WhizWheel - Bike Rental & Travel Services Honnavar",
-        "alternateName": ["GK WhizWheels", "G.K. WhizWheel", "Whizwheels Honnavar"],
-        "sameAs": ["https://share.google/GoM4iOgiuUIa7ZfwV"],
-        "description": "Premier travel and bike rental agency in Honnavar offering well-maintained scooters and bikes from ₹350/day, AC taxi transfers, backwater boating, scuba diving, and coastal homestays.",
-        "image": "https://whizwheels.in/images/logo.png",
-        "telephone": "+918660989586",
-        "email": "contact@whizwheels.in",
-        "url": "https://whizwheels.in/",
-        "priceRange": "₹350 - ₹5000",
-        "openingHours": "Mo-Su 06:00-23:00",
-        "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "Palya Main Rd, near Honnavar Railway Station",
-            "addressLocality": "Honnavar",
-            "addressRegion": "Karnataka",
-            "postalCode": "581334",
-            "addressCountry": "IN"
-        },
-        "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": 14.2802,
-            "longitude": 74.4437
-        },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "5.0",
-            "reviewCount": "324",
-            "bestRating": "5",
-            "worstRating": "1"
-        },
-        "openingHoursSpecification": [
-            {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-                "opens": "06:00",
-                "closes": "23:00"
-            }
-        ],
-        "areaServed": [
-            { "@type": "City", "name": "Honnavar" },
-            { "@type": "City", "name": "Kumta" },
-            { "@type": "City", "name": "Bhatkal" },
-            { "@type": "City", "name": "Murudeshwar" },
-            { "@type": "City", "name": "Gokarna" }
-        ],
-        "hasOfferCatalog": {
-            "@type": "OfferCatalog",
-            "name": "Honnavar Travel & Mobility Services Catalog",
-            "itemListElement": [
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Bike & Scooter Rentals in Honnavar",
-                        "description": "Daily self-drive scooter and motorcycle rental starting at ₹350/day with zero deposit option for exploring Honnavar beaches and Sharavathi backwaters"
-                    },
-                    "price": "350",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Honnavar Coastal Cabs & Station Taxi Transfers",
-                        "description": "Private sanitized AC cabs for Honnavar Railway Station pickups, Gokarna day trips, and Murudeshwar sightseeing"
-                    },
-                    "price": "1499",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Honnavar Homestays & Coastal Rooms",
-                        "description": "Riverside and beachfront authentic homestays in Honnavar with authentic Karavali meals and serene backwater views"
-                    },
-                    "price": "1200",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Sharavathi Backwater Boating & Mangrove Cruises",
-                        "description": "Guided motorboat and Shikara boat cruises through the pristine Sharavathi river estuary and mangrove trails in Honnavar"
-                    },
-                    "price": "350",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Netrani Island Scuba Diving & Snorkeling",
-                        "description": "PADI certified underwater scuba diving and snorkeling expeditions at Netrani Island with boat transfer and HD footage"
-                    },
-                    "price": "3499",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Local Travel Guides & Heritage Trails",
-                        "description": "Certified local storytelling guides for Mirjan Fort, Apsarakonda, hidden waterfalls, and coastal heritage walks"
-                    },
-                    "price": "799",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Custom Honnavar Vacation Tour Packages",
-                        "description": "All-in-one customized Karavali vacation packages combining stays, rides, boating, and scuba with 24/7 coordinator"
-                    },
-                    "price": "2999",
-                    "priceCurrency": "INR"
-                }
-            ]
-        }
-    };
-
-    const welcomeFaqSchema = {
         '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: 'What documents are required to rent a bike?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'To rent a two-wheeler, you need: (1) An original, valid Indian Driving License for two-wheelers, and (2) One government ID proof (Aadhaar Card, Voter ID, or Passport). Digital KYC can be completed online in advance or in 3 minutes during the vehicle handover.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'How much is the security deposit and when is it refunded?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'We offer zero-deposit options for eligible verified profiles, and nominal deposits (₹500 – ₹1,500 depending on vehicle model) for others. Security deposits are 100% refundable and credited directly back to your UPI or bank account within 2 hours of vehicle return following a quick inspection.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'What is your cancellation and booking rescheduling policy?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'We offer completely flexible cancellation. You can cancel your booking up to 12 hours before scheduled pickup for a full refund. Rescheduling dates or changing pickup times is free of charge, subject to fleet availability.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'What happens if the bike breaks down or gets a flat tire?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'All GK WhizWheel bikes undergo rigorous mechanical checkups before every rental. In the rare event of a breakdown or puncture anywhere along the coastal circuit, our 24/7 mobile roadside assistance team will provide on-site repair or dispatch an immediate vehicle replacement.',
-                },
-            },
-        ],
+        '@type': 'Organization',
+        name: 'G.K. WhizWheel Bike Rentals',
+        url: 'https://whizwheels.in/',
+        logo: 'https://whizwheels.in/images/logo.png',
+        description: 'Bike and scooter rentals with published pickup branches along coastal Karnataka.',
     };
 
     return (
         <AppLayout>
             <PageHead
-                title="Bike Rental Honnavar | Boating, Scuba, Tours – GK WhizWheel"
-                description="Explore Honnavar & Karavali coast with GK WhizWheel: bike rentals from ₹350/day, cabs, backwater boating, scuba diving, homestays & custom tour packages."
+                title="Bike Rentals in Honnavar & Murudeshwar | G.K. WhizWheel"
+                description="Explore bike and scooter rentals at G.K. WhizWheel pickup branches in Honnavar, Murudeshwar and coastal Karnataka. Compare bikes, choose dates and book online."
                 canonicalUrl="https://whizwheels.in/"
                 ogImage="/images/logo.png"
                 ogType="website"
-                structuredData={[structuredData, welcomeFaqSchema]}
+                structuredData={structuredData}
             />
 
             {/* =========================================================================
@@ -335,7 +183,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         <Grid size={{ xs: 12, lg: 7 }}>
                             <Chip
                                 icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 16 }} />}
-                                label="G.K. WhizWheel • 5.0 ★ (324 Google Reviews) • Honnavar, Karnataka"
+                                label="G.K. WhizWheel • Bike Rentals Across Coastal Karnataka"
                                 sx={{
                                     bgcolor: 'rgba(245, 158, 11, 0.12)',
                                     color: '#FBBF24',
@@ -395,16 +243,16 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     maxWidth: 680,
                                 }}
                             >
-                                Welcome to <strong>G.K. WhizWheel</strong>. We are Honnavar’s premier travel and mobility agency. Whether you want to <strong>rent a bike starting at ₹350/day</strong>, hire a <strong>private AC cab</strong> for station pickup & Gokarna tours, book a serene <strong>Sharavathi riverfront homestay</strong>, cruise the <strong>mangrove backwaters</strong>, or explore underwater coral reefs at <strong>Netrani Island</strong> — our local team manages every detail under one verified roof with zero hidden fees.
+                                Welcome to <strong>G.K. WhizWheel</strong>. Choose your pickup branch in Honnavar or Murudeshwar, compare our listed bikes and scooters, and check availability and pricing for your trip dates. You can select a different return branch where permitted; any additional one-way fee is shown before payment.
                             </Typography>
 
                             {/* Key Highlights Pill Badges */}
                             <Grid container spacing={1.5} sx={{ mb: 4 }}>
                                 {[
-                                    { text: '5.0 ★ Google Rated (324+ Reviews)', color: '#F59E0B' },
-                                    { text: 'Palya Rd & Railway Station Hubs', color: '#0284C7' },
-                                    { text: 'Zero Security Deposit Options', color: '#10B981' },
-                                    { text: '24/7 Roadside & Trip Assistance', color: '#7C3AED' },
+                                    { text: 'Honnavar & Murudeshwar branch discovery', color: '#F59E0B' },
+                                    { text: 'Choose your pickup location', color: '#0284C7' },
+                                    { text: 'View actual bike prices before checkout', color: '#10B981' },
+                                    { text: 'Optional one-way returns where available', color: '#7C3AED' },
                                 ].map((item, i) => (
                                     <Grid key={i} size={{ xs: 12, sm: 6 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1622,33 +1470,23 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 </Box>
 
                 {/* =========================================================================
+                    Branches are admin-managed; no hardcoded physical hubs.
+                ========================================================================= */}
+                                {/* =========================================================================
                     8. CONDENSED HONNAVAR HUBS (2-Card Compact Row)
                 ========================================================================== */}
                 <Box id="hubs" sx={{ mb: 8 }}>
                     <Box sx={{ mb: 3 }}>
                         <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 0.5 }}>
-                            Honnavar Pickup & Return Hubs
+                            Our Pickup & Return Branches
                         </Typography>
                         <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#64748B' }}>
-                            Two convenient locations for rapid bike pickup and returns
+                            Explore active branches and confirm current bike availability before booking
                         </Typography>
                     </Box>
 
                     <Grid container spacing={3}>
-                        {[
-                            {
-                                name: 'Palya Main Rd Hub (Head Office)',
-                                address: 'Palya Main Rd, Honnavar, Karnataka 581334',
-                                hours: 'Open 24 Hours Daily',
-                                mapUrl: 'https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334',
-                            },
-                            {
-                                name: 'Railway Station Hub',
-                                address: 'Station Road (Platform 1 Exit), Honnavar, Karnataka 581334',
-                                hours: 'Open 24 Hours Daily (Train Meet & Greet)',
-                                mapUrl: 'https://www.google.com/maps/dir/?api=1&destination=Honnavar+Railway+Station,+Karnataka',
-                            },
-                        ].map((hub, hIdx) => (
+                        {stores.map((hub, hIdx) => (
                             <Grid size={{ xs: 12, md: 6 }} key={hIdx}>
                                 <Paper
                                     elevation={0}
@@ -1671,24 +1509,22 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                                             <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, mt: 0.2, flexShrink: 0 }} />
                                             <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155' }}>
-                                                {hub.address}
+                                                {hub.address_line}, {hub.city}, {hub.state} {hub.pincode}
                                             </Typography>
                                         </Box>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <AccessTimeIcon sx={{ color: '#10B981', fontSize: 18, flexShrink: 0 }} />
                                             <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', fontWeight: 600 }}>
-                                                {hub.hours}
+                                                {hub.bikes_count ?? 0} bikes currently listed
                                             </Typography>
                                         </Box>
                                     </Box>
 
                                     <Button
                                         variant="outlined"
-                                        component="a"
-                                        href={hub.mapUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        startIcon={<DirectionsIcon />}
+                                        component={Link}
+                                        href={`/locations/${hub.slug}`}
+                                        startIcon={<TwoWheelerIcon />}
                                         sx={{
                                             alignSelf: 'flex-start',
                                             borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
@@ -1698,7 +1534,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
                                         }}
                                     >
-                                        Get Directions
+                                        View Branch Bikes
                                     </Button>
                                 </Paper>
                             </Grid>
