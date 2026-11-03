@@ -17,7 +17,7 @@ A unified online and offline bike & multi-service mobility platform designed for
 
 ## Tech Stack
 
-- **Backend:** Laravel 11, PHP 8.3, MySQL 8.0 / MariaDB
+- **Backend:** Laravel 12, PHP 8.3, MySQL 8.0 / MariaDB
 - **Web Frontend:** React 18, Inertia.js, Material UI (MUI) & Tailwind CSS
 - **Mobile Android App:** Native Android (Gradle 8.7, Android SDK 34, Java 21) & React Native PWA wrapper
 - **Payment Gateway:** Razorpay with cryptographic webhook verification & idempotency
