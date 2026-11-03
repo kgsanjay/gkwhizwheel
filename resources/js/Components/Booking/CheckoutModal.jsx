@@ -59,22 +59,22 @@ export default function CheckoutModal({
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [heldBooking, setHeldBooking] = useState(null);
-    const [timeLeftSeconds, setTimeLeftSeconds] = useState(900); // 15-minute countdown
+    const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
 
-    // Countdown timer once booking is held
+    // Always show the actual expiry timestamp issued by Laravel. The backend
+    // reserves bikes for 10 minutes; a hardcoded 15-minute UI is misleading.
     useEffect(() => {
-        if (!heldBooking) return;
-        const timer = setInterval(() => {
-            setTimeLeftSeconds((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        if (!heldBooking?.held_until) {
+            setTimeLeftSeconds(0);
+            return;
+        }
+
+        const expiration = new Date(heldBooking.held_until).getTime();
+        const update = () => setTimeLeftSeconds(Math.max(0, Math.ceil((expiration - Date.now()) / 1000)));
+        update();
+        const timer = setInterval(update, 1000);
         return () => clearInterval(timer);
-    }, [heldBooking]);
+    }, [heldBooking?.held_until]);
 
     const formatTimer = (secs) => {
         const m = Math.floor(secs / 60);
@@ -89,7 +89,7 @@ export default function CheckoutModal({
     const handleBookAndPay = async () => {
         setIsSubmitting(true);
         setErrorMessage('');
-        setStatusMessage('Generating reservation hold (15-min lock)...');
+        setStatusMessage('Generating a time-limited reservation hold...');
 
         try {
             // 1. Generate client-side Idempotency-Key UUID at the moment "Book Now" is clicked
@@ -165,7 +165,7 @@ export default function CheckoutModal({
                 modal: {
                     ondismiss: function () {
                         setIsSubmitting(false);
-                        setStatusMessage('Payment cancelled or dismissed. Hold is still active for 15 minutes.');
+                        setStatusMessage('Payment cancelled or dismissed. Check the reservation timer before retrying.');
                     },
                 },
             };
@@ -273,7 +273,7 @@ export default function CheckoutModal({
                         severity={timeLeftSeconds > 180 ? 'info' : 'warning'}
                         sx={{ mb: 2.5, fontWeight: 600 }}
                     >
-                        Reservation Hold Active ({heldBooking.booking_reference}): Expires in{' '}
+                        Reservation Hold ({heldBooking.booking_reference}): {timeLeftSeconds > 0 ? 'Expires in' : 'Expired'}{' '}
                         <strong>{formatTimer(timeLeftSeconds)}</strong>
                     </Alert>
                 )}
