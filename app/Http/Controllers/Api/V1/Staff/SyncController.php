@@ -67,16 +67,22 @@ class SyncController extends Controller
             }
 
             try {
-                $itemData = match ($actionType) {
+                $itemData = \Illuminate\Support\Facades\DB::transaction(function () use ($actionType, $payload, $idempotencyKey, $staffUser, $availabilityService, $bookingService, $refundService, $deviceId) {
+                    // Acquire the idempotency lock before executing the business action.
+                    $prior = SyncQueue::where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
+                    if ($prior !== null && $prior->status === SyncStatus::SYNCED) {
+                        return ['already_synced' => true];
+                    }
+                    $result = match ($actionType) {
                     'create_booking', 'hold_booking' => $this->handleCreateBooking($payload, $idempotencyKey, $staffUser, $availabilityService),
                     'collect_payment' => $this->handleCollectPayment($payload, $staffUser, $bookingService),
                     'handover' => $this->handleHandover($payload, $staffUser, $bookingService),
                     'return', 'mark_returned' => $this->handleReturn($payload, $staffUser, $bookingService, $refundService),
                     'maintenance' => $this->handleMaintenance($payload, $staffUser),
                     default => throw new InvalidArgumentException("Unsupported action type: '{$actionType}'"),
-                };
+                    };
 
-                SyncQueue::updateOrCreate(
+                    SyncQueue::updateOrCreate(
                     ['idempotency_key' => $idempotencyKey],
                     [
                         'device_id' => $deviceId,
@@ -86,7 +92,9 @@ class SyncController extends Controller
                         'status' => SyncStatus::SYNCED,
                         'synced_at' => now(),
                     ]
-                );
+                    );
+                    return $result;
+                });
 
                 $results[] = [
                     'idempotency_key' => $idempotencyKey,
