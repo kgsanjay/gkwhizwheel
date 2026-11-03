@@ -13,6 +13,7 @@ Route::get('/sitemap.xml', [\App\Http\Controllers\Web\SitemapController::class, 
 Route::get('/', function () {
     $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
         ->where('status', \App\Enums\BikeStatus::AVAILABLE)
+        ->whereDoesntHave('transfers', fn ($q) => $q->whereIn('status', ['approved', 'in_transit']))
         ->orderBy('id')
         ->get();
 
@@ -71,6 +72,7 @@ Route::get('/services', function () {
         ->get();
 
     $availableBikes = \App\Models\Bike::where('status', \App\Enums\BikeStatus::AVAILABLE)
+        ->whereDoesntHave('transfers', fn ($q) => $q->whereIn('status', ['approved', 'in_transit']))
         ->with('category')->get();
 
     return Inertia::render('Services', [
