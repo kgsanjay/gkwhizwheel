@@ -488,7 +488,7 @@ export default function CheckoutModal({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
                     <SecurityIcon sx={{ fontSize: 14, color: '#64748B' }} />
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                        256-bit encrypted transaction • Concurrency-safe hold • Instant deposit refund on return
+                        Secure payment processing • Reserved bike hold • Refunds subject to rental terms
                     </Typography>
                 </Box>
             </DialogActions>
