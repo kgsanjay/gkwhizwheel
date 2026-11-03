@@ -3,6 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
+import { getServiceDisplayRate, getServiceDisplayImage } from '../utils/publicCatalog';
 import {
     Box,
     Typography,
@@ -58,7 +59,7 @@ import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
 
-export default function Welcome({ featuredBikes = [], categories = [], stores = [] }) {
+export default function Welcome({ featuredBikes = [], categories = [], stores = [], availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -806,7 +807,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 'Curated Sunset Clifftops & Photography Spots',
                             ],
                         },
-                    ].map((srv) => (
+                    ].map((srv) => ({
+                        ...srv,
+                        rate: getServiceDisplayRate(srv.id, availableItems, featuredBikes),
+                        image: getServiceDisplayImage(srv.id, availableItems, srv.image),
+                    })).map((srv) => (
                         <Grid key={srv.id} size={{ xs: 12, sm: 6, lg: 4 }}>
                             <Card
                                 sx={{
