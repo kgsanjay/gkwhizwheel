@@ -189,16 +189,6 @@ class AvailabilityService
                 ]);
             }
 
-            // A future booking may change the bike's branch before this pickup.
-            // Also reject a new route that would strand an existing later booking.
-            if (! $this->bikeLocationSchedule->canReserve(
-                $bike, $start, $end, $pickupStoreId, $returnStoreId
-            )) {
-                throw new BikeNotAvailableException(
-                    'Bike is not available at the requested pickup branch for these dates.'
-                );
-            }
-
             // 2. Check overlapping bookings in held/confirmed/handed_over
             $hasConflict = Booking::where('bike_id', $bike->id)
                 ->where(function ($query): void {
@@ -220,6 +210,17 @@ class AvailabilityService
             if ($hasConflict) {
                 throw new BikeNotAvailableException('Bike is not available for the requested dates.');
             }
+
+            // A future booking may change the bike's branch before this pickup.
+            // Also reject a new route that would strand an existing later booking.
+            if (! $this->bikeLocationSchedule->canReserve(
+                $bike, $start, $end, $pickupStoreId, $returnStoreId
+            )) {
+                throw new BikeNotAvailableException(
+                    'Bike is not available at the requested pickup branch for these dates.'
+                );
+            }
+
 
             // 3. Compute itemized price quote
             $quote = $this->pricingService->calculateQuote(
