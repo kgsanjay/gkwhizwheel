@@ -219,6 +219,14 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/check-in/sync', [\App\Http\Controllers\Web\Admin\AdminCheckInWebController::class, 'sync'])->name('admin.check-in.sync');
     Route::post('/check-in/{type}/{id}/process', [\App\Http\Controllers\Web\Admin\AdminCheckInWebController::class, 'process'])->name('admin.check-in.process');
 
+    // Audited cross-branch bike transfers
+    Route::get('/bike-transfers', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'index'])->name('admin.bike-transfers.index');
+    Route::post('/bike-transfers', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'store'])->name('admin.bike-transfers.store');
+    Route::post('/bike-transfers/{id}/approve', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'approve'])->name('admin.bike-transfers.approve');
+    Route::post('/bike-transfers/{id}/dispatch', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'dispatch'])->name('admin.bike-transfers.dispatch');
+    Route::post('/bike-transfers/{id}/receive', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'receive'])->name('admin.bike-transfers.receive');
+    Route::post('/bike-transfers/{id}/cancel', [\App\Http\Controllers\Web\Admin\AdminBikeTransferWebController::class, 'cancel'])->name('admin.bike-transfers.cancel');
+
     // Bike Inventory
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');
     Route::get('/bikes/create', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'create'])->name('admin.bikes.create');
