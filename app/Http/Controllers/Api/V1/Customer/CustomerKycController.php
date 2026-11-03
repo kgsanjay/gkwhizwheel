@@ -40,7 +40,16 @@ class CustomerKycController extends Controller
         $document = KycDocument::findOrFail($id);
 
         $isOwner = $user !== null && (int) $document->user_id === (int) $user->id;
-        $isStaffOrAdmin = $user !== null && in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+        $isStaffOrAdmin = $user !== null && $user->role === UserRole::SUPER_ADMIN;
+        if ($user !== null && in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+            $storeIds = $user->getAuthorizedStoreIds();
+            $isStaffOrAdmin = $storeIds !== null && \App\Models\Booking::query()
+                ->where('user_id', $document->user_id)
+                ->where(function ($query) use ($storeIds): void {
+                    $query->whereIn('pickup_store_id', $storeIds)
+                        ->orWhereIn('return_store_id', $storeIds);
+                })->exists();
+        }
 
         if (! $isOwner && ! $isStaffOrAdmin) {
             abort(403, 'Unauthorized access to KYC document.');
