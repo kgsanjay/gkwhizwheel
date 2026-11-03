@@ -30,8 +30,20 @@ Route::get('/', function () {
         ->orderBy('city')
         ->get();
 
+    // Public hero data must never expose registration numbers, odometer
+    // readings or internal fleet identifiers beyond the public bike ID.
+    $publicBikes = $bikes->map(function (\App\Models\Bike $bike): array {
+        $resource = (new \App\Http\Resources\BikeResource($bike))->resolve();
+
+        return array_intersect_key($resource, array_flip([
+            'id', 'brand', 'model_name', 'daily_rate',
+            'deposit_amount', 'primary_image_url', 'current_store',
+            'category', 'transmission',
+        ]));
+    })->values();
+
     return Inertia::render('Welcome', [
-        'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
+        'featuredBikes' => $publicBikes,
         'categories' => $categories,
         'stores' => $stores,
     ]);
