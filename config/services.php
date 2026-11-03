@@ -38,14 +38,14 @@ return [
     ],
 
     'razorpay' => [
-        'key_id' => env('RAZORPAY_KEY_ID', 'rzp_test_placeholder'),
-        'key_secret' => env('RAZORPAY_KEY_SECRET', 'test_secret_placeholder'),
-        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET', 'test_webhook_secret'),
+        'key_id' => env('RAZORPAY_KEY_ID'),
+        'key_secret' => env('RAZORPAY_KEY_SECRET'),
+        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
     ],
 
     'phonepe' => [
-        'merchant_id' => env('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT'),
-        'salt_key' => env('PHONEPE_SALT_KEY', 'test_phonepe_salt_key'),
+        'merchant_id' => env('PHONEPE_MERCHANT_ID'),
+        'salt_key' => env('PHONEPE_SALT_KEY'),
         'salt_index' => env('PHONEPE_SALT_INDEX', '1'),
         'env' => env('PHONEPE_ENV', 'sandbox'),
         'base_url' => env('PHONEPE_BASE_URL', 'https://api-preprod.phonepe.com/apis/pg-sandbox'),
@@ -54,11 +54,11 @@ return [
     ],
 
     'whatsapp' => [
-        'token' => env('WHATSAPP_CLOUD_API_TOKEN', 'test_wa_token'),
-        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID', 'test_wa_phone_id'),
-        'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID', 'test_wa_business_id'),
-        'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'test_wa_verify_token'),
-        'app_secret' => env('WHATSAPP_APP_SECRET', 'test_wa_app_secret'),
+        'token' => env('WHATSAPP_CLOUD_API_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+        'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN'),
+        'app_secret' => env('WHATSAPP_APP_SECRET'),
         'api_version' => env('WHATSAPP_API_VERSION', 'v19.0'),
     ],
 
