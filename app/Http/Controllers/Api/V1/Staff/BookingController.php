@@ -429,12 +429,6 @@ class BookingController extends Controller
                 processedBy: $request->user()->id
             );
 
-            if ($request->filled('deposit_refund_amount')) {
-                $overrideDepositRefund = round(max(0.0, (float) $request->validated('deposit_refund_amount')), 2);
-                $refund->update([
-                    'amount' => $overrideDepositRefund,
-                ]);
-            }
         }
 
         ActivityLog::create([
