@@ -74,7 +74,9 @@ class BikeController extends Controller
                         (string) $request->validated('end_date'),
                         null,
                         $pickupStoreId,
-                        $pickupStoreId
+                        $request->filled('return_store_id')
+                            ? (int) $request->validated('return_store_id')
+                            : $pickupStoreId
                     );
                 }
 
