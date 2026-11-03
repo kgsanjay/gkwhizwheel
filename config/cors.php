@@ -33,7 +33,7 @@ return [
             'capacitor://localhost',
             'ionic://localhost',
         ],
-        app()->environment('local', 'testing') ? [
+        in_array(env('APP_ENV', 'production'), ['local', 'testing'], true) ? [
             'http://localhost',
             'http://localhost:3000',
             'http://localhost:8000',
