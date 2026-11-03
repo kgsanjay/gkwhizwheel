@@ -1236,7 +1236,7 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
                                         '&:hover': { filter: 'brightness(0.95)' },
                                     }}
                                 />
-                                {service.quickPills.map((pill, pIdx) => {
+                                {[...new Set(availableItems.map((item) => item.category).filter(Boolean))].map((pill, pIdx) => {
                                     const isSelected = selectedCategoryFilter === pill;
                                     return (
                                         <Chip
