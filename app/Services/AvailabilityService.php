@@ -43,6 +43,7 @@ class AvailabilityService
                 $query->whereIn('status', [
                     BookingStatus::CONFIRMED->value,
                     BookingStatus::HANDED_OVER->value,
+                    BookingStatus::PENDING_PAYMENT->value,
                 ])->orWhere(function ($q): void {
                     $q->where('status', BookingStatus::HELD->value)
                         ->where(function ($hq): void {
@@ -79,6 +80,7 @@ class AvailabilityService
                 $query->whereIn('status', [
                     BookingStatus::CONFIRMED->value,
                     BookingStatus::HANDED_OVER->value,
+                    BookingStatus::PENDING_PAYMENT->value,
                 ])->orWhere(function ($q): void {
                     $q->where('status', BookingStatus::HELD->value)
                         ->where(function ($hq): void {
@@ -166,6 +168,7 @@ class AvailabilityService
                     $query->whereIn('status', [
                         BookingStatus::CONFIRMED->value,
                         BookingStatus::HANDED_OVER->value,
+                        BookingStatus::PENDING_PAYMENT->value,
                     ])->orWhere(function ($q): void {
                         $q->where('status', BookingStatus::HELD->value)
                             ->where(function ($hq): void {
@@ -223,7 +226,7 @@ class AvailabilityService
                 $booking->addons()->create([
                     'addon_type' => $addon['addon_type'],
                     'quantity' => (int) ($addon['quantity'] ?? 1),
-                    'unit_price' => (float) ($addon['unit_price'] ?? 0.0),
+                    'unit_price' => (float) (\App\Services\PricingService::ADDON_RATES[(string) $addon['addon_type']] ?? 0.0),
                 ]);
             }
 
