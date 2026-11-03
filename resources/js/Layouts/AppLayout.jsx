@@ -380,7 +380,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5, mt: 0.2 }}>
                                     <ElectricBoltIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
                                     <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, letterSpacing: '0.02em' }}>
-                                        Honnavar, Karnataka
+                                        Honnavar & Murudeshwar, Karnataka
                                     </Typography>
                                 </Box>
                             </Box>
@@ -422,6 +422,10 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 About
                             </Button>
 
+                            <Button component={Link} href="/locations" sx={{
+    color: url.startsWith('/locations') ? '#F59E0B' : (isDark ? '#E2E8F0' : '#1E293B'),
+    fontWeight: 700, fontSize: '0.875rem', px: 1.6, py: 0.6, borderRadius: 2,
+}}>Locations</Button>
                             {/* Desktop 2-Column Services Mega Menu Dropdown */}
                             <Button
                                 id="desktop-services-mega-menu-btn"
@@ -1044,7 +1048,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 GK WhizWheels
                             </Typography>
                             <Typography variant="caption" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 700 }}>
-                                Honnavar, Karnataka
+                                Honnavar & Murudeshwar, Karnataka
                             </Typography>
                         </Box>
                     </Box>
@@ -1087,6 +1091,8 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
                 {/* Drawer Scrollable Content */}
                 <Box sx={{ p: 2.5, overflowY: 'auto', flexGrow: 1 }}>
+                    <Button component={Link} href="/locations" onClick={handleCloseMobileDrawer} fullWidth variant="outlined"
+                        sx={{ mb: 2, justifyContent: 'flex-start', color: '#F59E0B', fontWeight: 700 }}>Explore Pickup Locations</Button>
                     {/* User Profile / Quick Auth Bar */}
                     {auth?.user ? (
                         <Paper

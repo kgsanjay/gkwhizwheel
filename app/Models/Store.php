@@ -30,6 +30,15 @@ class Store extends Model
         'phone',
         'operating_hours',
         'status',
+        'slug',
+        'public_name',
+        'hero_image_url',
+        'public_description',
+        'pickup_instructions',
+        'seo_title',
+        'seo_description',
+        'publication_status',
+        'published_at',
     ];
 
     /**
@@ -44,6 +53,7 @@ class Store extends Model
             'longitude' => 'decimal:7',
             'operating_hours' => 'array',
             'status' => StoreStatus::class,
+            'published_at' => 'datetime',
         ];
     }
 

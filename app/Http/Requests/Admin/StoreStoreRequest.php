@@ -38,6 +38,14 @@ class StoreStoreRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'operating_hours' => ['nullable', 'array'],
             'status' => ['nullable', new Enum(StoreStatus::class)],
+            'slug' => ['nullable', 'string', 'max:160', 'alpha_dash:ascii', 'unique:stores,slug'],
+            'public_name' => ['nullable', 'string', 'max:160'],
+            'hero_image_url' => ['nullable', 'url:http,https', 'max:2048'],
+            'public_description' => ['nullable', 'string', 'max:5000'],
+            'pickup_instructions' => ['nullable', 'string', 'max:3000'],
+            'seo_title' => ['nullable', 'string', 'max:160'],
+            'seo_description' => ['nullable', 'string', 'max:320'],
+            'publication_status' => ['sometimes', 'in:draft,published'],
         ];
     }
 
