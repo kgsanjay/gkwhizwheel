@@ -76,12 +76,12 @@ beforeEach(function (): void {
     ];
 });
 
-function scheduleReservation(int $pickup, int $return, string $start, string $end, BookingStatus $status = BookingStatus::CONFIRMED, ?Carbon $expiry = null): Booking
+function scheduleReservation(Bike $bike, User $customer, int $pickup, int $return, string $start, string $end, BookingStatus $status = BookingStatus::CONFIRMED, ?Carbon $expiry = null): Booking
 {
     return Booking::create([
         'booking_reference' => 'BK-FUTURE-'.strtoupper(\Illuminate\Support\Str::random(8)),
-        'bike_id' => $this->bike->id,
-        'user_id' => $this->customer->id,
+        'bike_id' => $bike->id,
+        'user_id' => $customer->id,
         'pickup_store_id' => $pickup,
         'return_store_id' => $return,
         'channel' => BookingChannel::ONLINE,
@@ -99,6 +99,7 @@ function scheduleReservation(int $pickup, int $return, string $start, string $en
 
 test('a prior one-way return makes the bike bookable at its future destination only', function (): void {
     scheduleReservation(
+        $this->bike, $this->customer,
         $this->murudeshwar->id, $this->honnavar->id,
         $this->dates['earlyStart'], $this->dates['earlyEnd']
     );
@@ -128,6 +129,7 @@ test('a prior one-way return makes the bike bookable at its future destination o
 
 test('hold allows a later Honnavar pickup after a confirmed Murudeshwar to Honnavar return', function (): void {
     scheduleReservation(
+        $this->bike, $this->customer,
         $this->murudeshwar->id, $this->honnavar->id,
         $this->dates['earlyStart'], $this->dates['earlyEnd']
     );
@@ -150,6 +152,7 @@ test('hold allows a later Honnavar pickup after a confirmed Murudeshwar to Honna
 
 test('inserting an earlier one-way booking cannot strand an existing later pickup', function (): void {
     scheduleReservation(
+        $this->bike, $this->customer,
         $this->murudeshwar->id, $this->murudeshwar->id,
         $this->dates['lateStart'], $this->dates['lateEnd']
     );
@@ -170,6 +173,7 @@ test('inserting an earlier one-way booking cannot strand an existing later picku
 
 test('inserted earlier booking is allowed if it preserves the next scheduled pickup branch', function (): void {
     scheduleReservation(
+        $this->bike, $this->customer,
         $this->murudeshwar->id, $this->murudeshwar->id,
         $this->dates['lateStart'], $this->dates['lateEnd']
     );
@@ -190,6 +194,7 @@ test('inserted earlier booking is allowed if it preserves the next scheduled pic
 
 test('pending payment bookings block date-filtered public availability', function (): void {
     scheduleReservation(
+        $this->bike, $this->customer,
         $this->murudeshwar->id, $this->murudeshwar->id,
         $this->dates['earlyStart'], $this->dates['earlyEnd'],
         BookingStatus::PENDING_PAYMENT, Carbon::now()->addMinutes(15)
@@ -203,6 +208,7 @@ test('pending payment bookings block date-filtered public availability', functio
 
 test('expired holds do not affect future branch projection', function (): void {
     scheduleReservation(
+        $this->bike, $this->customer,
         $this->murudeshwar->id, $this->honnavar->id,
         $this->dates['earlyStart'], $this->dates['earlyEnd'],
         BookingStatus::HELD, Carbon::now()->subMinutes(2)
