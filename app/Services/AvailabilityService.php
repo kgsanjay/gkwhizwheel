@@ -20,7 +20,8 @@ use Illuminate\Support\Str;
 class AvailabilityService
 {
     public function __construct(
-        protected PricingService $pricingService
+        protected PricingService $pricingService,
+        protected BikeLocationSchedule $bikeLocationSchedule
     ) {
     }
 
@@ -31,7 +32,9 @@ class AvailabilityService
         int|Bike $bike,
         CarbonInterface|string $startDate,
         CarbonInterface|string $endDate,
-        ?int $excludeBookingId = null
+        ?int $excludeBookingId = null,
+        ?int $pickupStoreId = null,
+        ?int $returnStoreId = null
     ): bool {
         $bikeModel = $bike instanceof Bike ? $bike : Bike::findOrFail($bike);
 
@@ -58,7 +61,19 @@ class AvailabilityService
             $query->where('id', '!=', $excludeBookingId);
         }
 
-        return ! $query->exists();
+        if ($query->exists()) {
+            return false;
+        }
+
+        return $pickupStoreId === null
+            || $this->bikeLocationSchedule->canReserve(
+                $bikeModel,
+                $startDate,
+                $endDate,
+                $pickupStoreId,
+                $returnStoreId ?? $pickupStoreId,
+                $excludeBookingId
+            );
     }
 
     /**
@@ -162,7 +177,7 @@ class AvailabilityService
 
             // A vehicle cannot be picked up from another branch, nor rented
             // while physically unavailable or under maintenance.
-            if ($bike->status !== \App\Enums\BikeStatus::AVAILABLE || (int) $bike->current_store_id !== $pickupStoreId) {
+            if ($bike->status !== \App\Enums\BikeStatus::AVAILABLE) {
                 throw new BikeNotAvailableException('The selected bike is not available for pickup at this branch.');
             }
 
@@ -172,6 +187,16 @@ class AvailabilityService
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'return_store_id' => 'Pickup and return branches must both be active.',
                 ]);
+            }
+
+            // A future booking may change the bike's branch before this pickup.
+            // Also reject a new route that would strand an existing later booking.
+            if (! $this->bikeLocationSchedule->canReserve(
+                $bike, $start, $end, $pickupStoreId, $returnStoreId
+            )) {
+                throw new BikeNotAvailableException(
+                    'Bike is not available at the requested pickup branch for these dates.'
+                );
             }
 
             // 2. Check overlapping bookings in held/confirmed/handed_over
