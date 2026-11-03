@@ -230,7 +230,7 @@ class PricingService
             $type = (string) ($addon['addon_type'] ?? 'addon');
             $qty = max(1, (int) ($addon['quantity'] ?? 1));
             // ponytail: Always resolve unit price server-side from standard catalog if known
-            $unitPrice = self::ADDON_RATES[$type] ?? (float) ($addon['unit_price'] ?? 0.0);
+            $unitPrice = self::ADDON_RATES[$type] ?? throw new InvalidArgumentException("Unknown booking add-on type: {$type}");
             $addonTotal = round($qty * $unitPrice, 2);
             $totalAddonsAmount += $addonTotal;
 

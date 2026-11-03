@@ -47,7 +47,17 @@ class BookingService
             'status' => BookingStatus::CONFIRMED,
         ]);
 
-        $booking->user?->notify(new \App\Notifications\BookingConfirmationNotification($booking));
+        // Notify only after payment and booking state have been committed.
+        DB::afterCommit(static function () use ($booking): void {
+            try {
+                $booking->user?->notify(new \App\Notifications\BookingConfirmationNotification($booking));
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::error('Booking confirmation notification failed', [
+                    'booking_id' => $booking->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        });
 
         return $booking->refresh();
     }

@@ -128,7 +128,7 @@ test('Razorpay duplicate webhook delivery returns 200 and prevents duplicate Pay
         'base_amount' => 1800.00,
         'deposit_amount' => 2000.00,
         'total_amount' => 3800.00,
-        'price_breakdown_json' => [],
+        'price_breakdown_json' => ['razorpay_order_id' => 'order_test_race_01'],
         'idempotency_key' => 'idemp-rzp-race-01',
     ]);
 
@@ -138,6 +138,7 @@ test('Razorpay duplicate webhook delivery returns 200 and prevents duplicate Pay
             'payment' => [
                 'entity' => [
                     'id' => 'pay_rzp_race_condition_ref_001',
+                    'order_id' => 'order_test_race_01',
                     'amount' => 380000,
                     'currency' => 'INR',
                     'notes' => [
@@ -208,12 +209,13 @@ test('PhonePe duplicate webhook delivery returns 200 and prevents duplicate Paym
         'deposit_amount' => 2000.00,
         'total_amount' => 3800.00,
         'price_breakdown_json' => [
-            'phonepe_transaction_id' => 'TXN_BK_'.$booking_id = '123',
+            'phonepe_transaction_id' => 'pending',
         ],
         'idempotency_key' => 'idemp-phonepe-race-01',
     ]);
 
     $merchantTxnId = 'TXN_BK_'.$booking->id.'_'.time();
+    $booking->update(['price_breakdown_json' => ['phonepe_transaction_id' => $merchantTxnId]]);
 
     $payloadData = [
         'code' => 'PAYMENT_SUCCESS',
@@ -275,7 +277,7 @@ test('Razorpay webhook logs warning and returns 200 when UniqueConstraintViolati
         'base_amount' => 1800.00,
         'deposit_amount' => 2000.00,
         'total_amount' => 3800.00,
-        'price_breakdown_json' => [],
+        'price_breakdown_json' => ['razorpay_order_id' => 'order_test_clash_01'],
         'idempotency_key' => 'idemp-rzp-clash-01',
     ]);
 
@@ -285,6 +287,7 @@ test('Razorpay webhook logs warning and returns 200 when UniqueConstraintViolati
             'payment' => [
                 'entity' => [
                     'id' => 'pay_simulated_unique_clash',
+                    'order_id' => 'order_test_clash_01',
                     'amount' => 380000,
                     'currency' => 'INR',
                     'notes' => [
@@ -360,6 +363,7 @@ test('PhonePe webhook logs warning and returns 200 when UniqueConstraintViolatio
     ]);
 
     $merchantTxnId = 'TXN_BK_'.$booking->id.'_clash_test';
+    $booking->update(['price_breakdown_json' => ['phonepe_transaction_id' => $merchantTxnId]]);
 
     $payloadData = [
         'code' => 'PAYMENT_SUCCESS',

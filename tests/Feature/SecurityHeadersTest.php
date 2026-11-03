@@ -53,7 +53,9 @@ class SecurityHeadersTest extends TestCase
 
     public function test_strict_transport_security_is_not_sent_over_insecure_http(): void
     {
-        $response = $this->get('/');
+        // Explicitly reset HTTPS flags that previous HTTPS requests may leave in the test client.
+        $this->withServerVariables(['HTTPS' => 'off', 'SERVER_PORT' => 80, 'HTTP_X_FORWARDED_PROTO' => 'http']);
+        $response = $this->get('http://localhost/');
 
         $response->assertStatus(200);
         $this->assertNull($response->headers->get('Strict-Transport-Security'));

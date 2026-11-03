@@ -96,8 +96,18 @@ class PhonePeWebhookController extends Controller
                     ], 404);
                 }
 
+                $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
+                if ($gatewayTransactionId === '' || $merchantTransactionId === '' ||
+                    ! hash_equals((string) ($breakdown['phonepe_transaction_id'] ?? ''), $merchantTransactionId) ||
+                    (int) round($amount * 100) !== (int) round((float) $booking->total_amount * 100)) {
+                    return response()->json(['success' => false, 'message' => 'Payment does not match the checkout transaction.'], 422);
+                }
+
                 // Idempotency: return 200 if already processed
                 $existingPayment = Payment::where('gateway_reference', $gatewayTransactionId)->lockForUpdate()->first();
+                if ($existingPayment && (int) $existingPayment->booking_id !== (int) $booking->id) {
+                    return response()->json(['success' => false, 'message' => 'Payment reference belongs to another booking.'], 409);
+                }
                 if ($existingPayment && $booking->status === BookingStatus::CONFIRMED) {
                     return response()->json([
                         'success' => true,
@@ -117,7 +127,7 @@ class PhonePeWebhookController extends Controller
                     [
                         'booking_id' => $booking->id,
                         'type' => PaymentType::ADVANCE,
-                        'amount' => $amount > 0 ? $amount : (float) $booking->total_amount,
+                        'amount' => $amount,
                         'method' => PaymentMethod::PHONEPE,
                         'status' => PaymentStatus::SUCCESS,
                         'collected_by' => null,

@@ -216,7 +216,7 @@ test('customer booking creation stores dynamic surge quote in customer_notes', f
         'customer_name' => 'Vikram Shenoy',
         'customer_phone' => '9845112233',
         'customer_email' => 'vikram@example.com',
-        'start_datetime' => '2026-09-12 06:30:00', // Saturday
+        'start_datetime' => '2027-09-11 06:30:00', // Saturday; future date for CI runs
         'quantity' => 2,
         'pickup_location' => 'Murudeshwar Port',
         'payment_method' => 'pay_on_arrival',

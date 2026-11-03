@@ -144,13 +144,14 @@ class SecurityAuditComplianceTest extends TestCase
         $unsignedResponse = $this->get('/api/v1/kyc-documents/' . $kycDoc->id);
         $this->assertTrue(in_array($unsignedResponse->status(), [401, 403]));
 
-        // Valid signed URL within 15 minutes allows access
+        // Valid signed URL additionally requires an authenticated document owner.
         $validSignedUrl = URL::temporarySignedRoute(
             'kyc-documents.download',
             now()->addMinutes(15),
             ['id' => $kycDoc->id]
         );
 
+        $this->actingAs($this->customerUser);
         $signedResponse = $this->get($validSignedUrl);
         $signedResponse->assertOk();
 

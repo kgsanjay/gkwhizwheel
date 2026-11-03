@@ -44,7 +44,7 @@ class AvailabilityService
                     BookingStatus::CONFIRMED->value,
                     BookingStatus::HANDED_OVER->value,
                 ])->orWhere(function ($q): void {
-                    $q->where('status', BookingStatus::HELD->value)
+                    $q->whereIn('status', [BookingStatus::HELD->value, BookingStatus::PENDING_PAYMENT->value])
                         ->where(function ($hq): void {
                             $hq->whereNull('held_until')
                                 ->orWhere('held_until', '>', now());
@@ -80,7 +80,7 @@ class AvailabilityService
                     BookingStatus::CONFIRMED->value,
                     BookingStatus::HANDED_OVER->value,
                 ])->orWhere(function ($q): void {
-                    $q->where('status', BookingStatus::HELD->value)
+                    $q->whereIn('status', [BookingStatus::HELD->value, BookingStatus::PENDING_PAYMENT->value])
                         ->where(function ($hq): void {
                             $hq->whereNull('held_until')
                                 ->orWhere('held_until', '>', now());
@@ -167,7 +167,7 @@ class AvailabilityService
                         BookingStatus::CONFIRMED->value,
                         BookingStatus::HANDED_OVER->value,
                     ])->orWhere(function ($q): void {
-                        $q->where('status', BookingStatus::HELD->value)
+                        $q->whereIn('status', [BookingStatus::HELD->value, BookingStatus::PENDING_PAYMENT->value])
                             ->where(function ($hq): void {
                                 $hq->whereNull('held_until')
                                     ->orWhere('held_until', '>', now());
@@ -223,7 +223,7 @@ class AvailabilityService
                 $booking->addons()->create([
                     'addon_type' => $addon['addon_type'],
                     'quantity' => (int) ($addon['quantity'] ?? 1),
-                    'unit_price' => (float) ($addon['unit_price'] ?? 0.0),
+                    'unit_price' => (float) (\App\Services\PricingService::ADDON_RATES[(string) $addon['addon_type']] ?? 0.0),
                 ]);
             }
 

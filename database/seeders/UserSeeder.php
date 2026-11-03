@@ -19,6 +19,11 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        // Never provision predictable demo accounts in a production environment.
+        if (app()->environment('production')) {
+            return;
+        }
+
         // Ensure Spatie roles exist for all enum cases
         foreach (UserRole::cases() as $role) {
             Role::firstOrCreate(['name' => $role->value, 'guard_name' => 'web']);

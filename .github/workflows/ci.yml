@@ -29,12 +29,6 @@ jobs:
       - name: Generate key
         run: php artisan key:generate
 
-      - name: Run Laravel Tests
-        run: php artisan test --parallel
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -44,6 +38,13 @@ jobs:
         run: |
           npm ci
           npm run build
+
+      - name: Run Laravel Tests
+        run: php artisan test --parallel
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          MAIL_FROM_ADDRESS: "noreply@example.test"
 
   test-mobile-customer:
     name: Mobile Customer TS Check

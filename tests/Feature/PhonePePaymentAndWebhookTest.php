@@ -185,6 +185,7 @@ test('PhonePe webhook with valid signature flips booking from pending_payment to
         'price_breakdown_json' => [],
         'idempotency_key' => 'idemp-ppe-confirm-01',
     ]);
+    $booking->update(['price_breakdown_json' => ['phonepe_transaction_id' => "TXN_BK_{$booking->id}_abc12345"]]);
 
     $responsePayload = [
         'success' => true,
@@ -261,6 +262,7 @@ test('PhonePe webhook idempotency prevents duplicate payment records on retransm
         'price_breakdown_json' => [],
         'idempotency_key' => 'idemp-ppe-idemp-01',
     ]);
+    $booking->update(['price_breakdown_json' => ['phonepe_transaction_id' => "TXN_BK_{$booking->id}_dup123"]]);
 
     $responsePayload = [
         'success' => true,
@@ -330,4 +332,46 @@ test('PhonePe webhook for unknown booking returns 404', function (): void {
             'success' => false,
             'message' => 'Booking not found for PhonePe payment webhook.',
         ]);
+});
+
+
+test('PhonePe rejects a signed callback whose paid amount differs from the checkout amount', function (): void {
+    $booking = Booking::create([
+        'booking_reference' => 'BK-PPE-INVALID-AMOUNT',
+        'bike_id' => $this->bike->id,
+        'user_id' => $this->customer->id,
+        'pickup_store_id' => $this->store->id,
+        'return_store_id' => $this->store->id,
+        'channel' => BookingChannel::ONLINE,
+        'status' => BookingStatus::PENDING_PAYMENT,
+        'start_date' => '2027-01-15',
+        'end_date' => '2027-01-16',
+        'base_amount' => 2400.00,
+        'deposit_amount' => 3000.00,
+        'total_amount' => 5400.00,
+        'price_breakdown_json' => [],
+        'idempotency_key' => 'idemp-ppe-invalid-amount',
+    ]);
+    $merchantTransactionId = 'TXN_BK_'.$booking->id.'_invalid_amount';
+    $booking->update(['price_breakdown_json' => ['phonepe_transaction_id' => $merchantTransactionId]]);
+
+    $responsePayload = [
+        'success' => true,
+        'code' => 'PAYMENT_SUCCESS',
+        'data' => [
+            'merchantId' => 'PGTESTPAYUAT',
+            'merchantTransactionId' => $merchantTransactionId,
+            'transactionId' => 'T_INVALID_AMOUNT',
+            'amount' => 100,
+            'state' => 'COMPLETED',
+        ],
+    ];
+    $encoded = base64_encode(json_encode($responsePayload, JSON_THROW_ON_ERROR));
+    $signature = hash('sha256', $encoded.'test_phonepe_salt_key_123').'###1';
+
+    $response = $this->postJson('/webhooks/phonepe', ['response' => $encoded], ['X-VERIFY' => $signature]);
+
+    $response->assertStatus(422);
+    expect($booking->fresh()->status)->toBe(BookingStatus::PENDING_PAYMENT);
+    expect(Payment::where('booking_id', $booking->id)->count())->toBe(0);
 });

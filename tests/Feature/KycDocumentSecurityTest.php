@@ -82,8 +82,12 @@ test('kyc documents cannot be accessed via download route without valid signatur
     $unsignedResponse = $this->getJson("/api/v1/kyc-documents/{$doc->id}");
     $unsignedResponse->assertStatus(403);
 
-    // Attempt access with valid signed URL
+    // A signed URL alone cannot grant anonymous access to sensitive ID documents.
     $signedUrl = URL::temporarySignedRoute('kyc-documents.download', now()->addMinutes(15), ['id' => $doc->id]);
+    $anonymousResponse = $this->get($signedUrl);
+    $anonymousResponse->assertStatus(403);
+
+    Sanctum::actingAs($this->customerA);
     $signedResponse = $this->get($signedUrl);
     $signedResponse->assertStatus(200);
 
@@ -112,10 +116,10 @@ test('authenticated download endpoint prevents IDOR and verifies ownership', fun
     $ownerResponse = $this->get("/api/v1/customer/kyc-documents/{$docA->id}/download");
     $ownerResponse->assertStatus(200);
 
-    // Staff member reviews Customer A's KYC document
+    // Unassigned staff cannot access arbitrary customer identity documents.
     Sanctum::actingAs($this->staff);
     $staffResponse = $this->get("/api/v1/customer/kyc-documents/{$docA->id}/download");
-    $staffResponse->assertStatus(200);
+    $staffResponse->assertStatus(403);
 });
 
 test('kyc document resource provides a signed temporary url with expiration', function (): void {
