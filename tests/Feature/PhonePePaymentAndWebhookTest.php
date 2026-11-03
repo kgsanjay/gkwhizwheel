@@ -185,6 +185,7 @@ test('PhonePe webhook with valid signature flips booking from pending_payment to
         'price_breakdown_json' => [],
         'idempotency_key' => 'idemp-ppe-confirm-01',
     ]);
+    $booking->update(['price_breakdown_json' => ['phonepe_transaction_id' => "TXN_BK_{$booking->id}_abc12345"]]);
 
     $responsePayload = [
         'success' => true,
@@ -261,6 +262,7 @@ test('PhonePe webhook idempotency prevents duplicate payment records on retransm
         'price_breakdown_json' => [],
         'idempotency_key' => 'idemp-ppe-idemp-01',
     ]);
+    $booking->update(['price_breakdown_json' => ['phonepe_transaction_id' => "TXN_BK_{$booking->id}_dup123"]]);
 
     $responsePayload = [
         'success' => true,
