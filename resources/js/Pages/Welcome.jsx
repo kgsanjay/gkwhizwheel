@@ -3,6 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
+import { getServiceDisplayRate, getServiceDisplayImage } from '../utils/publicCatalog';
 import {
     Box,
     Typography,
@@ -58,7 +59,7 @@ import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
 
-export default function Welcome({ featuredBikes = [], categories = [], stores = [] }) {
+export default function Welcome({ featuredBikes = [], categories = [], stores = [], availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -583,7 +584,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             lineHeight: 1.15,
                         }}
                     >
-                        7 Curated Services For Your Honnavar Trip
+                        Travel & Rental Services Along the Coast
                     </Typography>
                     <Typography
                         variant="body1"
@@ -595,7 +596,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             lineHeight: 1.65,
                         }}
                     >
-                        Explore dedicated live fleets, certified water activities, riverfront cottages, and local trail experts with zero deposit and transparent tariffs.
+                        Explore bike rentals and local travel services. Final availability, deposits and pricing depend on your selected service and booking details.
                     </Typography>
                 </Box>
 
@@ -753,7 +754,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     <Box
                                         component="img"
                                         className="card-img"
-                                        src={srv.image}
+                                        src={getServiceDisplayImage(srv.id, availableItems, srv.image)}
                                         alt={`${srv.title} in Honnavar - GK WhizWheel`}
                                         loading="lazy"
                                         sx={{
@@ -853,7 +854,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 letterSpacing: '0.02em',
                                             }}
                                         >
-                                            {srv.rate}
+                                            {getServiceDisplayRate(srv.id, availableItems, featuredBikes)}
                                         </Box>
                                         <Box
                                             sx={{
@@ -872,7 +873,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             }}
                                         >
                                             <StarIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                            5.0 Verified
+                                            Explore Services
                                         </Box>
                                     </Box>
                                 </Box>
