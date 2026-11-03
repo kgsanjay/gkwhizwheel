@@ -20,10 +20,14 @@ Route::get('/', function () {
         $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
     }])->get();
 
+    // Only completed, published physical branches are promoted publicly.
     $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+        ->where('publication_status', 'published')
+        ->whereNotNull('slug')
         ->withCount(['bikes' => function ($query) {
             $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
         }])
+        ->orderBy('city')
         ->get();
 
     return Inertia::render('Welcome', [
