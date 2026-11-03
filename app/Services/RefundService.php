@@ -188,6 +188,11 @@ class RefundService
             $paymentId
         ): Refund {
             $targetPayment = $this->resolveTargetPayment($booking, $paymentId);
+            $alreadyRefunded = (float) $booking->refunds()->whereIn('status', [RefundStatus::PENDING->value, RefundStatus::COMPLETED->value])->sum('amount');
+            $paid = (float) $booking->payments()->where('status', PaymentStatus::SUCCESS)->sum('amount');
+            if ($amount <= 0 || round($amount + $alreadyRefunded, 2) > round($paid, 2)) {
+                throw new \InvalidArgumentException('Refund exceeds the remaining captured payment balance.');
+            }
 
             $gatewayResult = $this->dispatchGatewayRefund(
                 payment: $targetPayment,
@@ -214,7 +219,7 @@ class RefundService
     protected function resolveTargetPayment(Booking $booking, ?int $paymentId): ?Payment
     {
         if ($paymentId) {
-            return Payment::find($paymentId);
+            return $booking->payments()->where('status', PaymentStatus::SUCCESS)->findOrFail($paymentId);
         }
 
         return $booking->payments()
