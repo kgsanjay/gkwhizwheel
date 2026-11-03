@@ -160,6 +160,20 @@ class AvailabilityService
             // 1. Acquire row-level lock on the bike
             $bike = Bike::where('id', $bikeId)->lockForUpdate()->firstOrFail();
 
+            // A vehicle cannot be picked up from another branch, nor rented
+            // while physically unavailable or under maintenance.
+            if ($bike->status !== \App\Enums\BikeStatus::AVAILABLE || (int) $bike->current_store_id !== $pickupStoreId) {
+                throw new BikeNotAvailableException('The selected bike is not available for pickup at this branch.');
+            }
+
+            $pickupStore = \App\Models\Store::findOrFail($pickupStoreId);
+            $returnStore = \App\Models\Store::findOrFail($returnStoreId);
+            if ($pickupStore->status !== \App\Enums\StoreStatus::ACTIVE || $returnStore->status !== \App\Enums\StoreStatus::ACTIVE) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'return_store_id' => 'Pickup and return branches must both be active.',
+                ]);
+            }
+
             // 2. Check overlapping bookings in held/confirmed/handed_over
             $hasConflict = Booking::where('bike_id', $bike->id)
                 ->where(function ($query): void {
