@@ -139,13 +139,11 @@ test('slug generation avoids duplicate city URLs for multiple hubs', function ()
 });
 
 test('staging pages return noindex header while normal production requests do not', function (): void {
-    $this->withServerVariables(['HTTP_HOST' => 'staging.whizwheels.in'])
-        ->get('/locations/honnavar')
+    $this->get('https://staging.whizwheels.in/locations/honnavar')
         ->assertOk()
         ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
 
-    $this->withServerVariables(['HTTP_HOST' => 'whizwheels.in'])
-        ->get('/locations/honnavar')
+    $this->get('https://whizwheels.in/locations/honnavar')
         ->assertOk()
         ->assertHeaderMissing('X-Robots-Tag');
 });
