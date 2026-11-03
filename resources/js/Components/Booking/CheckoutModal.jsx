@@ -399,6 +399,37 @@ export default function CheckoutModal({
                     </Card>
                 </RadioGroup>
 
+                {/* Final server-generated one-way fee disclosure */}
+                <Card variant="outlined" sx={{ mt: 2, bgcolor: '#F8FAFC', borderRadius: 2 }}>
+                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                        <Stack spacing={1}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                                <Typography variant="body2" color="text.secondary">Rental and adjustments</Typography>
+                                <Typography variant="body2" fontWeight={700}>
+                                    ₹{(Number(quote?.base_amount || 0)
+                                        + Number(quote?.pricing_adjustments_amount || 0)
+                                        + Number(quote?.addon_amount || 0)
+                                        - Number(quote?.discount_amount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    {String(pickupStore.id) === String(returnStore.id) ? 'Same-branch return fee' : 'One-way return fee'}
+                                </Typography>
+                                <Typography variant="body2" fontWeight={700}>
+                                    ₹{Number(quote?.one_way_fee_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                                <Typography variant="body2" color="text.secondary">Refundable deposit (subject to terms)</Typography>
+                                <Typography variant="body2" fontWeight={700}>
+                                    ₹{Number(quote?.deposit_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    </CardContent>
+                </Card>
+
                 {/* Amount Due Summary */}
                 <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #E2E8F0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -440,7 +471,7 @@ export default function CheckoutModal({
                 </Button>
 
                 {/* Test / Dev Simulation Trigger when hold is active */}
-                {heldBooking && (
+                {import.meta.env.DEV && heldBooking && (
                     <Button
                         variant="outlined"
                         color="primary"
