@@ -232,7 +232,7 @@ test('Razorpay webhook with valid signature flips booking from pending_payment t
         'base_amount' => 1800.00,
         'deposit_amount' => 2000.00,
         'total_amount' => 3800.00,
-        'price_breakdown_json' => [],
+        'price_breakdown_json' => ['razorpay_order_id' => 'order_test_confirm_01'],
         'idempotency_key' => 'idemp-confirm-01',
     ]);
 
@@ -242,6 +242,8 @@ test('Razorpay webhook with valid signature flips booking from pending_payment t
             'payment' => [
                 'entity' => [
                     'id' => 'pay_rzp_real_capture_987',
+                    'order_id' => 'order_test_confirm_01',
+                    'currency' => 'INR',
                     'amount' => 380000,
                     'currency' => 'INR',
                     'notes' => [
@@ -336,7 +338,7 @@ test('Razorpay webhook idempotency prevents duplicate payment records on retrans
         'base_amount' => 1800.00,
         'deposit_amount' => 2000.00,
         'total_amount' => 3800.00,
-        'price_breakdown_json' => [],
+        'price_breakdown_json' => ['razorpay_order_id' => 'order_test_idempotent_01'],
         'idempotency_key' => 'idemp-rzp-idemp-01',
     ]);
 
@@ -346,6 +348,8 @@ test('Razorpay webhook idempotency prevents duplicate payment records on retrans
             'payment' => [
                 'entity' => [
                     'id' => 'pay_duplicate_check_1122',
+                    'order_id' => 'order_test_idempotent_01',
+                    'currency' => 'INR',
                     'amount' => 380000,
                     'notes' => [
                         'booking_id' => (string) $booking->id,
