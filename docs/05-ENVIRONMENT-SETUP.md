@@ -66,20 +66,28 @@ FILESYSTEM_DISK=local
 2. **Upload code** via Git (if Serverbyt supports SSH + git pull) or via cPanel File Manager/FTP as a fallback.
 3. **Composer install:** if SSH access is available, run `composer install --no-dev --optimize-autoloader` on the server. If SSH isn't available on your plan, run it locally and upload the `vendor/` folder (bulkier, but works on any shared host).
 4. **Set `.env`** with production values via cPanel File Manager (never upload your local `.env`, only `.env.example`, and fill in production secrets directly on the server).
-5. **Run migrations:** `php artisan migrate --force` via SSH, or via a one-time web route/artisan-runner script if SSH isn't available (remove/protect that route immediately after use).
-6. **Storage symlink:** `php artisan storage:link` so uploaded bike images/documents are web-accessible through the intended signed-URL mechanism.
+5. **Run migrations:** `php artisan migrate --force` via SSH, or via an authorized hosting CLI/terminal or a controlled deployment process. Do not expose a web route or script that executes migrations or arbitrary Artisan commands.
+6. **Storage symlink:** `php artisan storage:link` for explicitly public bike images only; private KYC documents must remain on the private storage disk and be served solely through authorized download controllers.
 7. **Set up cron:** in cPanel's Cron Jobs section, add:
    ```
    * * * * * php /home/yourusername/path-to-app/artisan schedule:run >> /dev/null 2>&1
    ```
-   This single cron entry drives everything: releasing expired `held` bookings, sending scheduled reminder notifications, checking document expiry alerts — all defined as scheduled tasks inside Laravel's `app/Console/Kernel.php`, not as separate cron entries.
+   This single cron entry drives everything: releasing expired `held` bookings, sending scheduled reminder notifications, checking document expiry alerts — all defined as scheduled tasks inside Laravel's `routes/console.php`, not as separate cron entries.
 8. **SSL:** enable AutoSSL/Let's Encrypt via cPanel (usually one click) — confirm `APP_URL` uses `https://`.
 9. **File permissions:** `storage/` and `bootstrap/cache/` need to be writable by the web server user (typically `755` or as your host's PHP execution user requires — check Serverbyt's specific docs, this varies slightly by host).
 
 ## 4. Backup Strategy (No Extra Cost)
-- **Database:** a scheduled Laravel command (`php artisan backup:run` using `spatie/laravel-backup`, a free package) triggered by the same cron, dumping the DB and emailing it to yourself or storing it in a `backups/` folder outside the public root — rotate to keep the last 7–14 daily backups to avoid filling your storage quota.
+- **Database and private user files:** current scheduler runs `backup:run --only-db`, which omits private uploads and KYC files. Configure encrypted off-site database and private-storage backups and test a restore. Do not email database dumps or put archives under the web root. Set a real backup notification address, protect the encryption key separately, and apply a documented retention policy.
 - **Code:** your Git repository itself is your code backup — always push before/after any deployment.
 
 ## 5. Mobile App Distribution (Android APK)
 - Host the compiled APK file in a non-public or rate-limited folder on the same shared hosting (e.g., `yourdomain.com/downloads/store-app-latest.apk`), since your plan includes unlimited storage.
 - Build an `/api/v1/staff/app-version` endpoint returning the latest version number + download URL, so the app's in-app update check (Section 7 of the main requirements doc) has something to poll.
+
+## 6. Deployment preflight and staging gate
+
+- Deploy to an isolated staging domain and separate staging database. Do not reuse production API keys or customer KYC files.
+- Require PHP 8.3+ in web and CLI, a valid HTTPS origin, Laravel `public/` as document root, database-backed sessions, secure cookies, a configured mail sender, writable Laravel storage, and a built Vite manifest.
+- Run `php artisan app:production-check` against a production-like staging configuration, then verify `/up`, login/logout, booking hold expiry, email, scheduler, and sandbox payment callbacks. The command checks configuration; it does **not** prove host connectivity, cron execution, backup recovery, or real payment processing.
+- Never run `php artisan key:generate` against an existing installation unless rotating its encryption key with an approved recovery plan.
+- Consult [`PRODUCTION-SECURITY-READINESS-20261103.md`](PRODUCTION-SECURITY-READINESS-20261103.md) before scheduling a release.
