@@ -63,8 +63,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     const isDark = theme.palette.mode === 'dark';
 
     // Quick search form state
-    const today = new Date().toISOString().split('T')[0];
-    const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+    const toLocalDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const today = toLocalDate(new Date());
+    const dayAfterDate = new Date();
+    dayAfterDate.setDate(dayAfterDate.getDate() + 2);
+    const dayAfter = toLocalDate(dayAfterDate);
 
     const [searchStore, setSearchStore] = useState('');
     const [searchCategory, setSearchCategory] = useState('');
