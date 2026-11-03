@@ -439,3 +439,49 @@ test('Razorpay webhook for unknown booking returns 404', function (): void {
             'message' => 'Booking not found for payment webhook.',
         ]);
 });
+
+
+test('Razorpay rejects a signed webhook when the captured amount differs from the checkout amount', function (): void {
+    $booking = Booking::create([
+        'booking_reference' => 'BK-RZP-INVALID-AMOUNT',
+        'bike_id' => $this->bike->id,
+        'user_id' => $this->customer->id,
+        'pickup_store_id' => $this->store->id,
+        'return_store_id' => $this->store->id,
+        'channel' => BookingChannel::ONLINE,
+        'status' => BookingStatus::PENDING_PAYMENT,
+        'start_date' => '2027-01-15',
+        'end_date' => '2027-01-16',
+        'base_amount' => 1800.00,
+        'deposit_amount' => 2000.00,
+        'total_amount' => 3800.00,
+        'price_breakdown_json' => ['razorpay_order_id' => 'order_amount_guard'],
+        'idempotency_key' => 'idemp-rzp-invalid-amount',
+    ]);
+
+    $payload = json_encode([
+        'event' => 'payment.captured',
+        'payload' => [
+            'payment' => [
+                'entity' => [
+                    'id' => 'pay_amount_guard',
+                    'order_id' => 'order_amount_guard',
+                    'amount' => 100,
+                    'currency' => 'INR',
+                    'notes' => ['booking_id' => (string) $booking->id],
+                ],
+            ],
+        ],
+    ], JSON_THROW_ON_ERROR);
+
+    $signature = hash_hmac('sha256', $payload, 'test_webhook_secret_xyz');
+
+    $response = $this->call('POST', '/webhooks/razorpay', [], [], [], [
+        'HTTP_X-Razorpay-Signature' => $signature,
+        'CONTENT_TYPE' => 'application/json',
+    ], $payload);
+
+    $response->assertStatus(422);
+    expect($booking->fresh()->status)->toBe(BookingStatus::PENDING_PAYMENT);
+    expect(Payment::where('booking_id', $booking->id)->count())->toBe(0);
+});
