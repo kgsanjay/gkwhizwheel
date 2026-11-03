@@ -187,6 +187,8 @@ class RefundService
             $processedBy,
             $paymentId
         ): Refund {
+            // Serialize concurrent refunds for the same booking before calculating remaining balance.
+            Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
             $targetPayment = $this->resolveTargetPayment($booking, $paymentId);
             $alreadyRefunded = (float) $booking->refunds()->whereIn('status', [RefundStatus::PENDING->value, RefundStatus::COMPLETED->value])->sum('amount');
             $paid = (float) $booking->payments()->where('status', PaymentStatus::SUCCESS)->sum('amount');
