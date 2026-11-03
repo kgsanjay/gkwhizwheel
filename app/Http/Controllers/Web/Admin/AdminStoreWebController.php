@@ -13,6 +13,8 @@ use App\Models\Store;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -55,6 +57,14 @@ class AdminStoreWebController extends Controller
             'stores' => $stores->map(fn (Store $store): array => [
                 'id' => $store->id,
                 'name' => $store->name,
+                'slug' => $store->slug,
+                'public_name' => $store->public_name,
+                'publication_status' => $store->publication_status,
+                'public_description' => $store->public_description,
+                'hero_image_url' => $store->hero_image_url,
+                'pickup_instructions' => $store->pickup_instructions,
+                'seo_title' => $store->seo_title,
+                'seo_description' => $store->seo_description,
                 'address_line' => $store->address_line,
                 'city' => $store->city,
                 'state' => $store->state,
@@ -101,7 +111,7 @@ class AdminStoreWebController extends Controller
     {
         Gate::authorize('create', Store::class);
 
-        $store = Store::create($request->validated());
+        $store = Store::create($this->validatedPublicPage($request->validated()));
 
         return redirect()->route('admin.stores.index')
             ->with('success', "Store Hub '{$store->name}' created successfully.");
@@ -144,10 +154,50 @@ class AdminStoreWebController extends Controller
         $store = Store::findOrFail($id);
         Gate::authorize('update', $store);
 
-        $store->update($request->validated());
+        $store->update($this->validatedPublicPage($request->validated(), $store));
 
         return redirect()->route('admin.stores.index')
             ->with('success', "Store Hub '{$store->name}' updated successfully.");
+    }
+
+    /**
+     * Keep branch URLs permanent. New branches are drafts until explicitly
+     * published and legacy stores have no public page until edited.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function validatedPublicPage(array $values, ?Store $existing = null): array
+    {
+        $slug = $values['slug'] ?? $existing?->slug;
+        if (! $slug) {
+            $base = Str::slug((string) ($values['city'] ?? $existing?->city ?? $values['name'] ?? 'branch'));
+            $slug = $base;
+            $index = 2;
+            while (Store::where('slug', $slug)->when($existing, fn ($q) => $q->whereKeyNot($existing->id))->exists()) {
+                $slug = $base.'-'.$index++;
+            }
+        }
+
+        $values['slug'] = $slug;
+
+        if (($values['publication_status'] ?? $existing?->publication_status ?? 'draft') === 'published') {
+            if (! filled($values['public_description'] ?? $existing?->public_description)) {
+                throw ValidationException::withMessages([
+                    'public_description' => 'Add original branch information before publishing.',
+                ]);
+            }
+            if (($values['status'] ?? $existing?->status?->value ?? 'active') !== 'active') {
+                throw ValidationException::withMessages([
+                    'publication_status' => 'Only active branches can publish their public page.',
+                ]);
+            }
+            $values['published_at'] = $existing?->published_at ?? now();
+        } elseif (array_key_exists('publication_status', $values)) {
+            $values['published_at'] = null;
+        }
+
+        return $values;
     }
 
     /**
