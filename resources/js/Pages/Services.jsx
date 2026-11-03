@@ -183,7 +183,7 @@ export default function Services({ availableItems = [], bikeStartingRate = null 
             order: '01',
             title: 'Bike & Scooter Rentals',
             tag: 'Self-Drive Fleet',
-            tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with zero deposit options and instant station delivery.',
+            tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with upfront deposit information and available pickup options.',
             rate: 'Starts ₹350 / Day',
             image: '/images/services/two_wheelers.jpg',
             color: '#F59E0B',
@@ -192,7 +192,7 @@ export default function Services({ availableItems = [], bikeStartingRate = null 
             cta: 'Explore Bikes & Rent',
             icon: <TwoWheelerIcon sx={{ fontSize: 20 }} />,
             highlights: [
-                '19+ Fleet (Activa 6G, Classic 350, CB350)',
+                'Check Live Fleet Availability',
                 '2 Sanitized ISI Helmets & Phone Mount Free',
                 'Honnavar Railway Station Delivery Available',
             ],
