@@ -61,7 +61,7 @@ class AvailabilityService
             $query->where('id', '!=', $excludeBookingId);
         }
 
-        if ($query->exists()) {
+        if ($query->exists() || BikeTransferService::hasBlockingTransfer((int) $bikeModel->id)) {
             return false;
         }
 
@@ -174,6 +174,10 @@ class AvailabilityService
         ): Booking {
             // 1. Acquire row-level lock on the bike
             $bike = Bike::where('id', $bikeId)->lockForUpdate()->firstOrFail();
+            if (BikeTransferService::hasBlockingTransfer((int) $bike->id)) {
+                throw new BikeNotAvailableException('This bike is reserved for a branch transfer.');
+            }
+
 
             // A vehicle cannot be picked up from another branch, nor rented
             // while physically unavailable or under maintenance.
