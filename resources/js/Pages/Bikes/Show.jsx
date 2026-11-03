@@ -49,11 +49,12 @@ export default function BikeShow({ bike, stores = [] }) {
     const initialStart = searchParams.get('start_date') || '';
     const initialEnd = searchParams.get('end_date') || '';
     const initialPickup = searchParams.get('pickup_store_id') || String(bike.current_store_id || (stores[0]?.id || ''));
+    const initialReturn = searchParams.get('return_store_id') || initialPickup;
 
     const [startDate, setStartDate] = useState(initialStart);
     const [endDate, setEndDate] = useState(initialEnd);
     const [pickupStoreId, setPickupStoreId] = useState(initialPickup);
-    const [returnStoreId, setReturnStoreId] = useState(initialPickup);
+    const [returnStoreId, setReturnStoreId] = useState(initialReturn);
     const [couponCode, setCouponCode] = useState('');
     const [selectedAddons, setSelectedAddons] = useState([]);
 
@@ -78,7 +79,9 @@ export default function BikeShow({ bike, stores = [] }) {
     }, []);
 
     // React Query: Fetch live price quote when dates and stores are present
-    const canFetchQuote = Boolean(startDate && endDate && pickupStoreId && returnStoreId && startDate <= endDate);
+    const localToday = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+    const validDateRange = Boolean(startDate && endDate && startDate >= localToday && endDate >= startDate);
+    const canFetchQuote = Boolean(validDateRange && pickupStoreId && returnStoreId);
 
     const quotePayload = {
         start_date: startDate,
@@ -92,6 +95,7 @@ export default function BikeShow({ bike, stores = [] }) {
     const {
         data: quoteResponse,
         isLoading: isQuoteLoading,
+        isFetching: isQuoteFetching,
         isError: isQuoteError,
         error: quoteError,
     } = useQuery({
@@ -101,9 +105,10 @@ export default function BikeShow({ bike, stores = [] }) {
         retry: false,
     });
 
-    const quote = quoteResponse?.data;
+    const quote = canFetchQuote && !isQuoteFetching && !isQuoteError ? quoteResponse?.data : null;
 
     const handleBookNowClick = () => {
+        if (!quote || !canFetchQuote || isQuoteFetching) return;
         const hasToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
         if (!currentUser && !hasToken) {
             setAuthModalOpen(true);
@@ -376,7 +381,8 @@ export default function BikeShow({ bike, stores = [] }) {
                                         slotProps={{ inputLabel: { shrink: true } }}
                                         InputLabelProps={{ shrink: true }}
                                         value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
+                                        slotProps={{ htmlInput: { min: localToday }, inputLabel: { shrink: true } }}
+                                        onChange={(e) => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(e.target.value); }}
                                     />
                                 </Grid>
                                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -387,6 +393,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                         slotProps={{ inputLabel: { shrink: true } }}
                                         InputLabelProps={{ shrink: true }}
                                         value={endDate}
+                                        slotProps={{ htmlInput: { min: startDate || localToday }, inputLabel: { shrink: true } }}
                                         onChange={(e) => setEndDate(e.target.value)}
                                     />
                                 </Grid>
@@ -398,7 +405,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                     <TextField
                                         select
                                         fullWidth
-                                        label="Pickup Store"
+                                        label="Pickup Branch"
                                         value={pickupStoreId}
                                         onChange={(e) => setPickupStoreId(e.target.value)}
                                     >
@@ -414,7 +421,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                     <TextField
                                         select
                                         fullWidth
-                                        label="Return Store"
+                                        label="Return Branch"
                                         value={returnStoreId}
                                         onChange={(e) => setReturnStoreId(e.target.value)}
                                     >
@@ -430,7 +437,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             {/* One-way rental banner */}
                             {isOneWay && (
                                 <Alert severity="info" sx={{ mb: 2, fontSize: '0.8125rem' }}>
-                                    One-way trip selected: Pick up at store and return to a different hub.
+                                    One-way return selected: {pickupStore.name} → {returnStore.name}. The applicable relocation fee is calculated below and charged once per booking.
                                 </Alert>
                             )}
 
@@ -451,12 +458,12 @@ export default function BikeShow({ bike, stores = [] }) {
                             {!canFetchQuote && (
                                 <Box sx={{ py: 3, textAlign: 'center', bgcolor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#F8FAFC', borderRadius: 2, border: isDark ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed #CBD5E1' }}>
                                     <Typography variant="body2" color="text.secondary">
-                                        Select both <strong>Pickup Date</strong> and <strong>Return Date</strong> to calculate your live quote.
+                                        Select valid future <strong>pickup and return dates</strong> and your branches to calculate a live quote.
                                     </Typography>
                                 </Box>
                             )}
 
-                            {canFetchQuote && isQuoteLoading && (
+                            {canFetchQuote && isQuoteFetching && (
                                 <Box sx={{ py: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                                     <CircularProgress size={32} color="secondary" />
                                     <Typography variant="caption" color="text.secondary">
@@ -467,11 +474,11 @@ export default function BikeShow({ bike, stores = [] }) {
 
                             {canFetchQuote && isQuoteError && (
                                 <Alert severity="error" sx={{ mb: 2 }}>
-                                    {quoteError?.message || 'Unable to calculate quote for selected dates.'}
+                                    {quoteError?.errors?.return_store_id?.[0] || quoteError?.errors?.pickup_store_id?.[0] || quoteError?.message || 'Unable to calculate quote for selected dates and branches.'}
                                 </Alert>
                             )}
 
-                            {canFetchQuote && !isQuoteLoading && !isQuoteError && quote && (
+                            {canFetchQuote && !isQuoteFetching && !isQuoteError && quote && (
                                 <Box sx={{ bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', p: 2.5, borderRadius: 2, border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0', mb: 3 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                         Price Breakdown
@@ -498,10 +505,10 @@ export default function BikeShow({ bike, stores = [] }) {
                                             </Box>
                                         )}
 
-                                        {quote.one_way_fee_amount > 0 && (
+                                        {isOneWay && (
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <Typography variant="body2" color="text.secondary">
-                                                    One-Way Return Fee
+                                                    One-Way Return Fee ({pickupStore.name} → {returnStore.name})
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#EA580C' }}>
                                                     + ₹{Number(quote.one_way_fee_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -566,7 +573,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                 color="secondary"
                                 size="large"
                                 fullWidth
-                                disabled={!canFetchQuote || isQuoteLoading || !quote}
+                                disabled={!canFetchQuote || isQuoteFetching || isQuoteError || !quote}
                                 onClick={handleBookNowClick}
                                 sx={{
                                     py: 1.5,
@@ -579,7 +586,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             </Button>
 
                             <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#64748B', mt: 1.5 }}>
-                                Instant confirmation with Razorpay & PhonePe. Concurrency-safe reservation.
+                                Price and branch availability are verified again before payment. Your booking is confirmed only after successful payment.
                             </Typography>
                         </CardContent>
                     </Card>
