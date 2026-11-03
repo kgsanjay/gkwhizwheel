@@ -200,7 +200,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                Palya Main Rd, Honnavar, Karnataka 581334
+                                Palya Main Rd, Honnavar & Murudeshwar, Karnataka 581334
                             </Typography>
                             <Box
                                 component="a"
@@ -380,7 +380,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5, mt: 0.2 }}>
                                     <ElectricBoltIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
                                     <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, letterSpacing: '0.02em' }}>
-                                        Honnavar, Karnataka
+                                        Honnavar & Murudeshwar, Karnataka
                                     </Typography>
                                 </Box>
                             </Box>
@@ -422,6 +422,10 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 About
                             </Button>
 
+                            <Button component={Link} href="/locations" sx={{
+    color: url.startsWith('/locations') ? '#F59E0B' : (isDark ? '#E2E8F0' : '#1E293B'),
+    fontWeight: 700, fontSize: '0.875rem', px: 1.6, py: 0.6, borderRadius: 2,
+}}>Locations</Button>
                             {/* Desktop 2-Column Services Mega Menu Dropdown */}
                             <Button
                                 id="desktop-services-mega-menu-btn"
@@ -1044,7 +1048,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 GK WhizWheels
                             </Typography>
                             <Typography variant="caption" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 700 }}>
-                                Honnavar, Karnataka
+                                Honnavar & Murudeshwar, Karnataka
                             </Typography>
                         </Box>
                     </Box>
@@ -1087,6 +1091,8 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
                 {/* Drawer Scrollable Content */}
                 <Box sx={{ p: 2.5, overflowY: 'auto', flexGrow: 1 }}>
+                    <Button component={Link} href="/locations" onClick={handleCloseMobileDrawer} fullWidth variant="outlined"
+                        sx={{ mb: 2, justifyContent: 'flex-start', color: '#F59E0B', fontWeight: 700 }}>Explore Pickup Locations</Button>
                     {/* User Profile / Quick Auth Bar */}
                     {auth?.user ? (
                         <Paper
@@ -1699,7 +1705,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, mt: '2px', flexShrink: 0 }} />
                                     <Box>
                                         <Typography variant="body2" sx={{ color: '#F1F5F9', fontWeight: 700, fontSize: '0.84rem' }}>
-                                            Palya Main Rd, Honnavar, Karnataka 581334
+                                            Palya Main Rd, Honnavar & Murudeshwar, Karnataka 581334
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>
                                             Plus Railway Station Hub (Platform 1 Exit)
@@ -1990,7 +1996,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         }}
                     >
                         <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.82rem', textAlign: { xs: 'center', sm: 'left' } }}>
-                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. Palya Main Rd, Honnavar, Karnataka 581334.
+                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. Palya Main Rd, Honnavar & Murudeshwar, Karnataka 581334.
                         </Typography>
                         <Stack direction="row" spacing={2.5} flexWrap="wrap" justifyContent="center">
                             <Typography component={Link} href="/about" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
