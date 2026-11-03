@@ -43,9 +43,8 @@ class AvailabilityService
                 $query->whereIn('status', [
                     BookingStatus::CONFIRMED->value,
                     BookingStatus::HANDED_OVER->value,
-                    BookingStatus::PENDING_PAYMENT->value,
                 ])->orWhere(function ($q): void {
-                    $q->where('status', BookingStatus::HELD->value)
+                    $q->whereIn('status', [BookingStatus::HELD->value, BookingStatus::PENDING_PAYMENT->value])
                         ->where(function ($hq): void {
                             $hq->whereNull('held_until')
                                 ->orWhere('held_until', '>', now());
@@ -80,9 +79,8 @@ class AvailabilityService
                 $query->whereIn('status', [
                     BookingStatus::CONFIRMED->value,
                     BookingStatus::HANDED_OVER->value,
-                    BookingStatus::PENDING_PAYMENT->value,
                 ])->orWhere(function ($q): void {
-                    $q->where('status', BookingStatus::HELD->value)
+                    $q->whereIn('status', [BookingStatus::HELD->value, BookingStatus::PENDING_PAYMENT->value])
                         ->where(function ($hq): void {
                             $hq->whereNull('held_until')
                                 ->orWhere('held_until', '>', now());
@@ -168,9 +166,8 @@ class AvailabilityService
                     $query->whereIn('status', [
                         BookingStatus::CONFIRMED->value,
                         BookingStatus::HANDED_OVER->value,
-                        BookingStatus::PENDING_PAYMENT->value,
                     ])->orWhere(function ($q): void {
-                        $q->where('status', BookingStatus::HELD->value)
+                        $q->whereIn('status', [BookingStatus::HELD->value, BookingStatus::PENDING_PAYMENT->value])
                             ->where(function ($hq): void {
                                 $hq->whereNull('held_until')
                                     ->orWhere('held_until', '>', now());
