@@ -119,7 +119,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
         setFilters((prev) => ({
             ...prev,
             [field]: value,
-            ...(field === 'store_id' && !prev.return_store_id ? { return_store_id: value } : {}),
+            ...(field === 'store_id' && (!prev.return_store_id || String(prev.return_store_id) === String(prev.store_id)) ? { return_store_id: value } : {}),
         }));
     };
 
