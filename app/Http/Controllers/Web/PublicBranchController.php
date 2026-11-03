@@ -43,6 +43,7 @@ class PublicBranchController extends Controller
         $bikes = Bike::query()
             ->where('current_store_id', $branch->id)
             ->where('status', BikeStatus::AVAILABLE)
+            ->whereDoesntHave('transfers', fn ($q) => $q->whereIn('status', ['approved', 'in_transit']))
             ->with(['category', 'currentStore', 'homeStore', 'images'])
             ->orderBy('brand')
             ->orderBy('model_name')
