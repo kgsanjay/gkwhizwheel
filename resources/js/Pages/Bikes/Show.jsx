@@ -578,7 +578,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                     boxShadow: '0 10px 15px -3px rgba(245, 158, 11, 0.3)',
                                 }}
                             >
-                                Book This Bike (15m Hold)
+                                Continue to Secure Checkout
                             </Button>
 
                             <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#64748B', mt: 1.5 }}>
