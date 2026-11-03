@@ -118,12 +118,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         "name": "GK WhizWheel - Bike Rental & Travel Services Honnavar",
         "alternateName": ["GK WhizWheels", "G.K. WhizWheel", "Whizwheels Honnavar"],
         "sameAs": ["https://share.google/GoM4iOgiuUIa7ZfwV"],
-        "description": "Premier travel and bike rental agency in Honnavar offering well-maintained scooters and bikes from ₹350/day, AC taxi transfers, backwater boating, scuba diving, and coastal homestays.",
+        "description": "Travel and bike rental agency in Honnavar offering scooters, motorcycles and coastal travel services. See current inventory for pricing and availability.",
         "image": "https://whizwheels.in/images/logo.png",
         "telephone": "+918660989586",
         "email": "contact@whizwheels.in",
         "url": "https://whizwheels.in/",
-        "priceRange": "₹350 - ₹5000",
         "openingHours": "Mo-Su 06:00-23:00",
         "address": {
             "@type": "PostalAddress",
@@ -137,13 +136,6 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             "@type": "GeoCoordinates",
             "latitude": 14.2802,
             "longitude": 74.4437
-        },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "5.0",
-            "reviewCount": "324",
-            "bestRating": "5",
-            "worstRating": "1"
         },
         "openingHoursSpecification": [
             {
@@ -162,79 +154,33 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         ],
         "hasOfferCatalog": {
             "@type": "OfferCatalog",
-            "name": "Honnavar Travel & Mobility Services Catalog",
+            "name": "Currently available rentals and services",
             "itemListElement": [
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Bike & Scooter Rentals in Honnavar",
-                        "description": "Daily self-drive scooter and motorcycle rental starting at ₹350/day with zero deposit option for exploring Honnavar beaches and Sharavathi backwaters"
-                    },
-                    "price": "350",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Honnavar Coastal Cabs & Station Taxi Transfers",
-                        "description": "Private sanitized AC cabs for Honnavar Railway Station pickups, Gokarna day trips, and Murudeshwar sightseeing"
-                    },
-                    "price": "1499",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Honnavar Homestays & Coastal Rooms",
-                        "description": "Riverside and beachfront authentic homestays in Honnavar with authentic Karavali meals and serene backwater views"
-                    },
-                    "price": "1200",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Sharavathi Backwater Boating & Mangrove Cruises",
-                        "description": "Guided motorboat and Shikara boat cruises through the pristine Sharavathi river estuary and mangrove trails in Honnavar"
-                    },
-                    "price": "350",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Netrani Island Scuba Diving & Snorkeling",
-                        "description": "PADI certified underwater scuba diving and snorkeling expeditions at Netrani Island with boat transfer and HD footage"
-                    },
-                    "price": "3499",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Local Travel Guides & Heritage Trails",
-                        "description": "Certified local storytelling guides for Mirjan Fort, Apsarakonda, hidden waterfalls, and coastal heritage walks"
-                    },
-                    "price": "799",
-                    "priceCurrency": "INR"
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Custom Honnavar Vacation Tour Packages",
-                        "description": "All-in-one customized Karavali vacation packages combining stays, rides, boating, and scuba with 24/7 coordinator"
-                    },
-                    "price": "2999",
-                    "priceCurrency": "INR"
-                }
-            ]
+                ...featuredBikes
+                    .filter((bike) => Number(bike.daily_rate) > 0)
+                    .map((bike) => ({
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Service",
+                            "name": `${bike.brand} ${bike.model_name} rental`,
+                        },
+                        "price": Number(bike.daily_rate),
+                        "priceCurrency": "INR",
+                        "url": `https://whizwheels.in/services/bikes/${bike.id}`,
+                    })),
+                ...availableItems
+                    .filter((item) => Number(item.price_base) > 0 && item.service_type !== 'two_wheelers')
+                    .map((item) => ({
+                        "@type": "Offer",
+                        "itemOffered": {
+                            "@type": "Service",
+                            "name": item.name,
+                            "description": item.description || undefined,
+                        },
+                        "price": Number(item.price_base),
+                        "priceCurrency": "INR",
+                    })),
+            ],
         }
     };
 
@@ -255,7 +201,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 name: 'How much is the security deposit and when is it refunded?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'We offer zero-deposit options for eligible verified profiles, and nominal deposits (₹500 – ₹1,500 depending on vehicle model) for others. Security deposits are 100% refundable and credited directly back to your UPI or bank account within 2 hours of vehicle return following a quick inspection.',
+                    text: 'Security deposits vary by bike and are displayed in the live booking quote. Any eligible refund is processed according to the rental terms and return inspection.',
                 },
             },
             {
@@ -263,7 +209,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 name: 'What is your cancellation and booking rescheduling policy?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'We offer completely flexible cancellation. You can cancel your booking up to 12 hours before scheduled pickup for a full refund. Rescheduling dates or changing pickup times is free of charge, subject to fleet availability.',
+                    text: 'Cancellation and rescheduling are subject to the current rental terms, booking details, and fleet availability. Review the cancellation policy before payment.',
                 },
             },
             {
@@ -281,7 +227,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         <AppLayout>
             <PageHead
                 title="Bike Rental Honnavar | Boating, Scuba, Tours – GK WhizWheel"
-                description="Explore Honnavar & Karavali coast with GK WhizWheel: bike rentals from ₹350/day, cabs, backwater boating, scuba diving, homestays & custom tour packages."
+                description="Explore Honnavar and the Karavali coast with GK WhizWheel. Browse current bike rentals, coastal services, and admin-updated availability."
                 canonicalUrl="https://whizwheels.in/"
                 ogImage="/images/logo.png"
                 ogType="website"
@@ -399,15 +345,15 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     maxWidth: 680,
                                 }}
                             >
-                                Welcome to <strong>G.K. WhizWheel</strong>. We are Honnavar’s premier travel and mobility agency. Whether you want to <strong>rent a bike starting at ₹350/day</strong>, hire a <strong>private AC cab</strong> for station pickup & Gokarna tours, book a serene <strong>Sharavathi riverfront homestay</strong>, cruise the <strong>mangrove backwaters</strong>, or explore underwater coral reefs at <strong>Netrani Island</strong> — our local team manages every detail under one verified roof with zero hidden fees.
+                                Welcome to <strong>G.K. WhizWheel</strong>. We are Honnavar’s premier travel and mobility agency. Whether you want to <strong>rent an available bike with transparent pricing</strong>, hire a <strong>private AC cab</strong> for station pickup & Gokarna tours, book a serene <strong>Sharavathi riverfront homestay</strong>, cruise the <strong>mangrove backwaters</strong>, or explore underwater coral reefs at <strong>Netrani Island</strong> — our local team manages every detail under one verified roof with zero hidden fees.
                             </Typography>
 
                             {/* Key Highlights Pill Badges */}
                             <Grid container spacing={1.5} sx={{ mb: 4 }}>
                                 {[
-                                    { text: '5.0 ★ Google Rated (324+ Reviews)', color: '#F59E0B' },
+                                    { text: 'Explore Available Local Rides', color: '#F59E0B' },
                                     { text: 'Palya Rd & Railway Station Hubs', color: '#0284C7' },
-                                    { text: 'Zero Security Deposit Options', color: '#10B981' },
+                                    { text: 'Refundable Deposit Shown Before Checkout', color: '#10B981' },
                                     { text: '24/7 Roadside & Trip Assistance', color: '#7C3AED' },
                                 ].map((item, i) => (
                                     <Grid key={i} size={{ xs: 12, sm: 6 }}>
