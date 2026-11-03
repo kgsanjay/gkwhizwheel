@@ -36,10 +36,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
-        $middleware->validateCsrfTokens(except: [
-            'logout',
-            'admin/logout',
-        ]);
         $middleware->statefulApi();
         $middleware->alias([
             'admin.auth' => \App\Http\Middleware\EnsureAdminOrStaff::class,
