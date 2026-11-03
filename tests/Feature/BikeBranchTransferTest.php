@@ -182,3 +182,32 @@ test('managers see only transfers involving their assigned branches and customer
     ]);
     $this->actingAs($customer)->get('/admin/bike-transfers')->assertForbidden();
 });
+
+
+test('admin bike edit endpoints cannot bypass receiving confirmation and move physical location', function (): void {
+    $this->actingAs($this->admin)->put("/admin/bikes/{$this->bike->id}", [
+        'current_store_id' => $this->honnavar->id,
+    ])->assertSessionHasErrors('current_store_id');
+
+    $this->actingAs($this->admin)->putJson("/api/v1/admin/bikes/{$this->bike->id}", [
+        'current_store_id' => $this->honnavar->id,
+    ])->assertStatus(422)->assertJsonValidationErrors('current_store_id');
+
+    expect((int) $this->bike->fresh()->current_store_id)->toBe($this->murudeshwar->id);
+});
+
+test('public catalog hides bikes in an approved transfer until receipt', function (): void {
+    $this->actingAs($this->sender)->post('/admin/bike-transfers', [
+        'bike_id' => $this->bike->id, 'to_store_id' => $this->honnavar->id, 'reason' => 'Reposition',
+    ])->assertRedirect();
+    $id = BikeTransfer::firstOrFail()->id;
+
+    $this->actingAs($this->admin)->post("/admin/bike-transfers/{$id}/approve")->assertRedirect();
+    $this->getJson('/api/v1/bikes?store_id='.$this->murudeshwar->id)
+        ->assertOk()->assertJsonCount(0, 'data');
+
+    $this->actingAs($this->sender)->post("/admin/bike-transfers/{$id}/dispatch")->assertRedirect();
+    $this->actingAs($this->receiver)->post("/admin/bike-transfers/{$id}/receive")->assertRedirect();
+    $this->getJson('/api/v1/bikes?store_id='.$this->honnavar->id)
+        ->assertOk()->assertJsonCount(1, 'data');
+});
