@@ -614,7 +614,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569' }}>
                                             {bike.transmission || 'Two-wheeler'}{bike.current_store?.name ? ` · ${bike.current_store.name}` : ''}
                                         </Typography>
-                                        <Typography variant="h6" sx={{ fontWeight: 900, color: isDark ? '#FBBF24' : '#92400E' }}>
+                                        <Typography variant="h6" component="p" sx={{ fontWeight: 900, color: isDark ? '#FBBF24' : '#92400E' }}>
                                             {Number(bike.daily_rate) > 0 ? `From ₹${Number(bike.daily_rate).toLocaleString('en-IN')} / day` : 'Get a price quote'}
                                         </Typography>
                                         <Button component={Link} href={`/services/bikes/${bike.id}`} variant="contained" sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706' } }}>
