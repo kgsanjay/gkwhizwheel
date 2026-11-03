@@ -44,6 +44,7 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
+          MAIL_FROM_ADDRESS: "noreply@example.test"
 
   test-mobile-customer:
     name: Mobile Customer TS Check
