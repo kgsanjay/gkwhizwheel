@@ -200,7 +200,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                Palya Main Rd, Honnavar & Murudeshwar, Karnataka 581334
+                                Palya Main Rd, Honnavar, Karnataka 581334
                             </Typography>
                             <Box
                                 component="a"
@@ -1705,7 +1705,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, mt: '2px', flexShrink: 0 }} />
                                     <Box>
                                         <Typography variant="body2" sx={{ color: '#F1F5F9', fontWeight: 700, fontSize: '0.84rem' }}>
-                                            Palya Main Rd, Honnavar & Murudeshwar, Karnataka 581334
+                                            Palya Main Rd, Honnavar, Karnataka 581334
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>
                                             Plus Railway Station Hub (Platform 1 Exit)
@@ -1996,7 +1996,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         }}
                     >
                         <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.82rem', textAlign: { xs: 'center', sm: 'left' } }}>
-                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. Palya Main Rd, Honnavar & Murudeshwar, Karnataka 581334.
+                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. Palya Main Rd, Honnavar, Karnataka 581334.
                         </Typography>
                         <Stack direction="row" spacing={2.5} flexWrap="wrap" justifyContent="center">
                             <Typography component={Link} href="/about" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
