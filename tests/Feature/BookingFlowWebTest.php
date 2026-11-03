@@ -16,6 +16,9 @@ use App\Enums\UserStatus;
 use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\Booking;
+use App\Models\PricingRule;
+use App\Enums\PricingRuleType;
+use App\Enums\PricingRateType;
 use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
@@ -110,6 +113,15 @@ test('unauthenticated customer cannot hold booking', function (): void {
 });
 
 test('customer can hold booking with client-generated UUID Idempotency-Key and addons', function (): void {
+    PricingRule::create([
+        'rule_type' => PricingRuleType::ONE_WAY_FEE,
+        'from_store_id' => $this->store1->id,
+        'to_store_id' => $this->store2->id,
+        'rate_type' => PricingRateType::FLAT_ADDON,
+        'value' => 200,
+        'priority' => 5,
+        'is_active' => true,
+    ]);
     Sanctum::actingAs($this->customer, ['*']);
 
     $uuidKey = (string) Str::uuid();
