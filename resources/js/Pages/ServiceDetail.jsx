@@ -681,16 +681,8 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
         });
     }, [availableItems, selectedCategoryFilter, searchQuery]);
 
-    const filteredPackages = useMemo(() => {
-        if (!service.packages) return [];
-        return service.packages.filter((pkg) => {
-            const matchesCat = !selectedCategoryFilter || pkg.name.toLowerCase().includes(selectedCategoryFilter.toLowerCase()) || pkg.models.toLowerCase().includes(selectedCategoryFilter.toLowerCase());
-            const matchesQuery = !searchQuery || pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) || pkg.idealFor.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesCat && matchesQuery;
-        });
-    }, [service.packages, selectedCategoryFilter, searchQuery]);
-
-    const totalAvailableCount = availableItems && availableItems.length > 0 ? filteredDbItems.length : filteredPackages.length;
+    // Only admin-published ServiceItem records are genuine bookable options.
+    const totalAvailableCount = filteredDbItems.length;
 
     const serviceFaqSchema = useMemo(() => {
         const visibleFaqs = (service.faqs || []).slice(0, 4).map((faq) => ({
@@ -1232,7 +1224,7 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
                             </Box>
                             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 0.8 }}>
                                 <Chip
-                                    label={`All Options (${availableItems && availableItems.length > 0 ? availableItems.length : service.packages.length})`}
+                                    label={`All Options (${availableItems.length})`}
                                     size="small"
                                     onClick={() => setSelectedCategoryFilter('')}
                                     sx={{
@@ -1244,7 +1236,7 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
                                         '&:hover': { filter: 'brightness(0.95)' },
                                     }}
                                 />
-                                {service.quickPills.map((pill, pIdx) => {
+                                {[...new Set(availableItems.map((item) => item.category).filter(Boolean))].map((pill, pIdx) => {
                                     const isSelected = selectedCategoryFilter === pill;
                                     return (
                                         <Chip
@@ -1497,72 +1489,28 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
                         })}
                         </Grid>
                     ) : (
-                        <Grid container spacing={3} sx={{ mb: 6 }}>
-                            {filteredPackages.map((pkg, idx) => (
-                                <Grid key={idx} size={{ xs: 12, sm: 6, md: 3 }}>
-                                    <Card
-                                        sx={{
-                                            height: '100%',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            justifyContent: 'space-between',
-                                            p: 3,
-                                            borderRadius: 3.5,
-                                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#FFFFFF',
-                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                            transition: 'all 0.3s ease',
-                                            '&:hover': {
-                                                transform: 'translateY(-4px)',
-                                                borderColor: service.color,
-                                                boxShadow: `0 14px 28px -8px ${service.color}25`,
-                                            },
-                                        }}
-                                    >
-                                        <Box>
-                                            <Chip
-                                                label={pkg.rate}
-                                                size="small"
-                                                sx={{
-                                                    bgcolor: `${service.color}18`,
-                                                    color: service.color,
-                                                    fontWeight: 900,
-                                                    fontSize: '0.78rem',
-                                                    mb: 1.5,
-                                                    border: `1px solid ${service.color}35`,
-                                                }}
-                                            />
-                                            <Typography variant="h6" component="h3" sx={{ fontWeight: 850, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1, lineHeight: 1.25 }}>
-                                                {pkg.name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: service.color, fontWeight: 750, display: 'block', mb: 1.5 }}>
-                                                {pkg.models}
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: secondaryTextColor, fontSize: '0.82rem', lineHeight: 1.5 }}>
-                                                {pkg.idealFor}
-                                            </Typography>
-                                        </Box>
-
-                                        <Box sx={{ mt: 3, pt: 2, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #F1F5F9' }}>
-                                            <Button
-                                                fullWidth
-                                                variant="outlined"
-                                                onClick={handleOpenBooking}
-                                                sx={{
-                                                    borderColor: service.color,
-                                                    color: service.color,
-                                                    fontWeight: 800,
-                                                    borderRadius: 2,
-                                                    py: 0.9,
-                                                    '&:hover': { bgcolor: `${service.color}15`, borderColor: service.color },
-                                                }}
-                                            >
-                                                Reserve Option
-                                            </Button>
-                                        </Box>
-                                    </Card>
-                                </Grid>
-                            ))}
-                        </Grid>
+                        <Paper
+                            role="status"
+                            sx={{
+                                p: { xs: 3, md: 5 },
+                                mb: 6,
+                                textAlign: 'center',
+                                borderRadius: 3,
+                                bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
+                                border: '1px solid #CBD5E1',
+                            }}
+                        >
+                            <Typography variant="h6" component="h3" sx={{ color: primaryTextColor, fontWeight: 800, mb: 1 }}>
+                                No published options available
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2 }}>
+                                There are currently no available {service.title.toLowerCase()} listings matching your selection.
+                                Contact our team to discuss availability. No price or reservation is confirmed until a live option is selected.
+                            </Typography>
+                            <Button component={Link} href="/contact" variant="contained" sx={{ bgcolor: service.color, fontWeight: 800 }}>
+                                Contact Us
+                            </Button>
+                        </Paper>
                     )}
 
                     {/* =========================================================================
