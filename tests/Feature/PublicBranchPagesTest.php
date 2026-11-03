@@ -173,3 +173,17 @@ test('branch landing pages do not expose customer-irrelevant bike registration n
             ->missing('bikes.0.registration_number')
             ->missing('bikes.0.odometer_reading'));
 });
+
+
+test('published branch slug is immutable without an explicit redirect plan', function (): void {
+    $admin = User::create([
+        'name' => 'Super Admin', 'email' => 'branchadmin3@example.com',
+        'phone' => '9000000043', 'password' => bcrypt('Password123!'),
+        'role' => UserRole::SUPER_ADMIN, 'status' => UserStatus::ACTIVE,
+    ]);
+    $this->actingAs($admin)->put("/admin/stores/{$this->honnavar->id}", [
+        'slug' => 'new-honnavar-address',
+    ])->assertSessionHasErrors(['slug']);
+
+    expect($this->honnavar->fresh()->slug)->toBe('honnavar');
+});
