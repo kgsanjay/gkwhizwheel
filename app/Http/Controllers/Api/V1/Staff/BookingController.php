@@ -407,6 +407,11 @@ class BookingController extends Controller
             }
         }
 
+        if ($request->filled('deposit_refund_amount')) {
+            // A refund amount must never be changed after dispatching the gateway request.
+            return response()->json(['success' => false, 'message' => 'Manual deposit refund overrides are not supported by this endpoint.'], 422);
+        }
+
         // Mark returned in BookingService (which updates bike.current_store_id and bike status to AVAILABLE)
         $bookingService->markReturned(
             booking: $booking,
