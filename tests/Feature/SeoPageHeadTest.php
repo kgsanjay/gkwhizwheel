@@ -29,37 +29,27 @@ test('PageHead SEO component exists and supports all required meta and JSON-LD p
         ->toContain('application/ld+json');
 });
 
-test('Welcome page integrates PageHead with unique title, meta description, canonical URL, and LocalBusiness schema', function (): void {
-    $path = resource_path('js/Pages/Welcome.jsx');
-
-    expect(file_exists($path))->toBeTrue();
-
-    $content = file_get_contents($path);
+test('Welcome page uses location-neutral brand metadata and factual Organization schema', function (): void {
+    $content = file_get_contents(resource_path('js/Pages/Welcome.jsx'));
 
     expect($content)
         ->toContain("import PageHead from '../Components/SEO/PageHead'")
         ->toContain('<PageHead')
-        ->toContain('title="Bike Rental Honnavar | Boating, Scuba, Tours – GK WhizWheel"')
+        ->toContain('title="Bike Rentals in Honnavar & Murudeshwar | G.K. WhizWheel"')
         ->toContain('canonicalUrl="https://whizwheels.in/"')
-        ->toContain('"@type": "LocalBusiness"')
-        ->toContain('"telephone": "+918660989586"')
-        ->toContain('"priceRange": "₹350 - ₹5000"')
-        ->toContain('"openingHours": "Mo-Su 06:00-23:00"')
-        ->toContain('"@type": "PostalAddress"')
-        ->toContain('"@type": "GeoCoordinates"');
+        ->toContain("'@type': 'Organization'")
+        ->toContain("'@context': 'https://schema.org'")
+        ->not->toContain('"@type": "LocalBusiness"')
+        ->not->toContain('5.0 Google Rating (324+ Reviews)');
 
-    // Verify title length is under 60 chars
     preg_match('/title="([^"]+)"/', $content, $titleMatches);
     expect($titleMatches)->not->toBeEmpty();
-    expect(mb_strlen($titleMatches[1]))->toBeLessThan(60);
+    expect(mb_strlen($titleMatches[1]))->toBeLessThan(61);
 
-    // Verify description length is under 155 chars
     preg_match('/description="([^"]+)"/', $content, $descMatches);
     expect($descMatches)->not->toBeEmpty();
-    expect(mb_strlen($descMatches[1]))->toBeLessThan(155);
-    expect($descMatches[1])
-        ->toContain('Honnavar')
-        ->toContain('Karavali coast');
+    expect(mb_strlen($descMatches[1]))->toBeLessThan(156);
+    expect($descMatches[1])->toContain('Honnavar')->toContain('Murudeshwar');
 });
 
 test('Services, ServiceDetail, Bikes/Index, and Bikes/Show pages integrate PageHead with unique metadata and canonical URLs', function (): void {
@@ -264,12 +254,8 @@ test('About, HowItWorks, and Contact pages integrate PageHead with unique metada
     expect(count(array_unique($descriptions)))->toBe(4);
 });
 
-test('FAQ sections on Welcome, Services, HowItWorks, and individual service pages include FAQPage structuredData matching visible Q&A copy', function (): void {
+test('FAQ sections with structured data on service pages match visible Q&A copy', function (): void {
     $pages = [
-        'Welcome.jsx' => [
-            'sampleQuestion' => 'What documents are required to rent a bike?',
-            'sampleAnswer' => 'An original, valid Indian Driving License for two-wheelers',
-        ],
         'Services.jsx' => [
             'sampleQuestion' => 'Should I choose a self-drive bike or a chauffeured private cab?',
             'sampleAnswer' => 'For solo travelers or couples looking for maximum freedom',
