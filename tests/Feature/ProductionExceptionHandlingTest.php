@@ -52,12 +52,14 @@ test('unhandled runtime exception on API in production does not leak stack trace
     Log::shouldHaveReceived('error')
         ->atLeast()->once()
         ->withArgs(function ($message, $context = []) {
-            return str_contains((string) $message, 'Secret database password leaked')
-                || (isset($context['exception']) && str_contains($context['exception'], 'RuntimeException'));
+            return $message === 'Unhandled API exception'
+                && ($context['exception'] ?? null) === RuntimeException::class
+                && ! isset($context['message'])
+                && ! isset($context['trace']);
         });
 });
 
-test('raw sql query exception on API in production does not leak raw sql query or table names and logs sql server side', function (): void {
+test('raw sql query exception on API in production does not leak query details to response or logs', function (): void {
     config()->set('app.debug', false);
     Log::spy();
 
@@ -80,8 +82,12 @@ test('raw sql query exception on API in production does not leak raw sql query o
     Log::shouldHaveReceived('error')
         ->atLeast()->once()
         ->withArgs(function ($message, $context = []) {
-            return (isset($context['sql']) && str_contains($context['sql'], 'SELECT * FROM secret_users'))
-                || str_contains((string) $message, 'secret_users');
+            return $message === 'Unhandled API exception'
+                && ($context['exception'] ?? null) === QueryException::class
+                && ! isset($context['sql'])
+                && ! isset($context['bindings'])
+                && ! isset($context['message'])
+                && ! isset($context['trace']);
         });
 });
 
