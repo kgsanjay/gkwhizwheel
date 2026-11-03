@@ -3,6 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
+import { getServiceDisplayRate } from '../utils/publicCatalog';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
 import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
@@ -77,7 +78,7 @@ const servicesFaqSchema = {
     })),
 };
 
-export default function Services({ availableItems = [] }) {
+export default function Services({ availableItems = [], bikeStartingRate = null }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -320,12 +321,13 @@ export default function Services({ availableItems = [] }) {
             const media = getServiceItemMedia(item, preview.image);
             enhanced[key] = {
                 ...preview,
+                rate: getServiceDisplayRate(key, availableItems, bikeStartingRate !== null ? [{ daily_rate: bikeStartingRate }] : []),
                 item,
                 media,
             };
         });
         return enhanced;
-    }, [availableItems]);
+    }, [availableItems, bikeStartingRate]);
 
     const servicesWithMedia = React.useMemo(() => {
         return services.map((srv) => {
@@ -333,11 +335,12 @@ export default function Services({ availableItems = [] }) {
             const media = getServiceItemMedia(item, srv.image);
             return {
                 ...srv,
+                rate: getServiceDisplayRate(srv.id, availableItems, bikeStartingRate !== null ? [{ daily_rate: bikeStartingRate }] : []),
                 item,
                 media,
             };
         });
-    }, [availableItems]);
+    }, [availableItems, bikeStartingRate]);
 
     const tourItem = getItemForService('tours');
     const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
