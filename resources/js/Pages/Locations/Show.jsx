@@ -64,11 +64,15 @@ export default function LocationsShow({ branch, bikes = [], canonicalUrl }) {
                             </Button>
                         </Paper>
                         <Box>
+                            <Button component={Link} href={`/services/bikes?store_id=${branch.id}&return_store_id=${branch.id}`}
+                                variant="outlined" sx={{ mb: 2, color: '#FBBF24', borderColor: '#F59E0B', fontWeight: 700 }}>
+                                Search Bikes at This Branch
+                            </Button>
                             <Typography component="h2" variant="h4" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 1 }}>
                                 Bikes at {branch.city}
                             </Typography>
                             <Typography sx={{ color: '#CBD5E1', mb: 3 }}>
-                                These bikes are currently assigned to this branch. Select dates to confirm live availability and pricing.
+                                These bikes are currently located at this branch. Select rental dates and a return branch to confirm availability and the final price.
                             </Typography>
                             {bikes.length ? (
                                 <Grid container spacing={3}>
@@ -87,7 +91,7 @@ export default function LocationsShow({ branch, bikes = [], canonicalUrl }) {
                                                         <Typography sx={{ color: '#FBBF24', fontWeight: 800 }}>
                                                             {Number(bike.daily_rate) > 0 ? `From ₹${Number(bike.daily_rate).toLocaleString('en-IN')} / day` : 'Request a quote'}
                                                         </Typography>
-                                                        <Button component={Link} href={`/services/bikes/${bike.id}`}
+                                                        <Button component={Link} href={`/services/bikes/${bike.id}?pickup_store_id=${branch.id}&return_store_id=${branch.id}`}
                                                             variant="contained" sx={{ bgcolor: '#F59E0B', color: '#111827', fontWeight: 800 }}>
                                                             Check Dates and Price
                                                         </Button>
