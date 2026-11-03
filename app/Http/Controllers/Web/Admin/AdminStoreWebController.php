@@ -154,6 +154,11 @@ class AdminStoreWebController extends Controller
         $store = Store::findOrFail($id);
         Gate::authorize('update', $store);
 
+        if (array_key_exists('publication_status', $request->validated())
+            && $request->validated('publication_status') !== $store->publication_status) {
+            Gate::authorize('create', Store::class);
+        }
+
         $store->update($this->validatedPublicPage($request->validated(), $store));
 
         return redirect()->route('admin.stores.index')
@@ -177,6 +182,12 @@ class AdminStoreWebController extends Controller
             while (Store::where('slug', $slug)->when($existing, fn ($q) => $q->whereKeyNot($existing->id))->exists()) {
                 $slug = $base.'-'.$index++;
             }
+        }
+
+        if ($existing && $existing->publication_status === 'published' && $existing->slug !== $slug) {
+            throw ValidationException::withMessages([
+                'slug' => 'A published branch URL cannot be changed without an SEO redirect plan.',
+            ]);
         }
 
         $values['slug'] = $slug;
