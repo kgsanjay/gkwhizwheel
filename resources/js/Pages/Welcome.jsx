@@ -545,6 +545,63 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 </Box>
             </Box>
 
+            {/* Live featured fleet — only admin-published, available bikes */}
+            <Box component="section" aria-labelledby="featured-fleet-heading" sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mb: { xs: 6, md: 9 } }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 3 }}>
+                    <Box>
+                        <Typography id="featured-fleet-heading" component="h2" variant="h4" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', mb: 0.5 }}>
+                            Explore Available Bikes
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569' }}>
+                            Vehicles and starting daily rates are updated from our fleet management system.
+                        </Typography>
+                    </Box>
+                    <Button component={Link} href="/services/bikes" variant="outlined" endIcon={<ArrowForwardIcon />} sx={{ fontWeight: 800, borderRadius: 2 }}>
+                        View All Bikes
+                    </Button>
+                </Stack>
+                {featuredBikes.length > 0 ? (
+                    <Grid container spacing={2.5}>
+                        {featuredBikes.slice(0, 3).map((bike) => (
+                            <Grid key={bike.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                                <Card sx={{ height: '100%', borderRadius: 3, overflow: 'hidden', bgcolor: isDark ? '#1E293B' : '#FFFFFF', border: '1px solid #CBD5E1' }}>
+                                    <Box component="img"
+                                        src={bike.primary_image_url || '/images/services/two_wheelers.jpg'}
+                                        alt={`${bike.brand} ${bike.model_name} available for rent`}
+                                        loading="lazy"
+                                        sx={{ width: '100%', height: 190, objectFit: 'cover', bgcolor: '#E2E8F0' }}
+                                    />
+                                    <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                                        <Typography component="h3" variant="h6" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                            {bike.brand} {bike.model_name}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569' }}>
+                                            {bike.transmission || 'Two-wheeler'}{bike.current_store?.name ? ` · ${bike.current_store.name}` : ''}
+                                        </Typography>
+                                        <Typography variant="h6" component="p" sx={{ fontWeight: 900, color: isDark ? '#FBBF24' : '#92400E' }}>
+                                            {Number(bike.daily_rate) > 0 ? `From ₹${Number(bike.daily_rate).toLocaleString('en-IN')} / day` : 'Get a price quote'}
+                                        </Typography>
+                                        <Button component={Link} href={`/services/bikes/${bike.id}`} variant="contained" sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706' } }}>
+                                            Check Dates & Price
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+                ) : (
+                    <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center', bgcolor: isDark ? '#1E293B' : '#F8FAFC' }}>
+                        <Typography variant="body1" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 700, mb: 1 }}>
+                            No bikes are listed as available right now.
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569' }}>
+                            Please contact the team for upcoming availability.
+                        </Typography>
+                        <Button component={Link} href="/contact" sx={{ mt: 2 }}>Contact Us</Button>
+                    </Paper>
+                )}
+            </Box>
+
             {/* =========================================================================
                 2. DEDICATED SERVICE OFFERINGS SHOWCASE (7 CURATED SERVICES)
                    ORDER: 1. Bike Rentals, 2. Cab, 3. Homestay/Rooms, 4. Boating, 5. Scuba, 6. Guide, 7. Custom Tour Package
