@@ -312,7 +312,7 @@ test('super admin can update a bike and replace/update document expiry dates', f
         'registration_number' => $this->bike->registration_number,
         'category_id' => $this->category->id,
         'home_store_id' => $this->store1->id,
-        'current_store_id' => $this->store2->id,
+        'current_store_id' => $this->store1->id,
         'fuel_type' => FuelType::ELECTRIC->value,
         'transmission' => Transmission::AUTOMATIC->value,
         'odometer_reading' => 2400,
@@ -334,7 +334,7 @@ test('super admin can update a bike and replace/update document expiry dates', f
 
     $this->bike->refresh();
     expect($this->bike->brand)->toBe('Ather Energy');
-    expect($this->bike->current_store_id)->toBe($this->store2->id);
+    expect($this->bike->current_store_id)->toBe($this->store1->id);
     expect($this->bike->status)->toBe(BikeStatus::MAINTENANCE);
     expect($this->bike->odometer_reading)->toBe(2400);
 
