@@ -64,6 +64,10 @@ export default function LocationsShow({ branch, bikes = [], canonicalUrl }) {
                             </Button>
                         </Paper>
                         <Box>
+                            <Button component={Link} href={`/services/bikes?store_id=${branch.id}&return_store_id=${branch.id}`}
+                                variant="outlined" sx={{ mb: 2, color: '#FBBF24', borderColor: '#F59E0B', fontWeight: 700 }}>
+                                Search Bikes at This Branch
+                            </Button>
                             <Typography component="h2" variant="h4" sx={{ color: '#FFFFFF', fontWeight: 800, mb: 1 }}>
                                 Bikes at {branch.city}
                             </Typography>
