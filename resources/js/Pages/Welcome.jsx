@@ -413,11 +413,11 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         }}
                                     >
                                         <StarIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
-                                        5.0 Google Rating (324+ Reviews)
+                                        Explore Our Pickup Locations
                                     </Box>
                                     <Chip
                                         size="small"
-                                        label="● Open 24/7"
+                                        label="Contact for operating hours"
                                         sx={{
                                             bgcolor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5',
                                             color: isDark ? '#34D399' : '#047857',
@@ -474,7 +474,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     <Grid size={{ xs: 4 }}>
                                         <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
                                             <Typography component="span" variant="h6" sx={{ display: 'block', color: '#10B981', fontWeight: 900, lineHeight: 1.2 }}>0 Lock</Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Zero Deposit</Typography>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>See Deposit Details</Typography>
                                         </Box>
                                     </Grid>
                                 </Grid>
@@ -1390,149 +1390,9 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                     </Grid>
                 </Box>
 
-                {/* =========================================================================
-                    7. CUSTOMER REVIEWS & EXPERIENCES (What Our Riders Say)
-                ========================================================================== */}
-                <Box id="reviews" sx={{ mb: 10 }}>
-                    <Box sx={{ textAlign: 'center', mb: 6 }}>
-                        <Box
-                            sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                px: 2,
-                                py: 0.75,
-                                borderRadius: 10,
-                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7',
-                                color: '#D97706',
-                                fontWeight: 800,
-                                fontSize: '0.82rem',
-                                mb: 1.5,
-                            }}
-                        >
-                            <FormatQuoteIcon sx={{ fontSize: 18, color: '#F59E0B' }} />
-                            Customer Experiences
-                        </Box>
-                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 1 }}>
-                            What Our Riders Say
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155', maxWidth: 640, mx: 'auto' }}>
-                            Real feedback from road-trippers and explorers who chose GK WhizWheels for their Karnataka coastal journey.
-                        </Typography>
-                    </Box>
-
-                    <Grid container spacing={3.5}>
-                        {[
-                            {
-                                name: 'Ankit Sharma',
-                                location: 'Bangalore, Karnataka',
-                                bike: 'Honda Activa 6G',
-                                trip: 'Sharavathi Backwaters & Eco Beach',
-                                rating: 5,
-                                review:
-                                    'Super seamless experience! Booked online and selected Honnavar Railway Station pickup. The executive was waiting with the bike right as our train pulled in. Clean helmets, spotless scooter, and exact 24-hour block billing with zero surprise charges.',
-                            },
-                            {
-                                name: 'Dr. Sneha & Rohan K.',
-                                location: 'Mumbai, Maharashtra',
-                                bike: 'Royal Enfield Classic 350',
-                                trip: 'Coastal Ride to Mirjan Fort & Gokarna',
-                                rating: 5,
-                                review:
-                                    'Rented the Classic 350 for 4 days. The bike was in mint mechanical condition with great tyres and smooth brakes. Cruised along NH66 all the way to Om Beach. The zero deposit option and instant WhatsApp assistance made this our best road trip yet!',
-                            },
-                            {
-                                name: 'Karthik Venugopal',
-                                location: 'Mysore, Karnataka',
-                                bike: 'TVS Ntorq 125',
-                                trip: 'Apsarakonda Falls & Murudeshwar',
-                                rating: 5,
-                                review:
-                                    'Outstanding customer service by the GK WhizWheels team at Palya Main Rd. Quick KYC verification took under 3 minutes. The bike had great pickup for hill climbs around Apsarakonda. Deposit refund was credited directly within an hour of vehicle return.',
-                            },
-                        ].map((rev) => (
-                            <Grid size={{ xs: 12, md: 4 }} key={rev.name}>
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 3.5,
-                                        height: '100%',
-                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                        borderRadius: 3,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        transition: 'transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
-                                        '&:hover': {
-                                            transform: 'translateY(-4px)',
-                                            borderColor: 'rgba(245, 158, 11, 0.4)',
-                                            boxShadow: isDark
-                                                ? '0 12px 28px -5px rgba(0, 0, 0, 0.5)'
-                                                : '0 10px 25px -4px rgba(15, 23, 42, 0.08)',
-                                        },
-                                    }}
-                                >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Stack direction="row" spacing={0.5}>
-                                            {[...Array(rev.rating)].map((_, i) => (
-                                                <StarIcon key={i} sx={{ fontSize: 18, color: '#F59E0B' }} />
-                                            ))}
-                                        </Stack>
-                                        <Chip
-                                            icon={<CheckCircleIcon sx={{ fontSize: 14, color: '#10B981 !important' }} />}
-                                            label="Verified Ride"
-                                            size="small"
-                                            sx={{
-                                                bgcolor: 'rgba(16, 185, 129, 0.1)',
-                                                color: '#10B981',
-                                                fontWeight: 800,
-                                                fontSize: '0.68rem',
-                                            }}
-                                        />
-                                    </Box>
-
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            color: isDark ? '#E2E8F0' : '#334155',
-                                            lineHeight: 1.7,
-                                            mb: 3,
-                                            flexGrow: 1,
-                                            fontStyle: 'italic',
-                                        }}
-                                    >
-                                        "{rev.review}"
-                                    </Typography>
-
-                                    <Divider sx={{ mb: 2.5, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9' }} />
-
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <Avatar
-                                            sx={{
-                                                bgcolor: '#F59E0B',
-                                                color: '#000000',
-                                                fontWeight: 800,
-                                                fontSize: '0.9rem',
-                                                width: 42,
-                                                height: 42,
-                                            }}
-                                        >
-                                            {rev.name.charAt(0)}
-                                        </Avatar>
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography variant="subtitle2" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
-                                                {rev.name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', display: 'block' }}>
-                                                {rev.location} • {rev.trip}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+                {/* Customer reviews will be rendered from verified, approved
+                    review records in a future CMS release. Unverified static
+                    testimonials must not be presented as real customer reviews. */}
 
                 {/* =========================================================================
                     Branches are admin-managed; no hardcoded physical hubs.
@@ -1946,7 +1806,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
                                 }}
                             >
-                                5.0★ (324 Reviews on Google)
+                                Honnavar & Murudeshwar Bike Rentals
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
