@@ -68,6 +68,8 @@ class SyncController extends Controller
 
             try {
                 $itemData = \Illuminate\Support\Facades\DB::transaction(function () use ($actionType, $payload, $idempotencyKey, $staffUser, $availabilityService, $bookingService, $refundService, $deviceId) {
+                    // Serialize per-staff operations; the unique key prevents cross-staff races.
+                    User::whereKey($staffUser->id)->lockForUpdate()->firstOrFail();
                     // Acquire the idempotency lock before executing the business action.
                     $prior = SyncQueue::where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
                     if ($prior !== null && $prior->status === SyncStatus::SYNCED) {
@@ -105,7 +107,8 @@ class SyncController extends Controller
                 ];
                 $syncedCount++;
             } catch (Throwable $e) {
-                SyncQueue::updateOrCreate(
+                // Do not overwrite a completed operation when a retry encounters an error.
+                SyncQueue::query()->firstOrCreate(
                     ['idempotency_key' => $idempotencyKey],
                     [
                         'device_id' => $deviceId,
