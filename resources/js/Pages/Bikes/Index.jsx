@@ -406,7 +406,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             '&:hover': { bgcolor: '#D97706' },
                                         }}
                                     >
-                                        Explore Available Fleet ({bikes.length > 0 ? bikes.length : '9'} Bikes) ↓
+                                        Explore Available Fleet ({isLoading ? '…' : bikes.length} Bikes) ↓
                                     </Button>
                                     <Button
                                         component="a"
