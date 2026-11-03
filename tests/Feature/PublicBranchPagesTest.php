@@ -185,3 +185,46 @@ test('published branch slug is immutable without an explicit redirect plan', fun
 
     expect($this->honnavar->fresh()->slug)->toBe('honnavar');
 });
+
+
+test('homepage promotes only published active branches and preserves their real numeric booking IDs', function (): void {
+    $this->get('/')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Welcome')
+            ->has('stores', 2)
+            ->where('stores.0.slug', 'honnavar')
+            ->where('stores.1.slug', 'murudeshwar')
+            ->where('stores.0.id', $this->honnavar->id)
+            ->where('stores.1.id', $this->murudeshwar->id)
+        );
+
+    $this->murudeshwar->update(['publication_status' => 'draft']);
+    $this->get('/')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Welcome')
+            ->has('stores', 1)
+            ->where('stores.0.slug', 'honnavar')
+        );
+});
+
+test('homepage does not expose vehicle registration and internal odometer fields', function (): void {
+    $category = BikeCategory::create([
+        'name' => 'Scooter', 'base_daily_rate' => 500, 'default_deposit_amount' => 0,
+    ]);
+    Bike::create([
+        'category_id' => $category->id,
+        'home_store_id' => $this->honnavar->id,
+        'current_store_id' => $this->honnavar->id,
+        'brand' => 'Honda', 'model_name' => 'Activa',
+        'registration_number' => 'KA-47-AB-4567',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+        'status' => BikeStatus::AVAILABLE,
+        'odometer_reading' => 1250,
+    ]);
+    $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('Welcome')
+        ->has('featuredBikes', 1)
+        ->missing('featuredBikes.0.registration_number')
+        ->missing('featuredBikes.0.odometer_reading')
+    );
+});
