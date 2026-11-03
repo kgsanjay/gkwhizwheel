@@ -194,8 +194,8 @@ Route::get('/auth/google', [\App\Http\Controllers\Web\Auth\GoogleAuthController:
 Route::get('/auth/google/callback', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 Route::get('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('admin.login');
 Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])->middleware('throttle:auth')->name('admin.login.store');
-Route::match(['get', 'post'], '/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('logout');
-Route::match(['get', 'post'], '/admin/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('admin.logout');
+Route::post('/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('logout');
+Route::post('/admin/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('admin.logout');
 
 // Two-Factor Authentication (TOTP)
 Route::get('/admin/2fa/challenge', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorChallenge'])->name('admin.2fa.challenge');
