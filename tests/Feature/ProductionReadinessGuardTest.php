@@ -37,3 +37,8 @@ test('payment webhook signature verification fails when secret is unconfigured',
     expect(app(\App\Services\PhonePeService::class)
         ->verifyWebhookSignature('encoded', 'any-signature'))->toBeFalse();
 });
+
+test('production readiness check refuses nonproduction or incomplete deployment configuration', function (): void {
+    $this->artisan('app:production-check')
+        ->assertExitCode(1);
+});
