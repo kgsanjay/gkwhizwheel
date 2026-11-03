@@ -8,7 +8,6 @@ use App\Exceptions\ServiceItemNotAvailableException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -144,17 +143,23 @@ return Application::configure(basePath: dirname(__DIR__))
                     ? $e->getStatusCode()
                     : 500;
 
-                // ponytail: Log full server-side diagnostic details while returning sanitized envelope to client
-                Log::error('Unhandled exception in API request: '.$e->getMessage(), [
+                // Never log request URLs, SQL bindings, or raw exception messages
+                // in production: these can contain passwords, tokens or KYC data.
+                $diagnostics = [
                     'exception' => get_class($e),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString(),
-                    'url' => $request->fullUrl(),
+                    'path' => $request->path(),
                     'method' => $request->method(),
-                    'sql' => $e instanceof QueryException ? $e->getSql() : null,
-                    'bindings' => $e instanceof QueryException ? $e->getBindings() : null,
-                ]);
+                    'status' => $statusCode,
+                ];
+
+                if (config('app.debug', false) && ! app()->isProduction()) {
+                    $diagnostics['message'] = $e->getMessage();
+                    $diagnostics['file'] = $e->getFile();
+                    $diagnostics['line'] = $e->getLine();
+                    $diagnostics['trace'] = $e->getTraceAsString();
+                }
+
+                Log::error('Unhandled API exception', $diagnostics);
 
                 $isProductionOrNoDebug = app()->isProduction() || ! config('app.debug', false);
 
