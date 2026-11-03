@@ -158,8 +158,26 @@ test('kyc document download allows owner customer and admin/staff but rejects no
     $responseAdmin = $this->get($signedUrl);
     $responseAdmin->assertOk();
 
-    // 3. Staff downloads Customer A's document
+    // Staff cannot inspect KYC data until a booking links the customer to the store.
     Sanctum::actingAs($this->staffStoreA);
+    $this->get($signedUrl)->assertStatus(403);
+
+    Booking::create([
+        'booking_reference' => 'BK-ALICE-KYC-STORE-A',
+        'bike_id' => $this->bikeA->id,
+        'user_id' => $this->customerA->id,
+        'pickup_store_id' => $this->storeA->id,
+        'return_store_id' => $this->storeA->id,
+        'channel' => BookingChannel::ONLINE,
+        'status' => BookingStatus::CONFIRMED,
+        'start_date' => '2026-11-15',
+        'end_date' => '2026-11-16',
+        'base_amount' => 1000.00,
+        'deposit_amount' => 1000.00,
+        'total_amount' => 2000.00,
+        'price_breakdown_json' => [],
+        'idempotency_key' => 'idemp-kyc-staff-access',
+    ]);
     $responseStaff = $this->get($signedUrl);
     $responseStaff->assertOk();
 
