@@ -36,6 +36,14 @@ export default function StoresEdit({
         longitude: store.longitude || 77.5946,
         phone: store.phone || '',
         status: store.status || 'active',
+        slug: store.slug || '',
+        public_name: store.public_name || '',
+        hero_image_url: store.hero_image_url || '',
+        public_description: store.public_description || '',
+        pickup_instructions: store.pickup_instructions || '',
+        seo_title: store.seo_title || '',
+        seo_description: store.seo_description || '',
+        publication_status: store.publication_status || 'draft',
     });
 
     const handleSubmit = (e) => {
@@ -191,6 +199,63 @@ export default function StoresEdit({
                                                 {s.label}
                                             </MenuItem>
                                         ))}
+                                    </TextField>
+                                </Grid>
+                            </Grid>
+                        </Paper>
+                    </Grid>
+
+                    {/* Branch landing page: disabled until manually published */}
+                    <Grid size={{ xs: 12 }}>
+                        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+                                Public Branch Page & SEO
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                Draft branches are not public or included in the sitemap. Add genuine location-specific content before publishing.
+                            </Typography>
+                            <Grid container spacing={2}>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <TextField fullWidth label="Public branch name" value={data.public_name}
+                                        onChange={(e) => setData('public_name', e.target.value)}
+                                        error={Boolean(errors.public_name)} helperText={errors.public_name || 'Example: G.K. WhizWheel Murudeshwar'} />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <TextField fullWidth label="URL slug (leave blank to generate)" value={data.slug}
+                                        onChange={(e) => setData('slug', e.target.value)}
+                                        error={Boolean(errors.slug)} helperText={errors.slug || 'Use lowercase letters, digits and hyphens. Avoid changing a published URL.'} />
+                                </Grid>
+                                <Grid size={{ xs: 12 }}>
+                                    <TextField fullWidth label="Hero image URL" value={data.hero_image_url}
+                                        onChange={(e) => setData('hero_image_url', e.target.value)}
+                                        error={Boolean(errors.hero_image_url)} helperText={errors.hero_image_url || 'Use an image hosted on your approved public media storage.'} />
+                                </Grid>
+                                <Grid size={{ xs: 12 }}>
+                                    <TextField fullWidth multiline rows={4} label="Original branch description" value={data.public_description}
+                                        onChange={(e) => setData('public_description', e.target.value)}
+                                        error={Boolean(errors.public_description)} helperText={errors.public_description || 'Required before publishing. Describe the actual branch and local pickup details.'} />
+                                </Grid>
+                                <Grid size={{ xs: 12 }}>
+                                    <TextField fullWidth multiline rows={2} label="Pickup and return instructions" value={data.pickup_instructions}
+                                        onChange={(e) => setData('pickup_instructions', e.target.value)}
+                                        error={Boolean(errors.pickup_instructions)} helperText={errors.pickup_instructions} />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <TextField fullWidth label="SEO title" value={data.seo_title}
+                                        onChange={(e) => setData('seo_title', e.target.value)}
+                                        error={Boolean(errors.seo_title)} helperText={errors.seo_title || 'Unique title for this physical branch.'} />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <TextField fullWidth label="SEO description" value={data.seo_description}
+                                        onChange={(e) => setData('seo_description', e.target.value)}
+                                        error={Boolean(errors.seo_description)} helperText={errors.seo_description} />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <TextField fullWidth select label="Public page status" value={data.publication_status}
+                                        onChange={(e) => setData('publication_status', e.target.value)}
+                                        error={Boolean(errors.publication_status)} helperText={errors.publication_status}>
+                                        <MenuItem value="draft">Draft — hidden from public</MenuItem>
+                                        <MenuItem value="published">Published — public and indexed</MenuItem>
                                     </TextField>
                                 </Grid>
                             </Grid>
