@@ -43,7 +43,10 @@ test('Welcome page integrates PageHead with unique title, meta description, cano
         ->toContain('canonicalUrl="https://whizwheels.in/"')
         ->toContain('"@type": "LocalBusiness"')
         ->toContain('"telephone": "+918660989586"')
-        ->toContain('"priceRange": "₹350 - ₹5000"')
+        ->toContain('"hasOfferCatalog": {')
+        ->toContain('...featuredBikes')
+        ->toContain('...availableItems')
+        ->not->toContain('"ratingValue": "5.0"')
         ->toContain('"openingHours": "Mo-Su 06:00-23:00"')
         ->toContain('"@type": "PostalAddress"')
         ->toContain('"@type": "GeoCoordinates"');
