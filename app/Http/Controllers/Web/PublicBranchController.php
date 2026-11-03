@@ -67,7 +67,14 @@ class PublicBranchController extends Controller
                 'seo_title' => $branch->seo_title,
                 'seo_description' => $branch->seo_description,
             ],
-            'bikes' => BikeResource::collection($bikes)->resolve(),
+            'bikes' => $bikes->map(function (Bike $bike): array {
+                $resource = (new BikeResource($bike))->resolve();
+
+                return array_intersect_key($resource, array_flip([
+                    'id', 'brand', 'model_name', 'daily_rate',
+                    'deposit_amount', 'primary_image_url', 'transmission',
+                ]));
+            })->values(),
             'canonicalUrl' => url('/locations/'.$branch->slug),
         ]);
     }
