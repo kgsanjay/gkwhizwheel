@@ -954,8 +954,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                             <Grid container spacing={3}>
                                 {bikes.map((bike) => {
-                                    const weekdayRate = bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || bike.category?.base_daily_rate || '350.00';
-                                    const weekendRate = bike.weekend_rate || (Number(weekdayRate) + (Number(weekdayRate) >= 1000 ? (Number(weekdayRate) >= 1200 ? 300 : 200) : (Number(weekdayRate) === 450 ? 50 : 100)));
+                                    const weekdayRate = bike.daily_rate ?? bike.weekday_rate ?? bike.category?.base_daily_rate ?? 0;
                                     const isElectric = bike.fuel_type === 'electric';
 
                                     // Build forward query params to retain user dates
@@ -1118,52 +1117,30 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 2 }}>
                                                         <LocationOnIcon aria-hidden="true" sx={{ fontSize: 16, color: isDark ? '#F59E0B' : '#D97706' }} />
                                                         <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                            {bike.current_store?.name || 'Honnavar Main Hub (Palya & Railway Stn)'}
+                                                            {bike.current_store?.name || 'Contact us to confirm pickup location'}
                                                         </Typography>
                                                     </Box>
 
-                                                    {/* Pricing Box (Mon-Thu vs Fri-Sun) */}
-                                                    <Box
-                                                        sx={{
-                                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
-                                                            p: 1.8,
-                                                            borderRadius: 2.5,
-                                                            mb: 2.5,
-                                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                                        }}
-                                                    >
+                                                    {/* Actual admin-managed starting rate; dates and branch define final total. */}
+                                                    <Box sx={{
+                                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                                                        p: 1.8, borderRadius: 2.5, mb: 2.5,
+                                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                    }}>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                                            <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750, fontSize: '0.84rem' }}>
-                                                                Mon – Thu <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekday)</Box>
+                                                            <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750 }}>
+                                                                Starting daily rate
                                                             </Typography>
-                                                            <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekdayPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekdayRate).toLocaleString('en-IN')}{' '}
-                                                                <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                    /day
-                                                                </Typography>
+                                                            <Typography component="span" variant="h6" sx={{ fontWeight: 900, color: weekdayPriceColor }}>
+                                                                {Number(weekdayRate) > 0 ? `₹${Number(weekdayRate).toLocaleString('en-IN')} /day` : 'Request quote'}
                                                             </Typography>
                                                         </Box>
-
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                                            <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 750, fontSize: '0.84rem' }}>
-                                                                Fri – Sun <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekend)</Box>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                                                            <Typography variant="caption" sx={{ color: secondaryTextColor }}>
+                                                                Deposit: ₹{Number(bike.deposit_amount || 0).toLocaleString('en-IN')}
                                                             </Typography>
-                                                            <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekendPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekendRate).toLocaleString('en-IN')}{' '}
-                                                                <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                    /day
-                                                                </Typography>
-                                                            </Typography>
-                                                        </Box>
-
-                                                        <Divider sx={{ my: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }} />
-
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                            <Typography variant="caption" sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800 }}>
-                                                                ✓ Zero Deposit Option
-                                                            </Typography>
-                                                            <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                Instant 5-Min Pickup
+                                                            <Typography variant="caption" sx={{ color: secondaryTextColor, textAlign: 'right' }}>
+                                                                Return-branch fee shown in live quote
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -1176,7 +1153,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         color="secondary"
                                                         fullWidth
                                                         endIcon={<ArrowForwardIcon aria-hidden="true" />}
-                                                        aria-label={`Book ${bike.brand} ${bike.model_name} starting at ₹${weekdayRate} per day`}
+                                                        aria-label={`Check dates and price for ${bike.brand} ${bike.model_name}`}
                                                         sx={{
                                                             mt: 'auto',
                                                             fontWeight: 900,
