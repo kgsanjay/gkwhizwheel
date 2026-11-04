@@ -375,14 +375,14 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 component={Link}
                                 href="/"
                                 sx={{
-                                    color: url === '/' ? '#F59E0B' : (isDark ? '#E2E8F0' : '#1E293B'),
-                                    bgcolor: url === '/' ? (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)') : 'transparent',
+                                    color: url === '/' ? '#0A404C' : '#0A404C',
+                                    bgcolor: url === '/' ? ('rgba(57, 147, 148, 0.10)') : 'transparent',
                                     fontWeight: url === '/' ? 700 : 600,
                                     fontSize: '0.875rem',
                                     px: 1.6,
                                     py: 0.6,
                                     borderRadius: 2,
-                                    '&:hover': { color: '#F59E0B', bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)' },
+                                    '&:hover': { color: '#0A404C', bgcolor: 'rgba(57, 147, 148, 0.10)' },
                                 }}
                             >
                                 Home
@@ -392,21 +392,21 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 component={Link}
                                 href="/about"
                                 sx={{
-                                    color: url.startsWith('/about') ? '#F59E0B' : (isDark ? '#E2E8F0' : '#1E293B'),
-                                    bgcolor: url.startsWith('/about') ? (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)') : 'transparent',
+                                    color: url.startsWith('/about') ? '#0A404C' : '#0A404C',
+                                    bgcolor: url.startsWith('/about') ? ('rgba(57, 147, 148, 0.10)') : 'transparent',
                                     fontWeight: url.startsWith('/about') ? 700 : 600,
                                     fontSize: '0.875rem',
                                     px: 1.6,
                                     py: 0.6,
                                     borderRadius: 2,
-                                    '&:hover': { color: '#F59E0B', bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)' },
+                                    '&:hover': { color: '#0A404C', bgcolor: 'rgba(57, 147, 148, 0.10)' },
                                 }}
                             >
                                 About
                             </Button>
 
                             <Button component={Link} href="/locations" sx={{
-    color: url.startsWith('/locations') ? '#F59E0B' : (isDark ? '#E2E8F0' : '#1E293B'),
+    color: url.startsWith('/locations') ? '#0A404C' : '#0A404C',
     fontWeight: 700, fontSize: '0.875rem', px: 1.6, py: 0.6, borderRadius: 2,
 }}>Locations</Button>
                             {/* Desktop 2-Column Services Mega Menu Dropdown */}
@@ -1610,7 +1610,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 desc: '100% Commercial permits, valid insurance & PUC',
                             },
                             {
-                                icon: <StarIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
+                                icon: <StarIcon sx={{ color: '#F5C360', fontSize: 22 }} />,
                                 title: '5.0 ★ Google Rated',
                                 desc: '324+ Verified traveler & tourist reviews',
                             },
@@ -1620,7 +1620,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 desc: 'Palya Main Rd Head Office & Railway Station Hub',
                             },
                             {
-                                icon: <ElectricBoltIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
+                                icon: <ElectricBoltIcon sx={{ color: '#F5C360', fontSize: 22 }} />,
                                 title: 'Zero Deposit Options',
                                 desc: 'Paperless digital KYC & instant confirmation',
                             },
@@ -1669,7 +1669,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, lineHeight: 1.1 }}>
                                         GK WhizWheels
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800, letterSpacing: '0.02em' }}>
+                                    <Typography variant="caption" sx={{ color: '#F5C360', fontWeight: 800, letterSpacing: '0.02em' }}>
                                         #1 Travel & Rental Hub in Honnavar
                                     </Typography>
                                 </Box>
@@ -1680,7 +1680,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
                             <Stack spacing={1.2} sx={{ mb: 2.5 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                    <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, mt: '2px', flexShrink: 0 }} />
+                                    <LocationOnIcon sx={{ color: '#F5C360', fontSize: 18, mt: '2px', flexShrink: 0 }} />
                                     <Box>
                                         <Typography variant="body2" sx={{ color: '#F1F5F9', fontWeight: 700, fontSize: '0.84rem' }}>
                                             Palya Main Rd, Honnavar, Karnataka 581334
@@ -1716,7 +1716,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         component="a"
                                         href="tel:+918660989586"
                                         variant="body2"
-                                        sx={{ color: '#F1F5F9', fontWeight: 700, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}
+                                        sx={{ color: '#F1F5F9', fontWeight: 700, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F5C360' } }}
                                     >
                                         +91 8660989586
                                     </Typography>
@@ -1725,14 +1725,14 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         component="a"
                                         href="tel:09731699125"
                                         variant="body2"
-                                        sx={{ color: '#F1F5F9', fontWeight: 700, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}
+                                        sx={{ color: '#F1F5F9', fontWeight: 700, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F5C360' } }}
                                     >
                                         097316 99125
                                     </Typography>
                                 </Box>
 
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <AccessTimeIcon sx={{ color: '#F59E0B', fontSize: 17, flexShrink: 0 }} />
+                                    <AccessTimeIcon sx={{ color: '#F5C360', fontSize: 17, flexShrink: 0 }} />
                                     <Typography variant="body2" sx={{ color: '#10B981', fontWeight: 800, fontSize: '0.84rem' }}>
                                         Open 24 Hours Daily • Instant Support
                                     </Typography>
@@ -1744,7 +1744,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         component="a"
                                         href="mailto:contact@whizwheels.in"
                                         variant="body2"
-                                        sx={{ color: '#F1F5F9', fontWeight: 600, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}
+                                        sx={{ color: '#F1F5F9', fontWeight: 600, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F5C360' } }}
                                     >
                                         contact@whizwheels.in
                                     </Typography>
@@ -1784,28 +1784,28 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 Two-Wheeler Fleet
                             </Typography>
                             <Stack spacing={1.3}>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#F59E0B', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#F5C360', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
                                     All Rental Bikes →
                                 </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Honda Activa 6G
                                 </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Suzuki Access 125
                                 </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Royal Enfield Classic 350
                                 </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Honda H'ness CB350
                                 </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Honda Shine 125 & Pulsar
                                 </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Smart Electric Scooters (EV)
                                 </Typography>
-                                <Typography component={Link} href="/how-it-works" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/how-it-works" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F5C360' } }}>
                                     Tariffs & Booking Terms
                                 </Typography>
                             </Stack>
@@ -1817,28 +1817,28 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 All 7 Services
                             </Typography>
                             <Stack spacing={1.2}>
-                                <Typography component={Link} href="/services" variant="body2" sx={{ color: '#F59E0B', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
+                                <Typography component={Link} href="/services" variant="body2" sx={{ color: '#F5C360', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
                                     Explore All 7 Services Hub →
                                 </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     🏍️ 1. Bike & Scooter Rentals
                                 </Typography>
-                                <Typography component={Link} href="/services/cabs" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/cabs" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     🚗 2. Coastal Cabs & Taxis
                                 </Typography>
-                                <Typography component={Link} href="/services/homestays" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/homestays" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     🏡 3. Homestays & Coastal Rooms
                                 </Typography>
-                                <Typography component={Link} href="/services/boating" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/boating" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     🚤 4. Backwater Boating
                                 </Typography>
-                                <Typography component={Link} href="/services/scuba" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/scuba" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     🤿 5. Netrani Island Scuba
                                 </Typography>
-                                <Typography component={Link} href="/services/guide" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/guide" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     📍 6. Local Guides & Trails
                                 </Typography>
-                                <Typography component={Link} href="/services/tours" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/tours" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     🧳 7. Custom Tour Packages
                                 </Typography>
                             </Stack>
@@ -1850,28 +1850,28 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 Scenic Attractions
                             </Typography>
                             <Stack spacing={1.3}>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#F59E0B', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#F5C360', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
                                     Explore Honnavar →
                                 </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Sharavathi Backwaters
                                 </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Honnavar Eco Beach
                                 </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Apsarakonda Falls
                                 </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Mirjan Fort Citadel
                                 </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Murudeshwar Shiva Temple
                                 </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F5C360' } }}>
                                     Gokarna Om Beach
                                 </Typography>
-                                <Typography component={Link} href="/services/cabs" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/services/cabs" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F5C360' } }}>
                                     Jog Falls Sightseeing Trip
                                 </Typography>
                             </Stack>
@@ -1903,13 +1903,13 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     ★ 5.0 on Google (324 Reviews) →
                                 </Typography>
                                 <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', my: 0.5 }} />
-                                <Typography component={Link} href="/account" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/account" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F5C360' } }}>
                                     Booking History
                                 </Typography>
-                                <Typography component={Link} href="/account/kyc" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/account/kyc" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F5C360' } }}>
                                     Upload KYC Documents
                                 </Typography>
-                                <Typography component={Link} href="/admin/login" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F59E0B' } }}>
+                                <Typography component={Link} href="/admin/login" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F5C360' } }}>
                                     Staff & Admin Login
                                 </Typography>
                             </Stack>
@@ -1977,19 +1977,19 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             © {new Date().getFullYear()} GK WhizWheels. All rights reserved. Palya Main Rd, Honnavar, Karnataka 581334.
                         </Typography>
                         <Stack direction="row" spacing={2.5} flexWrap="wrap" justifyContent="center">
-                            <Typography component={Link} href="/about" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                            <Typography component={Link} href="/about" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F5C360' } }}>
                                 About Us
                             </Typography>
-                            <Typography component={Link} href="/how-it-works" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                            <Typography component={Link} href="/how-it-works" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F5C360' } }}>
                                 How It Works
                             </Typography>
-                            <Typography component={Link} href="/terms" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                            <Typography component={Link} href="/terms" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F5C360' } }}>
                                 Rental Terms & Policies
                             </Typography>
-                            <Typography component={Link} href="/privacy" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                            <Typography component={Link} href="/privacy" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F5C360' } }}>
                                 Privacy Policy
                             </Typography>
-                            <Typography component={Link} href="/contact" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                            <Typography component={Link} href="/contact" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F5C360' } }}>
                                 Contact Us
                             </Typography>
                         </Stack>
@@ -2031,10 +2031,10 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         px: 1,
                         borderRadius: 2,
                         textTransform: 'none',
-                        '&:hover': { color: '#F59E0B', bgcolor: 'rgba(255, 255, 255, 0.05)' },
+                        '&:hover': { color: '#F5C360', bgcolor: 'rgba(255, 255, 255, 0.05)' },
                     }}
                 >
-                    <PhoneIcon sx={{ fontSize: 20, color: '#F59E0B' }} />
+                    <PhoneIcon sx={{ fontSize: 20, color: '#F5C360' }} />
                     <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 800, mt: 0.2 }}>
                         Call 24/7
                     </Typography>
@@ -2092,7 +2092,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                     variant="contained"
                     size="small"
                     sx={{
-                        bgcolor: '#F59E0B',
+                        bgcolor: '#F5C360',
                         color: '#0F172A',
                         fontWeight: 900,
                         fontSize: '0.75rem',
