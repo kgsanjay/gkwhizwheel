@@ -26,6 +26,12 @@ class HeadingHierarchyTest extends TestCase
 
             $content = file_get_contents($fullPath);
 
+            // The homepage h1 lives in its dedicated HomeHero component.
+            if ($pagePath === 'resources/js/Pages/Welcome.jsx') {
+                $this->assertStringContainsString('<HomeHero', $content);
+                $content = file_get_contents(base_path('resources/js/Components/HomeHero.jsx'));
+            }
+
             // Match component="h1" or <h1
             $h1ComponentMatches = [];
             preg_match_all('/component=["\']h1["\']/', $content, $h1ComponentMatches);
