@@ -7,20 +7,20 @@ export const getTheme = (mode = 'dark') => {
         palette: {
             mode,
             primary: {
-                main: isDark ? '#38BDF8' : '#0F172A',
-                light: isDark ? '#7DD3FC' : '#1E293B',
-                dark: isDark ? '#0284C7' : '#020617',
-                contrastText: isDark ? '#0B1120' : '#FFFFFF',
+                main: '#14565B',
+                light: '#29787C',
+                dark: '#103F43',
+                contrastText: '#FFFFFF',
             },
             secondary: {
-                main: '#F59E0B', // Electric Amber
-                light: '#FBBF24',
-                dark: '#D97706',
+                main: '#E6A23D', // Official logo warm amber
+                light: '#F3BC69',
+                dark: '#C8782F',
                 contrastText: '#0F172A',
             },
             background: {
-                default: isDark ? '#0B1120' : '#F8FAFC',
-                paper: isDark ? '#131D2F' : '#FFFFFF',
+                default: isDark ? '#102F33' : '#FAF8F1',
+                paper: isDark ? '#173C3F' : '#FFFFFF',
             },
             text: {
                 primary: isDark ? '#F8FAFC' : '#0F172A',
@@ -33,10 +33,10 @@ export const getTheme = (mode = 'dark') => {
                 main: '#EF4444',
             },
             warning: {
-                main: '#F59E0B',
+                main: '#E6A23D',
             },
             info: {
-                main: '#38BDF8',
+                main: '#29787C',
             },
             divider: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0',
         },
@@ -107,7 +107,7 @@ export const getTheme = (mode = 'dark') => {
             },
         },
         shape: {
-            borderRadius: 10,
+            borderRadius: 9,
         },
         components: {
             MuiButton: {
@@ -121,22 +121,22 @@ export const getTheme = (mode = 'dark') => {
                         fontWeight: 600,
                         transition: 'all 0.15s ease-in-out',
                         '&:focus-visible': {
-                            outline: '3px solid #F59E0B',
+                            outline: '3px solid #E6A23D',
                             outlineOffset: '2px',
                         },
                     },
                     containedPrimary: {
-                        backgroundColor: isDark ? '#F59E0B' : '#0F172A',
+                        backgroundColor: isDark ? '#E6A23D' : '#14565B',
                         color: isDark ? '#0B1120' : '#FFFFFF',
                         '&:hover': {
-                            backgroundColor: isDark ? '#D97706' : '#1E293B',
+                            backgroundColor: isDark ? '#F3BC69' : '#103F43',
                         },
                     },
                     containedSecondary: {
-                        backgroundColor: '#F59E0B',
+                        backgroundColor: '#E6A23D',
                         color: '#0F172A',
                         '&:hover': {
-                            backgroundColor: '#D97706',
+                            backgroundColor: '#C8782F',
                         },
                     },
                 },
