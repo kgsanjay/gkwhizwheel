@@ -40,13 +40,23 @@ class ImageLazyLoadingTest extends TestCase
         }
     }
 
+    public function test_home_hero_prioritizes_eager_loading_for_featured_vehicle(): void
+    {
+        $hero = file_get_contents(base_path('resources/js/Components/HomeHero.jsx'));
+        $image = file_get_contents(base_path('resources/js/Components/BikeImage.jsx'));
+        $this->assertStringContainsString('<BikeImage bike={heroBike}', $hero);
+        $this->assertStringContainsString('eager', $hero);
+        $this->assertStringContainsString("loading={eager ? 'eager' : 'lazy'}", $image);
+        $this->assertStringContainsString('onError={nextImage}', $image);
+    }
+
     /**
      * Verify that hero / above-the-fold images do not have loading="lazy".
      */
     public function test_hero_and_above_fold_images_are_loaded_eagerly(): void
     {
         $heroImageChecks = [
-            'resources/js/Components/HomeHero.jsx' => 'src={heroBike.primary_image_url}',
+            'resources/js/Components/BikeImage.jsx' => 'src={source}',
             'resources/js/Pages/Services.jsx' => 'src={active.media?.primary || active.image}',
             'resources/js/Pages/ServiceDetail.jsx' => 'src={service.image}',
             'resources/js/Pages/BoatingPage.jsx' => 'src="/images/services/honnavar-backwater-boating.jpg"',
