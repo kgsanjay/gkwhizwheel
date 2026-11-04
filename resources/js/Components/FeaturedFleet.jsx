@@ -4,6 +4,7 @@ import { Box, Container, Typography, Button, Grid, Card, Stack } from '@mui/mate
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import TwoWheelerOutlinedIcon from '@mui/icons-material/TwoWheelerOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import BikeImage from './BikeImage';
 
 const palette = {
     ink: '#123E43',
@@ -33,10 +34,10 @@ export default function FeaturedFleet({ bikes = [] }) {
                             fontSize: { xs: '2rem', sm: '2.45rem', md: '3rem' },
                             lineHeight: 1.13, letterSpacing: '-.05em', fontWeight: 750,
                         }}>
-                            The right bike for every kind of ride.
+                            Find a ride that fits your journey.
                         </Typography>
                         <Typography sx={{ color: palette.muted, mt: 1.5, fontSize: { xs: 15, md: 16 }, lineHeight: 1.75 }}>
-                            Explore our current fleet. Select your dates and pickup location to confirm availability and see your final rental price.
+                            From easygoing scooters to touring motorcycles, explore the bikes available across our branches. Check your dates for the final rental price.
                         </Typography>
                     </Box>
                     <Button component={Link} href="/services/bikes" endIcon={<ArrowForwardRoundedIcon />}
@@ -61,16 +62,8 @@ export default function FeaturedFleet({ bikes = [] }) {
                                         '&:hover': { borderColor: '#AEBEB7', transform: 'translateY(-3px)' },
                                         '@media (prefers-reduced-motion: reduce)': { transition: 'none', '&:hover': { transform: 'none' } },
                                     }}>
-                                        <Box sx={{
-                                            position: 'relative', height: { xs: 225, md: 240 },
-                                            bgcolor: palette.image, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
-                                        }}>
-                                            {bike.primary_image_url ? (
-                                                <Box component="img" src={bike.primary_image_url} loading="lazy" alt={title + ' rental bike'}
-                                                    sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 2.5 }} />
-                                            ) : (
-                                                <TwoWheelerOutlinedIcon aria-hidden="true" sx={{ color: '#A0ADA6', fontSize: 64 }} />
-                                            )}
+                                        <Box sx={{ height: { xs: 230, md: 250 }, bgcolor: '#E9F0EB', overflow: 'hidden' }}>
+                                            <BikeImage bike={bike} alt={title + ' rental bike'} />
                                         </Box>
                                         <Box sx={{ p: { xs: 2.5, md: 3 }, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                                             {bike.transmission && (
