@@ -18,7 +18,7 @@ export function ColorModeProvider({ children }) {
                 return saved;
             }
         }
-        return 'dark'; // Default to sleek dark mode
+        return 'light'; // Official brand: warm, bright default; preserve explicit user preference
     });
 
     const toggleColorMode = () => {
