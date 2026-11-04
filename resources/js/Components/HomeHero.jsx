@@ -58,6 +58,8 @@ export default function HomeHero({ stores = [], featuredBikes = [] }) {
             '&:hover fieldset': { borderColor: '#96ACA4' },
             '&.Mui-focused fieldset': { borderColor: colors.teal, borderWidth: 1.5 },
         },
+        '& .MuiInputBase-input': { color: colors.ink },
+        '& .MuiSelect-select': { color: colors.ink },
         '& .MuiInputLabel-root': { color: '#526064' },
         '& .MuiInputLabel-root.Mui-focused': { color: colors.teal },
     };
@@ -74,6 +76,7 @@ export default function HomeHero({ stores = [], featuredBikes = [] }) {
                             </Typography>
                         </Stack>
                         <Typography id="home-hero-title" component="h1" sx={{
+                            color: colors.ink,
                             fontWeight: 750,
                             fontSize: { xs: 'clamp(2.6rem, 9vw, 3.6rem)', md: 'clamp(3.2rem, 4.5vw, 4.65rem)' },
                             letterSpacing: '-.058em',
