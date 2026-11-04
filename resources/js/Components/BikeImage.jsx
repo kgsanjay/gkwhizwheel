@@ -27,11 +27,10 @@ const unique = (values) => [...new Set(values.filter(Boolean))];
 export function bikeImageCandidates(bike) {
     const label = [bike?.brand, bike?.model_name].filter(Boolean).join(' ');
     const localMatch = knownModels.find(([pattern]) => pattern.test(label));
-    // Prefer matching local catalog photography to a broken or misconfigured storage URL.
-    // Keep uploaded images as the next candidate for unrecognized models.
+    // Prefer the actual uploaded vehicle photo; try matching catalog imagery if the URL fails.
     return unique([
-        localMatch ? '/images/bikes/' + localMatch[1] : null,
         bike?.primary_image_url,
+        localMatch ? '/images/bikes/' + localMatch[1] : null,
         '/images/services/two_wheelers.jpg',
     ]);
 }
