@@ -5,6 +5,7 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import TwoWheelerOutlinedIcon from '@mui/icons-material/TwoWheelerOutlined';
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded';
+import BikeImage from './BikeImage';
 
 const colors = {
     ink: '#123E43',
@@ -47,7 +48,7 @@ export default function HomeHero({ stores = [], featuredBikes = [] }) {
         });
     };
 
-    const heroBike = featuredBikes.find((bike) => bike.primary_image_url);
+    const heroBike = featuredBikes.find((bike) => bike.primary_image_url) || featuredBikes[0] || { brand: 'Honda', model_name: 'Activa' };
 
     const fieldSx = {
         '& .MuiOutlinedInput-root': {
@@ -57,13 +58,15 @@ export default function HomeHero({ stores = [], featuredBikes = [] }) {
             '&:hover fieldset': { borderColor: '#96ACA4' },
             '&.Mui-focused fieldset': { borderColor: colors.teal, borderWidth: 1.5 },
         },
+        '& .MuiInputBase-input': { color: colors.ink },
+        '& .MuiSelect-select': { color: colors.ink },
         '& .MuiInputLabel-root': { color: '#526064' },
         '& .MuiInputLabel-root.Mui-focused': { color: colors.teal },
     };
 
     return (
         <Box component="section" aria-labelledby="home-hero-title" sx={{ bgcolor: colors.cream, color: colors.ink, borderBottom: '1px solid #E9ECE5' }}>
-            <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 10 }, pb: { xs: 6, md: 9 } }}>
+            <Container maxWidth="lg" sx={{ pt: { xs: 5, md: 8 }, pb: { xs: 5, md: 8 } }}>
                 <Grid container spacing={{ xs: 4, lg: 7 }} alignItems="center">
                     <Grid size={{ xs: 12, md: 7 }}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2.5 }}>
@@ -73,16 +76,17 @@ export default function HomeHero({ stores = [], featuredBikes = [] }) {
                             </Typography>
                         </Stack>
                         <Typography id="home-hero-title" component="h1" sx={{
+                            color: colors.ink,
                             fontWeight: 750,
-                            fontSize: { xs: 'clamp(2.55rem, 9vw, 3.4rem)', md: 'clamp(3.7rem, 5.2vw, 5.25rem)' },
+                            fontSize: { xs: 'clamp(2.6rem, 9vw, 3.6rem)', md: 'clamp(3.2rem, 4.5vw, 4.65rem)' },
                             letterSpacing: '-.058em',
                             lineHeight: 1.07,
                             maxWidth: 750,
                         }}>
-                            Your coastal ride, <Box component="span" sx={{ color: colors.teal }}>your way.</Box>
+                            Explore the coast.<Box component="span" sx={{ display: 'block', color: colors.teal }}>Ride your way.</Box>
                         </Typography>
                         <Typography sx={{ color: colors.body, fontSize: { xs: 16, md: 18 }, lineHeight: 1.8, mt: 3, maxWidth: 590 }}>
-                            Pick up a bike in Honnavar or Murudeshwar. Choose your dates, explore our fleet, and see the full rental price before you book.
+                            Rent a scooter or motorcycle from Honnavar or Murudeshwar. Choose your pickup point, compare bikes and see the price before booking.
                         </Typography>
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 4 }} alignItems={{ xs: 'stretch', sm: 'center' }}>
                             <Button component={Link} href="/services/bikes" variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{
@@ -112,24 +116,28 @@ export default function HomeHero({ stores = [], featuredBikes = [] }) {
                     </Grid>
                     <Grid size={{ xs: 12, md: 5 }}>
                         <Box sx={{
-                            bgcolor: '#E2EBE5', borderRadius: 2, overflow: 'hidden', height: { xs: 245, sm: 320, md: 420 },
-                            position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            bgcolor: '#E6EDE6', borderRadius: 2, overflow: 'hidden', height: { xs: 300, sm: 390, md: 475 },
+                            position: 'relative', boxShadow: '0 24px 55px rgba(12,58,54,.08)',
                         }}>
-                            {heroBike ? (
-                                <Box component="img" src={heroBike.primary_image_url}
-                                    alt={heroBike.brand + ' ' + heroBike.model_name + ' from G.K. WhizWheel rental fleet'}
-                                    sx={{ width: '100%', height: '100%', objectFit: 'contain', p: { xs: 2, md: 3 } }} />
-                            ) : (
-                                <Box component="img" src="/images/services/two_wheelers.webp" alt="G.K. WhizWheel bike and scooter rentals"
-                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            )}
-                            <Box sx={{ position: 'absolute', bottom: 17, left: 17, right: 17, bgcolor: 'rgba(255,255,255,.96)', borderRadius: 1.25, px: 2, py: 1.3 }}>
-                                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                                    <Stack direction="row" alignItems="center" spacing={1}>
-                                        <TwoWheelerOutlinedIcon sx={{ fontSize: 22, color: colors.teal }} />
-                                        <Typography sx={{ fontSize: 13.5, fontWeight: 750 }}>Find the right ride for your trip</Typography>
-                                    </Stack>
-                                    <ArrowForwardRoundedIcon sx={{ color: colors.orange, fontSize: 20 }} />
+                            <BikeImage bike={heroBike} alt="Featured G.K. WhizWheel rental bike" eager
+                                sx={{ height: '100%', bgcolor: '#E6EDE6' }} />
+                            <Box sx={{
+                                position: 'absolute', left: { xs: 15, md: 24 }, right: { xs: 15, md: 24 }, bottom: { xs: 15, md: 24 },
+                                bgcolor: '#fff', borderRadius: 1.5, p: { xs: 1.6, md: 2 }, boxShadow: '0 8px 28px rgba(0,0,0,.08)',
+                            }}>
+                                <Stack direction="row" spacing={1.4} alignItems="center" justifyContent="space-between">
+                                    <Box>
+                                        <Typography sx={{ color: colors.orange, fontSize: 11, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                                            Featured rental
+                                        </Typography>
+                                        <Typography sx={{ color: colors.ink, mt: .3, fontWeight: 750, fontSize: { xs: 15, md: 17 } }}>
+                                            {[heroBike.brand, heroBike.model_name].filter(Boolean).join(' ')}
+                                        </Typography>
+                                    </Box>
+                                    <Button component={Link} href="/services/bikes" aria-label="Browse rental bikes"
+                                        sx={{ minWidth: 40, color: colors.teal, '&:hover': { bgcolor: '#F2F6F2' } }}>
+                                        <ArrowForwardRoundedIcon />
+                                    </Button>
                                 </Stack>
                             </Box>
                         </Box>
