@@ -188,7 +188,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
             {/* Top Announcement Bar (1920px Container-Fluid) */}
             <Box
                 sx={{
-                    bgcolor: 'rgba(15, 23, 42, 0.98)',
+                    bgcolor: '#103F43',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                     py: 0.8,
                     width: '100%',
@@ -225,7 +225,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
                             <Typography variant="caption" sx={{ color: '#FBBF24', fontWeight: 700 }}>
-                                5.0 ★★★★★ (324 Google Reviews) • Open 24 Hours
+                                Bike rentals in Honnavar & Murudeshwar
                             </Typography>
                         </Box>
                         <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', gap: 0.75 }}>
@@ -328,11 +328,11 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                 position="sticky"
                 elevation={0}
                 sx={{
-                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    bgcolor: '#FFFFFF',
                     backdropFilter: 'blur(16px)',
-                    borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                    borderBottom: '1px solid #E6E7E2',
                     width: '100%',
-                    color: isDark ? '#F8FAFC' : '#0F172A',
+                    color: '#123E43',
                 }}
             >
                 <Box sx={{ width: '100%', px: { xs: 2, sm: 3, md: 4, lg: 6 } }}>
@@ -351,39 +351,22 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         >
                             <Box
                                 component="img"
-                                src="/images/logo.png"
-                                alt="GK WhizWheels — Bike Rental in Honnavar"
+                                src="/images/whizwheel-official-logo.png"
+                                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/logo.png'; }}
+                                alt="G.K. WhizWheel bike rentals — Honnavar and Murudeshwar"
                                 sx={{
-                                    height: { xs: 44, sm: 52 },
-                                    width: 'auto',
+                                    height: { xs: 50, sm: 64 },
+                                    width: { xs: 168, sm: 205, lg: 225 },
                                     objectFit: 'contain',
-                                    borderRadius: 1.5,
-                                    filter: isDark ? 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.1))',
+                                    objectPosition: 'left center',
+                                    bgcolor: '#FFFFFF',
+                                    borderRadius: 0,
+                                    filter: 'none',
                                     transition: 'transform 0.2s ease',
                                     '&:hover': { transform: 'scale(1.04)' },
                                 }}
                             />
-                            <Box>
-                                <Typography
-                                    variant="h6"
-                                    component="div"
-                                    sx={{
-                                        fontWeight: 900,
-                                        letterSpacing: '-0.02em',
-                                        lineHeight: 1.1,
-                                        fontSize: { xs: '1.02rem', sm: '1.25rem' },
-                                        color: isDark ? '#FFFFFF' : '#0F172A',
-                                    }}
-                                >
-                                    GK WhizWheels
-                                </Typography>
-                                <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5, mt: 0.2 }}>
-                                    <ElectricBoltIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                    <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, letterSpacing: '0.02em' }}>
-                                        Honnavar & Murudeshwar, Karnataka
-                                    </Typography>
-                                </Box>
-                            </Box>
+
                         </Box>
 
                         {/* Desktop Navigation Links & Action Buttons (md and up) */}
@@ -1039,18 +1022,12 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                     >
                         <Box
                             component="img"
-                            src="/images/logo.png"
-                            alt="GK WhizWheels Logo"
-                            sx={{ height: 38, width: 'auto', borderRadius: 1 }}
+                            src="/images/whizwheel-official-logo.png"
+                            onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/logo.png'; }}
+                            alt="G.K. WhizWheel official logo"
+                            sx={{ height: 48, width: 142, objectFit: 'contain', objectPosition: 'left', bgcolor: '#FFFFFF' }}
                         />
-                        <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                GK WhizWheels
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 700 }}>
-                                Honnavar & Murudeshwar, Karnataka
-                            </Typography>
-                        </Box>
+
                     </Box>
 
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -1603,8 +1580,8 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
             <Box
                 component="footer"
                 sx={{
-                    bgcolor: '#070D19',
-                    color: '#CBD5E1',
+                    bgcolor: '#103F43',
+                    color: '#E7EDE7',
                     borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                     pt: { xs: 5, md: 7 },
                     pb: { xs: 12, md: 5 },
@@ -1683,11 +1660,12 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                                 <Box
                                     component="img"
-                                    src="/images/logo.png"
-                                    alt="GK WhizWheels — Honnavar Bike Rentals & Travel Hub"
-                                    sx={{ height: 48, width: 'auto', borderRadius: 1.5 }}
+                                    src="/images/whizwheel-official-logo.png"
+                                    onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/logo.png'; }}
+                                    alt="G.K. WhizWheel official logo"
+                                    sx={{ height: 75, width: 220, maxWidth: '100%', objectFit: 'contain', objectPosition: 'left center', bgcolor: '#FFFFFF', borderRadius: 0 }}
                                 />
-                                <Box>
+                                <Box sx={{ display: 'none' }}>
                                     <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, lineHeight: 1.1 }}>
                                         GK WhizWheels
                                     </Typography>
