@@ -35,6 +35,7 @@ export default function StoresEdit({
         latitude: store.latitude || 12.9716,
         longitude: store.longitude || 77.5946,
         phone: store.phone || '',
+        google_maps_url: store.google_maps_url || '',
         status: store.status || 'active',
     });
 
@@ -175,6 +176,11 @@ export default function StoresEdit({
                                         helperText={errors.phone}
                                     />
                                 </Grid>
+                                <Grid size={{ xs: 12 }}><TextField fullWidth label="Official Google Maps URL" value={data.google_maps_url}
+                                    onChange={(e) => setData('google_maps_url', e.target.value)}
+                                    helperText={errors.google_maps_url || 'Paste the official branch Google Maps share link.'}
+                                    error={Boolean(errors.google_maps_url)} /></Grid>
+
 
                                 <Grid size={{ xs: 12 }}>
                                     <TextField
