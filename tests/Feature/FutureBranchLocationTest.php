@@ -221,7 +221,7 @@ test('expired holds do not affect future branch projection', function (): void {
 });
 
 test('directional one-way fee applies only on the configured Murudeshwar to Honnavar route', function (): void {
-    $pricing = app(\\App\\Services\\PricingService::class);
+    $pricing = app(\App\Services\PricingService::class);
     $forward = $pricing->calculateQuote(
         bike: $this->bike,
         startDate: $this->dates['earlyStart'],
@@ -243,14 +243,14 @@ test('directional one-way fee applies only on the configured Murudeshwar to Honn
 });
 
 test('reverse route is unavailable until an independent reverse one-way fee is configured', function (): void {
-    $pricing = app(\\App\\Services\\PricingService::class);
+    $pricing = app(\App\Services\PricingService::class);
     expect(fn () => $pricing->calculateQuote(
         bike: $this->bike,
         startDate: $this->dates['earlyStart'],
         endDate: $this->dates['earlyEnd'],
         pickupStore: $this->honnavar,
         returnStore: $this->murudeshwar
-    ))->toThrow(\\Illuminate\\Validation\\ValidationException::class);
+    ))->toThrow(\Illuminate\Validation\ValidationException::class);
 
     PricingRule::create([
         'rule_type' => PricingRuleType::ONE_WAY_FEE,

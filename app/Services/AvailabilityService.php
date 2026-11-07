@@ -150,7 +150,7 @@ class AvailabilityService
                 && $existing->end_date->toDateString() === Carbon::parse($params['end_date'])->toDateString()
                 && $existing->channel === $channel;
             if (! $matches) {
-                throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                throw \Illuminate\Validation\ValidationException::withMessages([
                     'idempotency_key' => 'This request key was already used for a different booking.',
                 ]);
             }

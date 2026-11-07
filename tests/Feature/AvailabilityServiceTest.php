@@ -257,7 +257,7 @@ test('reused hold key never returns another customer booking', function (): void
     expect(fn () => $this->availabilityService->holdBooking([
         ...$params,
         'user_id' => $this->customer2->id,
-    ]))->toThrow(\\Illuminate\\Validation\\ValidationException::class);
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
     expect(Booking::where('idempotency_key', 'ownership-protected-key')->sole()->id)->toBe($original->id);
 });
 
@@ -276,7 +276,7 @@ test('reused hold key cannot silently change return branch or dates', function (
     expect(fn () => $this->availabilityService->holdBooking([
         ...$params,
         'end_date' => '2026-12-23',
-    ]))->toThrow(\\Illuminate\\Validation\\ValidationException::class);
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
     expect(Booking::where('idempotency_key', 'payload-protected-key')->count())->toBe(1);
 });
 
