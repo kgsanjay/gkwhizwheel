@@ -121,6 +121,11 @@ class Store extends Model
         return $this->hasMany(PricingRule::class, 'to_store_id');
     }
 
+    public function pickupPoints(): HasMany
+    {
+        return $this->hasMany(PickupPoint::class);
+    }
+
     public function serviceItems(): HasMany
     {
         return $this->hasMany(ServiceItem::class, 'store_id');
