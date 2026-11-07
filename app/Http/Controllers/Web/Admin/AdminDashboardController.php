@@ -229,6 +229,30 @@ class AdminDashboardController extends Controller
                 ])->values()->all();
         }
 
+        // Operations review data only: the frontend may present these tasks in
+        // a future dedicated workflow. Never expose another branch's records.
+        $relocationQuery = \App\Models\BikeRelocationTask::query()
+            ->where('status', 'open')
+            ->with(['bike', 'affectedBooking']);
+        if (! $isSuperAdmin) {
+            $relocationQuery->whereIn('required_store_id', $authorizedStoreIds);
+        }
+        if ($storeId !== null) {
+            $relocationQuery->where('required_store_id', $storeId);
+        }
+        $pendingRelocations = $relocationQuery->orderBy('id')->limit(20)->get()
+            ->map(fn ($task) => [
+                'id' => $task->id,
+                'bike_id' => $task->bike_id,
+                'bike_registration' => $task->bike?->registration_number,
+                'affected_booking_id' => $task->affected_booking_id,
+                'affected_booking_reference' => $task->affectedBooking?->booking_reference,
+                'from_store_id' => $task->from_store_id,
+                'required_store_id' => $task->required_store_id,
+                'pickup_date' => $task->affectedBooking?->start_date?->toDateString(),
+                'status' => $task->status,
+            ])->values()->all();
+
         return Inertia::render('Admin/Dashboard', [
             'metrics' => [
                 'active_rentals' => $activeRentalsCount,
@@ -242,6 +266,7 @@ class AdminDashboardController extends Controller
                 'month_revenue' => $monthRevenue,
             ],
             'service_metrics' => array_values($serviceMetrics),
+            'pending_relocations' => $pendingRelocations,
             'recent_service_bookings' => $recentServiceBookings,
             'assigned_services' => $servicesScope,
             'recent_bookings' => BookingResource::collection($recentBookings)->resolve(),
