@@ -326,7 +326,7 @@ class CustomerServiceBookingController extends Controller
                 ->where('subject_type', ServiceBooking::class)
                 ->where('subject_id', (string) $locked->id)
                 ->get()
-                ->contains(fn ($log) => ($log->metadata['payment_id'] ?? null) === $paymentId);
+                ->contains(fn ($log) => ($log->new_values['payment_id'] ?? null) === $paymentId);
             if ($alreadyCredited || $paidAmount > (float) $locked->balance_due + 0.001) {
                 return false;
             }
@@ -347,7 +347,7 @@ class CustomerServiceBookingController extends Controller
                 'description' => "Online payment of ₹{$paidAmount} received for booking #{$locked->booking_number} (Ref: {$paymentId})",
                 'subject_type' => ServiceBooking::class,
                 'subject_id' => (string) $locked->id,
-                'metadata' => [
+                'new_values' => [
                     'payment_id' => $paymentId,
                     'amount' => $paidAmount,
                     'balance_due' => $newBalance,
