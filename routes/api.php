@@ -29,6 +29,9 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/contact', [\App\Http\Controllers\Web\ContactWebController::class, 'store'])
         ->middleware('throttle:contact');
 
+    // Date-based model inventory; must precede generic /bikes/{id} routes.
+    Route::get('/bike-models/availability', [\App\Http\Controllers\Api\V1\Public\BikeModelAvailabilityController::class, 'index']);
+
     // Public Bikes & Meta
     Route::get('/bikes', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'index']);
     Route::get('/bikes/{id}', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'show']);
