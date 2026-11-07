@@ -341,6 +341,21 @@ test('customer can initiate and verify online payment for service booking', func
         'pickup_location' => 'Sharavathi Jetty',
     ]);
 
+    \App\Models\ServiceQuoteSnapshot::create([
+        'public_id' => (string) \Illuminate\Support\Str::uuid(),
+        'user_id' => $customer->id,
+        'service_item_id' => $item->id,
+        'service_type' => 'boating',
+        'start_datetime' => $booking->start_datetime,
+        'quantity' => 1,
+        'base_amount' => 1500,
+        'discount_amount' => 0,
+        'total_amount' => 1500,
+        'breakdown_json' => ['base_amount' => 1500, 'total_amount' => 1500],
+        'expires_at' => now()->addMinutes(15),
+        'service_booking_id' => $booking->id,
+    ]);
+
     // 1. Initiate online payment
     $initResponse = $this->actingAs($customer)
         ->postJson("/services/bookings/{$booking->booking_number}/initiate-payment", [
