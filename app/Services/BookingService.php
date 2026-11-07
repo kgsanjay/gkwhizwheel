@@ -187,6 +187,21 @@ class BookingService
                 'odometer_reading' => $odometerReading,
             ]);
 
+            // Flag the first future pickup that the unexpected physical location
+            // would prevent. Do not cancel the customer booking or invent a transfer.
+            $affected = app(BikeLocationSchedule::class)->firstUnfulfillableReservation($bike);
+            if ($affected !== null) {
+                \App\Models\BikeRelocationTask::firstOrCreate(
+                    ['affected_booking_id' => $affected->id, 'status' => 'open'],
+                    [
+                        'bike_id' => $bike->id,
+                        'triggering_booking_id' => $booking->id,
+                        'from_store_id' => $actualReturnStoreId,
+                        'required_store_id' => $affected->pickup_store_id,
+                    ]
+                );
+            }
+
             // Record return condition log
             $log = BikeConditionLog::create([
                 'booking_id' => $booking->id,
