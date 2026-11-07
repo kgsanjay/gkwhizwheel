@@ -283,3 +283,89 @@ test('staff can process return with multi-store relocation and automatic deposit
         'store_id' => $this->storeMavinkurve->id,
     ]);
 });
+
+test('staff assigned only to return branch cannot hand over bike at pickup branch', function (): void {
+    $staff = User::create([
+        'name' => 'Return Branch Staff', 'email' => 'return-only@whizwheel.test',
+        'phone' => '9000012341', 'password' => bcrypt('Password123!'),
+        'role' => UserRole::STAFF, 'status' => UserStatus::ACTIVE,
+    ]);
+    $staff->stores()->attach($this->storeMavinkurve->id);
+    $booking = Booking::create([
+        'booking_reference' => 'WHIZ-HANDOVER-ACCESS-1',
+        'user_id' => $this->customer->id,
+        'bike_id' => $this->bike->id,
+        'pickup_store_id' => $this->storeHonnavar->id,
+        'return_store_id' => $this->storeMavinkurve->id,
+        'start_date' => Carbon::today()->toDateString(),
+        'end_date' => Carbon::tomorrow()->toDateString(),
+        'base_amount' => 1200, 'total_amount' => 1200,
+        'deposit_amount' => 0,
+        'price_breakdown_json' => [],
+        'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+        'status' => BookingStatus::CONFIRMED,
+        'channel' => BookingChannel::ONLINE,
+    ]);
+    $this->actingAs($staff)
+        ->post(route('admin.bookings.handover', $booking->id), [
+            'odometer_reading' => 1300,
+        ])->assertForbidden();
+    expect($booking->fresh()->status)->toBe(BookingStatus::CONFIRMED);
+});
+
+test('manager assigned only to pickup branch cannot redirect return to unassigned destination', function (): void {
+    $manager = User::create([
+        'name' => 'Pickup Branch Manager', 'email' => 'pickup-only@whizwheel.test',
+        'phone' => '9000012342', 'password' => bcrypt('Password123!'),
+        'role' => UserRole::STORE_MANAGER, 'status' => UserStatus::ACTIVE,
+    ]);
+    $manager->stores()->attach($this->storeHonnavar->id);
+    $this->bike->update(['status' => BikeStatus::ON_RENT, 'odometer_reading' => 1300]);
+    $booking = Booking::create([
+        'booking_reference' => 'WHIZ-RETURN-ACCESS-1',
+        'user_id' => $this->customer->id,
+        'bike_id' => $this->bike->id,
+        'pickup_store_id' => $this->storeHonnavar->id,
+        'return_store_id' => $this->storeHonnavar->id,
+        'start_date' => Carbon::yesterday()->toDateString(),
+        'end_date' => Carbon::today()->toDateString(),
+        'base_amount' => 1200, 'total_amount' => 1200,
+        'deposit_amount' => 0,
+        'price_breakdown_json' => [],
+        'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+        'status' => BookingStatus::HANDED_OVER,
+        'channel' => BookingChannel::ONLINE,
+    ]);
+    $this->actingAs($manager)
+        ->post(route('admin.bookings.return', $booking->id), [
+            'odometer_reading' => 1350,
+            'return_store_id' => $this->storeMavinkurve->id,
+        ])->assertForbidden();
+    expect($booking->fresh()->status)->toBe(BookingStatus::HANDED_OVER);
+    expect($this->bike->fresh()->current_store_id)->toBe($this->storeHonnavar->id);
+});
+
+test('bike return rejects a lower odometer without relocating inventory', function (): void {
+    $this->bike->update(['status' => BikeStatus::ON_RENT, 'odometer_reading' => 1500]);
+    $booking = Booking::create([
+        'booking_reference' => 'WHIZ-RETURN-ODOMETER-1',
+        'user_id' => $this->customer->id,
+        'bike_id' => $this->bike->id,
+        'pickup_store_id' => $this->storeHonnavar->id,
+        'return_store_id' => $this->storeMavinkurve->id,
+        'start_date' => Carbon::yesterday()->toDateString(),
+        'end_date' => Carbon::today()->toDateString(),
+        'base_amount' => 1200, 'total_amount' => 1200,
+        'deposit_amount' => 0, 'price_breakdown_json' => [],
+        'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+        'status' => BookingStatus::HANDED_OVER,
+        'channel' => BookingChannel::ONLINE,
+    ]);
+    $this->actingAs($this->admin)
+        ->post(route('admin.bookings.return', $booking->id), [
+            'odometer_reading' => 1400,
+            'return_store_id' => $this->storeMavinkurve->id,
+        ])->assertSessionHasErrors('odometer_reading');
+    expect($booking->fresh()->status)->toBe(BookingStatus::HANDED_OVER);
+    expect($this->bike->fresh()->current_store_id)->toBe($this->storeHonnavar->id);
+});
