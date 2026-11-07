@@ -80,3 +80,38 @@ test('another customer cannot view an unrelated booking confirmation', function 
         ->get('/services/bookings/'.$booking->booking_number.'/voucher')
         ->assertForbidden();
 });
+
+
+test('same gateway payment reference cannot be credited twice', function (): void {
+    $booking = ServiceBooking::create([
+        'booking_number' => 'GKW-TX-REPLAY-01',
+        'service_type' => 'taxi',
+        'service_item_id' => $this->item->id,
+        'store_id' => $this->branch->id,
+        'user_id' => $this->customer->id,
+        'customer_name' => 'Booking Customer',
+        'customer_phone' => '9888801001',
+        'start_datetime' => now()->addDays(3),
+        'total_amount' => 3000,
+        'advance_paid' => 0,
+        'balance_due' => 3000,
+        'payment_status' => 'pending',
+    ]);
+
+    $payload = [
+        'razorpay_payment_id' => 'pay_replay_fixture_123',
+        'amount' => 500,
+    ];
+
+    $url = '/services/bookings/'.$booking->booking_number.'/verify-payment';
+    $this->actingAs($this->customer)->postJson($url, $payload)
+        ->assertOk()
+        ->assertJsonPath('success', true);
+    $this->actingAs($this->customer)->postJson($url, $payload)
+        ->assertStatus(422)
+        ->assertJsonPath('success', false);
+
+    $booking->refresh();
+    expect((float) $booking->advance_paid)->toBe(500.0);
+    expect((float) $booking->balance_due)->toBe(2500.0);
+});
