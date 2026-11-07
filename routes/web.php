@@ -209,6 +209,9 @@ Route::post('/admin/2fa/disable', [\App\Http\Controllers\Web\Admin\AdminAuthCont
 Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/', [\App\Http\Controllers\Web\Admin\AdminDashboardController::class, 'index'])->name('admin.index');
     Route::get('/dashboard', [\App\Http\Controllers\Web\Admin\AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/relocations', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'index'])->name('admin.relocations.index');
+    Route::post('/relocations/{id}/confirm-receipt', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'confirmReceipt'])
+        ->middleware('role:super_admin')->name('admin.relocations.confirm-receipt');
     Route::get('/dispatch', [\App\Http\Controllers\Web\Admin\AdminDispatchWebController::class, 'index'])->name('admin.dispatch.index');
     Route::get('/operations', fn () => redirect()->route('admin.bookings.index', ['status' => 'confirmed']))->name('admin.operations');
     Route::get('/customers', fn () => redirect()->route('admin.bookings.index'))->name('admin.customers');
