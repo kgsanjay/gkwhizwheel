@@ -135,9 +135,26 @@ class AvailabilityService
     {
         $idempotencyKey = $params['idempotency_key'];
 
-        // If a booking with this idempotency key already exists, return it
+        // An idempotency key may be retried only for the same customer and
+        // exact bike/route/date request. Never disclose another user's booking.
         $existing = Booking::where('idempotency_key', $idempotencyKey)->first();
         if ($existing !== null) {
+            $channel = $params['channel'] instanceof BookingChannel
+                ? $params['channel']
+                : BookingChannel::from((string) $params['channel']);
+            $matches = (int) $existing->user_id === (int) $params['user_id']
+                && (int) $existing->bike_id === (int) $params['bike_id']
+                && (int) $existing->pickup_store_id === (int) $params['pickup_store_id']
+                && (int) $existing->return_store_id === (int) $params['return_store_id']
+                && $existing->start_date->toDateString() === Carbon::parse($params['start_date'])->toDateString()
+                && $existing->end_date->toDateString() === Carbon::parse($params['end_date'])->toDateString()
+                && $existing->channel === $channel;
+            if (! $matches) {
+                throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                    'idempotency_key' => 'This request key was already used for a different booking.',
+                ]);
+            }
+
             return $existing;
         }
 
