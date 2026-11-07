@@ -125,10 +125,6 @@ class BookingController extends Controller
             ], 422);
         }
 
-        if ($booking->status === BookingStatus::HELD) {
-            $booking = $bookingService->markPendingPayment($booking);
-        }
-
         $validated = $request->validate([
             'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
             'payment_option' => ['nullable', 'string', 'in:advance,full'],
@@ -158,6 +154,9 @@ class BookingController extends Controller
         $breakdown['checkout_gateway'] = $gateway;
         $breakdown['checkout_amount'] = $amount;
         $breakdown['balance_due_on_pickup'] = round(max(0, (float) $booking->total_amount - $amount), 2);
+        if ($booking->status === BookingStatus::HELD) {
+            $booking = $bookingService->markPendingPayment($booking);
+        }
         $booking->update(['price_breakdown_json' => $breakdown]);
 
         if ($gateway === 'phonepe') {

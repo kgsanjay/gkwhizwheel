@@ -107,19 +107,26 @@ class RefundService
             $processedBy,
             $paymentId
         ): Refund {
+            // Refunds cannot exceed captured payments or funds already refunded.
+            Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
             $targetPayment = $this->resolveTargetPayment($booking, $paymentId);
+            $paid = (float) $booking->payments()->where('status', PaymentStatus::SUCCESS)->sum('amount');
+            $alreadyRefunded = (float) $booking->refunds()->whereIn('status', [
+                RefundStatus::PENDING->value, RefundStatus::COMPLETED->value,
+            ])->sum('amount');
+            $refundAmount = min($calculation['refund_amount'], max(0, round($paid - $alreadyRefunded, 2)));
 
             $gatewayResult = $this->dispatchGatewayRefund(
                 payment: $targetPayment,
                 booking: $booking,
-                amount: $calculation['refund_amount'],
+                amount: $refundAmount,
                 reason: $reason
             );
 
             return Refund::create([
                 'booking_id' => $booking->id,
                 'payment_id' => $targetPayment?->id,
-                'amount' => $calculation['refund_amount'],
+                'amount' => $refundAmount,
                 'reason' => $reason,
                 'processed_by' => $processedBy ?? $booking->user_id,
                 'gateway_reference' => $gatewayResult['refund_id'],
