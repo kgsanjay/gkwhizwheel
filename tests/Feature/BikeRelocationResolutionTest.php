@@ -125,3 +125,28 @@ test('receipt confirmation rejects claimed receipt without actual confirmation',
     ])->assertUnprocessable();
     expect($this->bike->fresh()->current_store_id)->toBe($this->source->id);
 });
+
+test('relocation admin page renders its branch-scoped task table via Inertia', function (): void {
+    $this->actingAs($this->manager)->get('/admin/relocations')->assertOk()
+        ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->component('Admin/Relocations/Index')
+            ->has('tasks.data', 1)
+            ->where('can_confirm', false));
+
+    $this->actingAs($this->superadmin)->get('/admin/relocations')->assertOk()
+        ->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->component('Admin/Relocations/Index')
+            ->has('tasks.data', 1)
+            ->where('can_confirm', true));
+});
+
+test('browser receipt confirmation redirects back to the relocation list', function (): void {
+    $this->actingAs($this->superadmin)->post(
+        '/admin/relocations/'.$this->task->id.'/confirm-receipt',
+        [
+            'physical_receipt_confirmed' => true,
+            'destination_store_id' => $this->destination->id,
+        ]
+    )->assertRedirect(route('admin.relocations.index'));
+    expect($this->task->fresh()->status)->toBe('resolved');
+});
