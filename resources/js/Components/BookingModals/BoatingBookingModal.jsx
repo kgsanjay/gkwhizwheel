@@ -71,6 +71,7 @@ export default function BoatingBookingModal({
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (auth?.user) {
@@ -113,13 +114,11 @@ export default function BoatingBookingModal({
             `Slot: ${timeSlot} on ${boatingDate}`,
             `Passengers: ${adults} Adults, ${children} Children`,
             `Departure: Sharavathi River Jetty, Honnavar`,
-            `Rate: ₹${estimatedCost.toLocaleString('en-IN')}`,
             specialNotes ? `Notes: ${specialNotes}` : null,
         ].filter(Boolean).join('\n');
 
         return {
             service_type: 'boating',
-            service_item_id: null,
             customer_name: customerName.trim(),
             customer_phone: sanitizePhone(customerPhone),
             customer_email: customerEmail.trim() || null,
@@ -130,11 +129,11 @@ export default function BoatingBookingModal({
             quantity: 1, // 1 boat charter/ticket
             payment_method: 'pay_on_arrival',
             customer_notes: notes,
-            custom_amount: estimatedCost,
         };
     };
 
     const submitBooking = (loggedInUser = null) => {
+        setSuccessMessage('');
         setSubmitting(true);
         const payload = getBookingPayload();
         if (loggedInUser) {
@@ -143,7 +142,8 @@ export default function BoatingBookingModal({
             if (loggedInUser.email && !payload.customer_email) payload.customer_email = loggedInUser.email;
         }
 
-        router.post('/services/book', payload, {
+        router.post('/services/enquire', payload, {
+            onSuccess: () => setSuccessMessage('Enquiry received. Our team will check availability and confirm the final price. No booking or payment has been confirmed.'),
             onError: (errs) => {
                 setSubmitting(false);
                 const first = Object.values(errs)[0];
@@ -291,6 +291,11 @@ export default function BoatingBookingModal({
                 </DialogTitle>
 
                 <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 }, pt: { xs: 2.5, sm: 3 } }}>
+                    {successMessage && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{successMessage}</Alert>}
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Request only — availability and final prices will be confirmed by our team.
+                        Figures on this form are indicative, not a payable quote.
+                    </Alert>
                     {errorMessage && (
                         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
                             {errorMessage}
@@ -519,7 +524,7 @@ export default function BoatingBookingModal({
                                 '&:hover': { bgcolor: '#047857' },
                             }}
                         >
-                            {submitting ? 'Confirming Boat Slot...' : 'Confirm Boat Reservation (Pay at Jetty) →'}
+                            {submitting ? 'Sending Enquiry...' : 'Request Boating Availability →'}
                         </Button>
                     </Stack>
                 </DialogActions>
