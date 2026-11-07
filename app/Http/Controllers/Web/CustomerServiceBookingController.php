@@ -291,47 +291,79 @@ class CustomerServiceBookingController extends Controller
 
         $paidAmount = (float) $validated['amount'];
 
-        // In production, verify HMAC signature if signature and order_id are present
-        if (! app()->environment('local', 'testing') && ! empty($validated['razorpay_signature']) && ! empty($validated['razorpay_order_id'])) {
-            $validSignature = $razorpayService->verifyPaymentSignature(
-                $validated['razorpay_order_id'],
-                $validated['razorpay_payment_id'],
-                $validated['razorpay_signature']
-            );
-
-            if (! $validSignature) {
+        if (! app()->environment('local', 'testing')) {
+            // Payment proof is mandatory in production, not optional.
+            $orderId = (string) ($validated['razorpay_order_id'] ?? '');
+            $signature = (string) ($validated['razorpay_signature'] ?? '');
+            if ($orderId === '' || $signature === ''
+                || ! $razorpayService->verifyPaymentSignature(
+                    $orderId, $validated['razorpay_payment_id'], $signature
+                )) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Payment signature verification failed.',
                 ], 400);
             }
+
+            $verifiedPaise = $razorpayService->verifiedServicePaymentAmountPaise(
+                $booking, $orderId, $validated['razorpay_payment_id']
+            );
+            if ($verifiedPaise === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The payment could not be verified with the payment provider.',
+                ], 400);
+            }
+            $paidAmount = round($verifiedPaise / 100, 2);
         }
 
-        $newAdvance = (float) $booking->advance_paid + $paidAmount;
-        $total = (float) $booking->total_amount;
-        $newBalance = max(0.0, $total - $newAdvance);
-        $newPaymentStatus = $newBalance <= 0.01 ? 'paid' : 'partial';
+        // Lock the booking while applying the payment so duplicate callbacks
+        // cannot credit the same gateway payment twice.
+        $applied = DB::transaction(function () use ($booking, $request, $validated, $paidAmount): bool {
+            $locked = ServiceBooking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            $paymentId = $validated['razorpay_payment_id'];
+            $alreadyCredited = ActivityLog::where('action', 'service_booking.payment_received')
+                ->where('subject_type', ServiceBooking::class)
+                ->where('subject_id', (string) $locked->id)
+                ->get()
+                ->contains(fn ($log) => ($log->metadata['payment_id'] ?? null) === $paymentId);
+            if ($alreadyCredited || $paidAmount > (float) $locked->balance_due + 0.001) {
+                return false;
+            }
 
-        $booking->update([
-            'advance_paid' => $newAdvance,
-            'balance_due' => $newBalance,
-            'payment_status' => $newPaymentStatus,
-            'payment_method' => 'online',
-        ]);
+            $newAdvance = round((float) $locked->advance_paid + $paidAmount, 2);
+            $newBalance = max(0.0, round((float) $locked->total_amount - $newAdvance, 2));
+            $newPaymentStatus = $newBalance <= 0.01 ? 'paid' : 'partial';
 
-        ActivityLog::create([
-            'user_id' => $request->user()?->id ?? $booking->user_id,
-            'action' => 'service_booking.payment_received',
-            'description' => "Online payment of ₹{$paidAmount} received for booking #{$booking->booking_number} (Ref: {$validated['razorpay_payment_id']})",
-            'subject_type' => ServiceBooking::class,
-            'subject_id' => (string) $booking->id,
-            'metadata' => [
-                'payment_id' => $validated['razorpay_payment_id'],
-                'amount' => $paidAmount,
+            $locked->update([
+                'advance_paid' => $newAdvance,
                 'balance_due' => $newBalance,
                 'payment_status' => $newPaymentStatus,
-            ],
-        ]);
+                'payment_method' => 'online',
+            ]);
+            ActivityLog::create([
+                'user_id' => $request->user()?->id ?? $locked->user_id,
+                'action' => 'service_booking.payment_received',
+                'description' => "Online payment of ₹{$paidAmount} received for booking #{$locked->booking_number} (Ref: {$paymentId})",
+                'subject_type' => ServiceBooking::class,
+                'subject_id' => (string) $locked->id,
+                'metadata' => [
+                    'payment_id' => $paymentId,
+                    'amount' => $paidAmount,
+                    'balance_due' => $newBalance,
+                    'payment_status' => $newPaymentStatus,
+                ],
+            ]);
+            return true;
+        });
+
+        if (! $applied) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment already applied or exceeds the outstanding balance.',
+            ], 422);
+        }
+        $booking->refresh();
 
         // Send updated confirmation to customer
         if ($booking->user) {
