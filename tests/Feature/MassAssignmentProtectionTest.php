@@ -216,14 +216,23 @@ class MassAssignmentProtectionTest extends TestCase
             'status' => 'available',
         ]);
 
+        $date = Carbon::tomorrow()->setHour(16)->format('Y-m-d H:i:s');
+        $quoteId = $this->actingAs($this->customer)->postJson('/services/quote', [
+            'service_type' => 'boating',
+            'service_item_id' => $item->id,
+            'start_datetime' => $date,
+            'quantity' => 2,
+        ])->assertOk()->json('quote_id');
+
         $response = $this->actingAs($this->customer)->post('/services/book', [
             'service_type' => 'boating',
             'service_item_id' => $item->id,
+            'quote_id' => $quoteId,
             'customer_name' => 'Test Traveler',
             'customer_phone' => '9876543210',
             'customer_email' => 'traveler@example.com',
             'pickup_location' => 'Sharavathi River Boardwalk',
-            'start_datetime' => Carbon::tomorrow()->setHour(16)->format('Y-m-d H:i:s'),
+            'start_datetime' => $date,
             'quantity' => 2,
             'payment_method' => 'pay_on_arrival',
             // Injected overrides:

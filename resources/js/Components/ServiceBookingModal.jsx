@@ -256,10 +256,14 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
 
     // Live Dynamic Pricing & Surge Quote
     const [dynamicQuote, setDynamicQuote] = useState(null);
+    const [serverQuoteId, setServerQuoteId] = useState(null);
+    const [serverQuoteExpiresAt, setServerQuoteExpiresAt] = useState(null);
     const [loadingQuote, setLoadingQuote] = useState(false);
 
     useEffect(() => {
         setDynamicQuote(null);
+        setServerQuoteId(null);
+        setServerQuoteExpiresAt(null);
         if (!open || !selectedServiceItem?.id) {
             setLoadingQuote(false);
             return;
@@ -276,8 +280,10 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
                     start_datetime: currentStartDatetime,
                     quantity: Math.max(1, quoteQuantity),
                 });
-                if (isMounted && res.data?.quote) {
+                if (isMounted && res.data?.quote && res.data?.quote_id) {
                     setDynamicQuote(res.data.quote);
+                    setServerQuoteId(res.data.quote_id);
+                    setServerQuoteExpiresAt(res.data.expires_at);
                 }
             } catch (e) {
                 if (isMounted) {
@@ -392,10 +398,11 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
         return {
             service_type: selectedService,
             service_item_id: selectedServiceItem?.id ?? null,
+            quote_id: serverQuoteId,
             customer_name: customerName,
             customer_phone: customerPhone.replace(/\D/g, ''),
             customer_email: customerEmail || null,
-            start_datetime: startDt,
+            start_datetime: currentStartDatetime,
             end_datetime: endDt,
             pickup_location: pickupLoc,
             drop_location: dropLoc,
@@ -407,8 +414,8 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
 
     // Submit payload to server
     const submitBookingNow = (loggedInUser = null) => {
-        if (!selectedServiceItem || !dynamicQuote || loadingQuote) {
-            setErrorMessage('Select an available service and wait for the confirmed price quote.');
+        if (!selectedServiceItem || !dynamicQuote || !serverQuoteId || loadingQuote || (serverQuoteExpiresAt && Date.parse(serverQuoteExpiresAt) <= Date.now())) {
+            setErrorMessage('Select an available service and request a fresh server quote before booking.');
             return;
         }
         setSubmitting(true);

@@ -38,7 +38,7 @@ beforeEach(function (): void {
 });
 
 test('customer quote cannot override configured base price', function (): void {
-    $this->postJson('/services/quote', [
+    $this->actingAs($this->customer)->postJson('/services/quote', [
         'service_type' => 'taxi',
         'service_item_id' => $this->item->id,
         'start_datetime' => now()->addDays(3)->toDateTimeString(),
@@ -48,12 +48,20 @@ test('customer quote cannot override configured base price', function (): void {
 });
 
 test('customer booking does not honor custom amount', function (): void {
-    $this->actingAs($this->customer)->post('/services/book', [
+    $date = now()->addDays(3)->toDateTimeString();
+    $quoteId = $this->actingAs($this->customer)->postJson('/services/quote', [
+        'service_type' => 'taxi',
+        'service_item_id' => $this->item->id,
+        'start_datetime' => $date,
+        'quantity' => 1,
+    ])->assertOk()->json('quote_id');
+    $this->post('/services/book', [
+        'quote_id' => $quoteId,
         'service_type' => 'taxi',
         'service_item_id' => $this->item->id,
         'customer_name' => 'Booking Customer',
         'customer_phone' => '9888801001',
-        'start_datetime' => now()->addDays(3)->toDateTimeString(),
+        'start_datetime' => $date,
         'quantity' => 1,
         'pickup_location' => 'Murudeshwar',
         'payment_method' => 'pay_on_arrival',

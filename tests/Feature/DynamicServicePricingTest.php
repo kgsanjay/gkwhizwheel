@@ -40,6 +40,7 @@ beforeEach(function (): void {
         'price_base' => 2500.00,
         'unit' => 'per_day',
         'is_active' => true,
+        'status' => 'available',
     ]);
 
     $this->scubaItem = ServiceItem::create([
@@ -49,6 +50,7 @@ beforeEach(function (): void {
         'price_base' => 3500.00,
         'unit' => 'per_person',
         'is_active' => true,
+        'status' => 'available',
     ]);
 });
 
@@ -178,10 +180,10 @@ test('customer quote API endpoint POST /services/quote returns calculated dynami
         'is_active' => true,
     ]);
 
-    $response = $this->postJson('/services/quote', [
+    $response = $this->actingAs($this->admin)->postJson('/services/quote', [
         'service_type' => 'taxi',
         'service_item_id' => $this->cabItem->id,
-        'start_datetime' => '2026-09-12 10:00:00', // Saturday
+        'start_datetime' => '2027-09-11 10:00:00', // Future Saturday
         'quantity' => 2,
     ]);
 
@@ -232,7 +234,17 @@ test('customer booking creation stores dynamic surge quote in customer_notes', f
         'status' => UserStatus::ACTIVE,
     ]);
 
-    $response = $this->actingAs($customer)->post('/services/book', $bookingData);
+    $quoteId = $this->actingAs($customer)->postJson('/services/quote', [
+        'service_type' => 'scuba',
+        'service_item_id' => $this->scubaItem->id,
+        'start_datetime' => $bookingData['start_datetime'],
+        'quantity' => $bookingData['quantity'],
+    ])->assertOk()->json('quote_id');
+
+    $response = $this->post('/services/book', [
+        ...$bookingData,
+        'quote_id' => $quoteId,
+    ]);
 
     $response->assertSessionHasNoErrors();
     $response->assertRedirect();

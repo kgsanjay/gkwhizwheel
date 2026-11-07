@@ -49,6 +49,7 @@ class CustomerServiceBookingController extends Controller
         $validated = $request->validate([
             'service_type' => ['required', 'string', 'in:two_wheelers,taxi,boating,scuba,homestay,guide,tours'],
             'service_item_id' => ['required', 'integer', 'exists:service_items,id'],
+            'quote_id' => ['required', 'uuid', 'exists:service_quote_snapshots,public_id'],
             'customer_name' => ['required', 'string', 'max:100'],
             'customer_phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
             'customer_email' => ['nullable', 'email', 'max:150'],
@@ -66,22 +67,16 @@ class CustomerServiceBookingController extends Controller
             ->findOrFail($validated['service_item_id']);
 
         $quantity = (int) $validated['quantity'];
-
-        // Dynamic price calculation using PricingService
-        $pricingService = app(\App\Services\PricingService::class);
-        $quote = $item
-            ? $pricingService->calculateServiceQuote(
-                $validated['service_type'],
-                $item,
-                $validated['start_datetime'],
-                $quantity
-            )
-            : null;
-
-        $baseAmount = $quote ? $quote['base_amount'] : ($item ? (float) $item->price_base * $quantity : 0.0);
-
-        // Customer-supplied amounts cannot override server-side pricing.
-        $totalAmount = (float) $quote['total_amount'];
+        // An accepted quote is a time-limited, user-owned snapshot of server
+        // prices. Client-provided totals, coupons and price adjustments are ignored.
+        $quoteSnapshot = \App\Models\ServiceQuoteSnapshot::where('public_id', $validated['quote_id'])->firstOrFail();
+        app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
+            $quoteSnapshot, $request->user()->id, $item,
+            $validated['start_datetime'], $quantity
+        );
+        $quote = $quoteSnapshot->breakdown_json;
+        $baseAmount = (float) $quoteSnapshot->base_amount;
+        $totalAmount = (float) $quoteSnapshot->total_amount;
 
         // Advance calculation: If pay_on_arrival, advance is 0
         $advancePaid = 0.00;
@@ -103,7 +98,18 @@ class CustomerServiceBookingController extends Controller
 
         $availabilityService = app(\App\Services\AvailabilityService::class);
         try {
-            $booking = $availabilityService->createServiceBooking([
+            $booking = DB::transaction(function () use (
+                $validated, $request, $item, $availabilityService, $bookingNumber,
+                $quantity, $baseAmount, $totalAmount, $advancePaid, $balanceDue,
+                $paymentStatus, $customerNotes, $quoteSnapshot, $quote
+            ): ServiceBooking {
+                $lockedQuote = \App\Models\ServiceQuoteSnapshot::whereKey($quoteSnapshot->id)
+                    ->lockForUpdate()->firstOrFail();
+                app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
+                    $lockedQuote, $request->user()->id, $item,
+                    $validated['start_datetime'], $quantity
+                );
+                $booking = $availabilityService->createServiceBooking([
                 'booking_number' => $bookingNumber,
                 'service_type' => $validated['service_type'],
                 'service_item_id' => $item?->id,
@@ -129,6 +135,9 @@ class CustomerServiceBookingController extends Controller
                 'status' => 'confirmed',
                 'customer_notes' => $customerNotes ?: null,
             ]);
+                $lockedQuote->update(['service_booking_id' => $booking->id]);
+                return $booking;
+            });
         } catch (\App\Exceptions\ServiceItemNotAvailableException $e) {
             if ($request->wantsJson()) {
                 return response()->json(['message' => $e->getMessage()], 422);
@@ -400,29 +409,30 @@ class CustomerServiceBookingController extends Controller
      */
     public function calculateQuote(Request $request, \App\Services\PricingService $pricingService): \Illuminate\Http\JsonResponse
     {
+        abort_unless($request->user(), 401, 'Sign in to request a service quote.');
+
         $validated = $request->validate([
-            'service_type' => ['required', 'string'],
+            'service_type' => ['required', 'in:taxi,boating,scuba,homestay,guide,tours'],
             'service_item_id' => ['required', 'integer', 'exists:service_items,id'],
-            'start_datetime' => ['required', 'date'],
-            'quantity' => ['nullable', 'integer', 'min:1'],
-            'coupon_code' => ['nullable', 'string', 'max:50'],
+            'start_datetime' => ['required', 'date', 'after:now'],
+            'quantity' => ['required', 'integer', 'between:1,50'],
         ]);
 
         $item = ServiceItem::where('service_type', $validated['service_type'])
             ->whereIn('status', ['available', 'active'])
             ->findOrFail($validated['service_item_id']);
 
-        $quote = $pricingService->calculateServiceQuote(
-            $validated['service_type'],
-            $item,
-            $validated['start_datetime'],
-            (int) ($validated['quantity'] ?? 1),
-            $validated['coupon_code'] ?? null
+        $snapshot = app(\App\Services\ServiceQuoteSnapshots::class)->issue(
+            $request->user()->id, $item, $validated['start_datetime'],
+            (int) $validated['quantity']
         );
+        $quote = $snapshot->breakdown_json;
 
         return response()->json([
             'success' => true,
             'quote' => $quote,
+            'quote_id' => $snapshot->public_id,
+            'expires_at' => $snapshot->expires_at->toIso8601String(),
         ]);
     }
 
