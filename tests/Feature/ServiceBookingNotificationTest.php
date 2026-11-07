@@ -159,13 +159,22 @@ test('online service booking creation dispatches customer confirmation and manag
         ], 200),
     ]);
 
-    $response = $this->actingAs($this->customer)->post(route('services.book'), [
+    $quoteDate = Carbon::tomorrow()->setTime(10, 0)->toDateTimeString();
+    $quoteId = $this->actingAs($this->customer)->postJson('/services/quote', [
+        'service_type' => 'boating',
+        'service_item_id' => $this->serviceItem->id,
+        'start_datetime' => $quoteDate,
+        'quantity' => 1,
+    ])->assertOk()->json('quote_id');
+
+    $response = $this->post(route('services.book'), [
+        'quote_id' => $quoteId,
         'service_type' => 'boating',
         'service_item_id' => $this->serviceItem->id,
         'customer_name' => 'Aditi Sharma',
         'customer_phone' => '9876543299',
         'customer_email' => 'aditi.traveler@example.com',
-        'start_datetime' => Carbon::tomorrow()->setTime(10, 0)->toDateTimeString(),
+        'start_datetime' => $quoteDate,
         'pickup_location' => 'Sharavathi Jetty, Honnavar',
         'quantity' => 1,
         'payment_method' => 'online',
