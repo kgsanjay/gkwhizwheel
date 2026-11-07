@@ -45,7 +45,8 @@ test('dry run does not alter current staging branch data', function (): void {
 });
 
 test('explicit reconciliation keeps legacy store and produces two active branches', function (): void {
-    $this->artisan('branches:reconcile-coastal', ['--apply' => true])->assertSuccessful();
+    $code = \Illuminate\Support\Facades\Artisan::call('branches:reconcile-coastal', ['--apply' => true]);
+    \PHPUnit\Framework\Assert::assertSame(0, $code, \Illuminate\Support\Facades\Artisan::output());
     expect(Store::where('status', StoreStatus::ACTIVE)->count())->toBe(2)
         ->and(Store::find(2))->not->toBeNull()
         ->and(Store::find(2)->status)->toBe(StoreStatus::INACTIVE)
