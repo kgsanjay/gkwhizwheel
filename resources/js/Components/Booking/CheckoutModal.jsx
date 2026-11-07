@@ -92,33 +92,39 @@ export default function CheckoutModal({
     const handleBookAndPay = async () => {
         setIsSubmitting(true);
         setErrorMessage('');
-        setStatusMessage('Generating reservation hold (15-min lock)...');
+        setStatusMessage(heldBooking ? 'Preparing secure payment checkout...' : 'Checking available vehicles and reserving a bike...');
 
         try {
-            // 1. Generate client-side Idempotency-Key UUID at the moment "Book Now" is clicked
-            if (!requestKey.current) requestKey.current = generateIdempotencyKey();
-            const idempotencyKey = requestKey.current;
+            let booking = heldBooking;
+            if (!booking) {
+                // Keep the key stable for a retried hold after network errors.
+                if (!requestKey.current) requestKey.current = generateIdempotencyKey();
+                const holdPayload = {
+                    ...(bikeModelId ? { bike_model_id: bikeModelId } : { bike_id: bike.id }),
+                    start_date: startDate,
+                    end_date: endDate,
+                    pickup_store_id: Number(pickupStore.id),
+                    return_store_id: Number(returnStore.id),
+                    coupon_code: couponCode.trim() || undefined,
+                    addons: selectedAddons,
+                };
+                const holdRes = await apiClient.post(
+                    bikeModelId ? '/bookings/model-hold' : '/bookings/hold',
+                    holdPayload,
+                    { headers: { 'Idempotency-Key': requestKey.current } }
+                );
+                booking = holdRes.data;
+                setHeldBooking(booking);
 
-            // 2. Dispatch POST /api/v1/bookings/hold with Idempotency-Key header
-            const holdPayload = {
-                ...(bikeModelId ? { bike_model_id: bikeModelId } : { bike_id: bike.id }),
-                start_date: startDate,
-                end_date: endDate,
-                pickup_store_id: Number(pickupStore.id),
-                return_store_id: Number(returnStore.id),
-                coupon_code: couponCode.trim() || undefined,
-                addons: selectedAddons,
-            };
-
-            const holdRes = await apiClient.post(bikeModelId ? '/bookings/model-hold' : '/bookings/hold', holdPayload, {
-                headers: {
-                    'Idempotency-Key': idempotencyKey,
-                },
-            });
-
-            const booking = holdRes.data;
-            setHeldBooking(booking);
-            setStatusMessage(`Hold acquired! Ref: ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
+                if (bikeModelId) {
+                    // A model's exact rate may vary between physical vehicles.
+                    // Require an explicit second click to accept the actual total.
+                    setStatusMessage('Bike reserved. Review the exact amount below before continuing to payment.');
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+            setStatusMessage(`Reservation ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
 
             // 3. Initiate payment order creation on server
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
@@ -439,7 +445,9 @@ export default function CheckoutModal({
                     {isSubmitting ? (
                         <CircularProgress size={26} color="inherit" />
                     ) : (
-                        bikeModelId && !heldBooking ? 'Reserve bike & continue to payment' : `Book Now & Pay ₹${Number(finalQuote?.total_amount || 0).toLocaleString('en-IN')}`
+                        bikeModelId && !heldBooking
+                            ? 'Reserve vehicle & check final price'
+                            : `Continue to pay ₹${Number(finalQuote?.total_amount || 0).toLocaleString('en-IN')}`
                     )}
                 </Button>
 

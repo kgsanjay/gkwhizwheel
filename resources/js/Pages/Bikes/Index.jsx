@@ -863,38 +863,6 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         </Box>
                     )}
 
-                    {/* Empty State */}
-                    {!isLoading && !isError && legacyBikes.length === 0 && false && (
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                py: 9,
-                                px: 3,
-                                textAlign: 'center',
-                                border: isDark ? '1px dashed rgba(255, 255, 255, 0.2)' : '1px dashed #94A3B8',
-                                borderRadius: 3.5,
-                                bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                                backdropFilter: 'blur(16px)',
-                            }}
-                        >
-                            <TwoWheelerIcon aria-hidden="true" sx={{ fontSize: 64, color: isDark ? '#64748B' : '#94A3B8', mb: 2 }} />
-                            <Typography variant="h5" component="h2" sx={{ fontWeight: 850, mb: 1, color: primaryTextColor }}>
-                                No Bikes Found Matching Your Filter
-                            </Typography>
-                            <Typography variant="body2" sx={{ maxWidth: 480, mx: 'auto', mb: 3, color: secondaryTextColor, lineHeight: 1.6 }}>
-                                We could not find bikes in that specific budget or date bracket. Try widening your price range or clearing the category filter.
-                            </Typography>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={handleReset}
-                                sx={{ fontWeight: 800, px: 3, py: 1, borderRadius: 2 }}
-                            >
-                                Clear All Filters
-                            </Button>
-                        </Paper>
-                    )}
-
                     <ModelRentalCatalog filters={filters} stores={stores} />
 
                     {/* =========================================================================

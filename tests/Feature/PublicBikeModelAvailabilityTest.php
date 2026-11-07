@@ -171,3 +171,44 @@ test('inactive catalog model and unlinked legacy bike are not counted', function
     $this->model->update(['is_active' => false]);
     $this->getJson(availabilityQuery($this))->assertOk()->assertJsonCount(0, 'data');
 });
+
+test('public model catalog returns one card for several Activas and does not count unlinked bikes', function (): void {
+    modelBike($this, $this->honnavar, 'KA-47-CAT-01');
+    modelBike($this, $this->honnavar, 'KA-47-CAT-02');
+    Bike::create([
+        'category_id' => $this->model->category_id,
+        'brand' => 'Honda', 'model_name' => 'Activa 6G',
+        'registration_number' => 'KA-47-CAT-LEGACY',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+        'current_store_id' => $this->honnavar->id, 'home_store_id' => $this->honnavar->id,
+        'status' => BikeStatus::AVAILABLE,
+    ]);
+
+    $this->getJson('/api/v1/bike-models/catalog')
+        ->assertOk()->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.bike_model_id', $this->model->id)
+        ->assertJsonPath('data.0.total_units', 2)
+        ->assertJsonPath('data.0.available_units', null)
+        ->assertJsonPath('data.0.availability_checked', false);
+    $this->getJson('/api/v1/bike-models/catalog?'.http_build_query([
+        'pickup_store_id' => $this->honnavar->id,
+        'return_store_id' => $this->honnavar->id,
+        'start_date' => $this->start,
+        'end_date' => $this->end,
+    ]))->assertOk()->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.available_units', 2)
+        ->assertJsonPath('data.0.availability_checked', true);
+});
+
+test('catalog exposes no inactive models and rejects invalid return branches for a dated search', function (): void {
+    modelBike($this, $this->honnavar, 'KA-47-CAT-03');
+    $this->murudeshwar->update(['status' => StoreStatus::INACTIVE]);
+    $this->getJson('/api/v1/bike-models/catalog?'.http_build_query([
+        'pickup_store_id' => $this->honnavar->id,
+        'return_store_id' => $this->murudeshwar->id,
+        'start_date' => $this->start,
+        'end_date' => $this->end,
+    ]))->assertUnprocessable();
+    $this->model->update(['is_active' => false]);
+    $this->getJson('/api/v1/bike-models/catalog')->assertOk()->assertJsonCount(0, 'data');
+});
