@@ -34,6 +34,7 @@ class BikeResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'bike_model_id' => $this->bike_model_id,
             'brand' => $this->brand,
             'model_name' => $this->model_name,
             'registration_number' => $this->registration_number,

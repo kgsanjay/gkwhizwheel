@@ -90,4 +90,97 @@ class BikeModelAvailabilityController extends Controller
             'message' => 'Availability is a live estimate and is rechecked when creating a booking hold.',
         ]);
     }
+    /**
+     * Model-level storefront inventory. Without a complete route/date filter,
+     * expose catalog records but do not misrepresent stock as bookable.
+     */
+    public function catalog(Request $request, AvailabilityService $availabilityService): JsonResponse
+    {
+        $filters = $request->validate([
+            'pickup_store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'return_store_id' => ['nullable', 'integer', 'exists:stores,id'],
+            'start_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'category_id' => ['nullable', 'integer', 'exists:bike_categories,id'],
+        ]);
+        $ready = ! empty($filters['pickup_store_id'])
+            && ! empty($filters['return_store_id'])
+            && ! empty($filters['start_date'])
+            && ! empty($filters['end_date']);
+
+        if ($ready) {
+            $pickup = Store::findOrFail($filters['pickup_store_id']);
+            $return = Store::findOrFail($filters['return_store_id']);
+            if ($pickup->status !== StoreStatus::ACTIVE || $return->status !== StoreStatus::ACTIVE) {
+                throw ValidationException::withMessages([
+                    'pickup_store_id' => 'Pickup and return branches must both be active.',
+                ]);
+            }
+        }
+
+        $models = BikeModel::query()->where('is_active', true)
+            ->with(['category:id,name,base_daily_rate', 'bikes' => function ($query): void {
+                $query->select([
+                    'id', 'bike_model_id', 'current_store_id', 'status',
+                    'primary_image_path', 'base_daily_rate_override',
+                ])->orderBy('id');
+            }])
+            ->when(! empty($filters['category_id']),
+                fn ($query) => $query->where('category_id', $filters['category_id']))
+            ->orderBy('brand')->orderBy('name')->get();
+
+        $data = $models->map(function (BikeModel $model) use ($filters, $ready, $availabilityService): array {
+            $units = $model->bikes;
+            $available = null;
+            if ($ready) {
+                $available = $units->filter(fn ($bike): bool =>
+                    $bike->status === BikeStatus::AVAILABLE
+                    && $availabilityService->checkAvailability(
+                        $bike, $filters['start_date'], $filters['end_date'], null,
+                        (int) $filters['pickup_store_id'], (int) $filters['return_store_id']
+                    )
+                )->count();
+            }
+
+            $displayUnit = $units->first(fn ($bike) => $bike->primary_image_path !== null);
+            $imagePath = $model->primary_image_path ?? $displayUnit?->primary_image_path;
+
+            return [
+                'bike_model_id' => $model->id,
+                'brand' => $model->brand,
+                'name' => $model->name,
+                'category_id' => $model->category_id,
+                'category_name' => $model->category?->name,
+                'fuel_type' => $model->fuel_type->value,
+                'transmission' => $model->transmission->value,
+                'description' => $model->description,
+                'primary_image_url' => $imagePath
+                    ? (str_starts_with($imagePath, 'http')
+                        ? $imagePath
+                        : \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath))
+                    : null,
+                'indicative_daily_rate' => $model->category?->base_daily_rate === null
+                    ? null : (float) $model->category->base_daily_rate,
+                'total_units' => $units->count(),
+                'available_units' => $available,
+                'is_available' => $ready ? $available > 0 : null,
+                'availability_checked' => $ready,
+            ];
+        })->filter(fn (array $model): bool => $model['total_units'] > 0)->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data->all(),
+            'filters' => [
+                'pickup_store_id' => $filters['pickup_store_id'] ?? null,
+                'return_store_id' => $filters['return_store_id'] ?? null,
+                'start_date' => $filters['start_date'] ?? null,
+                'end_date' => $filters['end_date'] ?? null,
+            ],
+            'message' => $ready
+                ? 'Availability is rechecked atomically when placing a booking hold.'
+                : 'Select pickup and return branches and dates to see bookable units.',
+        ]);
+    }
+
 }

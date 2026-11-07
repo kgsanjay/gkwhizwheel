@@ -31,6 +31,7 @@ Route::prefix('v1')->group(function (): void {
 
     // Date-based model inventory; must precede generic /bikes/{id} routes.
     Route::get('/bike-models/availability', [\App\Http\Controllers\Api\V1\Public\BikeModelAvailabilityController::class, 'index']);
+    Route::get('/bike-models/catalog', [\App\Http\Controllers\Api\V1\Public\BikeModelAvailabilityController::class, 'catalog']);
 
     // Public Bikes & Meta
     Route::get('/bikes', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'index']);
