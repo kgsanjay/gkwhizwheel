@@ -64,14 +64,12 @@ class ReconcileCoastalBranches extends Command
                 // Actual branch contacts and customer-supplied Maps share links.
                 Store::whereKey(1)->update([
                     'name' => 'GK WhizWheel Honnavar Branch',
-                    'public_name' => 'G.K. WhizWheel Honnavar',
                     'phone' => '+918660989586',
                     'google_maps_url' => 'https://maps.app.goo.gl/xNRYJeqZR6DuqR7a6',
                     'status' => StoreStatus::ACTIVE,
                 ]);
                 Store::whereKey(3)->update([
                     'name' => 'GK WhizWheel Murudeshwar Branch',
-                    'public_name' => 'G.K. WhizWheel Murudeshwar',
                     'phone' => '+917892094155',
                     'google_maps_url' => 'https://maps.app.goo.gl/DUvVetyLkxzzMP6c8',
                     'status' => StoreStatus::ACTIVE,
@@ -84,7 +82,7 @@ class ReconcileCoastalBranches extends Command
                     ->where(function ($q): void {
                         $q->where('from_store_id', 2)->orWhere('to_store_id', 2);
                     })->update(['is_active' => false]);
-                Store::whereKey(2)->update(['status' => StoreStatus::INACTIVE, 'publication_status' => 'draft']);
+                Store::whereKey(2)->update(['status' => StoreStatus::INACTIVE]);
                 foreach (self::POINTS as $storeId => $points) {
                     foreach ($points as [$name, $address, $slug]) {
                         PickupPoint::firstOrCreate(
