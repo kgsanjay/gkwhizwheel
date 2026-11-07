@@ -11,7 +11,7 @@ class PickupPoint extends Model
 {
     protected $fillable = [
         'store_id', 'name', 'slug', 'address_line', 'landmark',
-        'latitude', 'longitude', 'delivery_fee', 'supports_pickup',
+        'latitude', 'longitude', 'delivery_fee', 'pickup_fee', 'return_fee', 'supports_pickup',
         'supports_return', 'is_active', 'sort_order',
     ];
 
@@ -19,7 +19,7 @@ class PickupPoint extends Model
     {
         return [
             'latitude' => 'decimal:7', 'longitude' => 'decimal:7',
-            'delivery_fee' => 'decimal:2', 'is_active' => 'boolean',
+            'delivery_fee' => 'decimal:2', 'pickup_fee' => 'decimal:2', 'return_fee' => 'decimal:2', 'is_active' => 'boolean',
             'supports_pickup' => 'boolean', 'supports_return' => 'boolean',
             'sort_order' => 'integer',
         ];

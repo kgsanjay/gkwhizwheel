@@ -38,6 +38,7 @@ class AdminPickupPointWebController extends Controller
         if ($branch->pickupPoints()->where('slug', $data['slug'])->exists()) {
             return back()->withErrors(['name' => 'Pickup point already exists at this branch.']);
         }
+        $data['delivery_fee'] = $data['delivery_fee'] ?? 0;
         $data['is_active'] = false; // Explicitly verify operational coverage before publishing.
         PickupPoint::create($data);
 
@@ -79,7 +80,9 @@ class AdminPickupPointWebController extends Controller
             'landmark' => ['nullable', 'string', 'max:255'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'delivery_fee' => ['required', 'numeric', 'between:0,999999.99'],
+            'delivery_fee' => ['nullable', 'numeric', 'between:0,999999.99'],
+            'pickup_fee' => ['nullable', 'numeric', 'between:0,999999.99'],
+            'return_fee' => ['nullable', 'numeric', 'between:0,999999.99'],
             'supports_pickup' => ['required', 'boolean'],
             'supports_return' => ['required', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:65535'],

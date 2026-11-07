@@ -266,6 +266,17 @@ class AvailabilityService
                 userId: $userId
             );
 
+            // The selected pickup and return fees are authoritative and must be
+            // configured before creating a paid hold. They are distinct from
+            // the inter-branch one-way vehicle relocation fee.
+            $locationCharges = app(BookingLocationFees::class)->forSelection($selectedPoints);
+            $quote['total_amount'] = round((float) $quote['total_amount'] + $locationCharges['location_fee_amount'], 2);
+            $quote['price_breakdown_json'] = [
+                ...$quote['price_breakdown_json'],
+                ...$locationCharges,
+                'total_amount' => $quote['total_amount'],
+            ];
+
             // Customer online bike rentals no longer require a security deposit.
             // Do not rewrite older booking financial records.
             if ($channel === BookingChannel::ONLINE) {

@@ -49,19 +49,19 @@ beforeEach(function (): void {
     $this->modelId = $model->id;
     $this->station = PickupPoint::create([
         'store_id' => $this->honnavar->id, 'name' => 'Honnavar Railway Station',
-        'slug' => 'railway-station', 'is_active' => true,
+        'slug' => 'railway-station', 'pickup_fee' => 0, 'return_fee' => 0, 'is_active' => true,
     ]);
     $this->busStand = PickupPoint::create([
         'store_id' => $this->honnavar->id, 'name' => 'Honnavar KSRTC Bus Stand',
-        'slug' => 'ksrtc-bus-stand', 'is_active' => true,
+        'slug' => 'ksrtc-bus-stand', 'pickup_fee' => 0, 'return_fee' => 0, 'is_active' => true,
     ]);
     $this->hotel = PickupPoint::create([
         'store_id' => $this->honnavar->id, 'name' => 'Hotels / custom location',
-        'slug' => 'hotel-delivery', 'is_active' => true,
+        'slug' => 'hotel-delivery', 'pickup_fee' => 0, 'return_fee' => 0, 'is_active' => true,
     ]);
     $this->otherBranch = PickupPoint::create([
         'store_id' => $this->murudeshwar->id, 'name' => 'Murudeshwar KSRTC Bus Stand',
-        'slug' => 'ksrtc-bus-stand', 'is_active' => true,
+        'slug' => 'ksrtc-bus-stand', 'pickup_fee' => 0, 'return_fee' => 0, 'is_active' => true,
     ]);
     $customer = User::create([
         'name' => 'Rider', 'email' => 'pickup.flow@example.test', 'phone' => '9000009522',
@@ -130,4 +130,36 @@ test('same idempotency key cannot silently change point details', function (): v
     $changed['return_point_id'] = $this->station->id;
     $this->postJson('/api/v1/bookings/model-hold', $changed)->assertUnprocessable();
     expect(Booking::count())->toBe(1);
+});
+
+
+test('each selected pickup and return point charges its independently configured fee', function (): void {
+    $this->station->update(['pickup_fee' => 75, 'return_fee' => 25]);
+    $this->busStand->update(['pickup_fee' => 45, 'return_fee' => 30]);
+    $res = $this->postJson('/api/v1/bookings/model-hold', pickupHold($this, 'point-fees-1'))
+        ->assertCreated()
+        ->assertJsonPath('data.pickup_fee_amount', 75)
+        ->assertJsonPath('data.return_fee_amount', 30)
+        ->assertJsonPath('data.location_fee_amount', 105);
+    $booking = Booking::findOrFail($res->json('data.id'));
+    expect((float) $booking->total_amount)->toBeGreaterThan(105)
+        ->and((float) $booking->deposit_amount)->toBe(0.0)
+        ->and((float) $booking->price_breakdown_json['location_fee_amount'])->toBe(105.0);
+});
+
+test('an unconfigured location fee cannot silently become free', function (): void {
+    $this->station->update(['pickup_fee' => null]);
+    $this->postJson('/api/v1/bookings/model-hold', pickupHold($this, 'point-fees-missing'))
+        ->assertUnprocessable();
+    expect(Booking::count())->toBe(0);
+});
+
+test('location fees are not duplicated on an idempotent booking retry', function (): void {
+    $this->station->update(['pickup_fee' => 70]);
+    $this->busStand->update(['return_fee' => 30]);
+    $req = pickupHold($this, 'point-fees-retry');
+    $a = $this->postJson('/api/v1/bookings/model-hold', $req)->assertCreated()->json('data.id');
+    $b = $this->postJson('/api/v1/bookings/model-hold', $req)->assertOk()->json('data.id');
+    expect($a)->toBe($b)->and(Booking::count())->toBe(1)
+        ->and((float) Booking::sole()->price_breakdown_json['location_fee_amount'])->toBe(100.0);
 });

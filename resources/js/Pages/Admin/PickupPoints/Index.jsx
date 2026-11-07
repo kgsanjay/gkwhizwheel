@@ -6,7 +6,7 @@ import { Alert, Box, Button, Card, CardContent, Chip, Divider, Grid, Stack,
     TextField, Typography, MenuItem } from '@mui/material';
 
 const blank = { store_id: '', name: '', address_line: '', landmark: '', latitude: '', longitude: '',
-    delivery_fee: '0', supports_pickup: true, supports_return: true, sort_order: 0 };
+    delivery_fee: '0', pickup_fee: '', return_fee: '', supports_pickup: true, supports_return: true, sort_order: 0 };
 
 export default function PickupPointsIndex({ stores = [], points = [] }) {
     const [form, setForm] = useState(blank);
@@ -24,6 +24,8 @@ export default function PickupPointsIndex({ stores = [], points = [] }) {
             latitude: point.latitude ?? '',
             longitude: point.longitude ?? '',
             delivery_fee: point.delivery_fee ?? '0',
+            pickup_fee: point.pickup_fee ?? '',
+            return_fee: point.return_fee ?? '',
             supports_pickup: Boolean(point.supports_pickup),
             supports_return: Boolean(point.supports_return),
             sort_order: point.sort_order ?? 0,
@@ -36,6 +38,8 @@ export default function PickupPointsIndex({ stores = [], points = [] }) {
         setSaving(true);
         router.post(editingId ? `/admin/pickup-points/${editingId}` : '/admin/pickup-points', {
             ...form,
+            pickup_fee: form.pickup_fee === '' ? null : Number(form.pickup_fee),
+            return_fee: form.return_fee === '' ? null : Number(form.return_fee),
             latitude: form.latitude === '' ? null : Number(form.latitude),
             longitude: form.longitude === '' ? null : Number(form.longitude),
         }, {
@@ -88,8 +92,15 @@ export default function PickupPointsIndex({ stores = [], points = [] }) {
                                 slotProps={{ htmlInput: { step: 'any' } }} />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth required label="Delivery fee ₹" type="number" value={form.delivery_fee}
-                                onChange={(e) => set('delivery_fee', e.target.value)}
+                            <TextField fullWidth label="Pickup charge ₹" type="number" value={form.pickup_fee}
+                                onChange={(e) => set('pickup_fee', e.target.value)}
+                                helperText="Leave blank until confirmed. Enter 0 only if free."
+                                slotProps={{ htmlInput: { min: 0, step: '0.01' } }} />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 3 }}>
+                            <TextField fullWidth label="Return charge ₹" type="number" value={form.return_fee}
+                                onChange={(e) => set('return_fee', e.target.value)}
+                                helperText="Different from pickup; blank prevents paid checkout."
                                 slotProps={{ htmlInput: { min: 0, step: '0.01' } }} />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
@@ -111,12 +122,13 @@ export default function PickupPointsIndex({ stores = [], points = [] }) {
             <Card variant="outlined"><CardContent><Typography variant="h6" fontWeight={700}>Locations by branch</Typography></CardContent>
                 <TableContainer><Table size="small">
                     <TableHead><TableRow><TableCell>Branch</TableCell><TableCell>Location</TableCell>
-                        <TableCell>Fee</TableCell><TableCell>Service</TableCell><TableCell>Status</TableCell><TableCell>Manage</TableCell></TableRow></TableHead>
+                        <TableCell>Pickup fee</TableCell><TableCell>Return fee</TableCell><TableCell>Service</TableCell><TableCell>Status</TableCell><TableCell>Manage</TableCell></TableRow></TableHead>
                     <TableBody>{points.map((p) => <TableRow key={p.id}>
                         <TableCell>{p.store?.city || p.store?.name}</TableCell>
                         <TableCell><Typography fontWeight={600} variant="body2">{p.name}</Typography>
                             <Typography color="text.secondary" variant="caption">{p.address_line || 'Address to be confirmed'}</Typography></TableCell>
-                        <TableCell>₹{Number(p.delivery_fee).toFixed(2)}</TableCell>
+                        <TableCell>{p.pickup_fee == null ? 'Not configured' : `₹${Number(p.pickup_fee).toFixed(2)}`}</TableCell>
+                        <TableCell>{p.return_fee == null ? 'Not configured' : `₹${Number(p.return_fee).toFixed(2)}`}</TableCell>
                         <TableCell>{p.supports_pickup ? 'Pickup' : ''}{p.supports_pickup && p.supports_return ? ' / ' : ''}{p.supports_return ? 'Return' : ''}</TableCell>
                         <TableCell><Chip size="small" color={p.is_active ? 'success' : 'default'}
                             label={p.is_active ? 'Published' : 'Draft'} /></TableCell>
