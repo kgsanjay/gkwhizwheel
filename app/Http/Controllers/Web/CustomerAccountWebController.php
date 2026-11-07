@@ -40,18 +40,11 @@ class CustomerAccountWebController extends Controller
             ->latest()
             ->get();
 
+        // Customer identity must come from authenticated ownership.
+        // Matching an unverified phone or email from old bookings can reveal
+        // other customers' reservation details.
         $serviceBookings = \App\Models\ServiceBooking::with(['serviceItem'])
-            ->where(function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-                if (! empty($user->phone)) {
-                    $cleanPhone = preg_replace('/^\+?91/', '', $user->phone);
-                    $query->orWhere('customer_phone', $user->phone)
-                        ->orWhere('customer_phone', $cleanPhone);
-                }
-                if (! empty($user->email)) {
-                    $query->orWhere('customer_email', $user->email);
-                }
-            })
+            ->where('user_id', $user->id)
             ->latest()
             ->get();
 
@@ -60,6 +53,15 @@ class CustomerAccountWebController extends Controller
             $sb->coordinator = $coord;
             return $sb;
         });
+
+        // Enquiries are requests, NOT confirmed reservations or payment obligations.
+        $serviceEnquiries = \App\Models\ServiceEnquiry::query()
+            ->where('user_id', $user->id)
+            ->latest()->get([
+                'id', 'reference', 'service_type', 'start_datetime',
+                'pickup_location', 'drop_location', 'quantity', 'status',
+                'created_at',
+            ]);
 
         $activeStatuses = [
             BookingStatus::HELD->value,
@@ -72,13 +74,14 @@ class CustomerAccountWebController extends Controller
         $bikeCompletedCount = $bookings->filter(fn ($b) => $b->status === BookingStatus::RETURNED)->count();
         $bikeCancelledCount = $bookings->filter(fn ($b) => $b->status === BookingStatus::CANCELLED)->count();
 
-        $serviceActiveCount = $serviceBookings->filter(fn ($sb) => in_array($sb->status, ['confirmed', 'in_progress'], true))->count();
+        $serviceActiveCount = $serviceBookings->filter(fn ($sb) => in_array($sb->status, ['held', 'pending_payment', 'confirmed', 'in_progress'], true))->count();
+        $enquiryActiveCount = $serviceEnquiries->filter(fn ($e) => in_array($e->status, ['requested', 'reviewing'], true))->count();
         $serviceCompletedCount = $serviceBookings->filter(fn ($sb) => $sb->status === 'completed')->count();
         $serviceCancelledCount = $serviceBookings->filter(fn ($sb) => $sb->status === 'cancelled')->count();
 
-        $activeCount = $bikeActiveCount + $serviceActiveCount;
+        $activeCount = $bikeActiveCount + $serviceActiveCount + $enquiryActiveCount;
         $completedCount = $bikeCompletedCount + $serviceCompletedCount;
-        $cancelledCount = $bikeCancelledCount + $serviceCancelledCount;
+        $cancelledCount = $bikeCancelledCount + $serviceCancelledCount + $serviceEnquiries->filter(fn ($e) => $e->status === 'cancelled')->count();
 
         $featuredBikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
             ->where('status', \App\Enums\BikeStatus::AVAILABLE)
@@ -91,11 +94,12 @@ class CustomerAccountWebController extends Controller
         return Inertia::render('Account/Bookings', [
             'bookings' => BookingResource::collection($bookings)->resolve(),
             'serviceBookings' => $serviceBookings,
+            'serviceEnquiries' => $serviceEnquiries,
             'stats' => [
                 'active_count' => $activeCount,
                 'completed_count' => $completedCount,
                 'cancelled_count' => $cancelledCount,
-                'total_count' => $bookings->count() + $serviceBookings->count(),
+                'total_count' => $bookings->count() + $serviceBookings->count() + $serviceEnquiries->count(),
             ],
             'user' => [
                 'id' => $user->id,
