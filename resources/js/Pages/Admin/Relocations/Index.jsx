@@ -37,8 +37,9 @@ export default function RelocationsIndex({
         }, {
             preserveScroll: true,
             onSuccess: () => {
-                close();
-                router.reload({ only: ['tasks'] });
+                setSelected(null);
+                setConfirmed(false);
+                setError('');
             },
             onError: (errors) => setError(Object.values(errors || {}).join(' ') || 'Unable to confirm this transfer.'),
             onFinish: () => setSubmitting(false),

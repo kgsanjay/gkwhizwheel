@@ -15,6 +15,7 @@ use App\Models\BikeRelocationTask;
 use App\Models\Store;
 use App\Services\BikeLocationSchedule;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -83,7 +84,7 @@ class BikeRelocationController extends Controller
      * Superadmin confirms physical receipt AFTER staff actually transfers the bike.
      * Never update a customer's booking or auto-claim a transfer has occurred.
      */
-    public function confirmReceipt(int $id, Request $request, BikeLocationSchedule $schedule): JsonResponse
+    public function confirmReceipt(int $id, Request $request, BikeLocationSchedule $schedule): JsonResponse|RedirectResponse
     {
         abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
         $validated = $request->validate([
@@ -91,7 +92,7 @@ class BikeRelocationController extends Controller
             'destination_store_id' => ['required', 'integer', 'exists:stores,id'],
         ]);
 
-        return DB::transaction(function () use ($id, $request, $validated, $schedule): JsonResponse {
+        return DB::transaction(function () use ($id, $request, $validated, $schedule): JsonResponse|RedirectResponse {
             $task = BikeRelocationTask::whereKey($id)->lockForUpdate()->firstOrFail();
             if ($task->status !== 'open') {
                 throw ValidationException::withMessages(['task' => 'This relocation has already been resolved.']);
@@ -145,6 +146,11 @@ class BikeRelocationController extends Controller
                     'affected_booking_id' => $task->affected_booking_id,
                 ],
             ]);
+
+            if (! $request->expectsJson()) {
+                return redirect()->route('admin.relocations.index')
+                    ->with('success', 'Bike receipt confirmed and relocation task resolved.');
+            }
 
             return response()->json([
                 'success' => true,
