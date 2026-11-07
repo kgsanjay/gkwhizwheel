@@ -35,31 +35,22 @@ class BikeController extends Controller
             $query->where('category_id', (int) $request->validated('category_id'));
         }
 
-        if ($request->filled('min_price')) {
-            $minPrice = (float) $request->validated('min_price');
-            $query->where(function ($q) use ($minPrice): void {
-                $q->where('base_daily_rate_override', '>=', $minPrice)
-                    ->orWhere(function ($q2) use ($minPrice): void {
-                        $q2->whereNull('base_daily_rate_override')
-                            ->whereHas('category', fn ($cq) => $cq->where('base_daily_rate', '>=', $minPrice));
-                    });
-            });
-        }
-
-        if ($request->filled('max_price')) {
-            $maxPrice = (float) $request->validated('max_price');
-            $query->where(function ($q) use ($maxPrice): void {
-                $q->where(function ($q1) use ($maxPrice): void {
-                    $q1->whereNotNull('base_daily_rate_override')
-                        ->where('base_daily_rate_override', '<=', $maxPrice);
-                })->orWhere(function ($q2) use ($maxPrice): void {
-                    $q2->whereNull('base_daily_rate_override')
-                        ->whereHas('category', fn ($cq) => $cq->where('base_daily_rate', '<=', $maxPrice));
-                });
-            });
-        }
-
         $bikes = $query->orderBy('id', 'asc')->get();
+
+        // Price filters must use the same pickup-branch rate as the public
+        // rate card and booking quote, not legacy SQL unit override values.
+        if ($request->filled('min_price') || $request->filled('max_price')) {
+            $branchPricing = app(\App\Services\\BranchBikePricing::class);
+            $bikes = $bikes->filter(function (Bike $bike) use ($request, $branchPricing): bool {
+                $storeId = $request->filled('store_id')
+                    ? (int) $request->validated('store_id')
+                    : (int) $bike->current_store_id;
+                $rate = $branchPricing->rates($bike, $storeId)['weekday_rate'];
+
+                return (! $request->filled('min_price') || $rate >= (float) $request->validated('min_price'))
+                    && (! $request->filled('max_price') || $rate <= (float) $request->validated('max_price'));
+            })->values();
+        }
 
         if ($hasDates) {
             $pickupStoreId = $request->filled('store_id')
