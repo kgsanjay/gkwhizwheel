@@ -48,7 +48,7 @@ class CustomerServiceBookingController extends Controller
 
         $validated = $request->validate([
             'service_type' => ['required', 'string', 'in:two_wheelers,taxi,boating,scuba,homestay,guide,tours'],
-            'service_item_id' => ['nullable', 'exists:service_items,id'],
+            'service_item_id' => ['required', 'integer', 'exists:service_items,id'],
             'customer_name' => ['required', 'string', 'max:100'],
             'customer_phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
             'customer_email' => ['nullable', 'email', 'max:150'],
@@ -59,17 +59,11 @@ class CustomerServiceBookingController extends Controller
             'drop_location' => ['nullable', 'string', 'max:255'],
             'payment_method' => ['required', 'string', 'in:pay_on_arrival,upi,online,cash'],
             'customer_notes' => ['nullable', 'string', 'max:2000'],
-            'custom_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $item = null;
-        if (! empty($validated['service_item_id'])) {
-            $item = ServiceItem::where('service_type', $validated['service_type'])
-                ->find($validated['service_item_id']);
-        }
-        if (! $item) {
-            $item = ServiceItem::where('service_type', $validated['service_type'])->first();
-        }
+        $item = ServiceItem::where('service_type', $validated['service_type'])
+            ->whereIn('status', ['available', 'active'])
+            ->findOrFail($validated['service_item_id']);
 
         $quantity = (int) $validated['quantity'];
 
@@ -86,14 +80,8 @@ class CustomerServiceBookingController extends Controller
 
         $baseAmount = $quote ? $quote['base_amount'] : ($item ? (float) $item->price_base * $quantity : 0.0);
 
-        // Total amount calculation with custom estimate fallback (e.g. custom packages or multi-day stays)
-        if (! empty($validated['custom_amount']) && (float) $validated['custom_amount'] > 0) {
-            $totalAmount = (float) $validated['custom_amount'];
-        } elseif ($quote) {
-            $totalAmount = (float) $quote['total_amount'];
-        } else {
-            $totalAmount = ($item ? (float) $item->price_base : 0.0) * $quantity;
-        }
+        // Customer-supplied amounts cannot override server-side pricing.
+        $totalAmount = (float) $quote['total_amount'];
 
         // Advance calculation: If pay_on_arrival, advance is 0
         $advancePaid = 0.00;
@@ -193,14 +181,20 @@ class CustomerServiceBookingController extends Controller
      */
     protected function authorizeBookingAccess(?User $user, ServiceBooking $booking): void
     {
-        if ($user !== null && $booking->user_id !== null) {
-            $isOwner = $user->id === $booking->user_id;
-            $isStaffOrAdmin = in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+        abort_unless($user !== null, 403, 'Authentication required.');
 
-            if (! $isOwner && ! $isStaffOrAdmin) {
-                abort(403, 'You are not authorized to access this service booking.');
-            }
+        if ($user->role === UserRole::SUPER_ADMIN || ($booking->user_id !== null && $user->id === $booking->user_id)) {
+            return;
         }
+
+        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)
+            && $booking->store_id !== null
+            && $user->canManageService($booking->service_type)
+            && in_array((int) $booking->store_id, $user->getAuthorizedStoreIds() ?? [], true)) {
+            return;
+        }
+
+        abort(403, 'You are not authorized to access this service booking.');
     }
 
     /**
@@ -362,36 +356,22 @@ class CustomerServiceBookingController extends Controller
     {
         $validated = $request->validate([
             'service_type' => ['required', 'string'],
-            'service_item_id' => ['nullable', 'integer'],
+            'service_item_id' => ['required', 'integer', 'exists:service_items,id'],
             'start_datetime' => ['required', 'date'],
             'quantity' => ['nullable', 'integer', 'min:1'],
-            'base_price' => ['nullable', 'numeric', 'min:0'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $item = null;
-        if (! empty($validated['service_item_id'])) {
-            $item = ServiceItem::where('service_type', $validated['service_type'])
-                ->find($validated['service_item_id']);
-        }
-        if (! $item) {
-            $item = ServiceItem::where('service_type', $validated['service_type'])->first();
-        }
-
-        if (! $item && ! isset($validated['base_price'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Service item not found.',
-            ], 404);
-        }
+        $item = ServiceItem::where('service_type', $validated['service_type'])
+            ->whereIn('status', ['available', 'active'])
+            ->findOrFail($validated['service_item_id']);
 
         $quote = $pricingService->calculateServiceQuote(
             $validated['service_type'],
             $item,
             $validated['start_datetime'],
             (int) ($validated['quantity'] ?? 1),
-            $validated['coupon_code'] ?? null,
-            isset($validated['base_price']) ? (float) $validated['base_price'] : null
+            $validated['coupon_code'] ?? null
         );
 
         return response()->json([
