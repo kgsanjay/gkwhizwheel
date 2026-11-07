@@ -95,7 +95,7 @@ test('overdue maintenance and unavailable status each stop handover', function (
 });
 
 test('compliance audit reports unsafe available bike but does not edit it or expose document paths', function (): void {
-    $before = $this->bike->getRawOriginal();
+    $before = $this->bike->fresh()->getRawOriginal();
     $this->artisan('fleet:audit-compliance', ['--strict' => true])->assertFailed();
     $this->artisan('fleet:audit-compliance')->assertSuccessful();
     expect($this->bike->fresh()->getRawOriginal())->toBe($before)
