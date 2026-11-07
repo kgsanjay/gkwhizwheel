@@ -272,3 +272,58 @@ test('reverse route is unavailable until an independent reverse one-way fee is c
     expect((float) $reverse['one_way_fee_amount'])->toBe(350.0);
 });
 
+
+test('unexpected bike return creates a relocation task without changing confirmed future pickup', function (): void {
+    $this->bike->update([
+        'status' => BikeStatus::ON_RENT,
+        'odometer_reading' => 1000,
+    ]);
+    $current = scheduleReservation(
+        $this->bike, $this->customer,
+        $this->murudeshwar->id, $this->murudeshwar->id,
+        Carbon::yesterday()->toDateString(), Carbon::today()->toDateString(),
+        BookingStatus::HANDED_OVER
+    );
+    $future = scheduleReservation(
+        $this->bike, $this->customer,
+        $this->murudeshwar->id, $this->murudeshwar->id,
+        $this->dates['lateStart'], $this->dates['lateEnd']
+    );
+
+    app(\App\Services\BookingService::class)->markReturned(
+        $current, 1100, returnStoreId: $this->honnavar->id
+    );
+
+    expect($this->bike->fresh()->current_store_id)->toBe($this->honnavar->id)
+        ->and($current->fresh()->status)->toBe(BookingStatus::RETURNED)
+        ->and($future->fresh()->status)->toBe(BookingStatus::CONFIRMED);
+    $this->assertDatabaseHas('bike_relocation_tasks', [
+        'bike_id' => $this->bike->id,
+        'triggering_booking_id' => $current->id,
+        'affected_booking_id' => $future->id,
+        'from_store_id' => $this->honnavar->id,
+        'required_store_id' => $this->murudeshwar->id,
+        'status' => 'open',
+    ]);
+});
+
+test('bike return aligned with next scheduled pickup does not create a relocation task', function (): void {
+    $this->bike->update(['status' => BikeStatus::ON_RENT, 'odometer_reading' => 1000]);
+    $current = scheduleReservation(
+        $this->bike, $this->customer,
+        $this->murudeshwar->id, $this->honnavar->id,
+        Carbon::yesterday()->toDateString(), Carbon::today()->toDateString(),
+        BookingStatus::HANDED_OVER
+    );
+    scheduleReservation(
+        $this->bike, $this->customer,
+        $this->honnavar->id, $this->honnavar->id,
+        $this->dates['lateStart'], $this->dates['lateEnd']
+    );
+
+    app(\App\Services\BookingService::class)->markReturned(
+        $current, 1100, returnStoreId: $this->honnavar->id
+    );
+
+    expect(\App\Models\BikeRelocationTask::count())->toBe(0);
+});
