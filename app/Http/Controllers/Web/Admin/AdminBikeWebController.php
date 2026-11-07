@@ -49,12 +49,10 @@ class AdminBikeWebController extends Controller
         // Scope to user's assigned stores if not super admin
         if (! $isSuperAdmin && $user !== null) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
-            if (! empty($userStoreIds)) {
-                $query->where(function ($q) use ($userStoreIds): void {
-                    $q->whereIn('current_store_id', $userStoreIds)
-                        ->orWhereIn('home_store_id', $userStoreIds);
-                });
-            }
+            $query->where(function ($q) use ($userStoreIds): void {
+                $q->whereIn('current_store_id', $userStoreIds)
+                    ->orWhereIn('home_store_id', $userStoreIds);
+            });
         }
 
         // Search query
@@ -90,6 +88,10 @@ class AdminBikeWebController extends Controller
 
         // Calculate fleet overview statistics
         $allBikes = Bike::query();
+        if (! $isSuperAdmin && $user !== null) {
+            $ids = $user->getAuthorizedStoreIds() ?? [];
+            $allBikes->where(fn ($q) => $q->whereIn('current_store_id', $ids)->orWhereIn('home_store_id', $ids));
+        }
         $totalCount = (clone $allBikes)->count();
         $availableCount = (clone $allBikes)->where('status', BikeStatus::AVAILABLE)->count();
         $inServiceCount = (clone $allBikes)->where('status', BikeStatus::MAINTENANCE)->count();
@@ -97,7 +99,9 @@ class AdminBikeWebController extends Controller
         $driftedCount = (clone $allBikes)->whereColumn('current_store_id', '!=', 'home_store_id')->count();
 
         $categories = BikeCategory::orderBy('name')->get();
-        $stores = Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get();
+        $stores = Store::where('status', StoreStatus::ACTIVE)
+            ->when(! $isSuperAdmin && $user !== null, fn ($q) => $q->whereIn('id', $user->getAuthorizedStoreIds() ?? []))
+            ->orderBy('name')->get();
 
         // Format bikes for frontend with document compliance metadata
         $formattedBikes = $bikes->map(function ($bike): array {

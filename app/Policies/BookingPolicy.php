@@ -34,8 +34,7 @@ class BookingPolicy
         if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return empty($userStoreIds)
-                || in_array($booking->pickup_store_id, $userStoreIds, true)
+            return in_array($booking->pickup_store_id, $userStoreIds, true)
                 || in_array($booking->return_store_id, $userStoreIds, true);
         }
 
@@ -54,8 +53,7 @@ class BookingPolicy
         if ($user->role === UserRole::STORE_MANAGER) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return empty($userStoreIds)
-                || in_array($booking->pickup_store_id, $userStoreIds, true)
+            return in_array($booking->pickup_store_id, $userStoreIds, true)
                 || in_array($booking->return_store_id, $userStoreIds, true);
         }
 
@@ -74,8 +72,7 @@ class BookingPolicy
         if ($user->role === UserRole::STORE_MANAGER) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return empty($userStoreIds)
-                || in_array($booking->pickup_store_id, $userStoreIds, true)
+            return in_array($booking->pickup_store_id, $userStoreIds, true)
                 || in_array($booking->return_store_id, $userStoreIds, true);
         }
 
@@ -94,8 +91,7 @@ class BookingPolicy
         if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return empty($userStoreIds)
-                || in_array($booking->pickup_store_id, $userStoreIds, true)
+            return in_array($booking->pickup_store_id, $userStoreIds, true)
                 || in_array($booking->return_store_id, $userStoreIds, true);
         }
 
@@ -114,8 +110,7 @@ class BookingPolicy
         if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return empty($userStoreIds)
-                || in_array($booking->pickup_store_id, $userStoreIds, true)
+            return in_array($booking->pickup_store_id, $userStoreIds, true)
                 || in_array($booking->return_store_id, $userStoreIds, true);
         }
 

@@ -32,16 +32,16 @@ class AdminDashboardController extends Controller
         $isStoreManager = $user->role === UserRole::STORE_MANAGER;
 
         // Determine store context
-        $stores = Store::where('status', \App\Enums\StoreStatus::ACTIVE)->get();
-        $assignedStore = null;
-
-        if (! $isSuperAdmin) {
-            $assignedStore = $user->stores()->first() ?? $stores->first();
+        $authorizedStoreIds = $isSuperAdmin ? null : ($user->getAuthorizedStoreIds() ?? []);
+        $stores = Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $authorizedStoreIds))
+            ->get();
+        $requestedStoreId = $request->filled('store_id') ? $request->integer('store_id') : null;
+        if (! $isSuperAdmin && $requestedStoreId !== null && ! $stores->contains('id', $requestedStoreId)) {
+            abort(403, 'You are not authorized to access this store.');
         }
-
-        $storeId = $request->query('store_id')
-            ? (int) $request->query('store_id')
-            : ($assignedStore?->id);
+        $storeId = $requestedStoreId ?? ($isSuperAdmin ? null : $stores->first()?->id);
+        $assignedStore = $storeId !== null ? $stores->firstWhere('id', $storeId) : null;
 
         // Base queries
         $today = Carbon::today()->toDateString();
@@ -50,11 +50,12 @@ class AdminDashboardController extends Controller
         $bookingQuery = Booking::query();
         $bikeQuery = Bike::query();
 
-        if ($storeId !== null && ! $isSuperAdmin) {
-            $bookingQuery->where(function ($q) use ($storeId): void {
-                $q->where('pickup_store_id', $storeId)
-                    ->orWhere('return_store_id', $storeId);
-            });
+        if (! $isSuperAdmin) {
+            $bookingQuery->where(fn ($q) => $q->whereIn('pickup_store_id', $authorizedStoreIds)->orWhereIn('return_store_id', $authorizedStoreIds));
+            $bikeQuery->whereIn('current_store_id', $authorizedStoreIds);
+        }
+        if ($storeId !== null) {
+            $bookingQuery->where(fn ($q) => $q->where('pickup_store_id', $storeId)->orWhere('return_store_id', $storeId));
             $bikeQuery->where('current_store_id', $storeId);
         }
 
@@ -84,7 +85,7 @@ class AdminDashboardController extends Controller
             ->where('status', BikeStatus::MAINTENANCE)
             ->count();
 
-        $unverifiedKycCount = KycDocument::where('verified', false)->count();
+        $unverifiedKycCount = $isSuperAdmin ? KycDocument::where('verified', false)->count() : 0; // No branch link on KYC documents.
 
         // Revenue statistics (visible to Super Admin and Store Manager)
         $monthRevenue = 0.0;
@@ -92,10 +93,11 @@ class AdminDashboardController extends Controller
             $paymentQuery = Payment::where('status', PaymentStatus::SUCCESS)
                 ->where('created_at', '>=', $monthStart);
 
-            if ($storeId !== null && ! $isSuperAdmin) {
-                $paymentQuery->whereHas('booking', function ($q) use ($storeId): void {
-                    $q->where('pickup_store_id', $storeId);
-                });
+            if (! $isSuperAdmin) {
+                $paymentQuery->whereHas('booking', fn ($q) => $q->whereIn('pickup_store_id', $authorizedStoreIds));
+            }
+            if ($storeId !== null) {
+                $paymentQuery->whereHas('booking', fn ($q) => $q->where('pickup_store_id', $storeId));
             }
 
             $monthRevenue = (float) $paymentQuery->sum('amount');
@@ -111,7 +113,7 @@ class AdminDashboardController extends Controller
         // Multi-Service Operational Metrics (Scoped by Manager's Assigned Services or All for Super Admin)
         $assignedServices = $user->assignedServicesList();
         $allServices = ['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'];
-        $servicesScope = $isSuperAdmin ? $allServices : (! empty($assignedServices) ? $assignedServices : $allServices);
+        $servicesScope = $isSuperAdmin ? $allServices : $assignedServices;
 
         $serviceMetrics = [];
         $serviceLabels = [
@@ -124,7 +126,7 @@ class AdminDashboardController extends Controller
             'tours' => 'Tour Packages',
         ];
 
-        if (! empty($servicesScope)) {
+        if ($isSuperAdmin && ! empty($servicesScope)) {
             foreach ($servicesScope as $st) {
                 $serviceItemQuery = \App\Models\ServiceItem::where('service_type', $st);
                 $serviceBookingQuery = \App\Models\ServiceBooking::where('service_type', $st);
@@ -188,7 +190,7 @@ class AdminDashboardController extends Controller
         }
 
         $recentServiceBookings = [];
-        if (! empty($servicesScope)) {
+        if ($isSuperAdmin && ! empty($servicesScope)) {
             $recentServiceBookings = \App\Models\ServiceBooking::with('serviceItem')
                 ->whereIn('service_type', $servicesScope)
                 ->latest()

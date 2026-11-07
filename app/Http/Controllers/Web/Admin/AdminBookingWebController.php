@@ -49,12 +49,10 @@ class AdminBookingWebController extends Controller
         // Scope to user's assigned stores if not super admin
         if (! $isSuperAdmin) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
-            if (! empty($userStoreIds)) {
-                $query->where(function ($q) use ($userStoreIds): void {
-                    $q->whereIn('pickup_store_id', $userStoreIds)
-                        ->orWhereIn('return_store_id', $userStoreIds);
-                });
-            }
+            $query->where(function ($q) use ($userStoreIds): void {
+                $q->whereIn('pickup_store_id', $userStoreIds)
+                    ->orWhereIn('return_store_id', $userStoreIds);
+            });
         }
 
         // Search filter
@@ -107,12 +105,10 @@ class AdminBookingWebController extends Controller
 
         if (! $isSuperAdmin) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
-            if (! empty($userStoreIds)) {
-                $calendarQuery->where(function ($q) use ($userStoreIds): void {
-                    $q->whereIn('pickup_store_id', $userStoreIds)
-                        ->orWhereIn('return_store_id', $userStoreIds);
-                });
-            }
+            $calendarQuery->where(function ($q) use ($userStoreIds): void {
+                $q->whereIn('pickup_store_id', $userStoreIds)
+                    ->orWhereIn('return_store_id', $userStoreIds);
+            });
         }
 
         if ($storeId) {
@@ -172,12 +168,10 @@ class AdminBookingWebController extends Controller
         $baseStatsQuery = Booking::query();
         if (! $isSuperAdmin) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
-            if (! empty($userStoreIds)) {
-                $baseStatsQuery->where(function ($q) use ($userStoreIds): void {
-                    $q->whereIn('pickup_store_id', $userStoreIds)
-                        ->orWhereIn('return_store_id', $userStoreIds);
-                });
-            }
+            $baseStatsQuery->where(function ($q) use ($userStoreIds): void {
+                $q->whereIn('pickup_store_id', $userStoreIds)
+                    ->orWhereIn('return_store_id', $userStoreIds);
+            });
         }
 
         $stats = [
@@ -196,7 +190,9 @@ class AdminBookingWebController extends Controller
                 ->count(),
         ];
 
-        $stores = Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']);
+        $stores = Store::where('status', StoreStatus::ACTIVE)
+            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $user->getAuthorizedStoreIds() ?? []))
+            ->orderBy('name')->get(['id', 'name', 'city']);
 
         return Inertia::render('Admin/Bookings/Index', [
             'bookings' => $bookings->through(fn (Booking $b): array => [
@@ -294,7 +290,9 @@ class AdminBookingWebController extends Controller
 
         Gate::authorize('update', $booking);
 
-        $stores = Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']);
+        $stores = Store::where('status', StoreStatus::ACTIVE)
+            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $user->getAuthorizedStoreIds() ?? []))
+            ->orderBy('name')->get(['id', 'name', 'city']);
 
         return Inertia::render('Admin/Bookings/Edit', [
             'booking' => [
