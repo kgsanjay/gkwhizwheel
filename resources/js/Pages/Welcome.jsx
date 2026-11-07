@@ -58,7 +58,7 @@ import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
 
-export default function Welcome({ featuredBikes = [], categories = [], stores = [] }) {
+export default function Welcome({ featuredBikes = [], categories = [], stores = [] , availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -2167,6 +2167,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 open={serviceModalOpen}
                 onClose={() => setServiceModalOpen(false)}
                 initialServiceId={serviceModalId}
+                availableItems={availableItems}
             />
         </AppLayout>
     );

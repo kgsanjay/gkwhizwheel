@@ -56,8 +56,7 @@ export const SERVICES_LIST = [
         color: '#F59E0B',
         desc: 'Honda Activa 6G, Royal Enfield 350, Honda H\'ness CB350, TVS Ntorq',
         category: 'Self-Drive',
-        startingRate: 'From ₹350/day',
-        defaultItemId: 1,
+        startingRate: 'Check current rates',
     },
     {
         id: 'taxi',
@@ -67,8 +66,7 @@ export const SERVICES_LIST = [
         color: '#0284C7',
         desc: 'Station pickups, local 8hr sightseeing, Jog Falls & Goa transfers',
         category: 'Cabs & Outstation',
-        startingRate: 'From ₹12/km',
-        defaultItemId: 4,
+        startingRate: 'Check current rates',
     },
     {
         id: 'boating',
@@ -78,8 +76,7 @@ export const SERVICES_LIST = [
         color: '#059669',
         desc: 'Explore Sharavathi Mangrove Forests • 1 - 1.5 Hour Scenic Ride',
         category: 'Sharavathi Backwaters',
-        startingRate: 'Special Offer ₹1,500',
-        defaultItemId: 7,
+        startingRate: 'Check current rates',
     },
     {
         id: 'scuba',
@@ -89,8 +86,7 @@ export const SERVICES_LIST = [
         color: '#4F46E5',
         desc: 'PADI dive master, coral reef dive, island boat ride & 4K GoPro video',
         category: 'Marine Adventure',
-        startingRate: 'From ₹2,999/dive',
-        defaultItemId: 10,
+        startingRate: 'Check current rates',
     },
     {
         id: 'homestay',
@@ -100,8 +96,7 @@ export const SERVICES_LIST = [
         color: '#E11D48',
         desc: 'Sharavathi riverfront wooden cottages & beachside heritage rooms',
         category: 'Stays & Cottages',
-        startingRate: 'From ₹1,500/night',
-        defaultItemId: 12,
+        startingRate: 'Check current rates',
     },
     {
         id: 'guide',
@@ -111,8 +106,7 @@ export const SERVICES_LIST = [
         color: '#D97706',
         desc: 'Hidden seasonal waterfalls, secret forest trails & Mirjan Fort',
         category: 'Guided Trails',
-        startingRate: 'From ₹800/trip',
-        defaultItemId: 14,
+        startingRate: 'Check current rates',
     },
     {
         id: 'tours',
@@ -122,8 +116,7 @@ export const SERVICES_LIST = [
         color: '#7C3AED',
         desc: 'All-inclusive 2D/1N & 3D/2N vacation bundles or build your custom trip',
         category: 'Vacation Bundles',
-        startingRate: 'All-Inclusive',
-        defaultItemId: 16,
+        startingRate: 'Check current rates',
     },
 ];
 
@@ -226,6 +219,15 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
         () => SERVICES_LIST.find((s) => s.id === selectedService) || SERVICES_LIST[0],
         [selectedService]
     );
+    const [selectedServiceItemId, setSelectedServiceItemId] = useState('');
+    const serviceItems = availableItems.filter((item) => item.service_type === selectedService);
+    const selectedServiceItem = serviceItems.find((item) => String(item.id) === selectedServiceItemId)
+        || serviceItems[0] || null;
+    const quoteQuantity = selectedService === 'scuba' ? scubaPax
+        : selectedService === 'homestay' ? stayRooms
+        : selectedService === 'tours' ? pkgTravelers
+        : selectedService === 'two_wheelers' ? bikeDays
+        : 1;
 
     // Homestay nights calculator
     const homestayNights = useMemo(() => {
@@ -236,87 +238,11 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
         return Math.max(1, isNaN(diffDays) ? 1 : diffDays);
     }, [stayCheckin, stayCheckout]);
 
-    // Dynamic Price Estimation per Service
-    const estimatedCost = useMemo(() => {
-        switch (selectedService) {
-            case 'two_wheelers': {
-                const daily = bikeCategory.includes('Activa') ? 450 : 1200;
-                return daily * bikeDays;
-            }
-            case 'taxi': {
-                if (taxiTripType === 'local_transfer') return taxiVehicle.includes('Innova') ? 600 : 350;
-                if (taxiTripType === 'day_rental') return taxiVehicle.includes('Innova') ? 3600 : 2500;
-                return taxiVehicle.includes('Innova') ? 4200 : 2800; // outstation
-            }
-            case 'boating': {
-                return 1500;
-            }
-            case 'scuba': {
-                let rate = 3499;
-                if (scubaTier === 'island_snorkeling') rate = 1799;
-                if (scubaTier === 'certified_dive') rate = 2999;
-                return rate * scubaPax + (scubaPickupRequired ? 300 * scubaPax : 0);
-            }
-            case 'homestay': {
-                let perNight = 2200;
-                if (stayRoomType === 'beachside_room') perNight = 1500;
-                if (stayRoomType === 'private_villa') perNight = 5500;
-
-                let mealAddon = 0;
-                if (stayMealPlan === 'breakfast_included') mealAddon = 150 * stayGuests * homestayNights;
-                if (stayMealPlan === 'breakfast_dinner') mealAddon = 550 * stayGuests * homestayNights;
-
-                return perNight * stayRooms * homestayNights + mealAddon;
-            }
-            case 'guide': {
-                return guideDuration === 'full_day' ? 1500 : 800;
-            }
-            case 'tours': {
-                let total = 0;
-                const days = pkgDays.includes('3') ? 3 : (pkgDays.includes('4') ? 4 : 2);
-                const nights = days - 1;
-
-                if (pkgIncludeBikes) total += 500 * (Math.ceil(pkgTravelers / 2)) * days;
-                if (pkgIncludeCab) total += (pkgCabType.includes('Innova') ? 3600 : 2500) * days;
-                if (pkgIncludeStay) total += (pkgStayType.includes('Villa') ? 5500 : 2200) * (Math.ceil(pkgTravelers / 2)) * nights;
-                if (pkgIncludeBoating) total += 600 * pkgTravelers;
-                if (pkgIncludeScuba) total += 3499 * pkgTravelers;
-                if (pkgIncludeGuide) total += 1500 * (days - 1);
-
-                return Math.max(total, 4999);
-            }
-            default:
-                return 1000;
-        }
-    }, [
-        selectedService,
-        bikeCategory,
-        bikeDays,
-        taxiTripType,
-        taxiVehicle,
-        boatingType,
-        boatingAdults,
-        boatingChildren,
-        scubaTier,
-        scubaPax,
-        scubaPickupRequired,
-        stayRoomType,
-        stayRooms,
-        stayGuests,
-        stayMealPlan,
-        homestayNights,
-        guideDuration,
-        pkgDays,
-        pkgIncludeBikes,
-        pkgIncludeCab,
-        pkgIncludeStay,
-        pkgIncludeBoating,
-        pkgIncludeScuba,
-        pkgIncludeGuide,
-        pkgTravelers,
-        pkgCabType,
-        pkgStayType,
-    ]);
+    // Display the configured admin price, never made-up service package rates.
+    // The final quote is calculated by Laravel for the selected service item.
+    const estimatedCost = selectedServiceItem
+        ? Number(selectedServiceItem.price_base || 0) * Math.max(1, quoteQuantity)
+        : null;
 
     // Compute active start datetime for live dynamic quote calculation
     const currentStartDatetime = useMemo(() => {
@@ -333,7 +259,11 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
     const [loadingQuote, setLoadingQuote] = useState(false);
 
     useEffect(() => {
-        if (!open) return;
+        setDynamicQuote(null);
+        if (!open || !selectedServiceItem?.id) {
+            setLoadingQuote(false);
+            return;
+        }
 
         let isMounted = true;
         setLoadingQuote(true);
@@ -342,9 +272,9 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             try {
                 const res = await window.axios.post('/services/quote', {
                     service_type: selectedService,
+                    service_item_id: selectedServiceItem.id,
                     start_datetime: currentStartDatetime,
-                    quantity: 1,
-                    base_price: estimatedCost,
+                    quantity: Math.max(1, quoteQuantity),
                 });
                 if (isMounted && res.data?.quote) {
                     setDynamicQuote(res.data.quote);
@@ -364,7 +294,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             isMounted = false;
             clearTimeout(timer);
         };
-    }, [open, selectedService, currentStartDatetime, estimatedCost]);
+    }, [open, selectedService, selectedServiceItem?.id, currentStartDatetime, quoteQuantity]);
 
     // Build rich formatted notes and payload
     const getBookingPayload = () => {
@@ -397,7 +327,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
                 adults: boatingAdults,
                 children: boatingChildren,
                 duration: '1 to 1.5 Hour Ride',
-                rate: '₹1,500 Flat',
+                rate: 'See confirmed quote',
             };
         } else if (selectedService === 'scuba') {
             pickupLoc = scubaPickupRequired ? 'Honnavar Hotel / Station (Transfer Required)' : 'Murudeshwar / Honnavar Dock (Direct Arrival)';
@@ -447,13 +377,13 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             };
         }
 
-        const finalAmount = dynamicQuote ? dynamicQuote.total : estimatedCost;
+        const finalAmount = dynamicQuote ? Number(dynamicQuote.total_amount) : null;
 
         const notesSummary = [
             `Service: ${activeService.title}`,
-            `Estimate: ₹${finalAmount.toLocaleString('en-IN')}`,
-            dynamicQuote?.breakdown?.has_surge && dynamicQuote.breakdown.applied_rule_names?.length
-                ? `Dynamic Surge Applied: ${dynamicQuote.breakdown.applied_rule_names.join(', ')}`
+            finalAmount === null ? 'Pricing: pending server quote' : `Server quote: ₹${finalAmount.toLocaleString('en-IN')}`,
+            dynamicQuote?.applied_rules?.length
+                ? `Pricing adjustments: ${dynamicQuote.applied_rules.map((rule) => rule.rule_name).join(', ')}`
                 : null,
             `Details: ${JSON.stringify(details)}`,
             specialNotes ? `User Note: ${specialNotes}` : null,
@@ -461,7 +391,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
 
         return {
             service_type: selectedService,
-            service_item_id: null,
+            service_item_id: selectedServiceItem?.id ?? null,
             customer_name: customerName,
             customer_phone: customerPhone.replace(/\D/g, ''),
             customer_email: customerEmail || null,
@@ -472,12 +402,15 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             quantity: Math.max(1, qty),
             payment_method: 'pay_on_arrival',
             customer_notes: notesSummary,
-            custom_amount: finalAmount,
-        };
+         };
     };
 
     // Submit payload to server
     const submitBookingNow = (loggedInUser = null) => {
+        if (!selectedServiceItem || !dynamicQuote || loadingQuote) {
+            setErrorMessage('Select an available service and wait for the confirmed price quote.');
+            return;
+        }
         setSubmitting(true);
         const payload = getBookingPayload();
         if (loggedInUser) {
@@ -543,7 +476,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
         if (selectedService === 'taxi') {
             detailsString = `*Trip Type:* ${taxiTripType}\n*Route:* ${taxiRoute}\n*Vehicle:* ${taxiVehicle}\n*Pickup Time:* ${taxiPickupDatetime}`;
         } else if (selectedService === 'boating') {
-            detailsString = `*Service:* Honnavar Backwater Boating (Sharavathi Backwaters)\n*Rate:* ₹1,500 Flat (1 to 1.5 Hour Ride)\n*Date:* ${boatingDate}\n*Slot:* ${boatingSlot}\n*Guests:* ${boatingAdults} Adults, ${boatingChildren} Children`;
+            detailsString = `*Service:* Honnavar Backwater Boating (Sharavathi Backwaters)\n*Rate:* Refer to live quote (1 to 1.5 Hour Ride)\n*Date:* ${boatingDate}\n*Slot:* ${boatingSlot}\n*Guests:* ${boatingAdults} Adults, ${boatingChildren} Children`;
         } else if (selectedService === 'scuba') {
             detailsString = `*Package:* ${scubaTier}\n*Date:* ${scubaDate} (06:30 AM)\n*Pax:* ${scubaPax} Divers\n*Pickup Transfer:* ${scubaPickupRequired ? 'Yes' : 'Direct dock arrival'}`;
         } else if (selectedService === 'homestay') {
@@ -556,17 +489,17 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             detailsString = `*Bike:* ${bikeCategory}\n*Duration:* ${bikeDays} Days\n*Pickup Hub:* ${bikePickupHub}`;
         }
 
-        const finalCost = dynamicQuote ? dynamicQuote.total : estimatedCost;
+        const finalCost = dynamicQuote ? Number(dynamicQuote.total_amount) : null;
         const message = `*G.K. WhizWheel - Service Booking / Vacation Request*
 ---------------------------------------
 *Service:* ${activeService.title}
 *Customer:* ${customerName || 'Guest'} (${customerPhone || 'Phone pending'})
-*Estimated Cost:* ₹${finalCost.toLocaleString('en-IN')}${dynamicQuote?.breakdown?.has_surge ? ' (Surge applied)' : ''}
+*Estimated Cost:* ${finalCost === null ? 'Quote required' : `₹${finalCost.toLocaleString('en-IN')}`}
 
 ${detailsString}
 ${specialNotes ? `\n*Special Notes:* ${specialNotes}` : ''}
 ---------------------------------------
-_Sent via gkwhizwheel.in - Zero Deposit & 24x7 Honnavar Support_`;
+_Sent via whizwheels.in - Service pricing subject to official booking quote_`;
 
         const whatsappUrl = `https://wa.me/918660989586?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
@@ -716,6 +649,21 @@ _Sent via gkwhizwheel.in - Zero Deposit & 24x7 Honnavar Support_`;
             </Box>
 
             <DialogContent sx={{ p: { xs: 2, sm: 3 }, pt: '16px !important' }}>
+                <TextField select fullWidth size="small" required label="Select an available service"
+                    value={selectedServiceItem ? String(selectedServiceItem.id) : ''}
+                    onChange={(event) => setSelectedServiceItemId(event.target.value)}
+                    sx={{ mb: 2 }}>
+                    {serviceItems.map((item) => (
+                        <MenuItem key={item.id} value={String(item.id)}>
+                            {item.name} — ₹{Number(item.price_base).toLocaleString('en-IN')} / {item.price_unit || 'unit'}
+                        </MenuItem>
+                    ))}
+                </TextField>
+                {serviceItems.length === 0 && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                        No bookable items are currently configured for this service. Please use WhatsApp to enquire.
+                    </Alert>
+                )}
                 {errorMessage && (
                     <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
                         {errorMessage}
@@ -1344,15 +1292,15 @@ _Sent via gkwhizwheel.in - Zero Deposit & 24x7 Honnavar Support_`;
                         <Box>
                             <Stack direction="row" alignItems="center" spacing={1}>
                                 <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600, display: 'block' }}>
-                                    Estimated Package Total • Zero Hidden Charges
+                                    Live Service Price · Server Quote
                                 </Typography>
                                 {loadingQuote && <CircularProgress size={12} sx={{ color: activeService.color }} />}
                             </Stack>
                             <Stack direction="row" alignItems="baseline" spacing={1} flexWrap="wrap">
                                 <Typography variant="h5" sx={{ fontWeight: 900, color: activeService.color }}>
-                                    ₹{(dynamicQuote ? dynamicQuote.total : estimatedCost).toLocaleString('en-IN')}{' '}
+                                    {dynamicQuote ? `₹${Number(dynamicQuote.total_amount).toLocaleString('en-IN')}` : 'Select service for quote'}
                                 </Typography>
-                                {dynamicQuote?.breakdown?.has_surge && dynamicQuote.total !== estimatedCost && (
+                                {dynamicQuote?.applied_rules?.length > 0 && estimatedCost !== null && Number(dynamicQuote.total_amount) !== estimatedCost && (
                                     <Typography variant="body2" sx={{ textDecoration: 'line-through', color: isDark ? '#64748B' : '#94A3B8', fontWeight: 700 }}>
                                         ₹{estimatedCost.toLocaleString('en-IN')}
                                     </Typography>
@@ -1364,10 +1312,10 @@ _Sent via gkwhizwheel.in - Zero Deposit & 24x7 Honnavar Support_`;
                         </Box>
 
                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                            {dynamicQuote?.breakdown?.has_surge && (
+                            {dynamicQuote?.applied_rules?.length > 0 && (
                                 <Chip
                                     icon={<FlashOnIcon sx={{ fontSize: '14px !important', color: '#F59E0B !important' }} />}
-                                    label={dynamicQuote.breakdown.applied_rule_names.join(' • ')}
+                                    label={dynamicQuote.applied_rules.map((rule) => rule.rule_name).join(' • ')}
                                     size="small"
                                     sx={{
                                         bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
