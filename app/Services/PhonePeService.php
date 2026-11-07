@@ -24,7 +24,7 @@ class PhonePeService
         $callbackUrl = (string) config('services.phonepe.callback_url', url('/webhooks/phonepe'));
         $finalRedirectUrl = $redirectUrl ?? (string) config('services.phonepe.redirect_url', url('/payment/phonepe/callback'));
 
-        $amountPaise = (int) round((float) $booking->total_amount * 100);
+        $amountPaise = (int) round(BikeBookingPayments::expectedGatewayAmount($booking) * 100);
         $merchantTransactionId = 'TXN_BK_'.$booking->id.'_'.Str::random(8);
 
         $requestData = [
@@ -59,7 +59,7 @@ class PhonePeService
 
                 return [
                     'merchant_transaction_id' => $merchantTransactionId,
-                    'amount' => (float) $booking->total_amount,
+                    'amount' => BikeBookingPayments::expectedGatewayAmount($booking),
                     'amount_paise' => $amountPaise,
                     'redirect_url' => $json['data']['instrumentResponse']['redirectInfo']['url'] ?? null,
                     'status' => 'pending_payment',
@@ -74,7 +74,7 @@ class PhonePeService
             // ponytail: synthetic order generation for PhonePe sandbox/local dev testing
             return [
                 'merchant_transaction_id' => $merchantTransactionId,
-                'amount' => (float) $booking->total_amount,
+                'amount' => BikeBookingPayments::expectedGatewayAmount($booking),
                 'amount_paise' => $amountPaise,
                 'redirect_url' => 'https://mercury-uat.phonepe.com/transact/simulator?token='.Str::random(32),
                 'status' => 'pending_payment',
