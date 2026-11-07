@@ -106,6 +106,8 @@ class BookingService
         ): Booking {
             // Acquire row-level lock on bike for availability/state transition
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
+            app(BikeComplianceGate::class)->assertReadyForHandover($bike);
+
             if ($odometerReading < (int) $bike->odometer_reading) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'odometer_reading' => 'Handover odometer cannot be lower than the recorded reading.',
@@ -198,9 +200,11 @@ class BookingService
                 'completed_by' => $staffId ?? $booking->completed_by,
             ]);
 
-            // Relocate bike to return store, update status to AVAILABLE and odometer
+            // A returned bike must not be published as rentable until current
+            // insurance, PUC, RC and maintenance are actually verified.
+            $complianceIssues = app(BikeComplianceGate::class)->problems($bike);
             $bike->update([
-                'status' => BikeStatus::AVAILABLE,
+                'status' => $complianceIssues === [] ? BikeStatus::AVAILABLE : BikeStatus::MAINTENANCE,
                 'current_store_id' => $actualReturnStoreId,
                 'odometer_reading' => $odometerReading,
             ]);

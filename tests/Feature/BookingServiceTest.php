@@ -62,6 +62,7 @@ beforeEach(function (): void {
         'odometer_reading' => 5000,
         'status' => BikeStatus::AVAILABLE,
     ]);
+        \Tests\Support\VerifiedBikeDocuments::attach($this->bike);
 
     $this->customer = User::create([
         'name' => 'Rider John',

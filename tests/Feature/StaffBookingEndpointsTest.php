@@ -86,6 +86,7 @@ beforeEach(function (): void {
         'status' => BikeStatus::AVAILABLE,
         'odometer_reading' => 5200,
     ]);
+        \Tests\Support\VerifiedBikeDocuments::attach($this->bike);
 
     $this->staff->stores()->attach($this->store->id);
     $this->storeManager->stores()->attach($this->store->id);

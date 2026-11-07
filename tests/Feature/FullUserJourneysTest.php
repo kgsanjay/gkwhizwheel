@@ -104,6 +104,7 @@ class FullUserJourneysTest extends TestCase
             'status' => BikeStatus::AVAILABLE,
         ]);
 
+
         $this->customer = User::create([
             'name' => 'Journey Customer',
             'email' => 'journey.customer@example.com',
@@ -295,6 +296,7 @@ class FullUserJourneysTest extends TestCase
      */
     public function test_journey_2_staff_processes_full_walkin_booking_from_lookup_through_handover(): void
     {
+        \Tests\Support\VerifiedBikeDocuments::attach($this->bike);
         Sanctum::actingAs($this->staff, ['*']);
 
         // 1. Phone lookup: Customer does not exist yet
@@ -413,6 +415,7 @@ class FullUserJourneysTest extends TestCase
      */
     public function test_journey_3_one_way_rental_updates_bike_current_store_id_on_return(): void
     {
+        \Tests\Support\VerifiedBikeDocuments::attach($this->bike);
         Sanctum::actingAs($this->staff, ['*']);
 
         // Bike starts at storeA
