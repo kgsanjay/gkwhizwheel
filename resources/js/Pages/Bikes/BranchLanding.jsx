@@ -83,6 +83,22 @@ export default function BranchLanding({ branch, models = [], unlinked_count = 0,
                                     {branch.phone && <Typography variant="body2">
                                         Contact: <a href={`tel:${branch.phone}`}>{branch.phone}</a>
                                     </Typography>}
+                                    {branch.google_maps_url && <Typography variant="body2">
+                                        <a href={branch.google_maps_url} target="_blank" rel="noopener noreferrer">View branch on Google Maps</a>
+                                    </Typography>}
+                                    {branch.whatsapp_enquiry_number && <Button size="small" variant="outlined"
+                                        component="a" target="_blank" rel="noopener noreferrer"
+                                        href={`https://wa.me/${branch.whatsapp_enquiry_number.replace(/\\D/g, '')}?text=${encodeURIComponent(`Hello G.K. WhizWheel, I have an enquiry about your ${branch.city} branch.`)}`}>
+                                        WhatsApp enquiry
+                                    </Button>}
+                                    {(branch.pickup_points || []).length > 0 && <Box>
+                                        <Typography variant="subtitle2" fontWeight={700}>Pickup and return points</Typography>
+                                        <Stack spacing={0.5}>
+                                            {branch.pickup_points.map((point) => <Typography key={point.id} variant="body2">
+                                                {point.name}
+                                            </Typography>)}
+                                        </Stack>
+                                    </Box>}
                                 </Stack>
                                 <Divider sx={{ my: 2 }} />
                                 <Grid container spacing={2}>
