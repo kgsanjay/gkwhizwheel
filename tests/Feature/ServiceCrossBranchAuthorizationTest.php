@@ -63,7 +63,7 @@ test('manager web routes prevent foreign branch booking details, changes and vou
     $this->actingAs($this->manager)
         ->get("/admin/services/taxi/bookings/{$foreign}")->assertForbidden();
     $this->actingAs($this->manager)
-        ->put("/admin/services/taxi/bookings/{$foreign}/status", [
+        ->post("/admin/services/taxi/bookings/{$foreign}/status", [
             'status' => 'completed',
         ])->assertForbidden();
     $this->actingAs($this->manager)
