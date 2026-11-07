@@ -18,10 +18,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class BikeRelocationController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse|Response
     {
         $user = $request->user();
         abort_unless(in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true), 403);
@@ -40,19 +42,39 @@ class BikeRelocationController extends Controller
         }
 
         $tasks = $query->orderBy('id')->paginate(20);
+        $items = $tasks->getCollection()->map(fn (BikeRelocationTask $task): array => [
+            'id' => $task->id,
+            'status' => $task->status,
+            'bike_id' => $task->bike_id,
+            'bike_registration' => $task->bike?->registration_number,
+            'affected_booking_id' => $task->affected_booking_id,
+            'affected_booking_reference' => $task->affectedBooking?->booking_reference,
+            'from_store_id' => $task->from_store_id,
+            'required_store_id' => $task->required_store_id,
+            'pickup_date' => $task->affectedBooking?->start_date?->toDateString(),
+        ])->all();
+
+        if (! $request->expectsJson()) {
+            $stores = Store::where('status', StoreStatus::ACTIVE)
+                ->when($user->role !== UserRole::SUPER_ADMIN,
+                    fn ($query) => $query->whereIn('id', $user->getAuthorizedStoreIds() ?? []))
+                ->orderBy('name')->get(['id', 'name', 'city']);
+            return Inertia::render('Admin/Relocations/Index', [
+                'tasks' => [
+                    'data' => $items,
+                    'current_page' => $tasks->currentPage(),
+                    'last_page' => $tasks->lastPage(),
+                    'total' => $tasks->total(),
+                ],
+                'stores' => $stores,
+                'filters' => ['store_id' => $request->query('store_id')],
+                'can_confirm' => $user->role === UserRole::SUPER_ADMIN,
+            ]);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $tasks->getCollection()->map(fn (BikeRelocationTask $task): array => [
-                'id' => $task->id,
-                'status' => $task->status,
-                'bike_id' => $task->bike_id,
-                'bike_registration' => $task->bike?->registration_number,
-                'affected_booking_id' => $task->affected_booking_id,
-                'affected_booking_reference' => $task->affectedBooking?->booking_reference,
-                'from_store_id' => $task->from_store_id,
-                'required_store_id' => $task->required_store_id,
-                'pickup_date' => $task->affectedBooking?->start_date?->toDateString(),
-            ])->all(),
+            'data' => $items,
             'meta' => ['total' => $tasks->total(), 'current_page' => $tasks->currentPage()],
         ]);
     }
