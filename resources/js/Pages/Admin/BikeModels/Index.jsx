@@ -21,6 +21,29 @@ export default function BikeModelsIndex({ models = [], categories = [], stores =
     const [bulkProcessing, setBulkProcessing] = useState(false);
     const [expanded, setExpanded] = useState(null);
     const [search, setSearch] = useState('');
+    const [rateEdits, setRateEdits] = useState({});
+    const [rateSaving, setRateSaving] = useState(false);
+    const rateKey = (modelId, storeId) => `${modelId}-${storeId}`;
+    const editRates = (model, store) => {
+        const key = rateKey(model.id, store.id);
+        const configured = (model.branch_prices || []).find((rate) => Number(rate.store_id) === Number(store.id));
+        return rateEdits[key] || {
+            weekday_rate: configured?.weekday_rate ?? '',
+            weekend_rate: configured?.weekend_rate ?? '',
+        };
+    };
+    const saveRates = (event, model, store) => {
+        event.preventDefault();
+        if (rateSaving) return;
+        setRateSaving(true);
+        router.post(`/admin/bike-models/${model.id}/branch-prices`, {
+            store_id: store.id,
+            ...editRates(model, store),
+        }, {
+            preserveScroll: true,
+            onFinish: () => setRateSaving(false),
+        });
+    };
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         category_id: '', brand: '', name: '', fuel_type: 'petrol', transmission: 'automatic', description: '',
     });
@@ -171,6 +194,32 @@ export default function BikeModelsIndex({ models = [], categories = [], stores =
                                                             </Stack>
                                                         )
                                                     }
+                                                    <Divider sx={{ my: 2 }} />
+                                                    <Typography fontWeight={700} variant="subtitle2" sx={{ mb: 1 }}>Branch-specific rental pricing (₹ / day)</Typography>
+                                                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
+                                                        Set separate Mon–Thu and Fri–Sun prices per branch. If left unconfigured, existing bike rates continue to apply. Rates are used for quotes from this pickup branch.
+                                                    </Typography>
+                                                    <Stack spacing={1.5}>
+                                                        {stores.map((store) => {
+                                                            const prices = editRates(model, store);
+                                                            const key = rateKey(model.id, store.id);
+                                                            return (
+                                                                <Box component="form" onSubmit={(event) => saveRates(event, model, store)} key={store.id}
+                                                                    sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                                                    <Typography variant="body2" sx={{ width: 160 }}>{store.name}</Typography>
+                                                                    <TextField size="small" type="number" label="Mon–Thu ₹" value={prices.weekday_rate}
+                                                                        slotProps={{ htmlInput: { min: 0, step: '0.01' } }} required sx={{ width: 140 }}
+                                                                        onChange={(event) => setRateEdits((prev) => ({ ...prev,
+                                                                            [key]: { ...prices, weekday_rate: event.target.value } }))} />
+                                                                    <TextField size="small" type="number" label="Fri–Sun ₹" value={prices.weekend_rate}
+                                                                        slotProps={{ htmlInput: { min: 0, step: '0.01' } }} required sx={{ width: 140 }}
+                                                                        onChange={(event) => setRateEdits((prev) => ({ ...prev,
+                                                                            [key]: { ...prices, weekend_rate: event.target.value } }))} />
+                                                                    <Button size="small" type="submit" variant="outlined" disabled={rateSaving}>Save rates</Button>
+                                                                </Box>
+                                                            );
+                                                        })}
+                                                    </Stack>
                                                     <Divider sx={{ my: 2 }} />
                                                     <Button size="small" variant="contained" sx={{ mr: 1 }} startIcon={<AddIcon />} onClick={() => startBulk(model)}>
                                                         Add multiple bikes
