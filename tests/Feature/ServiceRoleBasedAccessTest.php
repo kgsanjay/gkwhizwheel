@@ -225,13 +225,13 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
         'pickup_location' => 'Murudeshwar Port',
     ]);
 
-    // Until service bookings have branch ownership, manager dashboards must not expose globally shared service data.
+    // Legacy service rows without store ownership remain invisible to branch managers.
     $this->actingAs($this->taxiManager)
         ->get('/admin/dashboard')
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->has('service_metrics', 0)
+                ->has('service_metrics', 2)
                 ->where('assigned_services', fn ($val) => collect($val)->sort()->values()->all() === ['boating', 'taxi'])
                 ->has('recent_service_bookings', 0)
         );
