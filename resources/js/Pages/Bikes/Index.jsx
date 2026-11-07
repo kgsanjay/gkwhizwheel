@@ -56,7 +56,7 @@ import NavigationIcon from '@mui/icons-material/Navigation';
 const BIKE_FAQS = [
     {
         q: 'What is the average honnavar bike rental price?',
-        a: 'At GK WhizWheels, our honnavar bike rental price is transparent and straightforward: Honda Activa scooters start from ₹350–₹400/day, sporty 125cc scooters start from ₹450–₹500/day, and Royal Enfield Classic 350 / Honda CB350 start from ₹1,000–₹1,200/day. We offer additional discounts of 10% for 3+ days and 15% for weekly rentals, with zero surge fees.',
+        a: 'Rates are calculated from the bike, selected dates, rental duration, pickup and return branches, and any applicable fees or discounts. Choose dates to see the actual quote before paying.',
     },
     {
         q: 'Can I get rental bikes delivered to Honnavar Railway Station?',
@@ -75,8 +75,8 @@ const BIKE_FAQS = [
         a: 'Yes! All GK WhizWheels bikes have valid Karnataka road tax and permit to travel anywhere along the coastal belt, including Murudeshwar (27 km), Gokarna (48 km), Yana Caves, and Jog Falls (60 km).',
     },
     {
-        q: 'How does the security deposit refund work?',
-        a: 'We offer zero deposit options for verified return tickets. For standard rentals requiring a ₹1,000 security deposit, the refund is initiated immediately to your UPI ID or bank account as soon as the vehicle is returned in good order.',
+        q: 'Is a security deposit required for online bike rentals?',
+        a: 'New online bike rental reservations require no refundable security deposit. Pay ₹100 in advance or pay the full rental quote online; any remaining rental balance is collected at pickup.',
     },
 ];
 
@@ -158,6 +158,14 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
     const bikes = bikesResponse?.data || [];
     const legacyBikes = bikes.filter((bike) => !bike.bike_model_id);
+    // Public comparison uses registered inventory and actual configured rates.
+    // Never advertise non-existent models, made-up weekend surcharges or deposits.
+    const comparisonBikes = [...new Map(
+        bikes.map((bike) => [
+            bike.bike_model_id ? `model-${bike.bike_model_id}` : `bike-${bike.id}`,
+            bike,
+        ])
+    ).values()];
 
     // WCAG Compliant Text Tokens
     const primaryTextColor = isDark ? '#FFFFFF' : '#0F172A';
@@ -173,8 +181,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     return (
         <AppLayout>
             <PageHead
-                title="Browse Fleet & Rates - Bike Rental in Honnavar | GK WhizWheel"
-                description="Browse self-drive bike and scooter rental fleet in Honnavar starting ₹350/day. Honda Activa, Royal Enfield, zero deposit option, and station pickup."
+                title="Bike & Scooter Rentals by Branch | GK WhizWheel"
+                description="Browse self-drive bikes and scooters by branch and dates. Check current pricing and availability with no security deposit for new online bike bookings."
                 canonicalUrl="https://whizwheels.in/services/bikes"
                 ogImage="/images/services/two_wheelers.jpg"
                 ogType="website"
@@ -278,7 +286,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                                     <Chip
                                         icon={<StarIcon aria-hidden="true" sx={{ fontSize: '0.9rem !important', color: '#F59E0B' }} />}
-                                        label="5.0 ★ Google Rated (324+ Reviews)"
+                                        label="Browse Our Rental Fleet"
                                         size="small"
                                         sx={{
                                             bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.1)',
@@ -491,7 +499,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             </Typography>
                                         </Box>
                                         <Chip
-                                            label="From ₹350 / Day"
+                                            label="Check Current Rates"
                                             size="small"
                                             sx={{
                                                 bgcolor: '#F59E0B',
@@ -570,8 +578,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     {/* 3 Metric Pillars Under Image */}
                                     <Grid container sx={{ p: 1.2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0' }}>
                                         {[
-                                            { label: 'DAILY RATE', val: 'Starts ₹350' },
-                                            { label: 'STATION PICKUP', val: 'Platform 1 (5 Min)' },
+                                            { label: 'DAILY RATE', val: 'See Live Quote' },
+                                            { label: 'PICKUP', val: 'Select Branch' },
                                             { label: 'SECURITY DEPOSIT', val: 'Zero Deposit' },
                                         ].map((stat, idx) => (
                                             <Grid key={idx} size={{ xs: 4 }} sx={{ textAlign: 'center', borderRight: idx < 2 ? (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0') : 'none', py: 0.5 }}>
@@ -1200,7 +1208,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         >
                             <TableContainer
                                 tabIndex={0}
-                                aria-label="Honnavar bike rental pricing and rate comparison table"
+                                aria-label="Configured bike rental rates by model and vehicle"
                                 sx={{ '&:focus-visible': { outline: '2px solid #F59E0B' } }}
                             >
                                 <Table sx={{ minWidth: 700 }}>
@@ -1210,75 +1218,51 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             <TableCell component="th" scope="col" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.9rem' }}>Category & Spec</TableCell>
                                             <TableCell component="th" scope="col" sx={{ color: '#FBBF24', fontWeight: 800, fontSize: '0.9rem' }}>Mon – Thu (Weekday)</TableCell>
                                             <TableCell component="th" scope="col" sx={{ color: '#7DD3FC', fontWeight: 800, fontSize: '0.9rem' }}>Fri – Sun (Weekend)</TableCell>
-                                            <TableCell component="th" scope="col" sx={{ color: '#6EE7B7', fontWeight: 800, fontSize: '0.9rem' }}>Security Deposit</TableCell>
+                                            <TableCell component="th" scope="col" sx={{ color: '#6EE7B7', fontWeight: 800, fontSize: '0.9rem' }}>Online Deposit</TableCell>
                                             <TableCell component="th" scope="col" align="right" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.9rem' }}>Action</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {[
-                                            { name: 'Honda Dio DLX', keyword: 'dio', spec: '110cc • Automatic • Petrol', weekday: 350, weekend: 450 },
-                                            { name: "Honda H'ness CB350", keyword: 'ness', spec: '350cc • Manual Cruiser • Petrol', weekday: 1200, weekend: 1500 },
-                                            { name: 'Royal Enfield Classic 350', keyword: 'classic', spec: '350cc • Manual Cruiser • Petrol', weekday: 1000, weekend: 1200 },
-                                            { name: 'TVS Ntorq 125', keyword: 'ntorq', spec: '125cc • Sport Scooter • Petrol', weekday: 500, weekend: 600 },
-                                            { name: 'Yamaha Fascino 125', keyword: 'fascino', spec: '125cc • Retro Style • Petrol', weekday: 450, weekend: 500 },
-                                            { name: 'Suzuki Access 125', keyword: 'access', spec: '125cc • Classic Scooter • Petrol', weekday: 450, weekend: 500 },
-                                            { name: 'Honda Activa 6G', keyword: 'activa', spec: '110cc • Easy Commuter • Petrol', weekday: 400, weekend: 500 },
-                                            { name: 'Suzuki Burgman Street 125', keyword: 'burgman', spec: '125cc • Maxi Comfort • Petrol', weekday: 500, weekend: 600 },
-                                            { name: 'TVS Orbiter EV', keyword: 'orbiter', spec: 'Electric Scooter • 0 Emissions', weekday: 500, weekend: 600 },
-                                        ].map((row) => {
-                                            const matchedBike = bikes.find((b) =>
-                                                (b.model_name && b.model_name.toLowerCase().includes(row.keyword)) ||
-                                                (b.brand && row.name.toLowerCase().includes(b.brand.toLowerCase()))
-                                            );
-                                            const bookHref = matchedBike ? `/bikes/${matchedBike.id}` : '#fleet-catalog-heading';
-
+                                        {comparisonBikes.map((bike) => {
+                                            const name = [bike.brand, bike.model_name].filter(Boolean).join(' ');
+                                            const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                                            const href = bike.bike_model_id
+                                                ? `/services/bikes/models/${bike.bike_model_id}/${slug}`
+                                                : `/bikes/${bike.id}`;
                                             return (
-                                                <TableRow
-                                                    key={row.name}
-                                                    sx={{
-                                                        '&:nth-of-type(even)': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC' },
-                                                        '&:hover': { bgcolor: isDark ? 'rgba(245, 158, 11, 0.06)' : '#FFFBEB' },
-                                                    }}
-                                                >
+                                                <TableRow key={bike.bike_model_id ? `model-${bike.bike_model_id}` : bike.id}
+                                                    sx={{ '&:nth-of-type(even)': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC' } }}>
                                                     <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>
-                                                        {row.name}
+                                                        {name}
                                                     </TableCell>
                                                     <TableCell sx={{ color: secondaryTextColor, fontSize: '0.85rem' }}>
-                                                        {row.spec}
+                                                        {[bike.category?.name, bike.fuel_type, bike.transmission].filter(Boolean).join(' · ')}
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekdayPriceColor }}>
-                                                        ₹{row.weekday} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day</Box>
+                                                        ₹{Number(bike.weekday_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekendPriceColor }}>
-                                                        ₹{row.weekend} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day</Box>
+                                                        ₹{Number(bike.weekend_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800, fontSize: '0.85rem' }}>
-                                                        ₹1,000 (Refundable)
+                                                    <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800 }}>
+                                                        ₹0 for new online bookings
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        <Button
-                                                            component={matchedBike ? Link : 'a'}
-                                                            href={bookHref}
-                                                            size="small"
-                                                            variant="contained"
-                                                            color="secondary"
-                                                            aria-label={`Select ${row.name} for booking`}
-                                                            sx={{
-                                                                fontWeight: 800,
-                                                                px: 2,
-                                                                borderRadius: 1.5,
-                                                                bgcolor: '#F59E0B',
-                                                                color: '#0F172A',
-                                                                '&:hover': { bgcolor: '#D97706' },
-                                                                '&:focus-visible': { outline: '2px solid #0F172A', outlineOffset: '1px' },
-                                                            }}
-                                                        >
-                                                            Select
+                                                        <Button component={Link} href={href} size="small" variant="contained"
+                                                            color="secondary" aria-label={`View ${name} booking options`}>
+                                                            Check dates
                                                         </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             );
                                         })}
+                                        {!isLoading && comparisonBikes.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    No currently listed bikes. Please check the catalog again later.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
@@ -1622,9 +1606,9 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     },
                                     {
                                         step: '04',
-                                        badge: '💳 Immediate Deposit Refund',
+                                        badge: '✅ Deposit-Free Online',
                                         title: 'Ride & Swift Return',
-                                        desc: 'Ride across Honnavar, Gokarna, and Murudeshwar with 24/7 breakdown help. Return at any hub; deposit refunds initiate on the spot.',
+                                        desc: 'Ride on your booked dates and return to the selected branch. No security deposit is required for new online bike bookings.',
                                         color: '#A855F7',
                                         bgBadge: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(147, 51, 234, 0.1)',
                                     },

@@ -27,6 +27,10 @@ Route::get('/', function () {
         'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
         'categories' => $categories,
         'stores' => $stores,
+        'availableItems' => \App\Models\ServiceItem::query()
+            ->whereIn('status', ['available', 'active'])
+            ->orderBy('sort_order')
+            ->get(['id', 'service_type', 'name', 'price_base', 'price_unit', 'status', 'store_id']),
     ]);
 })->name('home');
 

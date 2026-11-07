@@ -58,7 +58,7 @@ import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
 
-export default function Welcome({ featuredBikes = [], categories = [], stores = [] }) {
+export default function Welcome({ featuredBikes = [], categories = [], stores = [] , availableItems = [] }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -111,16 +111,16 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     const structuredData = {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
-        "name": "GK WhizWheel - Bike Rental & Travel Services Honnavar",
+        "name": "GK WhizWheel - Travel, Rentals & Coastal Experiences",
         "alternateName": ["GK WhizWheels", "G.K. WhizWheel", "Whizwheels Honnavar"],
         "sameAs": ["https://share.google/GoM4iOgiuUIa7ZfwV"],
-        "description": "Premier travel and bike rental agency in Honnavar offering well-maintained scooters and bikes from ₹350/day, AC taxi transfers, backwater boating, scuba diving, and coastal homestays.",
+        "description": "Travel and rental services across coastal Karnataka, including scooters, motorcycles, cabs, boating, scuba diving, homestays, local guides and tour packages.",
         "image": "https://whizwheels.in/images/logo.png",
         "telephone": "+918660989586",
         "email": "contact@whizwheels.in",
         "url": "https://whizwheels.in/",
-        "priceRange": "₹350 - ₹5000",
-        "openingHours": "Mo-Su 06:00-23:00",
+        "priceRange": "Contact for current rates",
+        "areaServed": ["Honnavar", "Murudeshwar", "Coastal Karnataka"],
         "address": {
             "@type": "PostalAddress",
             "streetAddress": "Palya Main Rd, near Honnavar Railway Station",
@@ -165,7 +165,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                     "itemOffered": {
                         "@type": "Service",
                         "name": "Bike & Scooter Rentals in Honnavar",
-                        "description": "Daily self-drive scooter and motorcycle rental starting at ₹350/day with zero deposit option for exploring Honnavar beaches and Sharavathi backwaters"
+                        "description": "Self-drive scooter and motorcycle rentals with live model availability and deposit-free online booking for exploring the Karnataka coast"
                     },
                     "price": "350",
                     "priceCurrency": "INR"
@@ -248,10 +248,10 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             },
             {
                 '@type': 'Question',
-                name: 'How much is the security deposit and when is it refunded?',
+                name: 'Is there a security deposit for bike bookings?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'We offer zero-deposit options for eligible verified profiles, and nominal deposits (₹500 – ₹1,500 depending on vehicle model) for others. Security deposits are 100% refundable and credited directly back to your UPI or bank account within 2 hours of vehicle return following a quick inspection.',
+                    text: 'New online bike rental reservations have no refundable security deposit. Choose a ₹100 advance or pay the full quoted rental amount; the remaining rental balance, if any, is collected at pickup.',
                 },
             },
             {
@@ -276,8 +276,8 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     return (
         <AppLayout>
             <PageHead
-                title="Bike Rental Honnavar | Boating, Scuba, Tours – GK WhizWheel"
-                description="Explore Honnavar & Karavali coast with GK WhizWheel: bike rentals from ₹350/day, cabs, backwater boating, scuba diving, homestays & custom tour packages."
+                title="GK WhizWheel | Bike Rentals, Cabs, Boating, Stays & Tours"
+                description="Explore coastal Karnataka with GK WhizWheel: bike rentals, cabs, backwater boating, scuba diving, homestays, guides and customizable tour packages."
                 canonicalUrl="https://whizwheels.in/"
                 ogImage="/images/logo.png"
                 ogType="website"
@@ -335,7 +335,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         <Grid size={{ xs: 12, lg: 7 }}>
                             <Chip
                                 icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 16 }} />}
-                                label="G.K. WhizWheel • 5.0 ★ (324 Google Reviews) • Honnavar, Karnataka"
+                                label="G.K. WhizWheel • Coastal Karnataka Travel & Rental Services"
                                 sx={{
                                     bgcolor: 'rgba(245, 158, 11, 0.12)',
                                     color: '#FBBF24',
@@ -395,16 +395,16 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     maxWidth: 680,
                                 }}
                             >
-                                Welcome to <strong>G.K. WhizWheel</strong>. We are Honnavar’s premier travel and mobility agency. Whether you want to <strong>rent a bike starting at ₹350/day</strong>, hire a <strong>private AC cab</strong> for station pickup & Gokarna tours, book a serene <strong>Sharavathi riverfront homestay</strong>, cruise the <strong>mangrove backwaters</strong>, or explore underwater coral reefs at <strong>Netrani Island</strong> — our local team manages every detail under one verified roof with zero hidden fees.
+                                Welcome to <strong>G.K. WhizWheel</strong>. We serve coastal Karnataka with travel and mobility services. Whether you want to <strong>rent a bike with transparent, date-based pricing</strong>, hire a <strong>private AC cab</strong> for station pickup & Gokarna tours, book a serene <strong>Sharavathi riverfront homestay</strong>, cruise the <strong>mangrove backwaters</strong>, or explore underwater coral reefs at <strong>Netrani Island</strong> — our local team manages every detail under one verified roof with zero hidden fees.
                             </Typography>
 
                             {/* Key Highlights Pill Badges */}
                             <Grid container spacing={1.5} sx={{ mb: 4 }}>
                                 {[
-                                    { text: '5.0 ★ Google Rated (324+ Reviews)', color: '#F59E0B' },
-                                    { text: 'Palya Rd & Railway Station Hubs', color: '#0284C7' },
-                                    { text: 'Zero Security Deposit Options', color: '#10B981' },
-                                    { text: '24/7 Roadside & Trip Assistance', color: '#7C3AED' },
+                                    { text: 'Bikes, Cabs, Stays & Experiences', color: '#F59E0B' },
+                                    { text: 'Serving Multiple Coastal Branches', color: '#0284C7' },
+                                    { text: 'Deposit-Free Online Bike Bookings', color: '#10B981' },
+                                    { text: 'Local Travel & Rental Support', color: '#7C3AED' },
                                 ].map((item, i) => (
                                     <Grid key={i} size={{ xs: 12, sm: 6 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -537,7 +537,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                                 <Box sx={{ textAlign: 'center' }}>
                                     <Typography variant="subtitle1" sx={{ color: isDark ? '#F1F5F9' : '#0F172A', fontWeight: 800 }}>
-                                        Complete Tourism Agency in Honnavar
+                                        Coastal Karnataka Travel & Rental Services
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#334155', display: 'block', mt: 0.3 }}>
                                         Two-Wheelers • AC Cabs • Stays • Boating • Scuba • Tours
@@ -548,14 +548,14 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 <Grid container spacing={1.5} sx={{ textAlign: 'center' }}>
                                     <Grid size={{ xs: 4 }}>
                                         <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
-                                            <Typography component="span" variant="h6" sx={{ display: 'block', color: '#F59E0B', fontWeight: 900, lineHeight: 1.2 }}>₹350</Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Bikes from</Typography>
+                                            <Typography component="span" variant="h6" sx={{ display: 'block', color: '#F59E0B', fontWeight: 900, lineHeight: 1.2 }}>Live</Typography>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Bike rates</Typography>
                                         </Box>
                                     </Grid>
                                     <Grid size={{ xs: 4 }}>
                                         <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
-                                            <Typography component="span" variant="h6" sx={{ display: 'block', color: '#0284C7', fontWeight: 900, lineHeight: 1.2 }}>2 Hubs</Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Palya & Station</Typography>
+                                            <Typography component="span" variant="h6" sx={{ display: 'block', color: '#0284C7', fontWeight: 900, lineHeight: 1.2 }}>Multi</Typography>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Locations</Typography>
                                         </Box>
                                     </Grid>
                                     <Grid size={{ xs: 4 }}>
@@ -695,7 +695,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             title: 'Bike & Scooter Rentals',
                             tag: 'Self-Drive Fleet',
                             tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with zero deposit options and instant station delivery.',
-                            rate: 'Starts ₹350 / Day',
+                            rate: 'Check Live Rates',
                             image: '/images/services/two_wheelers.jpg',
                             color: '#F59E0B',
                             gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
@@ -703,7 +703,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             cta: 'Explore Bikes & Rent',
                             icon: <TwoWheelerIcon sx={{ fontSize: 20 }} />,
                             highlights: [
-                                '19+ Fleet (Activa 6G, Classic 350, CB350)',
+                                'Browse available models by branch',
                                 '2 Sanitized ISI Helmets & Phone Mount Free',
                                 'Honnavar Railway Station Delivery Available',
                             ],
@@ -714,7 +714,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             title: 'Coastal Cabs & Taxis',
                             tag: 'AC Chauffeur Fleet',
                             tagline: 'Chilled AC Swift Dzire, Ertiga & Innova Crysta with courteous, punctual local drivers who know every scenic shortcut.',
-                            rate: 'Station ₹400 • Tour ₹2,400',
+                            rate: 'Get a Trip Quote',
                             image: '/images/services/taxi.jpg',
                             color: '#0284C7',
                             gradient: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
@@ -733,7 +733,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             title: 'Homestays & Coastal Rooms',
                             tag: 'Verified Accommodations',
                             tagline: 'Peaceful Sharavathi riverfront wooden cottages, mangrove villas & beachside rooms serving home-cooked coastal meals.',
-                            rate: 'Starts ₹1,800 / Night',
+                            rate: 'Check Availability',
                             image: '/images/services/homestay.jpg',
                             color: '#E11D48',
                             gradient: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)',
@@ -752,7 +752,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             title: 'Sharavathi Backwater Boating',
                             tag: 'River & Mangrove Cruise',
                             tagline: 'Glide through tranquil mangrove channels and witness where the mighty Sharavathi River meets the Arabian Sea at sunset.',
-                            rate: 'Starts ₹400 / Person',
+                            rate: 'View Experiences',
                             image: '/images/services/boating.jpg',
                             color: '#059669',
                             gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
@@ -771,7 +771,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             title: 'Netrani Island Scuba Diving',
                             tag: 'PADI Coral Expedition',
                             tagline: 'Dive into Karnataka’s clearest coral waters with 1:1 certified dive master guidance. Non-swimmers and first-timers welcome!',
-                            rate: 'Starts ₹2,999 / Dive',
+                            rate: 'View Dive Packages',
                             image: '/images/services/scuba.jpg',
                             color: '#6366F1',
                             gradient: 'linear-gradient(135deg, #6366F1 0%, #4338CA 100%)',
@@ -790,7 +790,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             title: 'Local Travel Guides & Trails',
                             tag: 'Expert Local Insiders',
                             tagline: 'Discover hidden freshwater forest cascades, Mirjan Fort architecture, and panoramic cliff vantage points off the tourist track.',
-                            rate: 'Half-Day ₹1,200 • Full Day ₹2,200',
+                            rate: 'Request Guide Rates',
                             image: '/images/services/guide.jpg',
                             color: '#D97706',
                             gradient: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
@@ -1443,7 +1443,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             {
                                 icon: <PhoneIcon sx={{ color: '#8B5CF6', fontSize: 22 }} />,
                                 title: 'Ride & Prompt Return',
-                                desc: 'Enjoy 24/7 roadside helpline and swift deposit refund upon return.',
+                                desc: 'Return at the agreed branch and complete the standard return inspection.',
                             },
                         ].map((step, sIdx) => (
                             <Grid key={sIdx} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -1759,12 +1759,12 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                         >
                             <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#F59E0B' }} />}>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                    How much is the security deposit and when is it refunded?
+                                    Is a security deposit required for online bike rental bookings?
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails sx={{ pt: 0 }}>
                                 <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', lineHeight: 1.7 }}>
-                                    We offer zero-deposit options for eligible verified profiles, and nominal deposits (₹500 – ₹1,500 depending on vehicle model) for others. Security deposits are 100% refundable and credited directly back to your UPI or bank account within 2 hours of vehicle return following a quick inspection.
+                                    New online bike rental bookings have no security deposit. You can pay ₹100 in advance or the full quoted rental amount online, with any remaining rental balance due at pickup.
                                 </Typography>
                             </AccordionDetails>
                         </Accordion>
@@ -2167,6 +2167,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 open={serviceModalOpen}
                 onClose={() => setServiceModalOpen(false)}
                 initialServiceId={serviceModalId}
+                availableItems={availableItems}
             />
         </AppLayout>
     );

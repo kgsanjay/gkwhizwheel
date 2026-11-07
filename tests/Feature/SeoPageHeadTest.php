@@ -39,12 +39,12 @@ test('Welcome page integrates PageHead with unique title, meta description, cano
     expect($content)
         ->toContain("import PageHead from '../Components/SEO/PageHead'")
         ->toContain('<PageHead')
-        ->toContain('title="Bike Rental Honnavar | Boating, Scuba, Tours – GK WhizWheel"')
+        ->toContain('title="GK WhizWheel | Bike Rentals, Cabs, Boating, Stays & Tours"')
         ->toContain('canonicalUrl="https://whizwheels.in/"')
         ->toContain('"@type": "LocalBusiness"')
         ->toContain('"telephone": "+918660989586"')
-        ->toContain('"priceRange": "₹350 - ₹5000"')
-        ->toContain('"openingHours": "Mo-Su 06:00-23:00"')
+        ->toContain('"priceRange": "Contact for current rates"')
+        ->toContain('"areaServed": ["Honnavar", "Murudeshwar", "Coastal Karnataka"]')
         ->toContain('"@type": "PostalAddress"')
         ->toContain('"@type": "GeoCoordinates"');
 
@@ -58,8 +58,8 @@ test('Welcome page integrates PageHead with unique title, meta description, cano
     expect($descMatches)->not->toBeEmpty();
     expect(mb_strlen($descMatches[1]))->toBeLessThan(155);
     expect($descMatches[1])
-        ->toContain('Honnavar')
-        ->toContain('Karavali coast');
+        ->toContain('coastal Karnataka')
+        ->toContain('bike rentals');
 });
 
 test('Services, ServiceDetail, Bikes/Index, and Bikes/Show pages integrate PageHead with unique metadata and canonical URLs', function (): void {
@@ -88,7 +88,7 @@ test('Services, ServiceDetail, Bikes/Index, and Bikes/Show pages integrate PageH
         ->toContain("import PageHead from '../../Components/SEO/PageHead'")
         ->toContain('<PageHead')
         ->toContain('canonicalUrl="https://whizwheels.in/services/bikes"')
-        ->toContain('title="Browse Fleet & Rates - Bike Rental in Honnavar | GK WhizWheel"');
+        ->toContain('title="Bike & Scooter Rentals by Branch | GK WhizWheel"');
 
     // Bikes/Show.jsx
     expect($bikesShowContent)
@@ -304,7 +304,7 @@ test('FAQ sections on Welcome, Services, HowItWorks, and individual service page
         ],
         'Bikes/Index.jsx' => [
             'sampleQuestion' => 'What is the average honnavar bike rental price?',
-            'sampleAnswer' => 'Honda Activa scooters start from ₹350–₹400/day',
+            'sampleAnswer' => 'Rates are calculated from the bike, selected dates',
         ],
         'ServiceDetail.jsx' => [
             'sampleQuestion' => null, // Dynamic FAQs per service

@@ -97,7 +97,7 @@ export default function Services({ availableItems = [] }) {
         bikes: {
             id: 'two_wheelers',
             title: 'Bike & Scooter Rentals',
-            rate: 'From ₹350 / Day',
+            rate: 'Check Live Rates',
             image: '/images/services/two_wheelers.jpg',
             badge: 'Instant Handover',
             color: '#F59E0B',
@@ -107,7 +107,7 @@ export default function Services({ availableItems = [] }) {
         cabs: {
             id: 'taxi',
             title: 'Coastal Cabs & Taxis',
-            rate: 'Station ₹400 • Tour ₹2,400',
+            rate: 'Get a Trip Quote',
             image: '/images/services/taxi.jpg',
             badge: 'Zero Surge Pricing',
             color: '#0284C7',
@@ -117,7 +117,7 @@ export default function Services({ availableItems = [] }) {
         homestays: {
             id: 'homestay',
             title: 'Homestays & Coastal Rooms',
-            rate: 'Starts ₹1,800 / Night',
+            rate: 'Check Availability',
             image: '/images/services/homestay.jpg',
             badge: 'Riverfront & Beach',
             color: '#E11D48',
@@ -127,7 +127,7 @@ export default function Services({ availableItems = [] }) {
         boating: {
             id: 'boating',
             title: 'Sharavathi Backwater Boating',
-            rate: 'Starts ₹400 / Person',
+            rate: 'View Experiences',
             image: '/images/services/boating.jpg',
             badge: 'Certified Captains',
             color: '#059669',
@@ -137,7 +137,7 @@ export default function Services({ availableItems = [] }) {
         scuba: {
             id: 'scuba',
             title: 'Netrani Island Scuba Diving',
-            rate: 'Starts ₹2,999 / Dive',
+            rate: 'View Dive Packages',
             image: '/images/services/scuba.jpg',
             badge: 'PADI Certified',
             color: '#6366F1',
@@ -147,7 +147,7 @@ export default function Services({ availableItems = [] }) {
         tours: {
             id: 'tours',
             title: 'Custom Karavali Vacation Combos',
-            rate: 'Save 10% on Bundles',
+            rate: 'Build a Custom Package',
             image: '/images/services/tour.jpg',
             badge: 'All-in-One Package',
             color: '#8B5CF6',
@@ -179,7 +179,7 @@ export default function Services({ availableItems = [] }) {
             title: 'Bike & Scooter Rentals',
             tag: 'Self-Drive Fleet',
             tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with zero deposit options and instant station delivery.',
-            rate: 'Starts ₹350 / Day',
+            rate: 'Check Live Rates',
             image: '/images/services/two_wheelers.jpg',
             color: '#F59E0B',
             gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
@@ -187,7 +187,7 @@ export default function Services({ availableItems = [] }) {
             cta: 'Explore Bikes & Rent',
             icon: <TwoWheelerIcon sx={{ fontSize: 20 }} />,
             highlights: [
-                '19+ Fleet (Activa 6G, Classic 350, CB350)',
+                'See active fleet and model availability',
                 '2 Sanitized ISI Helmets & Phone Mount Free',
                 'Honnavar Railway Station Delivery Available',
             ],
@@ -199,7 +199,7 @@ export default function Services({ availableItems = [] }) {
             title: 'Coastal Cabs & Taxis',
             tag: 'AC Chauffeur Fleet',
             tagline: 'Chilled AC Swift Dzire, Ertiga & Innova Crysta with courteous, punctual local drivers who know every scenic shortcut.',
-            rate: 'Station ₹400 • Tour ₹2,400',
+            rate: 'Get a Trip Quote',
             image: '/images/services/taxi.jpg',
             color: '#0284C7',
             gradient: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
@@ -219,7 +219,7 @@ export default function Services({ availableItems = [] }) {
             title: 'Homestays & Coastal Rooms',
             tag: 'Verified Accommodations',
             tagline: 'Peaceful Sharavathi riverfront wooden cottages, mangrove villas & beachside rooms serving home-cooked coastal meals.',
-            rate: 'Starts ₹1,800 / Night',
+            rate: 'Check Availability',
             image: '/images/services/homestay.jpg',
             color: '#E11D48',
             gradient: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)',
@@ -239,7 +239,7 @@ export default function Services({ availableItems = [] }) {
             title: 'Sharavathi Backwater Boating',
             tag: 'River & Mangrove Cruise',
             tagline: 'Glide through tranquil mangrove channels and witness where the mighty Sharavathi River meets the Arabian Sea at sunset.',
-            rate: 'Starts ₹400 / Person',
+            rate: 'View Experiences',
             image: '/images/services/boating.jpg',
             color: '#059669',
             gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
@@ -259,7 +259,7 @@ export default function Services({ availableItems = [] }) {
             title: 'Netrani Island Scuba Diving',
             tag: 'PADI Coral Expedition',
             tagline: 'Dive into Karnataka’s clearest coral waters with 1:1 certified dive master guidance. Non-swimmers and first-timers welcome!',
-            rate: 'Starts ₹2,999 / Dive',
+            rate: 'View Dive Packages',
             image: '/images/services/scuba.jpg',
             color: '#6366F1',
             gradient: 'linear-gradient(135deg, #6366F1 0%, #4338CA 100%)',
@@ -279,7 +279,7 @@ export default function Services({ availableItems = [] }) {
             title: 'Local Travel Guides & Trails',
             tag: 'Expert Local Insiders',
             tagline: 'Discover hidden freshwater forest cascades, Mirjan Fort architecture, and panoramic cliff vantage points off the tourist track.',
-            rate: 'Half-Day ₹1,200 • Full Day ₹2,200',
+            rate: 'Request Guide Rates',
             image: '/images/services/guide.jpg',
             color: '#D97706',
             gradient: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
@@ -390,7 +390,7 @@ export default function Services({ availableItems = [] }) {
         <AppLayout>
             <PageHead
                 title="Honnavar Travel & Rental Services Hub | GK WhizWheel"
-                description="Explore all 7 travel services in Honnavar: self-drive bike rentals, AC cabs, backwater boating, Netrani scuba diving, homestays, and tour packages."
+                description="Explore travel and rental services across coastal Karnataka: self-drive bike rentals, AC cabs, backwater boating, Netrani scuba diving, homestays, and tour packages."
                 canonicalUrl="https://whizwheels.in/services"
                 ogImage="/images/logo.png"
                 ogType="website"
@@ -538,7 +538,7 @@ export default function Services({ availableItems = [] }) {
                                     {[
                                         { icon: <TrainIcon sx={{ fontSize: 16 }} />, label: '5-Min Station Handover' },
                                         { icon: <VerifiedUserIcon sx={{ fontSize: 16 }} />, label: 'Verified Local Operators' },
-                                        { icon: <ShieldIcon sx={{ fontSize: 16 }} />, label: 'Zero Deposit & Flat Rates' },
+                                        { icon: <ShieldIcon sx={{ fontSize: 16 }} />, label: 'Deposit-Free Bike Booking' },
                                         { icon: <SupportAgentIcon sx={{ fontSize: 16 }} />, label: '24/7 Coastal Support' },
                                     ].map((pill, pIdx) => (
                                         <Grid key={pIdx} size={{ xs: 6, sm: 6 }}>
@@ -636,7 +636,7 @@ export default function Services({ availableItems = [] }) {
                                     </Typography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                                         {[
-                                            { name: '🛵 Bikes (₹350)', href: '#service-bikes', color: '#F59E0B' },
+                                            { name: '🛵 Bikes', href: '#service-bikes', color: '#F59E0B' },
                                             { name: '🚖 Cabs', href: '#service-cabs', color: '#0284C7' },
                                             { name: '🏡 Stays', href: '#service-homestays', color: '#E11D48' },
                                             { name: '🚤 Boating', href: '#service-boating', color: '#059669' },
@@ -975,10 +975,10 @@ export default function Services({ availableItems = [] }) {
                         >
                             <Grid container spacing={3}>
                                 {[
-                                    { value: '19+ Fleet', title: 'Two-Wheelers & Cabs', desc: 'Activa 6G, Classic 350, Dzire & Ertiga ready' },
-                                    { value: '< 5 Mins', title: 'Station Exit Handover', desc: 'Platform 1 delivery as your Konkan train arrives' },
-                                    { value: '100% Certified', title: 'PADI & Boat Captains', desc: 'Lifejackets & certified gear on all water safaris' },
-                                    { value: '10,000+', title: 'Happy Explorers', desc: '5.0★ Google rating with 324+ verified tourist reviews' },
+                                    { value: 'Live Fleet', title: 'Two-Wheelers & Cabs', desc: 'See available bikes and request cab quotes' },
+                                    { value: 'Local Pickup', title: 'Branch Pickup', desc: 'Confirm the pickup location when booking' },
+                                    { value: 'Activities', title: 'Water Experiences', desc: 'Explore boating and diving options' },
+                                    { value: '7 Services', title: 'Travel Categories', desc: 'Bike rentals, cabs, stays, boating, scuba, guides and tours' },
                                 ].map((stat, sIdx) => (
                                     <Grid key={sIdx} size={{ xs: 6, md: 3 }}>
                                         <Box
@@ -2004,7 +2004,7 @@ export default function Services({ availableItems = [] }) {
                                 lineHeight: 1.7,
                             }}
                         >
-                            From self-drive bikes starting ₹350/day to airport taxi transfers, serene Sharavathi riverfront cottages, mangrove boating, and Netrani coral diving — we coordinate your entire holiday with zero hassle.
+                            From self-drive bike rentals with date-based quotes to airport taxi transfers, serene Sharavathi riverfront cottages, mangrove boating, and Netrani coral diving — we coordinate your entire holiday with zero hassle.
                         </Typography>
 
                         {/* Service Pills Quick Access */}

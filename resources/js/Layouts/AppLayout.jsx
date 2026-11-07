@@ -61,10 +61,10 @@ import { useColorMode } from '../theme/ColorModeContext';
 const servicesList = [
     {
         title: 'Bike & Scooter Rentals',
-        desc: 'Activa, Dio, Classic 350 & EV fleet from ₹350/day',
+        desc: 'Browse listed scooters and motorcycles',
         href: '/services/bikes',
         icon: <TwoWheelerIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-        badge: 'Starts ₹350',
+        badge: 'Browse Fleet',
     },
     {
         title: 'Coastal Cabs & Taxis',
@@ -111,10 +111,14 @@ const servicesList = [
 ];
 
 export default function AppLayout({ children, fullWidth = false, noFooterMargin = false }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash, public_branches: publicBranches = [] } = usePage().props;
     const { url = '/' } = usePage();
     const { mode, toggleColorMode } = useColorMode();
     const isDark = mode === 'dark';
+    const activeCities = [...new Set(publicBranches.map((branch) => branch.city).filter(Boolean))];
+    const locationLabel = activeCities.length ? activeCities.join(' & ') : 'Coastal Karnataka';
+    const whatsappGeneralUrl = 'https://wa.me/918660989586?text='
+        + encodeURIComponent('Hi GK WhizWheel, I would like to enquire about your travel and rental services.');
 
     const [userMenuAnchor, setUserMenuAnchor] = useState(null);
     const isUserMenuOpen = Boolean(userMenuAnchor);
@@ -200,11 +204,11 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                Palya Main Rd, Honnavar, Karnataka 581334
+                                {locationLabel} · Karnataka
                             </Typography>
                             <Box
                                 component="a"
-                                href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"
+                                href="/services/bikes"
                                 target="_blank"
                                 rel="noreferrer"
                                 sx={{
@@ -219,13 +223,13 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     '&:hover': { textDecoration: 'underline' },
                                 }}
                             >
-                                <DirectionsIcon sx={{ fontSize: 13 }} /> Get Directions
+                                <DirectionsIcon sx={{ fontSize: 13 }} /> Explore Branches
                             </Box>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                             <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
                             <Typography variant="caption" sx={{ color: '#FBBF24', fontWeight: 700 }}>
-                                5.0 ★★★★★ (324 Google Reviews) • Open 24 Hours
+                                Travel, rentals & local experiences
                             </Typography>
                         </Box>
                         <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', gap: 0.75 }}>
@@ -289,7 +293,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         </Box>
                         <Box
                             component="a"
-                            href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20am%20looking%20for%20a%20bike%20rental%20in%20Honnavar."
+                            href={whatsappGeneralUrl}
                             target="_blank"
                             rel="noreferrer"
                             sx={{
@@ -352,7 +356,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             <Box
                                 component="img"
                                 src="/images/logo.png"
-                                alt="GK WhizWheels — Bike Rental in Honnavar"
+                                alt="GK WhizWheel — travel and rental services"
                                 sx={{
                                     height: { xs: 44, sm: 52 },
                                     width: 'auto',
@@ -380,7 +384,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5, mt: 0.2 }}>
                                     <ElectricBoltIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
                                     <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, letterSpacing: '0.02em' }}>
-                                        Honnavar, Karnataka
+                                        {locationLabel}, Karnataka
                                     </Typography>
                                 </Box>
                             </Box>
@@ -871,14 +875,14 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1.5, mb: 2, borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
                     <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 850, color: isDark ? '#FBBF24' : '#B45309', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.76rem' }}>
-                            Honnavar & Karavali Coastal Services
+                            Coastal Karnataka Travel & Rental Services
                         </Typography>
                         <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: '0.82rem', mt: 0.2 }}>
                             Verified local fleet, stay accommodations & water adventure packages
                         </Typography>
                     </Box>
                     <Chip
-                        label="7 Services"
+                        label={`${servicesList.length} Services`}
                         size="small"
                         sx={{
                             bgcolor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
@@ -1044,7 +1048,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 GK WhizWheels
                             </Typography>
                             <Typography variant="caption" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 700 }}>
-                                Honnavar, Karnataka
+                                {locationLabel}, Karnataka
                             </Typography>
                         </Box>
                     </Box>
@@ -1213,10 +1217,10 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             }}
                         >
                             <Typography variant="subtitle2" sx={{ fontWeight: 850, color: isDark ? '#FBBF24' : '#92400E', mb: 0.5 }}>
-                                Rent Instantly in Honnavar
+                                Explore and book our services
                             </Typography>
                             <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', display: 'block', mb: 1.5, lineHeight: 1.4 }}>
-                                Sign in to track bookings, or start by picking your favorite bike.
+                                Sign in to manage bookings, or browse bikes, cabs, activities and stays.
                             </Typography>
                             <Stack direction="row" spacing={1}>
                                 <Button
@@ -1373,7 +1377,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     }}
                                 />
                                 <Chip
-                                    label="7 Services"
+                                    label={`${servicesList.length} Services`}
                                     size="small"
                                     sx={{
                                         height: 20,
@@ -1494,10 +1498,10 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         }}
                     >
                         <Typography variant="caption" sx={{ color: isDark ? '#34D399' : '#15803D', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', mb: 0.5 }}>
-                            24/7 Honnavar Desk & Hubs
+                            Our active service branches
                         </Typography>
                         <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 700, mb: 1.5, fontSize: '0.84rem' }}>
-                            Express Station Desk (Platform 1 Exit) & Palya Main Rd Head Office.
+                            {locationLabel} · Contact us to arrange pickup and services.
                         </Typography>
 
                         <Stack spacing={1}>
@@ -1520,7 +1524,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             </Button>
                             <Button
                                 component="a"
-                                href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20am%20looking%20for%20a%20bike%20rental%20in%20Honnavar."
+                                href={whatsappGeneralUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 variant="contained"
@@ -1628,17 +1632,17 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             },
                             {
                                 icon: <StarIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-                                title: '5.0 ★ Google Rated',
-                                desc: '324+ Verified traveler & tourist reviews',
+                                title: 'Multiple Travel Services',
+                                desc: 'Bikes, cabs, stays, boating, diving and tours',
                             },
                             {
                                 icon: <LocationOnIcon sx={{ color: '#38BDF8', fontSize: 22 }} />,
-                                title: 'Dual Honnavar Hubs',
-                                desc: 'Palya Main Rd Head Office & Railway Station Hub',
+                                title: 'Active Rental Branches',
+                                desc: locationLabel,
                             },
                             {
                                 icon: <ElectricBoltIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-                                title: 'Zero Deposit Options',
+                                title: 'Deposit-Free Online Bike Rentals',
                                 desc: 'Paperless digital KYC & instant confirmation',
                             },
                         ].map((badge, bIdx) => (
@@ -1678,7 +1682,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 <Box
                                     component="img"
                                     src="/images/logo.png"
-                                    alt="GK WhizWheels — Honnavar Bike Rentals & Travel Hub"
+                                    alt="GK WhizWheel — travel and rental services"
                                     sx={{ height: 48, width: 'auto', borderRadius: 1.5 }}
                                 />
                                 <Box>
@@ -1686,7 +1690,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         GK WhizWheels
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800, letterSpacing: '0.02em' }}>
-                                        #1 Travel & Rental Hub in Honnavar
+                                        Coastal Karnataka Travel & Rental Services
                                     </Typography>
                                 </Box>
                             </Box>
@@ -1699,14 +1703,14 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, mt: '2px', flexShrink: 0 }} />
                                     <Box>
                                         <Typography variant="body2" sx={{ color: '#F1F5F9', fontWeight: 700, fontSize: '0.84rem' }}>
-                                            Palya Main Rd, Honnavar, Karnataka 581334
+                                            {locationLabel} · Karnataka
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>
                                             Plus Railway Station Hub (Platform 1 Exit)
                                         </Typography>
                                         <Box
                                             component="a"
-                                            href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"
+                                            href="/services/bikes"
                                             target="_blank"
                                             rel="noreferrer"
                                             sx={{
@@ -1721,7 +1725,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                                 '&:hover': { textDecoration: 'underline' },
                                             }}
                                         >
-                                            <DirectionsIcon sx={{ fontSize: 13 }} /> Get Directions on Google Maps ↗
+                                            <DirectionsIcon sx={{ fontSize: 13 }} /> Explore Branches on Google Maps ↗
                                         </Box>
                                     </Box>
                                 </Box>
@@ -1974,7 +1978,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B' }}>•</Typography>
                             <Typography variant="caption" sx={{ color: '#38BDF8', fontWeight: 750 }}>
-                                ⚡ Zero Security Deposit Option
+                                ⚡ No Deposit for Online Bike Rentals
                             </Typography>
                         </Box>
                     </Box>
@@ -1990,7 +1994,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         }}
                     >
                         <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.82rem', textAlign: { xs: 'center', sm: 'left' } }}>
-                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. Palya Main Rd, Honnavar, Karnataka 581334.
+                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. {locationLabel} · Karnataka.
                         </Typography>
                         <Stack direction="row" spacing={2.5} flexWrap="wrap" justifyContent="center">
                             <Typography component={Link} href="/about" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
@@ -2098,7 +2102,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                 >
                     <ExploreIcon sx={{ fontSize: 20, color: '#38BDF8' }} />
                     <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 800, mt: 0.2 }}>
-                        7 Services
+                        {servicesList.length} Services
                     </Typography>
                 </Button>
 
@@ -2123,8 +2127,8 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         '&:hover': { bgcolor: '#D97706' },
                     }}
                 >
-                    <TwoWheelerIcon sx={{ fontSize: 18 }} />
-                    Book Ride
+                    <ExploreIcon sx={{ fontSize: 18 }} />
+                    Book Now
                 </Button>
             </Box>
         </Box>

@@ -39,6 +39,15 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'public_branches' => fn () => \App\Models\Store::query()
+                ->where('status', \App\Enums\StoreStatus::ACTIVE)
+                ->orderBy('name')
+                ->get(['id', 'name', 'city', 'state'])
+                ->map(fn ($store): array => [
+                    'id' => $store->id, 'name' => $store->name,
+                    'city' => $store->city, 'state' => $store->state,
+                    'slug' => \Illuminate\Support\Str::slug($store->city ?: $store->name),
+                ])->values()->all(),
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
