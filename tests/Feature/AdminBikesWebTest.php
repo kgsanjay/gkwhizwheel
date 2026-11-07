@@ -403,3 +403,67 @@ test('super admin can download sample CSV template', function (): void {
     $response->assertOk()
         ->assertHeader('content-disposition', 'attachment; filename=gkwhizwheel_bikes_sample.csv');
 });
+
+test('admin can register separate Activas under one shared model with distinct registrations', function (): void {
+    $model = \App\Models\BikeModel::create([
+        'category_id' => $this->category->id, 'brand' => 'Honda', 'name' => 'Activa 6G',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+    ]);
+    $payload = [
+        'bike_model_id' => $model->id, 'category_id' => $this->category->id,
+        'brand' => 'Honda', 'model_name' => 'Activa 6G',
+        'fuel_type' => FuelType::PETROL->value, 'transmission' => Transmission::AUTOMATIC->value,
+        'home_store_id' => $this->store1->id, 'current_store_id' => $this->store1->id,
+    ];
+
+    $this->actingAs($this->superAdmin)->get('/admin/bikes/create')->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('bike_models', 1)
+            ->where('bike_models.0.id', $model->id));
+
+    foreach (['KA-01-ACT-1001', 'KA-01-ACT-1002'] as $registration) {
+        $this->actingAs($this->superAdmin)->post('/admin/bikes', [
+            ...$payload, 'registration_number' => $registration,
+        ])->assertRedirect();
+    }
+
+    expect($model->bikes()->count())->toBe(2)
+        ->and($model->bikes()->distinct()->count('registration_number'))->toBe(2);
+});
+
+test('model linked vehicle creation rejects mismatched specifications', function (): void {
+    $model = \App\Models\BikeModel::create([
+        'category_id' => $this->category->id, 'brand' => 'Honda', 'name' => 'Activa 6G',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+    ]);
+    $payload = [
+        'bike_model_id' => $model->id, 'category_id' => $this->category->id,
+        'brand' => 'Honda', 'model_name' => 'Dio',
+        'fuel_type' => FuelType::PETROL->value, 'transmission' => Transmission::AUTOMATIC->value,
+        'home_store_id' => $this->store1->id, 'current_store_id' => $this->store1->id,
+        'registration_number' => 'KA-01-ACT-1003',
+    ];
+
+    $this->actingAs($this->superAdmin)->post('/admin/bikes', $payload)
+        ->assertSessionHasErrors('model_name');
+    expect(Bike::where('registration_number', 'KA-01-ACT-1003')->exists())->toBeFalse();
+});
+
+test('editing a bike can link a matching existing bike but not alter catalog identity', function (): void {
+    $model = \App\Models\BikeModel::create([
+        'category_id' => $this->category->id, 'brand' => 'Ather', 'name' => '450X',
+        'fuel_type' => FuelType::ELECTRIC, 'transmission' => Transmission::AUTOMATIC,
+    ]);
+    $this->actingAs($this->superAdmin)->post('/admin/bikes/'.$this->bike->id, [
+        '_method' => 'put', 'bike_model_id' => $model->id,
+    ])->assertRedirect();
+    expect($this->bike->fresh()->bike_model_id)->toBe($model->id);
+
+    $this->actingAs($this->superAdmin)->get('/admin/bikes/'.$this->bike->id.'/edit')
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('bike.bike_model_id', $model->id)->has('bike_models', 1));
+
+    $this->actingAs($this->superAdmin)->post('/admin/bikes/'.$this->bike->id, [
+        '_method' => 'put', 'model_name' => 'Dio',
+    ])->assertSessionHasErrors('model_name');
+    expect($this->bike->fresh()->model_name)->toBe('450X');
+});
