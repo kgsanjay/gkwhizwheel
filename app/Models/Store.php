@@ -28,6 +28,7 @@ class Store extends Model
         'latitude',
         'longitude',
         'phone',
+        'google_maps_url',
         'operating_hours',
         'status',
     ];
