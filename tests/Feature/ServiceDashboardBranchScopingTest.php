@@ -68,3 +68,79 @@ test('manager dashboard reports only assigned branch service inventory and booki
     $this->actingAs($manager)->get('/admin/dashboard?store_id='.$murudeshwar->id)
         ->assertForbidden();
 });
+
+test('relocation tasks appear only in dashboard data for their required branch', function (): void {
+    $honnavar = Store::create([
+        'name' => 'Honnavar Return Hub', 'address_line' => 'Main Road', 'city' => 'Honnavar',
+        'state' => 'Karnataka', 'pincode' => '581334', 'latitude' => 14.28,
+        'longitude' => 74.45, 'phone' => '9888876021', 'status' => StoreStatus::ACTIVE,
+    ]);
+    $murudeshwar = Store::create([
+        'name' => 'Murudeshwar Return Hub', 'address_line' => 'Bus Stand Road', 'city' => 'Murudeshwar',
+        'state' => 'Karnataka', 'pincode' => '581350', 'latitude' => 14.09,
+        'longitude' => 74.49, 'phone' => '9888876022', 'status' => StoreStatus::ACTIVE,
+    ]);
+    $manager = User::create([
+        'name' => 'Murudeshwar Manager', 'email' => 'relocation.manager@example.test',
+        'phone' => '9888876023', 'password' => 'Password123!',
+        'role' => UserRole::STORE_MANAGER, 'status' => UserStatus::ACTIVE,
+    ]);
+    $manager->stores()->attach($murudeshwar->id);
+    $manager->syncAssignedServices(['two_wheelers']);
+    $customer = User::create([
+        'name' => 'Rider', 'email' => 'relocation.rider@example.test',
+        'phone' => '9888876024', 'password' => 'Password123!',
+        'role' => UserRole::CUSTOMER, 'status' => UserStatus::ACTIVE,
+    ]);
+    $category = \App\Models\BikeCategory::create([
+        'name' => 'Scooter', 'base_daily_rate' => 600, 'default_deposit_amount' => 0,
+    ]);
+    $bike = \App\Models\Bike::create([
+        'category_id' => $category->id,
+        'current_store_id' => $honnavar->id, 'home_store_id' => $murudeshwar->id,
+        'brand' => 'Honda', 'model_name' => 'Activa',
+        'registration_number' => 'KA-47-XY-9090',
+        'fuel_type' => \App\Enums\FuelType::PETROL,
+        'transmission' => \App\Enums\Transmission::AUTOMATIC,
+        'status' => \App\Enums\BikeStatus::AVAILABLE,
+    ]);
+    $details = [
+        'bike_id' => $bike->id, 'user_id' => $customer->id,
+        'channel' => \App\Enums\BookingChannel::ONLINE,
+        'start_date' => now()->addDays(3)->toDateString(),
+        'end_date' => now()->addDays(4)->toDateString(),
+        'base_amount' => 1200, 'total_amount' => 1200,
+        'price_breakdown_json' => [],
+        'status' => \App\Enums\BookingStatus::CONFIRMED,
+    ];
+    $trigger = \App\Models\Booking::create($details + [
+        'booking_reference' => 'RELOC-TRIGGER-01',
+        'idempotency_key' => 'reloc-trigger',
+        'pickup_store_id' => $honnavar->id,
+        'return_store_id' => $honnavar->id,
+    ]);
+    $affected = \App\Models\Booking::create($details + [
+        'booking_reference' => 'RELOC-AFFECTED-01',
+        'idempotency_key' => 'reloc-affected',
+        'pickup_store_id' => $murudeshwar->id,
+        'return_store_id' => $murudeshwar->id,
+    ]);
+    \App\Models\BikeRelocationTask::create([
+        'bike_id' => $bike->id,
+        'triggering_booking_id' => $trigger->id,
+        'affected_booking_id' => $affected->id,
+        'from_store_id' => $honnavar->id,
+        'required_store_id' => $murudeshwar->id,
+        'status' => 'open',
+    ]);
+
+    $this->actingAs($manager)->get('/admin/dashboard')
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('pending_relocations', 1)
+            ->where('pending_relocations.0.affected_booking_reference', 'RELOC-AFFECTED-01'));
+
+    $manager->stores()->sync([$honnavar->id]);
+    $manager->refresh();
+    $this->actingAs($manager)->get('/admin/dashboard')
+        ->assertOk()->assertInertia(fn (Assert $page) => $page->has('pending_relocations', 0));
+});
