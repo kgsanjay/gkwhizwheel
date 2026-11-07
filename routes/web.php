@@ -292,6 +292,9 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/service-enquiries', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'index'])
         ->middleware('role:super_admin')->name('admin.service-enquiries.index');
 
+    Route::post('/service-enquiries/{id}/status', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'updateStatus'])
+        ->middleware('role:super_admin')->name('admin.service-enquiries.status');
+
     // Unified Bookings Calendar & Management
     Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'index'])->name('admin.bookings.index');
     Route::get('/bookings/{id}/edit', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'edit'])->name('admin.bookings.edit');

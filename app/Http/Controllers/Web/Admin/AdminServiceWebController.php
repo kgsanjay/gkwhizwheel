@@ -913,9 +913,11 @@ class AdminServiceWebController extends Controller
             'admin_notes' => ['nullable', 'string'],
         ]);
 
+        app(\App\Services\ServiceBookingLifecycle::class)->assertTransition($booking, $validated['status']);
+
         if ($validated['status'] === 'confirmed' && $booking->status !== 'confirmed') {
             try {
-                app(\App\Services\AvailabilityService::class)->confirmServiceBooking($booking);
+                app(\App\Services\ServiceAvailabilityService::class)->confirmServiceBooking($booking);
                 if (isset($validated['admin_notes'])) {
                     $booking->update(['admin_notes' => $validated['admin_notes']]);
                 }
@@ -923,8 +925,11 @@ class AdminServiceWebController extends Controller
                 return back()->with('error', $e->getMessage());
             }
         } else {
+            $oldStatus = $booking->status;
             $booking->update($validated);
-            if (in_array($validated['status'], ['completed', 'cancelled'], true) && $booking->serviceItem) {
+            if ($oldStatus !== $validated['status']
+                && in_array($validated['status'], ['completed', 'cancelled'], true)
+                && $booking->serviceItem) {
                 $booking->serviceItem->releaseAvailability();
             }
         }

@@ -8,11 +8,32 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceEnquiry;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use App\Services\ServiceEnquiryLifecycle;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AdminServiceEnquiryWebController extends Controller
 {
+    public function updateStatus(Request $request, int $id, ServiceEnquiryLifecycle $lifecycle): RedirectResponse
+    {
+        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+        $validated = $request->validate([
+            'status' => ['required', 'in:requested,reviewing,closed,cancelled'],
+        ]);
+
+        DB::transaction(function () use ($id, $validated, $lifecycle): void {
+            $enquiry = ServiceEnquiry::whereKey($id)->lockForUpdate()->firstOrFail();
+            $lifecycle->assertTransition($enquiry, $validated['status']);
+            if ($enquiry->status !== $validated['status']) {
+                $enquiry->update(['status' => $validated['status']]);
+            }
+        });
+
+        return back()->with('success', 'Enquiry review status updated. This is not a booking confirmation.');
+    }
+
     public function index(Request $request): Response
     {
         abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
