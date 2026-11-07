@@ -39,6 +39,19 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/bikes/{id}/availability', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'availability']);
     Route::match(['get', 'post'], '/bikes/{id}/price-quote', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'priceQuote'])
         ->middleware('throttle:coupons');
+    Route::get('/pickup-points', function (\Illuminate\Http\Request $request) {
+        $request->validate(['store_id' => ['required', 'integer', 'exists:stores,id']]);
+        $store = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+            ->findOrFail((int) $request->input('store_id'));
+        return response()->json([
+            'success' => true,
+            'data' => \App\Models\PickupPoint::where('store_id', $store->id)
+                ->where('is_active', true)->orderBy('sort_order')->orderBy('name')
+                ->get(['id', 'store_id', 'name', 'address_line', 'landmark', 'delivery_fee', 'supports_pickup', 'supports_return']),
+            'message' => '',
+        ]);
+    });
+
     Route::get('/stores', function () {
         return response()->json([
             'success' => true,
