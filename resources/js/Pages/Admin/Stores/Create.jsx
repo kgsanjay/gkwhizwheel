@@ -32,6 +32,7 @@ export default function StoresCreate({
         latitude: 12.9716,
         longitude: 77.5946,
         phone: '',
+        google_maps_url: '',
         status: 'active',
     });
 
@@ -169,6 +170,11 @@ export default function StoresCreate({
                                         helperText={errors.phone}
                                     />
                                 </Grid>
+                                <Grid size={{ xs: 12 }}><TextField fullWidth label="Official Google Maps URL" value={data.google_maps_url}
+                                    onChange={(e) => setData('google_maps_url', e.target.value)}
+                                    helperText={errors.google_maps_url || 'Paste a Google Maps share URL for the branch.'}
+                                    error={Boolean(errors.google_maps_url)} /></Grid>
+
 
                                 <Grid size={{ xs: 12 }}>
                                     <TextField
