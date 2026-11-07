@@ -64,6 +64,7 @@ export default function ScubaBookingModal({
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (auth?.user) {
@@ -106,13 +107,11 @@ export default function ScubaBookingModal({
             `Date: ${diveDate} (06:30 AM Departure)`,
             `Divers: ${paxCount} Pax | Murudeshwar Transfer: ${hotelTransfer ? 'Yes (+₹300/pax)' : 'Direct Arrival'}`,
             `Govt / Medical Fitness: Confirmed (${medicalConfirmed ? 'Yes' : 'No'})`,
-            `Total: ₹${estimatedCost.toLocaleString('en-IN')}`,
             specialNotes ? `Notes: ${specialNotes}` : null,
         ].filter(Boolean).join('\n');
 
         return {
             service_type: 'scuba',
-            service_item_id: null,
             customer_name: customerName.trim(),
             customer_phone: sanitizePhone(customerPhone),
             customer_email: customerEmail.trim() || null,
@@ -123,11 +122,11 @@ export default function ScubaBookingModal({
             quantity: Math.max(1, paxCount),
             payment_method: 'pay_on_arrival',
             customer_notes: notes,
-            custom_amount: estimatedCost,
         };
     };
 
     const submitBooking = (loggedInUser = null) => {
+        setSuccessMessage('');
         setSubmitting(true);
         const payload = getBookingPayload();
         if (loggedInUser) {
@@ -136,7 +135,8 @@ export default function ScubaBookingModal({
             if (loggedInUser.email && !payload.customer_email) payload.customer_email = loggedInUser.email;
         }
 
-        router.post('/services/book', payload, {
+        router.post('/services/enquire', payload, {
+            onSuccess: () => setSuccessMessage('Enquiry received. Our team will check availability and confirm the final price. No booking or payment has been confirmed.'),
             onError: (errs) => {
                 setSubmitting(false);
                 const first = Object.values(errs)[0];
@@ -288,6 +288,11 @@ export default function ScubaBookingModal({
                 </DialogTitle>
 
                 <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 }, pt: { xs: 2.5, sm: 3 } }}>
+                    {successMessage && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{successMessage}</Alert>}
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Request only — availability and final prices will be confirmed by our team.
+                        Figures on this form are indicative, not a payable quote.
+                    </Alert>
                     {errorMessage && (
                         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
                             {errorMessage}
@@ -508,7 +513,7 @@ export default function ScubaBookingModal({
                                 '&:hover': { bgcolor: '#4338CA' },
                             }}
                         >
-                            {submitting ? 'Confirming Dive Slot...' : 'Confirm Scuba Reservation (Pay on Arrival) →'}
+                            {submitting ? 'Confirming Dive Slot...' : 'Request Scuba Availability'}
                         </Button>
                     </Stack>
                 </DialogActions>
