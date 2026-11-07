@@ -110,11 +110,13 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
 
     const balanceDue = parseFloat(currentBooking.balance_due || 0);
     const advancePaid = parseFloat(currentBooking.advance_paid || 0);
-    const isFullyPaid = currentBooking.payment_status === 'paid' || balanceDue <= 0;
+    const isFullyPaid = currentBooking.payment_status === 'paid';
+    const isConfirmed = ['confirmed', 'in_progress', 'completed'].includes(currentBooking.status);
+    const isPayable = ['confirmed', 'in_progress'].includes(currentBooking.status) && balanceDue > 0;
 
     const handlePayOnline = async (payAmount = null) => {
         const amountToPay = payAmount || balanceDue;
-        if (amountToPay <= 0) return;
+        if (amountToPay <= 0 || !isPayable) return;
 
         setPaying(true);
         setPayErrorMsg('');
@@ -213,7 +215,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
 
     return (
         <AppLayout>
-            <Head title={`Booking Confirmed #${currentBooking.booking_number} - GK WhizWheels`} />
+            <Head title={`Service Booking ${currentBooking.booking_number} - GK WhizWheels`} />
 
             <Box sx={{ py: { xs: 5, md: 8 }, px: { xs: 2, sm: 4 }, maxWidth: 850, mx: 'auto' }}>
                 {/* Success Banner */}
@@ -236,10 +238,10 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                     </Box>
 
                     <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', mb: 1 }}>
-                        Booking Confirmed!
+                        {isConfirmed ? 'Booking Confirmed' : currentBooking.status === 'held' ? 'Reservation Held' : currentBooking.status === 'pending_payment' ? 'Awaiting Payment' : currentBooking.status === 'cancelled' ? 'Booking Cancelled' : currentBooking.status === 'expired' ? 'Hold Expired' : 'Booking Status'}
                     </Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 500, mx: 'auto' }}>
-                        Your reservation is verified. We look forward to hosting you in Honnavar!
+                        {isConfirmed ? 'Your reservation is confirmed. Review your service details and remaining balance.' : 'This service is not confirmed. Please check its current status before travelling or making a payment.'}
                     </Typography>
 
                     <Box sx={{ mt: 2 }}>
@@ -262,6 +264,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 variant="contained"
                                 component="a"
                                 href={`/services/bookings/${currentBooking.booking_number}/voucher`}
+                                disabled={!isConfirmed}
                                 download
                                 startIcon={<DownloadIcon />}
                                 size="small"
@@ -273,6 +276,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 variant="outlined"
                                 component="a"
                                 href={`/services/bookings/${currentBooking.booking_number}/print`}
+                                disabled={!isConfirmed}
                                 target="_blank"
                                 startIcon={<PrintIcon />}
                                 size="small"
@@ -302,7 +306,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                             Live Trip & Dispatch Progress
                         </Typography>
                         <Chip
-                            label={`STATUS: ${(currentBooking.status || 'confirmed').toUpperCase()}`}
+                            label={`STATUS: ${(currentBooking.status || 'unknown').toUpperCase()}`}
                             size="small"
                             color={currentBooking.status === 'completed' ? 'success' : currentBooking.status === 'in_progress' ? 'info' : currentBooking.status === 'cancelled' ? 'error' : 'default'}
                             sx={{ fontWeight: 800, fontSize: '0.7rem' }}
@@ -313,16 +317,16 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                             {
                                 step: 1,
                                 label: 'Reservation Confirmed',
-                                desc: 'Instant booking verified',
-                                active: true,
-                                completed: true,
+                                desc: isConfirmed ? 'Reservation confirmed' : 'Awaiting confirmation',
+                                active: isConfirmed,
+                                completed: isConfirmed,
                             },
                             {
                                 step: 2,
                                 label: 'Desk & Crew Dispatched',
-                                desc: 'Coordinator allocated',
-                                active: currentBooking.status !== 'cancelled',
-                                completed: currentBooking.status !== 'cancelled',
+                                desc: 'Assignment details are provided when verified',
+                                active: false,
+                                completed: false,
                             },
                             {
                                 step: 3,
@@ -684,7 +688,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 variant="outlined"
                                 color="success"
                                 component="a"
-                                href={`https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20have%20confirmed%20booking%20#${currentBooking.booking_number}%20for%20${encodeURIComponent(currentBooking.service_item?.name || serviceTitle)}.%20Payment%20status:%20${isFullyPaid ? 'Paid in Full' : 'Balance Due INR ' + balanceDue}.%20Please%20share%20coordinator%20details.`}
+                                href={`https://wa.me/918660989586?text=${encodeURIComponent(`Hello G.K. WhizWheel, please update the status of my ${serviceTitle} booking ${currentBooking.booking_number}. Payment: ${isFullyPaid ? 'Paid' : 'Pending'}.`)}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 startIcon={<WhatsAppIcon />}
