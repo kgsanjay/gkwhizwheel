@@ -103,6 +103,7 @@ Route::prefix('v1')->group(function (): void {
     // Customer Bookings
     Route::middleware(['auth:sanctum', 'throttle:bookings'])->prefix('bookings')->group(function (): void {
         Route::post('/hold', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'hold']);
+        Route::post('/model-hold', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'holdModel']);
         Route::get('/', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'index']);
         Route::get('/{id}', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'show']);
         Route::post('/{id}/checkout', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'checkout'])->middleware('throttle:payments');
