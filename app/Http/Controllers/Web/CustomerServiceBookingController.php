@@ -232,6 +232,13 @@ class CustomerServiceBookingController extends Controller
 
         $this->authorizeBookingAccess($request->user(), $booking);
 
+        if (! in_array($booking->status, ['confirmed', 'in_progress'], true) || ! $booking->service_item_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment is unavailable until the service and price are confirmed.',
+            ], 422);
+        }
+
         if ($booking->payment_status === 'paid' || (float) $booking->balance_due <= 0) {
             return response()->json([
                 'success' => false,
@@ -288,6 +295,13 @@ class CustomerServiceBookingController extends Controller
             'razorpay_signature' => ['nullable', 'string'],
             'amount' => ['required', 'numeric', 'min:1'],
         ]);
+
+        if (! in_array($booking->status, ['confirmed', 'in_progress'], true) || ! $booking->service_item_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment cannot be recorded against an unconfirmed reservation.',
+            ], 422);
+        }
 
         $paidAmount = (float) $validated['amount'];
 
