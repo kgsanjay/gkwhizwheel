@@ -56,14 +56,15 @@ class AdminServiceWebController extends Controller
         $user = request()->user();
         if ($user?->role === \App\Enums\UserRole::SUPER_ADMIN) {
             if ($requestedStoreId !== null) {
-                abort_unless(\App\Models\Store::whereKey($requestedStoreId)->exists(), 422, 'Invalid branch.');
+                abort_unless(\App\Models\Store::whereKey($requestedStoreId)
+                    ->where('status', \App\Enums\StoreStatus::ACTIVE->value)->exists(), 422, 'Branch is not active.');
             }
             return $requestedStoreId;
         }
 
         $authorized = $user?->getAuthorizedStoreIds() ?? [];
         if ($requestedStoreId !== null) {
-            abort_unless(in_array($requestedStoreId, $authorized, true), 403, 'Branch is not assigned.');
+            abort_unless(in_array($requestedStoreId, $authorized, true), 403, 'Branch is not assigned or active.');
             return $requestedStoreId;
         }
 
@@ -790,6 +791,7 @@ class AdminServiceWebController extends Controller
             $this->assertServiceRecordAccess($item->store_id);
         }
         $storeId = $this->resolveServiceStore(isset($validated['store_id']) ? (int) $validated['store_id'] : $item?->store_id);
+        abort_unless($storeId !== null, 422, 'Select an active branch for a new service booking.');
         if ($item !== null && $item->store_id !== $storeId) {
             abort(422, 'Service item must belong to the booking branch.');
         }

@@ -149,7 +149,7 @@ class AdminStaffWebController extends Controller
             'password' => ['nullable', 'string', 'min:8'],
             'status' => ['nullable', 'string', Rule::in([UserStatus::ACTIVE->value, UserStatus::BLACKLISTED->value])],
             'store_ids' => ['nullable', 'array'],
-            'store_ids.*' => ['integer', 'exists:stores,id'],
+            'store_ids.*' => ['integer', 'distinct', Rule::exists('stores', 'id')->where('status', StoreStatus::ACTIVE->value)],
             'services' => ['nullable', 'array'],
             'services.*' => ['string', Rule::in(['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'])],
         ]);

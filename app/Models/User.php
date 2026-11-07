@@ -313,7 +313,9 @@ class User extends Authenticatable
             return null;
         }
 
-        return $this->stores()->pluck('stores.id')->map(fn ($id) => (int) $id)->all();
+        return $this->stores()
+            ->where('stores.status', \App\Enums\StoreStatus::ACTIVE->value)
+            ->pluck('stores.id')->map(fn ($id) => (int) $id)->all();
     }
 
     /**

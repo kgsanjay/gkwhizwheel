@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Enums\UserRole;
+use App\Enums\StoreStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -49,7 +50,7 @@ class StoreStaffRequest extends FormRequest
                 Rule::in([UserRole::STAFF->value, UserRole::STORE_MANAGER->value]),
             ],
             'store_ids' => ['nullable', 'array'],
-            'store_ids.*' => ['integer', 'exists:stores,id'],
+            'store_ids.*' => ['integer', 'distinct', Rule::exists('stores', 'id')->where('status', StoreStatus::ACTIVE->value)],
             'services' => ['nullable', 'array'],
             'services.*' => ['string', Rule::in(['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'])],
         ];
