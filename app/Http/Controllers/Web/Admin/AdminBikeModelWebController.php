@@ -114,4 +114,84 @@ class AdminBikeModelWebController extends Controller
         return redirect()->route('admin.bike-models.index')
             ->with('success', 'Bike model created. Add and associate individually registered vehicles next.');
     }
+    /**
+     * Register multiple distinct physical vehicles under a single catalog
+     * model and branch. The entire batch is rejected if any row is invalid.
+     */
+    public function bulkRegister(int $id, Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+
+        $validated = $request->validate([
+            'store_id' => ['required', 'integer', 'exists:stores,id'],
+            'bikes' => ['required', 'array', 'min:1', 'max:50'],
+            'bikes.*.registration_number' => [
+                'required', 'string', 'max:30', 'distinct:ignore_case',
+                'unique:bikes,registration_number',
+            ],
+            'bikes.*.odometer_reading' => ['nullable', 'integer', 'min:0', 'max:99999999'],
+        ]);
+
+        $store = Store::findOrFail($validated['store_id']);
+        if ($store->status !== \App\Enums\StoreStatus::ACTIVE) {
+            throw ValidationException::withMessages([
+                'store_id' => 'The receiving branch must be active.',
+            ]);
+        }
+
+        $model = BikeModel::findOrFail($id);
+        if (! $model->is_active) {
+            throw ValidationException::withMessages([
+                'bike_model_id' => 'This catalog model is inactive.',
+            ]);
+        }
+
+        // This route has a superadmin guard; never expose it as a staff
+        // workaround for their restricted branch permissions.
+        DB::transaction(function () use ($validated, $id): void {
+            $model = BikeModel::whereKey($id)->lockForUpdate()->firstOrFail();
+            if (! $model->is_active) {
+                throw ValidationException::withMessages([
+                    'bike_model_id' => 'This catalog model is inactive.',
+                ]);
+            }
+
+            $rows = collect($validated['bikes']);
+            $registrations = $rows->pluck('registration_number')
+                ->map(fn (string $registration): string => mb_strtoupper(trim($registration)))
+                ->values()->all();
+
+            if (count($registrations) !== count(array_unique($registrations))) {
+                throw ValidationException::withMessages([
+                    'bikes' => 'Duplicate registration numbers are not allowed.',
+                ]);
+            }
+
+            if (Bike::withTrashed()->whereIn('registration_number', $registrations)->exists()) {
+                throw ValidationException::withMessages([
+                    'bikes' => 'One or more registration numbers already exist, including retired or deleted vehicles.',
+                ]);
+            }
+
+            foreach ($rows as $index => $row) {
+                Bike::create([
+                    'bike_model_id' => $model->id,
+                    'category_id' => $model->category_id,
+                    'brand' => $model->brand,
+                    'model_name' => $model->name,
+                    'fuel_type' => $model->fuel_type,
+                    'transmission' => $model->transmission,
+                    'registration_number' => $registrations[$index],
+                    'home_store_id' => $validated['store_id'],
+                    'current_store_id' => $validated['store_id'],
+                    'odometer_reading' => $row['odometer_reading'] ?? 0,
+                    'status' => BikeStatus::AVAILABLE,
+                ]);
+            }
+        });
+
+        return redirect()->route('admin.bike-models.index')
+            ->with('success', count($validated['bikes']).' individual bikes registered under '.$model->brand.' '.$model->name.'.');
+    }
+
 }
