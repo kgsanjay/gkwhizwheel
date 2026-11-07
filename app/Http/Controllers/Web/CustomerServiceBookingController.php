@@ -101,7 +101,7 @@ class CustomerServiceBookingController extends Controller
             $booking = DB::transaction(function () use (
                 $validated, $request, $item, $availabilityService, $bookingNumber,
                 $quantity, $baseAmount, $totalAmount, $advancePaid, $balanceDue,
-                $paymentStatus, $customerNotes, $quoteSnapshot
+                $paymentStatus, $customerNotes, $quoteSnapshot, $quote
             ): ServiceBooking {
                 $lockedQuote = \App\Models\ServiceQuoteSnapshot::whereKey($quoteSnapshot->id)
                     ->lockForUpdate()->firstOrFail();
