@@ -27,6 +27,10 @@ class Booking extends Model
         'bike_model_id',
         'user_id',
         'pickup_store_id',
+        'pickup_point_id',
+        'return_point_id',
+        'pickup_location_details',
+        'return_location_details',
         'return_store_id',
         'channel',
         'status',
@@ -104,6 +108,16 @@ class Booking extends Model
     /**
      * Store where return occurs.
      */
+    public function pickupPoint(): BelongsTo
+    {
+        return $this->belongsTo(PickupPoint::class, 'pickup_point_id');
+    }
+
+    public function returnPoint(): BelongsTo
+    {
+        return $this->belongsTo(PickupPoint::class, 'return_point_id');
+    }
+
     public function returnStore(): BelongsTo
     {
         return $this->belongsTo(Store::class, 'return_store_id');
