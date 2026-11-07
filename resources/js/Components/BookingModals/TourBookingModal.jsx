@@ -580,7 +580,7 @@ export default function TourBookingModal({
                                 '&:hover': { bgcolor: '#6D28D9' },
                             }}
                         >
-                            {submitting ? 'Confirming Reservation...' : 'Confirm Package Reservation →'}
+                            {submitting ? 'Sending Enquiry...' : 'Request Tour Quotation →'}
                         </Button>
                     </Stack>
                 </DialogActions>
