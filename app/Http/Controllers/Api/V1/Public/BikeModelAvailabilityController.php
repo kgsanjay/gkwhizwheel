@@ -159,8 +159,8 @@ class BikeModelAvailabilityController extends Controller
                         ? $imagePath
                         : \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath))
                     : null,
-                'indicative_daily_rate' => $this->indicativeRate($model, $filters['pickup_store_id'] ?? null),
-                'indicative_weekend_rate' => $this->indicativeRate($model, $filters['pickup_store_id'] ?? null, true),
+                'indicative_daily_rate' => $this->indicativeRate($model, ! empty($filters['pickup_store_id']) ? (int) $filters['pickup_store_id'] : null),
+                'indicative_weekend_rate' => $this->indicativeRate($model, ! empty($filters['pickup_store_id']) ? (int) $filters['pickup_store_id'] : null, true),
                 'total_units' => $units->count(),
                 'available_units' => $available,
                 'is_available' => $ready ? $available > 0 : null,
