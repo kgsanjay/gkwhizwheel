@@ -250,3 +250,88 @@ test('booking service itself rejects transition of an expired hold', function ()
         ->toThrow(\Illuminate\Validation\ValidationException::class);
     expect($booking->fresh()->status)->toBe(BookingStatus::HELD);
 });
+
+test('new web rental hold waives category deposit and retains rental total', function (): void {
+    $this->model->category->update(['default_deposit_amount' => 500]);
+    allocationBike($this, $this->honnavar, 'KA-47-NODEP-01');
+    Sanctum::actingAs($this->customer);
+    $response = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'deposit-free-01'))
+        ->assertCreated()
+        ->assertJsonPath('data.deposit_amount', 0);
+
+    $booking = Booking::findOrFail($response->json('data.id'));
+    expect((float) $booking->deposit_amount)->toBe(0.0)
+        ->and((float) $booking->total_amount)->toBeGreaterThan(0)
+        ->and($booking->price_breakdown_json['deposit_waived'])->toBeTrue();
+});
+
+test('₹100 advance checkout charges only ₹100 and stores outstanding balance', function (): void {
+    $this->model->category->update(['default_deposit_amount' => 500]);
+    allocationBike($this, $this->honnavar, 'KA-47-NODEP-02');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'payment-advance-01'))->assertCreated()->json('data.id');
+    $booking = Booking::findOrFail($bookingId);
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'razorpay',
+        'payment_option' => 'advance',
+    ])->assertOk()->assertJsonPath('data.amount', 100)
+        ->assertJsonPath('data.amount_paise', 10000)
+        ->assertJsonPath('data.payment_option', 'advance')
+        ->assertJsonPath('data.balance_due_on_pickup', round((float) $booking->total_amount - 100, 2));
+
+    $updated = $booking->fresh();
+    expect($updated->price_breakdown_json['checkout_amount'])->toBe(100)
+        ->and($updated->price_breakdown_json['checkout_payment_option'])->toBe('advance')
+        ->and((float) $updated->deposit_amount)->toBe(0.0);
+
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'razorpay', 'payment_option' => 'full',
+    ])->assertUnprocessable();
+});
+
+test('full web checkout charges rental total and no security deposit', function (): void {
+    $this->model->category->update(['default_deposit_amount' => 500]);
+    allocationBike($this, $this->honnavar, 'KA-47-NODEP-03');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'payment-full-01'))->assertCreated()->json('data.id');
+    $booking = Booking::findOrFail($bookingId);
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'razorpay',
+        'payment_option' => 'full',
+    ])->assertOk()
+        ->assertJsonPath('data.amount', (float) $booking->total_amount)
+        ->assertJsonPath('data.balance_due_on_pickup', 0)
+        ->assertJsonPath('data.payment_option', 'full');
+});
+
+test('PhonePe advance payment request uses the selected checkout amount', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-NODEP-04');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'payment-phonepe-01'))->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'phonepe', 'payment_option' => 'advance',
+    ])->assertOk()
+        ->assertJsonPath('data.amount', 100)
+        ->assertJsonPath('data.amount_paise', 10000)
+        ->assertJsonPath('data.payment_option', 'advance');
+});
+
+test('advance-only checkout cannot be used for older bookings with a deposit', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-NODEP-05');
+    Sanctum::actingAs($this->customer);
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'payment-legacy-01'))->assertCreated()->json('data.id');
+    Booking::findOrFail($bookingId)->update(['deposit_amount' => 500]);
+
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'razorpay', 'payment_option' => 'advance',
+    ])->assertUnprocessable();
+
+    expect(Booking::findOrFail($bookingId)->status)->toBe(BookingStatus::HELD);
+});
