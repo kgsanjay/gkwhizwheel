@@ -9,12 +9,15 @@ use App\Enums\BookingStatus;
 use App\Enums\FuelType;
 use App\Enums\StoreStatus;
 use App\Enums\Transmission;
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Exceptions\InvalidBookingTransitionException;
 use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\BikeConditionLog;
 use App\Models\Booking;
 use App\Models\Store;
+use App\Models\User;
 use App\Services\BookingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -48,7 +51,16 @@ beforeEach(function (): void {
         'odometer_reading' => 4500,
     ]);
     \Tests\Support\VerifiedBikeDocuments::attach($this->vehicle);
+    $this->customer = User::create([
+        'name' => 'Bike Replay Customer',
+        'email' => 'bike49-replay@example.test',
+        'phone' => '9000009549',
+        'password' => 'Password123!',
+        'role' => UserRole::CUSTOMER,
+        'status' => UserStatus::ACTIVE,
+    ]);
     $this->rental = Booking::create([
+        'user_id' => $this->customer->id,
         'booking_reference' => 'BK-P49-REPLAY-001',
         'bike_id' => $this->vehicle->id,
         'pickup_store_id' => $this->origin->id,
