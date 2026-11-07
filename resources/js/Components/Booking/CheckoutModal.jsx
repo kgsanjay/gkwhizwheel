@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
+import { useQuery } from '@tanstack/react-query';
 import {
     Dialog,
     DialogTitle,
@@ -19,6 +20,8 @@ import {
     Stack,
     IconButton,
     Chip,
+    TextField,
+    MenuItem,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -61,6 +64,30 @@ export default function CheckoutModal({
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [heldBooking, setHeldBooking] = useState(null);
+    const [pickupPointId, setPickupPointId] = useState('');
+    const [returnPointId, setReturnPointId] = useState('');
+    const [pickupDetails, setPickupDetails] = useState('');
+    const [returnDetails, setReturnDetails] = useState('');
+    const pickupPointsQuery = useQuery({
+        queryKey: ['checkout-pickup-points', pickupStore?.id],
+        queryFn: () => apiClient.get('/pickup-points', { params: { store_id: pickupStore.id } }),
+        enabled: Boolean(open && pickupStore?.id),
+        retry: false,
+    });
+    const returnPointsQuery = useQuery({
+        queryKey: ['checkout-return-points', returnStore?.id],
+        queryFn: () => apiClient.get('/pickup-points', { params: { store_id: returnStore.id } }),
+        enabled: Boolean(open && returnStore?.id),
+        retry: false,
+    });
+    const pickupPoints = (pickupPointsQuery.data?.data || []).filter((point) => point.supports_pickup);
+    const returnPoints = (returnPointsQuery.data?.data || []).filter((point) => point.supports_return);
+    const pickupPoint = pickupPoints.find((p) => String(p.id) === pickupPointId);
+    const returnPoint = returnPoints.find((p) => String(p.id) === returnPointId);
+    const hasPointOptions = pickupPoints.length > 0 && returnPoints.length > 0;
+    const pointSelectionValid = hasPointOptions && Boolean(pickupPoint && returnPoint)
+        && (pickupPoint.name.toLowerCase().includes('hotel') ? pickupDetails.trim().length >= 5 : true)
+        && (returnPoint.name.toLowerCase().includes('hotel') ? returnDetails.trim().length >= 5 : true);
     const requestKey = useRef(null);
     const finalQuote = heldBooking || quote;
     const total = finalQuote ? Number(finalQuote.total_amount || 0) : null;
@@ -94,6 +121,10 @@ export default function CheckoutModal({
      * then initiate payment checkout.
      */
     const handleBookAndPay = async () => {
+        if (!heldBooking && !pointSelectionValid) {
+            setErrorMessage('Choose valid pickup and return points. Hotel/custom requests need an address.');
+            return;
+        }
         setIsSubmitting(true);
         setErrorMessage('');
         setStatusMessage(heldBooking ? 'Preparing secure payment checkout...' : 'Checking available vehicles and reserving a bike...');
@@ -109,6 +140,10 @@ export default function CheckoutModal({
                     end_date: endDate,
                     pickup_store_id: Number(pickupStore.id),
                     return_store_id: Number(returnStore.id),
+                    pickup_point_id: Number(pickupPointId),
+                    return_point_id: Number(returnPointId),
+                    pickup_location_details: pickupPoint?.name.toLowerCase().includes('hotel') ? pickupDetails.trim() : null,
+                    return_location_details: returnPoint?.name.toLowerCase().includes('hotel') ? returnDetails.trim() : null,
                     coupon_code: couponCode.trim() || undefined,
                     addons: selectedAddons,
                 };
@@ -345,6 +380,42 @@ export default function CheckoutModal({
                     </CardContent>
                 </Card>
 
+                <Card variant="outlined" sx={{ borderRadius: 2, mb: 2, p: 2 }}>
+                    <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
+                        Pickup and return locations
+                    </Typography>
+                    <Stack spacing={2}>
+                        {(pickupPointsQuery.isError || returnPointsQuery.isError) && <Alert severity="error">
+                            Unable to load pickup points. Retry after checking the connection.
+                        </Alert>}
+                        {!pickupPointsQuery.isLoading && !returnPointsQuery.isLoading && !hasPointOptions && <Alert severity="warning">
+                            Pickup points are not published for both selected branches yet. Booking cannot continue until staff enables them.
+                        </Alert>}
+                        <TextField fullWidth select label={`Pickup point — ${pickupStore?.city || pickupStore?.name}`}
+                            value={pickupPointId} disabled={Boolean(heldBooking) || !hasPointOptions}
+                            onChange={(event) => { setPickupPointId(event.target.value); setPickupDetails(''); }}>
+                            {pickupPoints.map((point) => <MenuItem key={point.id} value={String(point.id)}>{point.name}</MenuItem>)}
+                        </TextField>
+                        {pickupPoint?.name.toLowerCase().includes('hotel') && <TextField
+                            fullWidth required label="Hotel name / exact pickup address" value={pickupDetails}
+                            disabled={Boolean(heldBooking)} onChange={(event) => setPickupDetails(event.target.value)}
+                            inputProps={{ maxLength: 255 }} />}
+                        <TextField fullWidth select label={`Return point — ${returnStore?.city || returnStore?.name}`}
+                            value={returnPointId} disabled={Boolean(heldBooking) || !hasPointOptions}
+                            onChange={(event) => { setReturnPointId(event.target.value); setReturnDetails(''); }}>
+                            {returnPoints.map((point) => <MenuItem key={point.id} value={String(point.id)}>{point.name}</MenuItem>)}
+                        </TextField>
+                        {returnPoint?.name.toLowerCase().includes('hotel') && <TextField
+                            fullWidth required label="Hotel name / exact return address" value={returnDetails}
+                            disabled={Boolean(heldBooking)} onChange={(event) => setReturnDetails(event.target.value)}
+                            inputProps={{ maxLength: 255 }} />}
+                        <Alert severity="info">
+                            Pickup and return arrangements are subject to branch confirmation.
+                            Location delivery charges have not been finalized and are not included in this rental quote.
+                            Any additional charge must be confirmed with you before collection.
+                        </Alert>
+                    </Stack>
+                </Card>
                 {/* No refundable security deposit is required for new online bike bookings. */}
                 <Alert severity="success" sx={{ mb: 2 }}>
                     No security deposit required. Pay ₹100 now to reserve, or pay the full rental amount.
@@ -487,7 +558,7 @@ export default function CheckoutModal({
                     color="secondary"
                     fullWidth
                     size="large"
-                    disabled={isSubmitting || (Boolean(heldBooking) && timeLeftSeconds <= 0)}
+                    disabled={isSubmitting || (!heldBooking && !pointSelectionValid) || (Boolean(heldBooking) && timeLeftSeconds <= 0)}
                     onClick={handleBookAndPay}
                     sx={{
                         py: 1.5,
@@ -523,7 +594,7 @@ export default function CheckoutModal({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
                     <SecurityIcon sx={{ fontSize: 14, color: '#64748B' }} />
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                        256-bit encrypted transaction • Concurrency-safe hold • Instant deposit refund on return
+                        Secure checkout • Concurrency-safe reservation • No security deposit
                     </Typography>
                 </Box>
             </DialogActions>
