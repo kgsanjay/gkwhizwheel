@@ -279,6 +279,9 @@ class AdminBookingWebController extends Controller
      */
     public function edit(int $id): Response
     {
+        $user = request()->user();
+        $isSuperAdmin = $user->role === UserRole::SUPER_ADMIN;
+
         $booking = Booking::with([
             'bike.category',
             'user',
