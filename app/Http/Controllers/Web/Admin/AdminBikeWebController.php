@@ -199,7 +199,10 @@ class AdminBikeWebController extends Controller
 
         return Inertia::render('Admin/Bikes/Create', [
             'categories' => BikeCategory::orderBy('name')->get(['id', 'name', 'base_daily_rate', 'default_deposit_amount']),
-            'stores' => Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']),
+            'stores' => Store::where('status', StoreStatus::ACTIVE)
+                ->when(auth()->user()?->getAuthorizedStoreIds() !== null,
+                    fn ($query) => $query->whereIn('id', auth()->user()->getAuthorizedStoreIds()))
+                ->orderBy('name')->get(['id', 'name', 'city']),
             'fuel_types' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], FuelType::cases()),
             'transmissions' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], Transmission::cases()),
             'statuses' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst(str_replace('_', ' ', $case->value))], BikeStatus::cases()),
@@ -320,7 +323,10 @@ class AdminBikeWebController extends Controller
                 ],
             ],
             'categories' => BikeCategory::orderBy('name')->get(['id', 'name', 'base_daily_rate', 'default_deposit_amount']),
-            'stores' => Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']),
+            'stores' => Store::where('status', StoreStatus::ACTIVE)
+                ->when(auth()->user()?->getAuthorizedStoreIds() !== null,
+                    fn ($query) => $query->whereIn('id', auth()->user()->getAuthorizedStoreIds()))
+                ->orderBy('name')->get(['id', 'name', 'city']),
             'fuel_types' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], FuelType::cases()),
             'transmissions' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst($case->value)], Transmission::cases()),
             'statuses' => array_map(fn ($case) => ['value' => $case->value, 'label' => ucfirst(str_replace('_', ' ', $case->value))], BikeStatus::cases()),
@@ -528,6 +534,13 @@ class AdminBikeWebController extends Controller
             }
 
             $bikeData = $validator->validated();
+            $authorizedStores = $request->user()->getAuthorizedStoreIds();
+            if ($authorizedStores !== null
+                && (! in_array((int) $bikeData['home_store_id'], $authorizedStores, true)
+                    || ! in_array((int) $bikeData['current_store_id'], $authorizedStores, true))) {
+                $errors[] = "Row {$rowNumber}: Both home and current stores must be assigned to your account.";
+                continue;
+            }
             if (! isset($bikeData['status'])) {
                 $bikeData['status'] = BikeStatus::AVAILABLE;
             }

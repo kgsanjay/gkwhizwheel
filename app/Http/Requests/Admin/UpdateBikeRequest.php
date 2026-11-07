@@ -30,10 +30,13 @@ class UpdateBikeRequest extends FormRequest
     {
         $bikeId = $this->route('id') ?? $this->route('bike');
 
+        $allowedStores = $this->user()?->getAuthorizedStoreIds();
+        $storeRule = $allowedStores === null ? [] : [Rule::in($allowedStores)];
+
         return [
             'category_id' => ['sometimes', 'integer', 'exists:bike_categories,id'],
-            'current_store_id' => ['sometimes', 'integer', 'exists:stores,id'],
-            'home_store_id' => ['sometimes', 'integer', 'exists:stores,id'],
+            'current_store_id' => ['sometimes', 'integer', 'exists:stores,id', ...$storeRule],
+            'home_store_id' => ['sometimes', 'integer', 'exists:stores,id', ...$storeRule],
             'brand' => ['sometimes', 'string', 'max:100'],
             'model_name' => ['sometimes', 'string', 'max:100'],
             'registration_number' => [

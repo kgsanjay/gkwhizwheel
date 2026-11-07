@@ -322,6 +322,17 @@ class BikeController extends Controller
             }
 
             $bikeData = $validator->validated();
+            $authorizedStores = $request->user()->getAuthorizedStoreIds();
+            if ($authorizedStores !== null
+                && (! in_array((int) $bikeData['home_store_id'], $authorizedStores, true)
+                    || ! in_array((int) $bikeData['current_store_id'], $authorizedStores, true))) {
+                $errors[] = [
+                    'row' => $rowNumber,
+                    'registration_number' => $row['registration_number'] ?? null,
+                    'errors' => ['store_id' => ['Both home and current branches must be assigned to your account.']],
+                ];
+                continue;
+            }
             if (! isset($bikeData['status'])) {
                 $bikeData['status'] = BikeStatus::AVAILABLE;
             }

@@ -10,6 +10,7 @@ use App\Enums\FuelType;
 use App\Enums\Transmission;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\Rule;
 
 class StoreBikeRequest extends FormRequest
 {
@@ -28,10 +29,13 @@ class StoreBikeRequest extends FormRequest
      */
     public function rules(): array
     {
+        $allowedStores = $this->user()?->getAuthorizedStoreIds();
+        $storeRule = $allowedStores === null ? [] : [Rule::in($allowedStores)];
+
         return [
             'category_id' => ['required', 'integer', 'exists:bike_categories,id'],
-            'current_store_id' => ['required', 'integer', 'exists:stores,id'],
-            'home_store_id' => ['required', 'integer', 'exists:stores,id'],
+            'current_store_id' => ['required', 'integer', 'exists:stores,id', ...$storeRule],
+            'home_store_id' => ['required', 'integer', 'exists:stores,id', ...$storeRule],
             'brand' => ['required', 'string', 'max:100'],
             'model_name' => ['required', 'string', 'max:100'],
             'registration_number' => ['required', 'string', 'max:30', 'unique:bikes,registration_number'],
