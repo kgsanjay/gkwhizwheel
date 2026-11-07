@@ -18,6 +18,7 @@ use App\Models\ActivityLog;
 use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\BikeDocument;
+use App\Models\BikeModel;
 use App\Models\Store;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -195,6 +196,8 @@ class AdminBikeWebController extends Controller
         Gate::authorize('create', Bike::class);
 
         return Inertia::render('Admin/Bikes/Create', [
+            'bike_models' => BikeModel::query()->where('is_active', true)
+                ->orderBy('brand')->orderBy('name')->get(['id', 'category_id', 'brand', 'name', 'fuel_type', 'transmission']),
             'categories' => BikeCategory::orderBy('name')->get(['id', 'name', 'base_daily_rate', 'default_deposit_amount']),
             'stores' => Store::where('status', StoreStatus::ACTIVE)
                 ->when(auth()->user()?->getAuthorizedStoreIds() !== null,
@@ -286,6 +289,7 @@ class AdminBikeWebController extends Controller
             'bike' => [
                 'id' => $bike->id,
                 'category_id' => $bike->category_id,
+                'bike_model_id' => $bike->bike_model_id,
                 'current_store_id' => $bike->current_store_id,
                 'home_store_id' => $bike->home_store_id,
                 'brand' => $bike->brand,
@@ -319,6 +323,11 @@ class AdminBikeWebController extends Controller
                     ] : null,
                 ],
             ],
+            'bike_models' => BikeModel::query()
+                ->where(fn ($query) => $query->where('is_active', true)
+                    ->orWhere('id', $bike->bike_model_id ?? 0))
+                ->orderBy('brand')->orderBy('name')
+                ->get(['id', 'category_id', 'brand', 'name', 'fuel_type', 'transmission']),
             'categories' => BikeCategory::orderBy('name')->get(['id', 'name', 'base_daily_rate', 'default_deposit_amount']),
             'stores' => Store::where('status', StoreStatus::ACTIVE)
                 ->when(auth()->user()?->getAuthorizedStoreIds() !== null,

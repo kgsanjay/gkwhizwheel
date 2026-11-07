@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Enums\BikeStatus;
+use App\Http\Requests\Admin\Concerns\ValidatesBikeModelAssignment;
+use App\Models\Bike;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,6 +15,8 @@ use Illuminate\Validation\Rules\Enum;
 
 class UpdateBikeRequest extends FormRequest
 {
+    use ValidatesBikeModelAssignment;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -35,6 +39,7 @@ class UpdateBikeRequest extends FormRequest
 
         return [
             'category_id' => ['sometimes', 'integer', 'exists:bike_categories,id'],
+            'bike_model_id' => ['sometimes', 'nullable', 'integer', 'exists:bike_models,id'],
             'current_store_id' => ['sometimes', 'integer', 'exists:stores,id', ...$storeRule],
             'home_store_id' => ['sometimes', 'integer', 'exists:stores,id', ...$storeRule],
             'brand' => ['sometimes', 'string', 'max:100'],
@@ -60,5 +65,15 @@ class UpdateBikeRequest extends FormRequest
             'documents.*.expiry_date' => ['nullable', 'date'],
             'documents.*.verified' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function after(): array
+    {
+        return [function (\Illuminate\Validation\Validator $validator): void {
+            $bike = Bike::find($this->route('id') ?? $this->route('bike'));
+            if ($bike !== null) {
+                $this->validateBikeModelAssignment($validator, $bike);
+            }
+        }];
     }
 }

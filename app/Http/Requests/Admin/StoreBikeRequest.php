@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Enums\BikeDocumentType;
+use App\Http\Requests\Admin\Concerns\ValidatesBikeModelAssignment;
 use App\Enums\BikeStatus;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
@@ -14,6 +15,8 @@ use Illuminate\Validation\Rule;
 
 class StoreBikeRequest extends FormRequest
 {
+    use ValidatesBikeModelAssignment;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -34,6 +37,7 @@ class StoreBikeRequest extends FormRequest
 
         return [
             'category_id' => ['required', 'integer', 'exists:bike_categories,id'],
+            'bike_model_id' => ['nullable', 'integer', 'exists:bike_models,id'],
             'current_store_id' => ['required', 'integer', 'exists:stores,id', ...$storeRule],
             'home_store_id' => ['required', 'integer', 'exists:stores,id', ...$storeRule],
             'brand' => ['required', 'string', 'max:100'],
@@ -56,5 +60,10 @@ class StoreBikeRequest extends FormRequest
             'documents.*.expiry_date' => ['nullable', 'date'],
             'documents.*.verified' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function after(): array
+    {
+        return [fn (\Illuminate\Validation\Validator $validator) => $this->validateBikeModelAssignment($validator)];
     }
 }
