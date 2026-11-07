@@ -349,6 +349,10 @@ class AvailabilityService
                 }
 
                 $params['service_item_id'] = $item->id;
+                if (isset($params['store_id']) && $item->store_id !== null && (int) $params['store_id'] !== (int) $item->store_id) {
+                    throw new ServiceItemNotAvailableException('Service item belongs to another branch.');
+                }
+                $params['store_id'] = $item->store_id;
             }
 
             // Generate booking number if not provided

@@ -119,6 +119,7 @@ class CustomerServiceBookingController extends Controller
                 'booking_number' => $bookingNumber,
                 'service_type' => $validated['service_type'],
                 'service_item_id' => $item?->id,
+                'store_id' => $item?->store_id,
                 'user_id' => $request->user()?->id,
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],

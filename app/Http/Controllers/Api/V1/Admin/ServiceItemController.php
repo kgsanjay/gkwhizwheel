@@ -65,6 +65,14 @@ class ServiceItemController extends Controller
         }
     }
 
+    private function accessibleItem(Request $request, ServiceItem $item): void
+    {
+        $this->authorizeServiceAccess($request, $item->service_type);
+        if ($request->user()->role !== UserRole::SUPER_ADMIN) {
+            $this->authorizeStoreAccess($request, $item->store_id ?? 0, $item, 'access_service_item');
+        }
+    }
+
     /**
      * Display a listing of service items with administrative filters.
      */
@@ -85,13 +93,18 @@ class ServiceItemController extends Controller
         // Service Scoping: if not super admin, restrict to assigned services
         if ($user->role !== UserRole::SUPER_ADMIN) {
             $assigned = $user->assignedServicesList();
-            $query->whereIn('service_type', $assigned);
+            $query->whereIn('service_type', $assigned)
+                ->whereIn('store_id', $user->getAuthorizedStoreIds() ?? []);
         }
 
         if ($request->filled('service_type')) {
             $serviceType = (string) $request->query('service_type');
             $this->authorizeServiceAccess($request, $serviceType);
             $query->where('service_type', $serviceType);
+        }
+
+        if ($request->filled('store_id')) {
+            $query->where('store_id', $request->integer('store_id'));
         }
 
         if ($request->filled('status')) {
@@ -141,7 +154,10 @@ class ServiceItemController extends Controller
             'documents.uploader:id,name',
         ])->findOrFail($id);
 
-        $this->authorizeServiceAccess($request, $item->service_type);
+        $this->accessibleItem($request, $item);
+        if ($request->filled('store_id')) {
+            abort_unless($item->store_id === $request->integer('store_id'), 404);
+        }
 
         return response()->json([
             'success' => true,
@@ -180,8 +196,15 @@ class ServiceItemController extends Controller
             $this->authorizeStoreAccess($request, (int) $validated['store_id'], null, 'create_service_item');
         }
 
+        if ($request->user()->role !== UserRole::SUPER_ADMIN && empty($validated['store_id'])) {
+            $ids = $request->user()->getAuthorizedStoreIds() ?? [];
+            abort_unless(count($ids) === 1, 422, 'Select an assigned branch.');
+            $validated['store_id'] = $ids[0];
+        }
+
         $item = DB::transaction(function () use ($validated, $request) {
             $itemData = collect($validated)->except(['primary_image', 'images', 'store_id'])->all();
+            $itemData['store_id'] = $validated['store_id'] ?? null;
             $itemData['status'] = $itemData['status'] ?? 'available';
             $itemData['price_unit'] = $itemData['price_unit'] ?? 'per_day';
             $itemData['sort_order'] = (int) ($itemData['sort_order'] ?? 0);
@@ -245,6 +268,7 @@ class ServiceItemController extends Controller
     public function update(int $id, Request $request): JsonResponse
     {
         $item = ServiceItem::findOrFail($id);
+        $this->accessibleItem($request, $item);
 
         $this->authorizeServiceAccess($request, $item->service_type);
 
@@ -318,6 +342,7 @@ class ServiceItemController extends Controller
     public function updateStatus(int $id, Request $request): JsonResponse
     {
         $item = ServiceItem::findOrFail($id);
+        $this->accessibleItem($request, $item);
 
         $this->authorizeServiceAccess($request, $item->service_type);
 
@@ -358,6 +383,7 @@ class ServiceItemController extends Controller
     public function destroy(int $id, Request $request): JsonResponse
     {
         $item = ServiceItem::with(['images', 'documents'])->findOrFail($id);
+        $this->accessibleItem($request, $item);
 
         $this->authorizeServiceAccess($request, $item->service_type);
 

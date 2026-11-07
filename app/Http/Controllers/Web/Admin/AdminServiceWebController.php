@@ -794,7 +794,7 @@ class AdminServiceWebController extends Controller
             abort(422, 'Service item must belong to the booking branch.');
         }
         // Unassigned inventory cannot be used in branch-originated bookings.
-        if ($item === null && request()->user()?->role !== \\App\\Enums\\UserRole::SUPER_ADMIN) {
+        if ($item === null && request()->user()?->role !== \App\Enums\UserRole::SUPER_ADMIN) {
             abort(422, 'Select an inventory item assigned to your branch.');
         }
 
