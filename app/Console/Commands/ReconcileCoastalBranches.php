@@ -61,6 +61,22 @@ class ReconcileCoastalBranches extends Command
 
             DB::transaction(function (): void {
                 $this->preflight();
+                // Actual branch contacts and customer-supplied Maps share links.
+                Store::whereKey(1)->update([
+                    'name' => 'GK WhizWheel Honnavar Branch',
+                    'public_name' => 'G.K. WhizWheel Honnavar',
+                    'phone' => '+918660989586',
+                    'google_maps_url' => 'https://maps.app.goo.gl/xNRYJeqZR6DuqR7a6',
+                    'status' => StoreStatus::ACTIVE,
+                ]);
+                Store::whereKey(3)->update([
+                    'name' => 'GK WhizWheel Murudeshwar Branch',
+                    'public_name' => 'G.K. WhizWheel Murudeshwar',
+                    'phone' => '+917892094155',
+                    'google_maps_url' => 'https://maps.app.goo.gl/DUvVetyLkxzzMP6c8',
+                    'status' => StoreStatus::ACTIVE,
+                ]);
+
                 // Preserve store #2 primary key for historical reservations, logs and transfers.
                 Bike::where('current_store_id', 2)->update(['current_store_id' => 1]);
                 Bike::where('home_store_id', 2)->update(['home_store_id' => 1]);
