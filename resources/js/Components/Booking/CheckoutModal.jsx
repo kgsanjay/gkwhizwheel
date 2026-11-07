@@ -56,12 +56,17 @@ export default function CheckoutModal({
     currentUser,
 }) {
     const [gateway, setGateway] = useState('razorpay');
+    const [paymentOption, setPaymentOption] = useState('advance');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [heldBooking, setHeldBooking] = useState(null);
     const requestKey = useRef(null);
     const finalQuote = heldBooking || quote;
+    const total = finalQuote ? Number(finalQuote.total_amount || 0) : null;
+    const advance = total === null ? 100 : Math.min(total, 100);
+    const payNow = total === null ? null : paymentOption === 'advance' ? advance : total;
+    const balanceAtPickup = total === null ? null : Math.max(0, total - payNow);
     const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
 
     // Use the real server deadline, not an independent 15-minute timer.
@@ -131,6 +136,7 @@ export default function CheckoutModal({
             }
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
                 gateway: gateway,
+                payment_option: paymentOption,
             });
 
             const paymentData = checkoutRes.data;
@@ -339,6 +345,52 @@ export default function CheckoutModal({
                     </CardContent>
                 </Card>
 
+                {/* No refundable security deposit is required for new online bike bookings. */}
+                <Alert severity="success" sx={{ mb: 2 }}>
+                    No security deposit required. Pay ₹100 now to reserve, or pay the full rental amount.
+                </Alert>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#0F172A' }}>
+                    Choose payment option
+                </Typography>
+                <RadioGroup row value={paymentOption} onChange={(e) => setPaymentOption(e.target.value)}
+                    sx={{ gap: 1.5, mb: 3 }}>
+                    <Card variant="outlined" sx={{ flex: '1 1 190px', borderRadius: 2,
+                        borderColor: paymentOption === 'advance' ? '#C66A42' : '#E2E8F0' }}>
+                        <FormControlLabel value="advance" control={<Radio color="secondary" />}
+                            sx={{ m: 0, p: 1.5, alignItems: 'flex-start', width: '100%' }}
+                            label={<Box>
+                                <Typography fontWeight={800}>Advance Payment</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Reserve your bike now. Pay the remaining rental amount at pickup.
+                                </Typography>
+                                <Typography fontWeight={800} sx={{ mt: 1, color: '#C66A42' }}>
+                                    {total === null ? '₹100' : `Pay now ₹${advance.toLocaleString('en-IN')}`}
+                                </Typography>
+                            </Box>} />
+                    </Card>
+                    <Card variant="outlined" sx={{ flex: '1 1 190px', borderRadius: 2,
+                        borderColor: paymentOption === 'full' ? '#C66A42' : '#E2E8F0' }}>
+                        <FormControlLabel value="full" control={<Radio color="secondary" />}
+                            sx={{ m: 0, p: 1.5, alignItems: 'flex-start', width: '100%' }}
+                            label={<Box>
+                                <Typography fontWeight={800}>Full Payment</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Pay the full rental amount online. No rental balance at pickup.
+                                </Typography>
+                                <Typography fontWeight={800} sx={{ mt: 1, color: '#C66A42' }}>
+                                    {total === null ? 'See total after reservation' : `Pay now ₹${total.toLocaleString('en-IN')}`}
+                                </Typography>
+                            </Box>} />
+                    </Card>
+                </RadioGroup>
+                {finalQuote && (
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        {paymentOption === 'advance'
+                            ? `Pay ₹${advance.toLocaleString('en-IN')} online and ₹${balanceAtPickup.toLocaleString('en-IN')} at pickup. No deposit.`
+                            : `Pay ₹${total.toLocaleString('en-IN')} online. Nothing due for the quoted rental at pickup.`}
+                    </Alert>
+                )}
+
                 {/* Payment Gateway Selection */}
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#0F172A' }}>
                     Select Payment Gateway
@@ -416,14 +468,14 @@ export default function CheckoutModal({
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                         <Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                                Total Amount Payable
+                                Amount to Pay Now
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                Rental advance + ₹{finalQuote?.deposit_amount || 0} refundable deposit
+                                No security deposit · Total rental {total === null ? 'calculated at reservation' : `₹${total.toLocaleString('en-IN')}`}
                             </Typography>
                         </Box>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                            {finalQuote ? `₹${Number(finalQuote.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'Calculated after reservation'}
+                            {payNow === null ? 'After reservation' : `₹${payNow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
                         </Typography>
                     </Box>
                 </Box>
@@ -449,7 +501,7 @@ export default function CheckoutModal({
                     ) : (
                         bikeModelId && !heldBooking
                             ? 'Reserve vehicle & check final price'
-                            : `Continue to pay ₹${Number(finalQuote?.total_amount || 0).toLocaleString('en-IN')}`
+                            : `Pay ₹${Number(payNow || 0).toLocaleString('en-IN')} now`
                     )}
                 </Button>
 
