@@ -31,6 +31,8 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/services/bikes', [\App\Http\Controllers\Web\BikeWebController::class, 'index'])->name('bikes.index');
+Route::get('/services/bikes/models/{id}/{slug?}', [\App\Http\Controllers\Web\BikeModelWebController::class, 'show'])
+    ->whereNumber('id')->name('services.bikes.models.show');
 Route::get('/services/bikes/{id}', [\App\Http\Controllers\Web\BikeWebController::class, 'show'])->name('services.bikes.show');
 Route::redirect('/bikes', '/services/bikes', 301);
 Route::redirect('/services/two-wheelers', '/services/bikes', 301);
