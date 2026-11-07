@@ -62,22 +62,21 @@ export default function CheckoutModal({
     const [heldBooking, setHeldBooking] = useState(null);
     const requestKey = useRef(null);
     const finalQuote = heldBooking || quote;
-    const [timeLeftSeconds, setTimeLeftSeconds] = useState(900); // 15-minute countdown
+    const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
 
-    // Countdown timer once booking is held
+    // Use the real server deadline, not an independent 15-minute timer.
     useEffect(() => {
-        if (!heldBooking) return;
-        const timer = setInterval(() => {
-            setTimeLeftSeconds((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        if (!heldBooking?.held_until) return;
+        const refreshRemaining = () => {
+            const expiry = Date.parse(heldBooking.held_until);
+            setTimeLeftSeconds(Number.isFinite(expiry)
+                ? Math.max(0, Math.ceil((expiry - Date.now()) / 1000))
+                : 0);
+        };
+        refreshRemaining();
+        const timer = setInterval(refreshRemaining, 1000);
         return () => clearInterval(timer);
-    }, [heldBooking]);
+    }, [heldBooking?.held_until]);
 
     const formatTimer = (secs) => {
         const m = Math.floor(secs / 60);
@@ -127,6 +126,9 @@ export default function CheckoutModal({
             setStatusMessage(`Reservation ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
 
             // 3. Initiate payment order creation on server
+            if (booking.held_until && Date.parse(booking.held_until) <= Date.now()) {
+                throw new Error('Your reservation hold has expired. Close this dialog and start a new booking.');
+            }
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
                 gateway: gateway,
             });
@@ -283,7 +285,7 @@ export default function CheckoutModal({
                         severity={timeLeftSeconds > 180 ? 'info' : 'warning'}
                         sx={{ mb: 2.5, fontWeight: 600 }}
                     >
-                        Reservation Hold Active ({heldBooking.booking_reference}): Expires in{' '}
+                        {timeLeftSeconds > 0 ? 'Reservation hold active' : 'Reservation hold expired'} ({heldBooking.booking_reference}):{' '}
                         <strong>{formatTimer(timeLeftSeconds)}</strong>
                     </Alert>
                 )}
@@ -433,7 +435,7 @@ export default function CheckoutModal({
                     color="secondary"
                     fullWidth
                     size="large"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (Boolean(heldBooking) && timeLeftSeconds <= 0)}
                     onClick={handleBookAndPay}
                     sx={{
                         py: 1.5,

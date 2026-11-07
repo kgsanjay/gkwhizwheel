@@ -22,6 +22,14 @@ class BookingService
     {
         $this->ensureCurrentStatus($booking, [BookingStatus::HELD], BookingStatus::PENDING_PAYMENT);
 
+        // Expired holds must not enter payment even when the expiry job has
+        // not yet changed the stored booking status.
+        if ($booking->held_until !== null && $booking->held_until->lte(now())) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'booking' => 'This reservation hold has expired. Please reserve a bike again.',
+            ]);
+        }
+
         $booking->update([
             'status' => BookingStatus::PENDING_PAYMENT,
         ]);

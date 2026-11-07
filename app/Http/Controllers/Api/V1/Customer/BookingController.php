@@ -114,6 +114,16 @@ class BookingController extends Controller
             ], 422);
         }
 
+        // Pending-payment retries must also respect the original deadline.
+        if ($booking->held_until !== null && $booking->held_until->lte(now())) {
+            return response()->json([
+                'success' => false,
+                'data' => new BookingResource($booking),
+                'message' => 'This reservation hold has expired. Please reserve a bike again.',
+                'errors' => ['booking' => ['Reservation hold expired.']],
+            ], 422);
+        }
+
         if ($booking->status === BookingStatus::HELD) {
             $booking = $bookingService->markPendingPayment($booking);
         }
