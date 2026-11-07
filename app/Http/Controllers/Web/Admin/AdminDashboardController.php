@@ -126,10 +126,19 @@ class AdminDashboardController extends Controller
             'tours' => 'Tour Packages',
         ];
 
-        if ($isSuperAdmin && ! empty($servicesScope)) {
+        if (! empty($servicesScope)) {
             foreach ($servicesScope as $st) {
                 $serviceItemQuery = \App\Models\ServiceItem::where('service_type', $st);
                 $serviceBookingQuery = \App\Models\ServiceBooking::where('service_type', $st);
+                if (! $isSuperAdmin) {
+                    // Unassigned legacy rows are HQ-only and remain excluded.
+                    $serviceItemQuery->whereIn('store_id', $authorizedStoreIds);
+                    $serviceBookingQuery->whereIn('store_id', $authorizedStoreIds);
+                }
+                if ($storeId !== null) {
+                    $serviceItemQuery->where('store_id', $storeId);
+                    $serviceBookingQuery->where('store_id', $storeId);
+                }
 
                 $availableItems = (clone $serviceItemQuery)->whereIn('status', ['available', 'active'])->count();
                 $totalItems = (clone $serviceItemQuery)->count();
@@ -190,9 +199,16 @@ class AdminDashboardController extends Controller
         }
 
         $recentServiceBookings = [];
-        if ($isSuperAdmin && ! empty($servicesScope)) {
-            $recentServiceBookings = \App\Models\ServiceBooking::with('serviceItem')
-                ->whereIn('service_type', $servicesScope)
+        if (! empty($servicesScope)) {
+            $recentServiceBookingsQuery = \App\Models\ServiceBooking::with('serviceItem')
+                ->whereIn('service_type', $servicesScope);
+            if (! $isSuperAdmin) {
+                $recentServiceBookingsQuery->whereIn('store_id', $authorizedStoreIds);
+            }
+            if ($storeId !== null) {
+                $recentServiceBookingsQuery->where('store_id', $storeId);
+            }
+            $recentServiceBookings = $recentServiceBookingsQuery
                 ->latest()
                 ->take(6)
                 ->get()
