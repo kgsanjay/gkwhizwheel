@@ -41,7 +41,7 @@ import LuggageIcon from '@mui/icons-material/Luggage';
 import PrintIcon from '@mui/icons-material/Print';
 import DownloadIcon from '@mui/icons-material/Download';
 
-export default function AccountBookings({ bookings = [], serviceBookings = [], stats = {}, user = null, featuredBikes = [] }) {
+export default function AccountBookings({ bookings = [], serviceBookings = [], serviceEnquiries = [], stats = {}, user = null, featuredBikes = [] }) {
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
 
@@ -76,8 +76,13 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
             case 'completed':
                 return { label: 'COMPLETED', bg: isDark ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9', color: isDark ? '#94A3B8' : '#475569', dotColor: '#10B981' };
             case 'held':
+                return { label: 'ON HOLD', bg: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', dotColor: '#F59E0B' };
             case 'pending_payment':
-                return { label: 'PENDING PAYMENT', bg: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', dotColor: '#F59E0B' };
+                return { label: 'AWAITING PAYMENT', bg: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', dotColor: '#F59E0B' };
+            case 'in_progress':
+                return { label: 'IN PROGRESS', bg: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', dotColor: '#3B82F6' };
+            case 'expired':
+                return { label: 'EXPIRED', bg: 'rgba(100, 116, 139, 0.15)', color: '#64748B', dotColor: '#64748B' };
             case 'cancelled':
                 return { label: 'CANCELLED', bg: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', dotColor: '#EF4444' };
             default:
@@ -95,16 +100,23 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
     });
 
     const filteredServiceBookings = serviceBookings.filter((sb) => {
-        if (activeTab === 'active') return sb.status === 'confirmed' || sb.status === 'in_progress';
+        if (activeTab === 'active') return ['held', 'pending_payment', 'confirmed', 'in_progress'].includes(sb.status);
         if (activeTab === 'completed') return sb.status === 'completed';
         if (activeTab === 'cancelled') return sb.status === 'cancelled';
         return true;
     });
 
-    const totalCount = stats.total_count ?? (bookings.length + serviceBookings.length);
-    const activeCount = stats.active_count ?? (bookings.filter((b) => activeStatuses.includes(b.status)).length + serviceBookings.filter((sb) => sb.status === 'confirmed' || sb.status === 'in_progress').length);
+    const filteredServiceEnquiries = serviceEnquiries.filter((e) => {
+        if (activeTab === 'active') return ['requested', 'reviewing'].includes(e.status);
+        if (activeTab === 'completed') return e.status === 'closed';
+        if (activeTab === 'cancelled') return e.status === 'cancelled';
+        return true;
+    });
+
+    const totalCount = stats.total_count ?? (bookings.length + serviceBookings.length + serviceEnquiries.length);
+    const activeCount = stats.active_count ?? (bookings.filter((b) => activeStatuses.includes(b.status)).length + serviceBookings.filter((sb) => ['held', 'pending_payment', 'confirmed', 'in_progress'].includes(sb.status)).length + serviceEnquiries.filter((e) => ['requested', 'reviewing'].includes(e.status)).length);
     const completedCount = stats.completed_count ?? (bookings.filter((b) => b.status === 'returned' || b.status === 'completed').length + serviceBookings.filter((sb) => sb.status === 'completed').length);
-    const cancelledCount = stats.cancelled_count ?? (bookings.filter((b) => b.status === 'cancelled').length + serviceBookings.filter((sb) => sb.status === 'cancelled').length);
+    const cancelledCount = stats.cancelled_count ?? (bookings.filter((b) => b.status === 'cancelled').length + serviceBookings.filter((sb) => sb.status === 'cancelled').length + serviceEnquiries.filter((e) => e.status === 'cancelled').length);
 
     const userInitial = user?.name ? user.name.trim().charAt(0).toUpperCase() : 'U';
 
@@ -955,6 +967,58 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                     </Paper>
                 )}
 
+                {/* Requests have no confirmed availability and are never payable bookings. */}
+                {filteredServiceEnquiries.length > 0 && (
+                    <Box sx={{ mt: 4 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, mb: 1.5 }}>
+                            My Service Enquiries ({filteredServiceEnquiries.length})
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Enquiries are requests only. Your availability, final price and booking
+                            are not confirmed until separately approved.
+                        </Typography>
+                        <Stack spacing={2}>
+                            {filteredServiceEnquiries.map((e) => (
+                                <Card key={e.id} variant="outlined" sx={{ borderRadius: 3 }}>
+                                    <CardContent>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between"
+                                            alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1.5}>
+                                            <Box>
+                                                <Typography variant="subtitle1" fontWeight={800}>
+                                                    {getServiceDetails(e.service_type).label} · {e.reference}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {e.pickup_location} · {new Date(e.start_datetime).toLocaleDateString('en-IN')}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {e.status === 'reviewing'
+                                                        ? 'Our team is reviewing your request'
+                                                        : e.status === 'closed'
+                                                            ? 'Enquiry closed — no reservation was confirmed by this status'
+                                                            : e.status === 'cancelled'
+                                                                ? 'Enquiry cancelled'
+                                                                : 'Enquiry received — awaiting team review'}
+                                                </Typography>
+                                            </Box>
+                                            <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
+                                                <Chip size="small" color="warning"
+                                                    label={e.status === 'reviewing' ? 'UNDER REVIEW'
+                                                        : e.status === 'closed' ? 'CLOSED'
+                                                        : e.status === 'cancelled' ? 'CANCELLED' : 'REQUESTED'} />
+                                                <Button variant="outlined" size="small" component="a"
+                                                    href={`https://wa.me/918660989586?text=${encodeURIComponent(`Hello G.K. WhizWheel, please update my ${e.service_type} enquiry ${e.reference}.`)}`}
+                                                    target="_blank" rel="noopener noreferrer">
+                                                    WhatsApp Support
+                                                </Button>
+                                            </Stack>
+                                        </Stack>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
+
                 {/* Other Travel Services Section (Taxis, Boating, Scuba, Stays, Guides, Tours) */}
                 {filteredServiceBookings && filteredServiceBookings.length > 0 && (
                     <Box sx={{ mt: 5 }}>
@@ -1091,14 +1155,14 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                 </Typography>
                                                 <Stack direction="row" spacing={1} alignItems="center">
                                                     <Chip
-                                                        label={(sb.status || 'confirmed').toUpperCase()}
+                                                        label={getStatusBadge(sb.status).label}
                                                         size="small"
                                                         color={sb.status === 'confirmed' ? 'success' : sb.status === 'in_progress' ? 'info' : 'default'}
                                                         sx={{ height: 20, fontSize: '0.68rem', fontWeight: 800 }}
                                                     />
                                                     <Chip
                                                         label={
-                                                            sb.payment_status === 'paid' || parseFloat(sb.balance_due || 0) <= 0
+                                                            sb.payment_status === 'paid'
                                                                 ? 'PAID'
                                                                 : parseFloat(sb.advance_paid || 0) > 0
                                                                 ? `BAL: ₹${parseFloat(sb.balance_due)}`
@@ -1138,7 +1202,7 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                     </Typography>
                                                 )}
                                                 <Stack direction="row" spacing={0.8} justifyContent={{ xs: 'flex-start', sm: 'flex-end' }} flexWrap="wrap">
-                                                    {parseFloat(sb.balance_due || 0) > 0 ? (
+                                                    {parseFloat(sb.balance_due || 0) > 0 && ['confirmed', 'in_progress'].includes(sb.status) ? (
                                                         <Button
                                                             component={Link}
                                                             href={`/services/bookings/${sb.booking_number}/confirmation`}
