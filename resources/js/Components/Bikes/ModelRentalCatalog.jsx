@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import { Box, Grid, Card, CardContent, Typography, Stack, Chip, Button, Alert,
     TextField, MenuItem, CircularProgress } from '@mui/material';
@@ -117,7 +118,12 @@ export default function ModelRentalCatalog({ filters, stores, onModelsLoaded }) 
                                 <Typography variant="caption" color="text.secondary">
                                     Exact vehicle pricing, one-way fees and deposit are calculated after allocation, before payment.
                                 </Typography>
-                                <Button variant="contained" color="secondary" fullWidth sx={{ mt: 'auto' }}
+                                <Button component={Link}
+                                    href={`/services/bikes/models/${model.bike_model_id}/${[model.brand, model.name].join(' ').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}
+                                    variant="outlined" fullWidth sx={{ mt: 'auto' }}>
+                                    View model details
+                                </Button>
+                                <Button variant="contained" color="secondary" fullWidth
                                     disabled={!ready || !model.is_available || isLoading}
                                     onClick={() => beginReservation(model)}>
                                     {!ready ? 'Choose dates and branch' : model.is_available ? 'Reserve this model' : 'Unavailable for selected dates'}
