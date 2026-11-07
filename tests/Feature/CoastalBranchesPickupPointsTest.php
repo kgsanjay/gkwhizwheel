@@ -56,9 +56,12 @@ test('explicit reconciliation keeps legacy store and produces two active branche
         ->and(Bike::first()->current_store_id)->toBe(1)
         ->and(Bike::first()->home_store_id)->toBe(1)
         ->and(PickupPoint::count())->toBe(9)
-        ->and(PickupPoint::where('is_active', false)->count())->toBe(9);
+        ->and(PickupPoint::where('is_active', false)->count())->toBe(2)
+        ->and(PickupPoint::where('is_active', true)->count())->toBe(7);
     $this->artisan('branches:reconcile-coastal', ['--apply' => true])->assertSuccessful();
     expect(PickupPoint::count())->toBe(9);
+    $this->getJson('/api/v1/pickup-points?store_id=1')->assertOk()->assertJsonCount(3, 'data');
+    $this->getJson('/api/v1/pickup-points?store_id=3')->assertOk()->assertJsonCount(4, 'data');
 });
 
 test('published pickup points are shown only for their active branch', function (): void {
