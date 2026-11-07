@@ -111,16 +111,16 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     const structuredData = {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
-        "name": "GK WhizWheel - Bike Rental & Travel Services Honnavar",
+        "name": "GK WhizWheel - Travel, Rentals & Coastal Experiences",
         "alternateName": ["GK WhizWheels", "G.K. WhizWheel", "Whizwheels Honnavar"],
         "sameAs": ["https://share.google/GoM4iOgiuUIa7ZfwV"],
-        "description": "Premier travel and bike rental agency in Honnavar offering well-maintained scooters and bikes from ₹350/day, AC taxi transfers, backwater boating, scuba diving, and coastal homestays.",
+        "description": "Travel and rental services across coastal Karnataka, including scooters, motorcycles, cabs, boating, scuba diving, homestays, local guides and tour packages.",
         "image": "https://whizwheels.in/images/logo.png",
         "telephone": "+918660989586",
         "email": "contact@whizwheels.in",
         "url": "https://whizwheels.in/",
-        "priceRange": "₹350 - ₹5000",
-        "openingHours": "Mo-Su 06:00-23:00",
+        "priceRange": "Contact for current rates",
+        "areaServed": ["Honnavar", "Murudeshwar", "Coastal Karnataka"],
         "address": {
             "@type": "PostalAddress",
             "streetAddress": "Palya Main Rd, near Honnavar Railway Station",
@@ -248,10 +248,10 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             },
             {
                 '@type': 'Question',
-                name: 'How much is the security deposit and when is it refunded?',
+                name: 'Is there a security deposit for bike bookings?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'We offer zero-deposit options for eligible verified profiles, and nominal deposits (₹500 – ₹1,500 depending on vehicle model) for others. Security deposits are 100% refundable and credited directly back to your UPI or bank account within 2 hours of vehicle return following a quick inspection.',
+                    text: 'New online bike rental reservations have no refundable security deposit. Choose a ₹100 advance or pay the full quoted rental amount; the remaining rental balance, if any, is collected at pickup.',
                 },
             },
             {
@@ -276,8 +276,8 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
     return (
         <AppLayout>
             <PageHead
-                title="Bike Rental Honnavar | Boating, Scuba, Tours – GK WhizWheel"
-                description="Explore Honnavar & Karavali coast with GK WhizWheel: bike rentals from ₹350/day, cabs, backwater boating, scuba diving, homestays & custom tour packages."
+                title="GK WhizWheel | Bike Rentals, Cabs, Boating, Stays & Tours"
+                description="Explore coastal Karnataka with GK WhizWheel: bike rentals, cabs, backwater boating, scuba diving, homestays, guides and customizable tour packages."
                 canonicalUrl="https://whizwheels.in/"
                 ogImage="/images/logo.png"
                 ogType="website"

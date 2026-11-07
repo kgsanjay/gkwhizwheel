@@ -75,8 +75,8 @@ const BIKE_FAQS = [
         a: 'Yes! All GK WhizWheels bikes have valid Karnataka road tax and permit to travel anywhere along the coastal belt, including Murudeshwar (27 km), Gokarna (48 km), Yana Caves, and Jog Falls (60 km).',
     },
     {
-        q: 'How does the security deposit refund work?',
-        a: 'We offer zero deposit options for verified return tickets. For standard rentals requiring a ₹1,000 security deposit, the refund is initiated immediately to your UPI ID or bank account as soon as the vehicle is returned in good order.',
+        q: 'Is a security deposit required for online bike rentals?',
+        a: 'New online bike rental reservations require no refundable security deposit. Pay ₹100 in advance or pay the full rental quote online; any remaining rental balance is collected at pickup.',
     },
 ];
 
