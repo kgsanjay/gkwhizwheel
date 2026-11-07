@@ -201,3 +201,52 @@ test('model hold requires authentication and a valid future date range', functio
     $invalid['end_date'] = now()->addDays(2)->toDateString();
     $this->postJson('/api/v1/bookings/model-hold', $invalid)->assertUnprocessable();
 });
+
+test('expired held reservation cannot start payment before the expiry worker runs', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-EXP-01');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'exp-hold-01'))
+        ->assertCreated()->json('data.id');
+    Booking::findOrFail($bookingId)->update(['held_until' => now()->subSeconds(5)]);
+
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'razorpay',
+    ])->assertUnprocessable()
+        ->assertJsonPath('success', false);
+
+    expect(Booking::findOrFail($bookingId)->status)->toBe(BookingStatus::HELD);
+});
+
+test('expired pending-payment booking cannot create another gateway order', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-EXP-02');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'exp-hold-02'))
+        ->assertCreated()->json('data.id');
+    Booking::findOrFail($bookingId)->update([
+        'status' => BookingStatus::PENDING_PAYMENT,
+        'held_until' => now()->subSeconds(5),
+    ]);
+
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'phonepe',
+    ])->assertUnprocessable()
+        ->assertJsonPath('success', false);
+
+    expect(Booking::findOrFail($bookingId)->status)->toBe(BookingStatus::PENDING_PAYMENT);
+});
+
+test('booking service itself rejects transition of an expired hold', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-EXP-03');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'exp-hold-03'))
+        ->assertCreated()->json('data.id');
+    $booking = Booking::findOrFail($bookingId);
+    $booking->update(['held_until' => now()->subSeconds(5)]);
+
+    expect(fn () => app(\App\Services\BookingService::class)->markPendingPayment($booking->fresh()))
+        ->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect($booking->fresh()->status)->toBe(BookingStatus::HELD);
+});
