@@ -863,6 +863,21 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         </Box>
                     )}
 
+                    {stores.length > 0 && (
+                        <Box component="nav" aria-label="Browse rental branches" sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 1.5 }}>
+                                Explore bikes by rental location
+                            </Typography>
+                            <Stack direction="row" gap={1} flexWrap="wrap">
+                                {stores.map((store) => (
+                                    <Button key={store.id} variant="outlined" size="small" component={Link}
+                                        href={`/bike-rentals/branches/${store.id}/${(store.city || store.name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}>
+                                        {store.city || store.name}
+                                    </Button>
+                                ))}
+                            </Stack>
+                        </Box>
+                    )}
                     <ModelRentalCatalog filters={filters} stores={stores} />
 
                     {/* =========================================================================
