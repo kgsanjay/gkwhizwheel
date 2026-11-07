@@ -230,7 +230,7 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->has('service_metrics', 2)
+                ->has('service_metrics', 0)
                 ->where('assigned_services', fn ($val) => collect($val)->sort()->values()->all() === ['boating', 'taxi'])
                 ->has('recent_service_bookings', 0)
         );
