@@ -505,7 +505,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                         </Grid>
 
                         {/* Online Instant Payment Card (When balance is due) */}
-                        {!isFullyPaid && balanceDue > 0 && (
+                        {!isFullyPaid && isPayable && (
                             <Paper sx={{ mt: 4, p: 3, borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -514,10 +514,10 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                         </Box>
                                         <Box>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                                Online Settlement / Advance Payment
+                                                Online Balance Payment
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                                Pay securely via UPI (GPay, PhonePe, Paytm), NetBanking, or Cards
+                                                Pay the approved full remaining balance via available gateway methods
                                             </Typography>
                                         </Box>
                                     </Box>
