@@ -513,7 +513,7 @@ export default function ScubaBookingModal({
                                 '&:hover': { bgcolor: '#4338CA' },
                             }}
                         >
-                            {submitting ? 'Confirming Dive Slot...' : 'Request Scuba Availability'}
+                            {submitting ? 'Sending Enquiry...' : 'Request Scuba Availability'}
                         </Button>
                     </Stack>
                 </DialogActions>
