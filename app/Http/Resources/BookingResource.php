@@ -29,6 +29,7 @@ class BookingResource extends JsonResource
             'booking_reference' => $this->booking_reference,
             'user_id' => $this->user_id,
             'bike_id' => $this->bike_id,
+            'bike_model_id' => $this->bike_model_id,
             'channel' => $this->channel?->value ?? (string) $this->channel,
             'status' => $this->status?->value ?? (string) $this->status,
             'start_date' => $this->start_date?->toDateString(),
