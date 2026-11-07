@@ -505,7 +505,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                         </Grid>
 
                         {/* Online Instant Payment Card (When balance is due) */}
-                        {!isFullyPaid && balanceDue > 0 && (
+                        {!isFullyPaid && isPayable && (
                             <Paper sx={{ mt: 4, p: 3, borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -514,10 +514,10 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                         </Box>
                                         <Box>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                                Online Settlement / Advance Payment
+                                                Online Balance Payment
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                                Pay securely via UPI (GPay, PhonePe, Paytm), NetBanking, or Cards
+                                                Pay the approved full remaining balance via available gateway methods
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -530,7 +530,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 </Box>
 
                                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2.5 }}>
-                                    Skip counter queues on arrival. Pay the remaining balance or advance deposit online for instant confirmed digital receipt.
+                                    Pay the approved outstanding balance securely online. Partial payment options for non-bike services will appear only after their terms are configured.
                                 </Typography>
 
                                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
@@ -545,16 +545,6 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                         {paying ? 'Processing...' : `Pay Full Balance: ₹${balanceDue.toLocaleString('en-IN')}`}
                                     </Button>
 
-                                    {balanceDue > 500 && (
-                                        <Button
-                                            variant="outlined"
-                                            onClick={() => handlePayOnline(Math.round(balanceDue * 0.25))}
-                                            disabled={paying}
-                                            sx={{ textTransform: 'none', fontWeight: 700, py: 1.2, px: 2.5, borderRadius: 2 }}
-                                        >
-                                            Pay 25% Advance (₹{Math.round(balanceDue * 0.25).toLocaleString('en-IN')})
-                                        </Button>
-                                    )}
                                 </Stack>
                             </Paper>
                         )}
@@ -564,10 +554,10 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                             <ShieldIcon sx={{ color: '#F59E0B', fontSize: 32 }} />
                             <Box>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#B45309' }}>
-                                    Zero Deposit & Guaranteed Transparent Pricing
+                                    Clear Service Pricing and Payment Terms
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: '#92400E' }}>
-                                    No hidden convenience charges or security deposit locks. Pay online or directly via UPI/Cash when you meet your coordinator.
+                                    Review your approved booking price and any applicable payment terms. Charges and cancellation policies may differ by service.
                                 </Typography>
                             </Box>
                         </Box>

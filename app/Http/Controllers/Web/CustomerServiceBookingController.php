@@ -241,27 +241,18 @@ class CustomerServiceBookingController extends Controller
 
         $this->authorizeBookingAccess($request->user(), $booking);
 
-        if (! in_array($booking->status, ['confirmed', 'in_progress'], true) || ! $booking->service_item_id) {
+        $eligibility = app(\App\Services\ServicePaymentEligibility::class);
+        if ($message = $eligibility->issue($booking)) {
+            return response()->json(['success' => false, 'message' => $message], 422);
+        }
+        $validated = $request->validate(['amount' => ['nullable', 'numeric', 'min:1']]);
+        $amount = (float) $booking->balance_due;
+        $requestedPaise = (int) round((float) ($validated['amount'] ?? $amount) * 100);
+        if (! $eligibility->amountAllowed($booking, $requestedPaise)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment is unavailable until the service and price are confirmed.',
+                'message' => 'Only the approved outstanding balance is payable online. Partial-payment terms are not configured.',
             ], 422);
-        }
-
-        if ($booking->payment_status === 'paid' || (float) $booking->balance_due <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This reservation is already fully settled.',
-            ], 422);
-        }
-
-        $validated = $request->validate([
-            'amount' => ['nullable', 'numeric', 'min:1'],
-        ]);
-
-        $amount = (float) ($validated['amount'] ?? $booking->balance_due);
-        if ($amount <= 0 || $amount > (float) $booking->balance_due) {
-            $amount = (float) $booking->balance_due;
         }
 
         try {
@@ -305,11 +296,9 @@ class CustomerServiceBookingController extends Controller
             'amount' => ['required', 'numeric', 'min:1'],
         ]);
 
-        if (! in_array($booking->status, ['confirmed', 'in_progress'], true) || ! $booking->service_item_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment cannot be recorded against an unconfirmed reservation.',
-            ], 422);
+        $eligibility = app(\App\Services\ServicePaymentEligibility::class);
+        if ($message = $eligibility->issue($booking)) {
+            return response()->json(['success' => false, 'message' => $message], 422);
         }
 
         $paidAmount = (float) $validated['amount'];
@@ -340,19 +329,37 @@ class CustomerServiceBookingController extends Controller
             $paidAmount = round($verifiedPaise / 100, 2);
         }
 
+        $paidPaise = (int) round($paidAmount * 100);
+        if (! $eligibility->amountAllowed($booking, $paidPaise)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The verified payment does not equal the approved outstanding balance.',
+            ], 422);
+        }
+
         // Lock the booking while applying the payment so duplicate callbacks
         // cannot credit the same gateway payment twice.
-        $applied = DB::transaction(function () use ($booking, $request, $validated, $paidAmount): bool {
+        try {
+        $applied = DB::transaction(function () use ($booking, $request, $validated, $paidAmount, $paidPaise): bool {
             $locked = ServiceBooking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
             $paymentId = $validated['razorpay_payment_id'];
-            $alreadyCredited = ActivityLog::where('action', 'service_booking.payment_received')
-                ->where('subject_type', ServiceBooking::class)
-                ->where('subject_id', (string) $locked->id)
-                ->get()
-                ->contains(fn ($log) => ($log->new_values['payment_id'] ?? null) === $paymentId);
-            if ($alreadyCredited || $paidAmount > (float) $locked->balance_due + 0.001) {
+            if (app(\App\Services\ServicePaymentEligibility::class)->issue($locked) !== null
+                || ! app(\App\Services\ServicePaymentEligibility::class)->amountAllowed($locked, $paidPaise)
+                || \App\Models\ServicePaymentReceipt::where('provider', 'razorpay')
+                    ->where('payment_id', $paymentId)->exists()
+                || ActivityLog::where('action', 'service_booking.payment_received')
+                    ->get()->contains(fn ($log) => ($log->new_values['payment_id'] ?? null) === $paymentId)) {
                 return false;
             }
+            // Unique(provider,payment_id) is enforced by the DB, even if two
+            // workers race for the same payment on separate booking rows.
+            \App\Models\ServicePaymentReceipt::create([
+                'service_booking_id' => $locked->id,
+                'provider' => 'razorpay',
+                'payment_id' => $paymentId,
+                'order_id' => $validated['razorpay_order_id'] ?? null,
+                'amount_paise' => $paidPaise,
+            ]);
 
             $newAdvance = round((float) $locked->advance_paid + $paidAmount, 2);
             $newBalance = max(0.0, round((float) $locked->total_amount - $newAdvance, 2));
@@ -379,6 +386,12 @@ class CustomerServiceBookingController extends Controller
             ]);
             return true;
         });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This payment reference has already been processed.',
+            ], 422);
+        }
 
         if (! $applied) {
             return response()->json([

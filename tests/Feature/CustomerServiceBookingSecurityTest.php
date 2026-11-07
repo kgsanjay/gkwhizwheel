@@ -104,11 +104,13 @@ test('same gateway payment reference cannot be credited twice', function (): voi
         'advance_paid' => 0,
         'balance_due' => 3000,
         'payment_status' => 'pending',
+        'booking_channel' => 'offline_walkin',
+        'status' => 'confirmed',
     ]);
 
     $payload = [
         'razorpay_payment_id' => 'pay_replay_fixture_123',
-        'amount' => 500,
+        'amount' => 3000,
     ];
 
     $url = '/services/bookings/'.$booking->booking_number.'/verify-payment';
@@ -120,6 +122,7 @@ test('same gateway payment reference cannot be credited twice', function (): voi
         ->assertJsonPath('success', false);
 
     $booking->refresh();
-    expect((float) $booking->advance_paid)->toBe(500.0);
-    expect((float) $booking->balance_due)->toBe(2500.0);
+    expect((float) $booking->advance_paid)->toBe(3000.0);
+    expect((float) $booking->balance_due)->toBe(0.0);
+    $this->assertDatabaseCount('service_payment_receipts', 1);
 });
