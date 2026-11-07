@@ -225,6 +225,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/check-in/{type}/{id}/process', [\App\Http\Controllers\Web\Admin\AdminCheckInWebController::class, 'process'])->name('admin.check-in.process');
 
     // Bike Inventory
+    Route::get('/bike-models', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'index'])->name('admin.bike-models.index');
+    Route::post('/bike-models', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'store'])->name('admin.bike-models.store');
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');
     Route::get('/bikes/create', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'create'])->name('admin.bikes.create');
     Route::post('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'store'])->name('admin.bikes.store');
