@@ -73,7 +73,18 @@ Use dedicated staging users for each role. Test both regular requests and forged
 - Reserve each non-bike service with an inventory item at the selected branch; reject a forged item/branch pair.
 - Test payment failure, cancellation, voucher access, offline counter booking, and refund reconciliation.
 
-## 6. Release gate
+## 6. Relocation task acceptance and obsolete-alert closure
+
+- Admin panel: visit `/admin/relocations` and confirm visible tasks are branch-scoped.
+- A superadmin may confirm physical receipt only after verifying the bike at the specified receiving branch. Confirm only once; the operation must audit the change.
+- Confirmations for inactive branches, wrong destinations, unfulfillable future pickups or bikes currently on rent must fail without relocating the vehicle.
+- If the affected future booking was cancelled, expired, marked no-show, returned or completed, a superadmin may choose **Dismiss obsolete** and enter a meaningful audit reason (at least ten characters).
+- A confirmed or still-active affected booking cannot be dismissed just because the relocation is inconvenient.
+- Closing a relocation alert must not modify the bike location, cancel bookings, or issue a refund.
+- Validate both JSON and browser flows; branch staff can review but cannot confirm or dismiss.
+- Check `activity_logs` for `bike_relocation_receipt_confirmed` and `bike_relocation_dismissed` and confirm no sensitive customer data is added.
+
+## 7. Release gate
 
 Do not consider PR #19 ready until:
 - CI passes on the exact release commit.
