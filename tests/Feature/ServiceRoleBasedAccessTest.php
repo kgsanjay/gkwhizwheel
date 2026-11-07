@@ -224,16 +224,15 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
         'pickup_location' => 'Murudeshwar Port',
     ]);
 
-    // Taxi Manager only sees taxi and boating (not scuba)
+    // Until service bookings have branch ownership, manager dashboards must not expose globally shared service data.
     $this->actingAs($this->taxiManager)
         ->get('/admin/dashboard')
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->has('service_metrics', 2)
+                ->has('service_metrics', 0)
                 ->where('assigned_services', fn ($val) => collect($val)->sort()->values()->all() === ['boating', 'taxi'])
-                ->has('recent_service_bookings', 1)
-                ->where('recent_service_bookings.0.booking_number', 'GKW-TX-260909-TEST')
+                ->has('recent_service_bookings', 0)
         );
 
     // Super admin sees all services
