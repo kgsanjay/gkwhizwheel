@@ -86,16 +86,6 @@ class BookingService
     ): Booking {
         $this->ensureCurrentStatus($booking, [BookingStatus::CONFIRMED], BookingStatus::HANDED_OVER);
 
-        // An advance-only online confirmation is not proof the entire rental
-        // has been paid. Staff must collect the recorded outstanding balance
-        // before releasing the vehicle; historical/full bookings are unchanged.
-        if (($booking->price_breakdown_json['checkout_payment_option'] ?? null) === 'advance'
-            && BikeBookingPayments::remainder($booking) > 0) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'payment' => 'Collect the remaining rental balance before handing over this bike.',
-            ]);
-        }
-
         return DB::transaction(function () use (
             $booking,
             $odometerReading,
@@ -104,7 +94,20 @@ class BookingService
             $photoPaths,
             $staffId
         ): Booking {
-            // Acquire row-level lock on bike for availability/state transition
+            // Lock the booking as well as its bike. A stale Eloquent instance
+            // must not authorize a duplicate inspection after first handover.
+            $booking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            $this->ensureCurrentStatus($booking, [BookingStatus::CONFIRMED], BookingStatus::HANDED_OVER);
+
+            // A paid ₹100 advance does not settle the remaining balance.
+            // Check inside the same transaction as the physical handover.
+            if (($booking->price_breakdown_json['checkout_payment_option'] ?? null) === 'advance'
+                && BikeBookingPayments::remainder($booking) > 0) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'payment' => 'Collect the remaining rental balance before handing over this bike.',
+                ]);
+            }
+
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
             app(BikeComplianceGate::class)->assertReadyForHandover($bike);
 
@@ -174,7 +177,14 @@ class BookingService
             $staffId,
             $returnStoreId
         ): Booking {
-            // Acquire row-level lock on bike for availability/state transition
+            $booking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            $this->ensureCurrentStatus($booking, [BookingStatus::HANDED_OVER], BookingStatus::RETURNED);
+            if (! is_finite($lateFee) || ! is_finite($damageFee) || $lateFee < 0 || $damageFee < 0) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'fees' => 'Return charges must be finite, non-negative amounts.',
+                ]);
+            }
+
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
 
             $actualReturnStoreId = $returnStoreId ?? $booking->return_store_id;
