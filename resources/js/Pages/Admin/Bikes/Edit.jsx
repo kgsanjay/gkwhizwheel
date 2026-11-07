@@ -35,6 +35,7 @@ import EditIcon from '@mui/icons-material/Edit';
 export default function BikesEdit({
     bike = {},
     categories = [],
+    bike_models = [],
     stores = [],
     fuel_types = [],
     transmissions = [],
@@ -42,6 +43,7 @@ export default function BikesEdit({
 }) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'put',
+        bike_model_id: bike.bike_model_id || '',
         brand: bike.brand || '',
         model_name: bike.model_name || '',
         registration_number: bike.registration_number || '',
@@ -78,6 +80,20 @@ export default function BikesEdit({
     const [imagePreview, setImagePreview] = useState(bike.primary_image_url || null);
     const [isDragging, setIsDragging] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+    const selectedModel = bike_models.find((model) => String(model.id) === String(data.bike_model_id));
+    const handleModelSelection = (id) => {
+        const model = bike_models.find((item) => String(item.id) === String(id));
+        if (model) {
+            setData((previous) => ({
+                ...previous, bike_model_id: model.id, category_id: model.category_id,
+                brand: model.brand, model_name: model.name,
+                fuel_type: model.fuel_type, transmission: model.transmission,
+            }));
+        } else {
+            setData('bike_model_id', '');
+        }
+    };
 
     const handlePrimaryImageChange = (file) => {
         if (file) {
@@ -188,6 +204,16 @@ export default function BikesEdit({
                                 <TwoWheelerIcon color="primary" /> Vehicle Specifications
                             </Typography>
 
+                            <TextField select fullWidth size="small" label="Bike model (catalog)" value={data.bike_model_id}
+                                onChange={(e) => handleModelSelection(e.target.value)} error={Boolean(errors.bike_model_id)}
+                                helperText={errors.bike_model_id || 'Choose a model to autofill specifications. Registration and branch remain unique.'}
+                                sx={{ mb: 2 }}>
+                                <MenuItem value="">Unlinked / legacy vehicle</MenuItem>
+                                {bike_models.map((m) => <MenuItem key={m.id} value={m.id}>{m.brand} {m.name}</MenuItem>)}
+                            </TextField>
+                            {selectedModel && <Alert severity="info" sx={{ mb: 2 }}>
+                                Specifications are inherited from the catalog model. Each bike still needs its own registration and branch.
+                            </Alert>}
                             <Grid container spacing={2}>
                                 <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
@@ -196,6 +222,7 @@ export default function BikesEdit({
                                         size="small"
                                         label="Brand / Make"
                                         value={data.brand}
+                                        disabled={Boolean(selectedModel)}
                                         onChange={(e) => setData('brand', e.target.value)}
                                         error={Boolean(errors.brand)}
                                         helperText={errors.brand}
@@ -208,6 +235,7 @@ export default function BikesEdit({
                                         size="small"
                                         label="Model Name"
                                         value={data.model_name}
+                                        disabled={Boolean(selectedModel)}
                                         onChange={(e) => setData('model_name', e.target.value)}
                                         error={Boolean(errors.model_name)}
                                         helperText={errors.model_name}
@@ -233,6 +261,7 @@ export default function BikesEdit({
                                         size="small"
                                         label="Vehicle Category"
                                         value={data.category_id}
+                                        disabled={Boolean(selectedModel)}
                                         onChange={(e) => setData('category_id', e.target.value)}
                                     >
                                         {categories.map((c) => (
@@ -248,6 +277,7 @@ export default function BikesEdit({
                                         size="small"
                                         label="Fuel Type"
                                         value={data.fuel_type}
+                                        disabled={Boolean(selectedModel)}
                                         onChange={(e) => setData('fuel_type', e.target.value)}
                                     >
                                         {fuel_types.map((f) => (
@@ -263,6 +293,7 @@ export default function BikesEdit({
                                         size="small"
                                         label="Transmission"
                                         value={data.transmission}
+                                        disabled={Boolean(selectedModel)}
                                         onChange={(e) => setData('transmission', e.target.value)}
                                     >
                                         {transmissions.map((t) => (
