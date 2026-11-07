@@ -30,6 +30,8 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/bike-rentals/branches/{id}/{slug?}', [\App\Http\Controllers\Web\BranchBikeRentalController::class, 'show'])
+    ->whereNumber('id')->name('bike-rentals.branches.show');
 Route::get('/services/bikes', [\App\Http\Controllers\Web\BikeWebController::class, 'index'])->name('bikes.index');
 Route::get('/services/bikes/models/{id}/{slug?}', [\App\Http\Controllers\Web\BikeModelWebController::class, 'show'])
     ->whereNumber('id')->name('services.bikes.models.show');
