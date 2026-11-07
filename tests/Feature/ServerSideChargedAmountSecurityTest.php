@@ -154,12 +154,13 @@ test('hold booking calculates addon amounts using server side catalog prices ins
     // Base rate: 1500
     // Insurance: 1 * 250 = 250
     // Helmet: 2 * 100 = 200
-    // Deposit: 3000
-    // Total: 1500 + 450 + 3000 = 4950.00
+    // No deposit on new online rental bookings
+    // Total: 1500 + 450 = 1950.00
     $bookingId = $response->json('data.id');
     $createdBooking = Booking::findOrFail($bookingId);
 
-    expect((float) $createdBooking->total_amount)->toBe(4950.00);
+    expect((float) $createdBooking->total_amount)->toBe(1950.00);
+    expect((float) $createdBooking->deposit_amount)->toBe(0.00);
 
     // Verify in price breakdown
     $breakdown = $createdBooking->price_breakdown_json;

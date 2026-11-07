@@ -279,7 +279,7 @@ test('₹100 advance checkout charges only ₹100 and stores outstanding balance
     ])->assertOk()->assertJsonPath('data.amount', 100)
         ->assertJsonPath('data.amount_paise', 10000)
         ->assertJsonPath('data.payment_option', 'advance')
-        ->assertJsonPath('data.balance_due_on_pickup', round((float) $booking->total_amount - 100, 2));
+        ->assertJsonPath('data.balance_due_on_pickup', (int) round((float) $booking->total_amount - 100, 2));
 
     $updated = $booking->fresh();
     expect($updated->price_breakdown_json['checkout_amount'])->toBe(100)
@@ -303,7 +303,7 @@ test('full web checkout charges rental total and no security deposit', function 
         'gateway' => 'razorpay',
         'payment_option' => 'full',
     ])->assertOk()
-        ->assertJsonPath('data.amount', (float) $booking->total_amount)
+        ->assertJsonPath('data.amount', (int) $booking->total_amount)
         ->assertJsonPath('data.balance_due_on_pickup', 0)
         ->assertJsonPath('data.payment_option', 'full');
 });

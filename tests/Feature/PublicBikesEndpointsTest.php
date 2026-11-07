@@ -298,7 +298,7 @@ test('public bike price quote invokes pricing service and returns itemized break
     ]);
 
     // 2 days weekday (Tuesday - Wednesday): 2026-10-06 to 2026-10-07
-    // Bike 1: 500 * 2 = 1000 base + 1500 deposit + 350 one-way fee = 2850 total
+    // Deposit-free: 500 * 2 + 350 one-way fee = 1350 total
     $query = http_build_query([
         'start_date' => '2026-10-06',
         'end_date' => '2026-10-07',
@@ -314,8 +314,8 @@ test('public bike price quote invokes pricing service and returns itemized break
             'data' => [
                 'base_amount' => 1000.00,
                 'one_way_fee_amount' => 350.00,
-                'deposit_amount' => 1500.00,
-                'total_amount' => 2850.00,
+                'deposit_amount' => 0.00,
+                'total_amount' => 1350.00,
             ],
         ])
         ->assertJsonStructure([
