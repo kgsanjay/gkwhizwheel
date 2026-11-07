@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
@@ -663,6 +663,12 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleOpenBooking = () => {
+        // Bike rentals have a dedicated, branch-aware inventory and checkout.
+        // Do not route bike customers through the generic six-service quote modal.
+        if (['bikes', 'two-wheelers', 'two_wheelers'].includes(normalizedSlug)) {
+            router.visit('/services/bikes');
+            return;
+        }
         setModalOpen(true);
     };
 
