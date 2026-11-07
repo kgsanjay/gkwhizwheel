@@ -40,7 +40,7 @@ class BranchBikeRentalController extends Controller
         $units = Bike::query()
             ->where('current_store_id', $store->id)
             ->whereIn('bike_model_id', $models->pluck('id'))
-            ->get(['id', 'bike_model_id', 'status', 'primary_image_path']);
+            ->get(['id', 'bike_model_id', 'status', 'primary_image_path', 'base_daily_rate_override']);
 
         $modelRows = $models->map(function (BikeModel $model) use ($units, $store): array {
             $atBranch = $units->where('bike_model_id', $model->id);
@@ -60,7 +60,7 @@ class BranchBikeRentalController extends Controller
                 'physically_available_now' => $atBranch->where('status', BikeStatus::AVAILABLE)->count(),
                 'indicative_daily_rate' => $configuredPrice !== null
                     ? (float) $configuredPrice->weekday_rate
-                    : ($model->category?->base_daily_rate === null ? null : (float) $model->category->base_daily_rate),
+                    : (float) ($atBranch->first()?->base_daily_rate_override ?? $model->category?->base_daily_rate ?? 0),
                 'image_url' => $imagePath
                     ? (str_starts_with($imagePath, 'http')
                         ? $imagePath
