@@ -150,3 +150,50 @@ test('browser receipt confirmation redirects back to the relocation list', funct
     )->assertRedirect(route('admin.relocations.index'));
     expect($this->task->fresh()->status)->toBe('resolved');
 });
+
+test('superadmin may dismiss obsolete relocation without moving bike and records the reason', function (): void {
+    $this->future->update(['status' => BookingStatus::CANCELLED]);
+    $initialStore = $this->bike->current_store_id;
+
+    $this->actingAs($this->superadmin)->postJson(
+        '/admin/relocations/'.$this->task->id.'/dismiss',
+        ['reason' => 'Customer cancelled their upcoming pickup.']
+    )->assertOk()->assertJsonPath('data.status', 'dismissed');
+
+    expect($this->task->fresh()->status)->toBe('dismissed')
+        ->and($this->bike->fresh()->current_store_id)->toBe($initialStore);
+    $audit = ActivityLog::where('action', 'bike_relocation_dismissed')->sole();
+    expect($audit->new_values['reason'])->toBe('Customer cancelled their upcoming pickup.');
+});
+
+test('superadmin cannot dismiss a relocation while confirmed pickup remains active', function (): void {
+    $this->actingAs($this->superadmin)->postJson(
+        '/admin/relocations/'.$this->task->id.'/dismiss',
+        ['reason' => 'The vehicle is not yet at the pickup branch.']
+    )->assertUnprocessable();
+
+    expect($this->task->fresh()->status)->toBe('open');
+});
+
+test('branch managers cannot dismiss relocation tasks even after cancellation', function (): void {
+    $this->future->update(['status' => BookingStatus::CANCELLED]);
+    $this->actingAs($this->manager)->postJson(
+        '/admin/relocations/'.$this->task->id.'/dismiss',
+        ['reason' => 'Customer cancelled this reservation.']
+    )->assertForbidden();
+    expect($this->task->fresh()->status)->toBe('open');
+});
+
+test('dismissal requires an audit reason and cannot be repeated', function (): void {
+    $this->future->update(['status' => BookingStatus::EXPIRED]);
+    $url = '/admin/relocations/'.$this->task->id.'/dismiss';
+    $this->actingAs($this->superadmin)->postJson($url, [
+        'reason' => 'Too short',
+    ])->assertUnprocessable();
+    $this->actingAs($this->superadmin)->postJson($url, [
+        'reason' => 'The reservation expired before pickup.',
+    ])->assertOk();
+    $this->actingAs($this->superadmin)->postJson($url, [
+        'reason' => 'Try to dismiss the same task twice.',
+    ])->assertUnprocessable();
+});

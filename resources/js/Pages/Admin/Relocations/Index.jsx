@@ -19,6 +19,8 @@ export default function RelocationsIndex({
     const [confirmed, setConfirmed] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [dismissTask, setDismissTask] = useState(null);
+    const [dismissReason, setDismissReason] = useState('');
 
     const close = () => {
         if (submitting) return;
@@ -42,6 +44,24 @@ export default function RelocationsIndex({
                 setError('');
             },
             onError: (errors) => setError(Object.values(errors || {}).join(' ') || 'Unable to confirm this transfer.'),
+            onFinish: () => setSubmitting(false),
+        });
+    };
+
+    const dismissAlert = () => {
+        if (!dismissTask || submitting || dismissReason.trim().length < 10) return;
+        setSubmitting(true);
+        setError('');
+        router.post(`/admin/relocations/${dismissTask.id}/dismiss`, {
+            reason: dismissReason.trim(),
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setDismissTask(null);
+                setDismissReason('');
+                setError('');
+            },
+            onError: (errors) => setError(Object.values(errors || {}).join(' ') || 'Unable to dismiss this task.'),
             onFinish: () => setSubmitting(false),
         });
     };
@@ -104,7 +124,10 @@ export default function RelocationsIndex({
                                     <TableCell>{task.pickup_date || '—'}</TableCell>
                                     <TableCell align="right">
                                         {can_confirm ? (
-                                            <Button variant="outlined" size="small" onClick={() => { setSelected(task); setConfirmed(false); setError(''); }}>Confirm receipt</Button>
+                                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                                <Button variant="outlined" size="small" onClick={() => { setSelected(task); setConfirmed(false); setError(''); }}>Confirm receipt</Button>
+                                                <Button size="small" color="inherit" onClick={() => { setDismissTask(task); setDismissReason(''); setError(''); }}>Dismiss obsolete</Button>
+                                            </Stack>
                                         ) : (
                                             <Typography color="text.secondary" variant="caption">Superadmin review</Typography>
                                         )}
@@ -147,6 +170,25 @@ export default function RelocationsIndex({
                     <Button color="primary" variant="contained" onClick={submitReceipt} disabled={!confirmed || submitting} startIcon={submitting ? <CircularProgress size={16} /> : <CheckCircleIcon />}>
                         Confirm receipt
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={Boolean(dismissTask)} onClose={() => { if (!submitting) { setDismissTask(null); setError(''); } }} maxWidth="sm" fullWidth>
+                <DialogTitle>Dismiss an obsolete relocation alert</DialogTitle>
+                <DialogContent dividers>
+                    <Stack spacing={2}>
+                        <Alert severity="info">Only an alert whose affected booking is no longer active can be dismissed. This does not move the bike.</Alert>
+                        <Typography variant="body2">Task #{dismissTask?.id}: {dismissTask?.affected_booking_reference}</Typography>
+                        <TextField label="Reason for dismissal" value={dismissReason} onChange={(event) => setDismissReason(event.target.value)}
+                            fullWidth multiline minRows={2} inputProps={{ maxLength: 500 }}
+                            helperText="Required: at least 10 characters. The reason will be recorded in the audit log." />
+                        {error && <Alert severity="error">{error}</Alert>}
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => { setDismissTask(null); setError(''); }} disabled={submitting}>Cancel</Button>
+                    <Button variant="contained" color="warning" disabled={submitting || dismissReason.trim().length < 10}
+                        onClick={dismissAlert}>Dismiss obsolete task</Button>
                 </DialogActions>
             </Dialog>
         </AdminLayout>

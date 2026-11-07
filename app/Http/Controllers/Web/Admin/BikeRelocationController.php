@@ -163,4 +163,63 @@ class BikeRelocationController extends Controller
             ]);
         });
     }
+    /**
+     * Close a no-longer-actionable alert without changing physical bike location.
+     * Only a superadmin may dismiss and only after its associated pickup is
+     * cancelled, expired, a no-show, returned or completed.
+     */
+    public function dismiss(int $id, Request $request): JsonResponse|RedirectResponse
+    {
+        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:500'],
+        ]);
+
+        return DB::transaction(function () use ($id, $request, $validated): JsonResponse|RedirectResponse {
+            $task = BikeRelocationTask::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($task->status !== 'open') {
+                throw ValidationException::withMessages(['task' => 'This relocation is no longer open.']);
+            }
+
+            $affected = $task->affectedBooking;
+            $inactiveStatuses = [
+                BookingStatus::CANCELLED,
+                BookingStatus::EXPIRED,
+                BookingStatus::NO_SHOW,
+                BookingStatus::RETURNED,
+                BookingStatus::COMPLETED,
+            ];
+            if ($affected !== null && ! in_array($affected->status, $inactiveStatuses, true)) {
+                throw ValidationException::withMessages([
+                    'task' => 'This reservation is still active. Confirm receipt or arrange a relocation instead.',
+                ]);
+            }
+
+            $task->update(['status' => 'dismissed']);
+            ActivityLog::create([
+                'user_id' => $request->user()->id,
+                'store_id' => $task->required_store_id,
+                'action' => 'bike_relocation_dismissed',
+                'subject_type' => BikeRelocationTask::class,
+                'subject_id' => (string) $task->id,
+                'old_values' => ['status' => 'open'],
+                'new_values' => [
+                    'status' => 'dismissed',
+                    'reason' => $validated['reason'],
+                    'affected_booking_id' => $task->affected_booking_id,
+                ],
+            ]);
+
+            if (! $request->expectsJson()) {
+                return redirect()->route('admin.relocations.index')
+                    ->with('success', 'Obsolete relocation alert dismissed.');
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => ['task_id' => $task->id, 'status' => 'dismissed'],
+            ]);
+        });
+    }
+
 }

@@ -212,6 +212,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/relocations', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'index'])->name('admin.relocations.index');
     Route::post('/relocations/{id}/confirm-receipt', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'confirmReceipt'])
         ->middleware('role:super_admin')->name('admin.relocations.confirm-receipt');
+    Route::post('/relocations/{id}/dismiss', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'dismiss'])
+        ->middleware('role:super_admin')->name('admin.relocations.dismiss');
     Route::get('/dispatch', [\App\Http\Controllers\Web\Admin\AdminDispatchWebController::class, 'index'])->name('admin.dispatch.index');
     Route::get('/operations', fn () => redirect()->route('admin.bookings.index', ['status' => 'confirmed']))->name('admin.operations');
     Route::get('/customers', fn () => redirect()->route('admin.bookings.index'))->name('admin.customers');
