@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use App\Enums\UserRole;
+use App\Enums\StoreStatus;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AssignStaffStoresRequest extends FormRequest
@@ -51,7 +53,7 @@ class AssignStaffStoresRequest extends FormRequest
     {
         return [
             'store_ids' => ['required', 'array', 'min:1'],
-            'store_ids.*' => ['integer', 'exists:stores,id'],
+            'store_ids.*' => ['integer', 'distinct', Rule::exists('stores', 'id')->where('status', StoreStatus::ACTIVE->value)],
         ];
     }
 }
