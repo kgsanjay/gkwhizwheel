@@ -103,6 +103,7 @@ class FullUserJourneysTest extends TestCase
             'odometer_reading' => 10000,
             'status' => BikeStatus::AVAILABLE,
         ]);
+        \Tests\Support\VerifiedBikeDocuments::attach($this->bike);
 
         $this->customer = User::create([
             'name' => 'Journey Customer',
