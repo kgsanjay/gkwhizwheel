@@ -49,10 +49,7 @@ class AdminBikeWebController extends Controller
         // Scope to user's assigned stores if not super admin
         if (! $isSuperAdmin && $user !== null) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
-            $query->where(function ($q) use ($userStoreIds): void {
-                $q->whereIn('current_store_id', $userStoreIds)
-                    ->orWhereIn('home_store_id', $userStoreIds);
-            });
+            $query->whereIn('current_store_id', $userStoreIds);
         }
 
         // Search query
@@ -90,7 +87,7 @@ class AdminBikeWebController extends Controller
         $allBikes = Bike::query();
         if (! $isSuperAdmin && $user !== null) {
             $ids = $user->getAuthorizedStoreIds() ?? [];
-            $allBikes->where(fn ($q) => $q->whereIn('current_store_id', $ids)->orWhereIn('home_store_id', $ids));
+            $allBikes->whereIn('current_store_id', $ids);
         }
         $totalCount = (clone $allBikes)->count();
         $availableCount = (clone $allBikes)->where('status', BikeStatus::AVAILABLE)->count();

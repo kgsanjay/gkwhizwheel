@@ -118,3 +118,27 @@ test('staff inventory endpoint excludes foreign bikes and rejects forged branch 
     $this->getJson('/api/v1/staff/bikes')->assertOk()->assertJsonCount(1, 'data');
     $this->getJson('/api/v1/staff/bikes?store_id='.$foreign->id)->assertForbidden();
 });
+
+test('home branch manager cannot edit or view bike physically assigned to another branch', function (): void {
+    $home = branchForIsolation('Home Assignment Hub', '9999999951');
+    $current = branchForIsolation('Current Assignment Hub', '9999999952');
+    $category = BikeCategory::create(['name' => 'Scooter', 'base_daily_rate' => 500, 'default_deposit_amount' => 500]);
+    $manager = managerForIsolation('home.only@example.test', '9999999953');
+    $manager->stores()->attach($home->id);
+    $bike = Bike::create([
+        'category_id' => $category->id,
+        'home_store_id' => $home->id, 'current_store_id' => $current->id,
+        'brand' => 'Honda', 'model_name' => 'Activa',
+        'registration_number' => 'KA-47-SCOPE-003',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+        'status' => BikeStatus::AVAILABLE,
+    ]);
+
+    expect($manager->can('view', $bike))->toBeFalse()
+        ->and($manager->can('update', $bike))->toBeFalse()
+        ->and($manager->can('delete', $bike))->toBeFalse();
+    $this->actingAs($manager)->get("/admin/bikes/{$bike->id}/edit")->assertForbidden();
+    $this->actingAs($manager)->get('/admin/bikes')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('bikes', 0));
+});

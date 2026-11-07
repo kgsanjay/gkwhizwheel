@@ -40,8 +40,9 @@ class BikePolicy
         if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return in_array($bike->current_store_id, $userStoreIds, true)
-                || in_array($bike->home_store_id, $userStoreIds, true);
+            // Physical branch ownership governs bike-level access. The nominal
+            // home branch cannot edit a bike currently assigned elsewhere.
+            return in_array($bike->current_store_id, $userStoreIds, true);
         }
 
         return false;
@@ -61,8 +62,9 @@ class BikePolicy
         if ($user->role === UserRole::STORE_MANAGER) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return in_array($bike->current_store_id, $userStoreIds, true)
-                || in_array($bike->home_store_id, $userStoreIds, true);
+            // Physical branch ownership governs bike-level access. The nominal
+            // home branch cannot edit a bike currently assigned elsewhere.
+            return in_array($bike->current_store_id, $userStoreIds, true);
         }
 
         return false;
@@ -77,8 +79,9 @@ class BikePolicy
         if ($user->role === UserRole::STORE_MANAGER) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return in_array($bike->current_store_id, $userStoreIds, true)
-                || in_array($bike->home_store_id, $userStoreIds, true);
+            // Physical branch ownership governs bike-level access. The nominal
+            // home branch cannot edit a bike currently assigned elsewhere.
+            return in_array($bike->current_store_id, $userStoreIds, true);
         }
 
         return false;
@@ -93,8 +96,9 @@ class BikePolicy
         if ($user->role === UserRole::STORE_MANAGER) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return in_array($bike->current_store_id, $userStoreIds, true)
-                || in_array($bike->home_store_id, $userStoreIds, true);
+            // Physical branch ownership governs bike-level access. The nominal
+            // home branch cannot edit a bike currently assigned elsewhere.
+            return in_array($bike->current_store_id, $userStoreIds, true);
         }
 
         return false;
