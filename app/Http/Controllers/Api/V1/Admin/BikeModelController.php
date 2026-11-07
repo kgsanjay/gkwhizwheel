@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Enums\BikeStatus;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
 use App\Http\Controllers\Controller;
@@ -18,7 +19,7 @@ class BikeModelController extends Controller
     public function index(Request $request): JsonResponse
     {
         $models = BikeModel::query()
-            ->with('category:id,name')
+            ->with(['category:id,name', 'bikes:id,bike_model_id,current_store_id,status'])
             ->withCount('bikes')
             ->orderBy('brand')
             ->orderBy('name')
@@ -36,6 +37,17 @@ class BikeModelController extends Controller
                 'transmission' => $model->transmission->value,
                 'is_active' => $model->is_active,
                 'total_units' => $model->bikes_count,
+                // All counts refer to current physical location, not home
+                // ownership or future date-based booking availability.
+                'branches' => $model->bikes->groupBy('current_store_id')
+                    ->map(fn ($bikes, $storeId): array => [
+                        'store_id' => (int) $storeId,
+                        'total_units' => $bikes->count(),
+                        'available_now' => $bikes->where('status', BikeStatus::AVAILABLE)->count(),
+                        'on_rent' => $bikes->where('status', BikeStatus::ON_RENT)->count(),
+                        'maintenance' => $bikes->where('status', BikeStatus::MAINTENANCE)->count(),
+                        'retired' => $bikes->where('status', BikeStatus::RETIRED)->count(),
+                    ])->values()->all(),
             ])->values()->all(),
         ]);
     }
