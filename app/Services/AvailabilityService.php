@@ -151,6 +151,7 @@ class AvailabilityService
                 && (int) ($existing->bike_model_id ?? 0) === (int) ($params['bike_model_id'] ?? 0)
                 && (int) $existing->pickup_store_id === (int) $params['pickup_store_id']
                 && (int) $existing->return_store_id === (int) $params['return_store_id']
+                && app(BookingPickupPoints::class)->sameAsBooking($existing, $params)
                 && $existing->start_date->toDateString() === Carbon::parse($params['start_date'])->toDateString()
                 && $existing->end_date->toDateString() === Carbon::parse($params['end_date'])->toDateString()
                 && $existing->channel === $channel;
@@ -217,6 +218,9 @@ class AvailabilityService
                 ]);
             }
 
+            // Resolve and authorize points server-side, independent of browser selections.
+            $selectedPoints = app(BookingPickupPoints::class)->resolve($params);
+
             // 2. Check overlapping bookings in held/confirmed/handed_over
             $hasConflict = Booking::where('bike_id', $bike->id)
                 ->where(function ($query): void {
@@ -276,6 +280,7 @@ class AvailabilityService
                 'user_id' => $userId,
                 'pickup_store_id' => $pickupStoreId,
                 'return_store_id' => $returnStoreId,
+                ...$selectedPoints,
                 'channel' => $channel,
                 'status' => BookingStatus::HELD,
                 'start_date' => $start,
@@ -332,6 +337,7 @@ class AvailabilityService
                     && (int) ($existing->bike_model_id ?? 0) === $modelId
                     && (int) $existing->pickup_store_id === $pickupId
                     && (int) $existing->return_store_id === $returnId
+                    && app(BookingPickupPoints::class)->sameAsBooking($existing, $params)
                     && $existing->start_date->toDateString() === Carbon::parse($params['start_date'])->toDateString()
                     && $existing->end_date->toDateString() === Carbon::parse($params['end_date'])->toDateString()
                     && $existing->channel === BookingChannel::ONLINE;
