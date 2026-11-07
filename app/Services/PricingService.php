@@ -75,7 +75,8 @@ class PricingService
         }
 
         // 1. Determine base rate and security deposit
-        $baseDailyRate = (float) ($bikeModel->base_daily_rate_override ?? $bikeModel->category->base_daily_rate);
+        $branchRates = app(BranchBikePricing::class)->rates($bikeModel, (int) $pickupStoreModel->id);
+        $baseDailyRate = $branchRates['weekday_rate'];
         $depositAmount = (float) ($bikeModel->deposit_amount_override ?? $bikeModel->category->default_deposit_amount);
 
         // 2. Fetch candidate pricing rules for this bike and its category
@@ -161,9 +162,9 @@ class PricingService
                     PricingRateType::FIXED_OVERRIDE => (float) $selectedRule->value - $baseDailyRate,
                     PricingRateType::FLAT_ADDON => (float) $selectedRule->value,
                 };
-            } elseif (in_array($dayOfWeek, [0, 5, 6], true) && $bikeModel->weekend_daily_rate_override !== null) {
-                // Rate card weekend rate (Fri-Sun)
-                $weekendRate = (float) $bikeModel->weekend_daily_rate_override;
+            } elseif (in_array($dayOfWeek, [0, 5, 6], true) && $branchRates['weekend_rate'] !== null) {
+                // Friday-Sunday tariff from the pickup branch's model rate card.
+                $weekendRate = $branchRates['weekend_rate'];
                 $adjustment = round($weekendRate - $baseDailyRate, 2);
                 $ruleName = "Weekend Tariff (Fri-Sun: ₹{$weekendRate}/day)";
             }
