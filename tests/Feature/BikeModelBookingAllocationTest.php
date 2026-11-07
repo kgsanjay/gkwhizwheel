@@ -63,7 +63,7 @@ function allocationBike($test, Store $store, string $registration, ?BikeModel $m
 {
     $model ??= $test->model;
 
-    return Bike::create([
+    $bike = Bike::create([
         'bike_model_id' => $model->id, 'category_id' => $model->category_id,
         'brand' => $model->brand, 'model_name' => $model->name,
         'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
@@ -71,6 +71,8 @@ function allocationBike($test, Store $store, string $registration, ?BikeModel $m
         'home_store_id' => $store->id, 'current_store_id' => $store->id,
         'status' => $status,
     ]);
+    \Tests\Support\VerifiedBikeDocuments::attach($bike);
+    return $bike;
 }
 
 function allocationPayload($test, ?BikeModel $model = null, ?Store $pickup = null, ?Store $return = null, string $key = 'model-hold-01'): array
