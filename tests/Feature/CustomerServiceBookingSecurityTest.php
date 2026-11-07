@@ -104,6 +104,7 @@ test('same gateway payment reference cannot be credited twice', function (): voi
         'advance_paid' => 0,
         'balance_due' => 3000,
         'payment_status' => 'pending',
+        'booking_channel' => 'offline_walkin',
         'status' => 'confirmed',
     ]);
 
