@@ -231,7 +231,15 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
         ->assertOk()
         ->assertInertia(
             fn (Assert $page) => $page
-                ->has('service_metrics', 0)
+                // The dashboard includes a zero-valued card for each assigned
+                // service, even when all branch-owned rows are absent.
+                ->has('service_metrics', 2)
+                ->where('service_metrics', fn ($metrics) =>
+                    collect($metrics)->every(fn ($metric) =>
+                        (int) $metric['items_count'] === 0
+                        && (int) $metric['active_bookings'] === 0
+                    )
+                )
                 ->where('assigned_services', fn ($val) => collect($val)->sort()->values()->all() === ['boating', 'taxi'])
                 ->has('recent_service_bookings', 0)
         );

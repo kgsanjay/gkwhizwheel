@@ -109,7 +109,7 @@ test('hold booking creates held status and 10-minute hold window', function (): 
             'data' => [
                 'status' => 'held',
                 'channel' => 'online',
-                'deposit_amount' => 2000.00,
+                'deposit_amount' => 0.00,
             ],
             'message' => 'Booking hold created successfully.',
         ])

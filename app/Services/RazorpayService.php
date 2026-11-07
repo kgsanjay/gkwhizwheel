@@ -21,7 +21,7 @@ class RazorpayService
         $keySecret = (string) config('services.razorpay.key_secret', 'test_secret_placeholder');
 
         // Option A: Advance rental + security deposit charged together in a single order
-        $amountPaise = (int) round((float) $booking->total_amount * 100);
+        $amountPaise = (int) round(BikeBookingPayments::expectedGatewayAmount($booking) * 100);
 
         $payload = [
             'amount' => $amountPaise,

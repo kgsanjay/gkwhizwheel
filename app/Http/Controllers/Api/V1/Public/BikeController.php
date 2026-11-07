@@ -183,6 +183,8 @@ class BikeController extends Controller
             userId: $request->user()?->id
         );
 
+        $quote = \App\Services\BikeBookingPayments::waiveDeposit($quote);
+
         return response()->json([
             'success' => true,
             'data' => $quote,

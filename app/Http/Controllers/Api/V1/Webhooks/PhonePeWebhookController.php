@@ -13,6 +13,7 @@ use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Services\BookingService;
+use App\Services\BikeBookingPayments;
 use App\Services\PhonePeService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -99,7 +100,7 @@ class PhonePeWebhookController extends Controller
                 $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
                 if ($gatewayTransactionId === '' || $merchantTransactionId === '' ||
                     ! hash_equals((string) ($breakdown['phonepe_transaction_id'] ?? ''), $merchantTransactionId) ||
-                    (int) round($amount * 100) !== (int) round((float) $booking->total_amount * 100)) {
+                    (int) round($amount * 100) !== (int) round(BikeBookingPayments::expectedGatewayAmount($booking) * 100)) {
                     return response()->json(['success' => false, 'message' => 'Payment does not match the checkout transaction.'], 422);
                 }
 
@@ -131,7 +132,7 @@ class PhonePeWebhookController extends Controller
                         'method' => PaymentMethod::PHONEPE,
                         'status' => PaymentStatus::SUCCESS,
                         'collected_by' => null,
-                        'notes' => 'PhonePe online advance + deposit payment via webhook',
+                        'notes' => 'PhonePe online bike rental '.(($breakdown['checkout_payment_option'] ?? 'full') === 'advance' ? 'advance' : 'full').' payment via webhook',
                     ]
                 );
 

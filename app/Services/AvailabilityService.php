@@ -262,6 +262,12 @@ class AvailabilityService
                 userId: $userId
             );
 
+            // Customer online bike rentals no longer require a security deposit.
+            // Do not rewrite older booking financial records.
+            if ($channel === BookingChannel::ONLINE) {
+                $quote = BikeBookingPayments::waiveDeposit($quote);
+            }
+
             // 4. Create the 'held' booking with held_until = 10 minutes from now
             $booking = Booking::create([
                 'booking_reference' => $this->generateBookingReference(),

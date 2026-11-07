@@ -479,23 +479,27 @@ export default function BookingConfirmation({ booking }) {
                                         </TableRow>
                                     )}
 
-                                    <TableRow>
+                                    {Number(booking.deposit_amount || 0) > 0 && <TableRow>
                                         <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 500, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                             Refundable Deposit
                                         </TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 600, color: isDark ? '#FFFFFF' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
                                             ₹{Number(booking.deposit_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </TableCell>
-                                    </TableRow>
+                                    </TableRow>}
 
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', fontSize: '1rem', pt: 2, borderColor: 'transparent' }}>
-                                            Total Paid
+                                            Total Rental
                                         </TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 800, color: '#F59E0B', fontSize: '1.25rem', pt: 2, borderColor: 'transparent' }}>
                                             ₹{Number(booking.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </TableCell>
                                     </TableRow>
+                                    <TableRow><TableCell sx={{ fontWeight: 700 }}>Paid</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700 }}>₹{Number(booking.paid_amount || 0).toLocaleString('en-IN')}</TableCell></TableRow>
+                                    <TableRow><TableCell sx={{ fontWeight: 700 }}>Balance Due at Pickup</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 800 }}>₹{Number(booking.balance_due || 0).toLocaleString('en-IN')}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
 
@@ -526,7 +530,11 @@ export default function BookingConfirmation({ booking }) {
                             )}
 
                             <Alert icon={<VerifiedUserIcon fontSize="inherit" />} severity="success" sx={{ mt: 2.5 }}>
-                                The ₹{Number(booking.deposit_amount || 0).toLocaleString('en-IN')} security deposit is 100% refundable upon vehicle return and inspection.
+                                {Number(booking.deposit_amount || 0) > 0
+                                    ? `The ₹${Number(booking.deposit_amount).toLocaleString('en-IN')} security deposit is refundable after return inspection.`
+                                    : Number(booking.balance_due || 0) > 0
+                                        ? `No security deposit. Pay the remaining ₹${Number(booking.balance_due).toLocaleString('en-IN')} rental balance at pickup.`
+                                        : 'No security deposit. Your quoted rental has been paid in full.'}
                             </Alert>
                         </CardContent>
                     </Card>

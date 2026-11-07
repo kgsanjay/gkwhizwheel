@@ -86,6 +86,16 @@ class BookingService
     ): Booking {
         $this->ensureCurrentStatus($booking, [BookingStatus::CONFIRMED], BookingStatus::HANDED_OVER);
 
+        // An advance-only online confirmation is not proof the entire rental
+        // has been paid. Staff must collect the recorded outstanding balance
+        // before releasing the vehicle; historical/full bookings are unchanged.
+        if (($booking->price_breakdown_json['checkout_payment_option'] ?? null) === 'advance'
+            && BikeBookingPayments::remainder($booking) > 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payment' => 'Collect the remaining rental balance before handing over this bike.',
+            ]);
+        }
+
         return DB::transaction(function () use (
             $booking,
             $odometerReading,

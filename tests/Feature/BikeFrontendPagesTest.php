@@ -169,8 +169,8 @@ test('POST /api/v1/bikes/{id}/price-quote returns live itemized pricing breakdow
 
     // 3 rental days: 3 * 850 = 2550 base_amount
     expect($response->json('data.base_amount'))->toEqual(2550);
-    expect($response->json('data.deposit_amount'))->toEqual(2000);
-    expect($response->json('data.total_amount'))->toBeGreaterThanOrEqual(4550);
+    expect($response->json('data.deposit_amount'))->toEqual(0);
+    expect($response->json('data.total_amount'))->toBeGreaterThanOrEqual(2550);
 });
 
 test('GET /api/v1/stores returns list of active stores', function (): void {
