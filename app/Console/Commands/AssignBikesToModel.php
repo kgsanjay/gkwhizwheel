@@ -87,9 +87,9 @@ class AssignBikesToModel extends Command
                     || $bike->fuel_type !== $model->fuel_type
                     || $bike->transmission !== $model->transmission
                     || ($bike->bike_model_id !== null && (int) $bike->bike_model_id !== (int) $model->id)) {
-                    throw new \Illuminate\Validation\ValidationException(
-                        \Illuminate\Validation\Validator::make([], [])
-                    );
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'bike' => 'A bike changed since the dry run or no longer matches this model.',
+                    ]);
                 }
             }
             foreach ($bikes as $bike) {
