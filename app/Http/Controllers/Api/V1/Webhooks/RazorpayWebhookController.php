@@ -15,6 +15,7 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Refund;
 use App\Services\BookingService;
+use App\Services\BikeBookingPayments;
 use App\Services\RazorpayService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -167,7 +168,7 @@ class RazorpayWebhookController extends Controller
                 $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
                 if ($gatewayPaymentId === '' || $gatewayOrderId === '' ||
                     ! hash_equals((string) ($breakdown['razorpay_order_id'] ?? ''), $gatewayOrderId) ||
-                    $currency !== 'INR' || (int) round($amount * 100) !== (int) round((float) $booking->total_amount * 100)) {
+                    $currency !== 'INR' || (int) round($amount * 100) !== (int) round(BikeBookingPayments::expectedGatewayAmount($booking) * 100)) {
                     return response()->json(['success' => false, 'message' => 'Payment does not match the checkout order.'], 422);
                 }
 
@@ -202,7 +203,7 @@ class RazorpayWebhookController extends Controller
                         'method' => PaymentMethod::RAZORPAY,
                         'status' => PaymentStatus::SUCCESS,
                         'collected_by' => null,
-                        'notes' => 'Razorpay online advance + deposit payment via webhook',
+                        'notes' => 'Razorpay online bike rental '.(($breakdown['checkout_payment_option'] ?? 'full') === 'advance' ? 'advance' : 'full').' payment via webhook',
                     ]
                 );
 

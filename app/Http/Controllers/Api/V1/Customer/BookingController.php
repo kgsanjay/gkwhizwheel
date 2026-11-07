@@ -17,6 +17,7 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Services\AvailabilityService;
 use App\Services\BookingService;
+use App\Services\BikeBookingPayments;
 use App\Services\PhonePeService;
 use App\Services\PricingService;
 use App\Services\RazorpayService;
@@ -130,10 +131,34 @@ class BookingController extends Controller
 
         $validated = $request->validate([
             'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
+            'payment_option' => ['nullable', 'string', 'in:advance,full'],
             'redirect_url' => ['nullable', 'string', 'max:500'],
         ]);
 
         $gateway = strtolower((string) ($validated['gateway'] ?? $request->query('gateway', 'razorpay')));
+        $option = (string) ($validated['payment_option'] ?? 'full');
+        $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
+
+        // Persist a server-calculated, immutable choice before creating an
+        // external gateway order. Retries cannot switch amount or gateway.
+        if (isset($breakdown['checkout_payment_option'])
+            && ($breakdown['checkout_payment_option'] !== $option
+                || ($breakdown['checkout_gateway'] ?? '') !== $gateway)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payment_option' => 'A checkout was already started with another payment option or gateway.',
+            ]);
+        }
+        $amount = BikeBookingPayments::amountFor($booking, $option);
+        if ($amount <= 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payment_option' => 'Online checkout requires a positive amount.',
+            ]);
+        }
+        $breakdown['checkout_payment_option'] = $option;
+        $breakdown['checkout_gateway'] = $gateway;
+        $breakdown['checkout_amount'] = $amount;
+        $breakdown['balance_due_on_pickup'] = round(max(0, (float) $booking->total_amount - $amount), 2);
+        $booking->update(['price_breakdown_json' => $breakdown]);
 
         if ($gateway === 'phonepe') {
             $paymentData = $phonePeService->createPayment($booking, $validated['redirect_url'] ?? null);
@@ -150,7 +175,9 @@ class BookingController extends Controller
                     'gateway' => 'phonepe',
                     'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
                     'redirect_url' => $paymentData['redirect_url'],
-                    'amount' => (float) $booking->total_amount,
+                    'amount' => $amount,
+                    'payment_option' => $option,
+                    'balance_due_on_pickup' => $breakdown['balance_due_on_pickup'],
                     'amount_paise' => $paymentData['amount_paise'],
                     'currency' => 'INR',
                     'status' => $booking->status->value,
@@ -172,8 +199,10 @@ class BookingController extends Controller
                 'booking_reference' => $booking->booking_reference,
                 'gateway' => 'razorpay',
                 'order_id' => $order['id'],
-                'amount' => (float) $booking->total_amount,
-                'amount_paise' => (int) ($order['amount'] ?? round((float) $booking->total_amount * 100)),
+                'amount' => $amount,
+                'payment_option' => $option,
+                'balance_due_on_pickup' => $breakdown['balance_due_on_pickup'],
+                'amount_paise' => (int) ($order['amount'] ?? round($amount * 100)),
                 'currency' => $order['currency'] ?? 'INR',
                 'key_id' => $order['key_id'] ?? (string) config('services.razorpay.key_id'),
                 'status' => $booking->status->value,

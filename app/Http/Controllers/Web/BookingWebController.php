@@ -93,7 +93,7 @@ class BookingWebController extends Controller
 
             $payment = Payment::create([
                 'booking_id' => $booking->id,
-                'amount' => $booking->total_amount,
+                'amount' => \App\Services\BikeBookingPayments::expectedGatewayAmount($booking),
                 'method' => $paymentMethod,
                 'type' => PaymentType::ADVANCE,
                 'gateway_reference' => $gatewayRef,
