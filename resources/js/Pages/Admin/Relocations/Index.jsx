@@ -6,9 +6,9 @@ import {
     Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     TextField, Typography, Pagination, CircularProgress,
 } from '@mui/material';
-import AltRouteIcon from '@mui/icons-material/AltRoute';
+import SwapHorizontalCircleIcon from '@mui/icons-material/SwapHorizontalCircle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AdminLayout from '../../../Layouts/AdminLayout';
 
 export default function RelocationsIndex({
@@ -58,7 +58,7 @@ export default function RelocationsIndex({
             <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2} sx={{ mb: 3 }}>
                 <Box>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                        <AltRouteIcon color="primary" />
+                        <SwapHorizontalCircleIcon color="primary" />
                         <Typography variant="h5" fontWeight={800}>Fleet relocation tasks</Typography>
                     </Stack>
                     <Typography variant="body2" color="text.secondary">Resolve vehicle location conflicts before the next confirmed pickup. Confirmation requires physical receipt.</Typography>
@@ -114,7 +114,7 @@ export default function RelocationsIndex({
                             {(!tasks.data || tasks.data.length === 0) && (
                                 <TableRow><TableCell colSpan={6}>
                                     <Box py={5} textAlign="center">
-                                        <CheckCircleOutlineIcon color="success" sx={{ fontSize: 32, mb: 1 }} />
+                                        <CheckCircleIcon color="success" sx={{ fontSize: 32, mb: 1 }} />
                                         <Typography fontWeight={700}>No pending relocations</Typography>
                                         <Typography variant="body2" color="text.secondary">There are no outstanding pickup-location conflicts for the selected branch.</Typography>
                                     </Box>
@@ -144,7 +144,7 @@ export default function RelocationsIndex({
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={close} disabled={submitting}>Cancel</Button>
-                    <Button color="primary" variant="contained" onClick={submitReceipt} disabled={!confirmed || submitting} startIcon={submitting ? <CircularProgress size={16} /> : <CheckCircleOutlineIcon />}>
+                    <Button color="primary" variant="contained" onClick={submitReceipt} disabled={!confirmed || submitting} startIcon={submitting ? <CircularProgress size={16} /> : <CheckCircleIcon />}>
                         Confirm receipt
                     </Button>
                 </DialogActions>
