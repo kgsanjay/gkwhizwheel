@@ -97,7 +97,19 @@ This audit identifies (a) bikes whose upcoming pickup is unfulfillable from the 
 
 For each failure, review the bike and booking record using the admin operations workflow. Confirm actual physical bike location before approving a transfer. Never resolve a conflict merely by modifying its database location without physical verification. Dismiss an obsolete alert only after verifying the affected booking is inactive.
 
-## 8. Release gate
+## 8. Combined release preflight — read only
+
+After the migration status and database backup have been reviewed, execute:
+
+```bash
+php artisan app:branch-preflight
+```
+
+This single read-only command checks that the necessary service ownership and bike relocation database schema exists, then runs both strict service ownership and fleet location audits. Any unresolved branch ownership, pickup mismatch or stale relocation task produces a nonzero exit status. It never creates, moves, confirms, refunds or cancels records, and must not be treated as a deployment authorization.
+
+If the schema is missing, stop and review `php artisan migrate:status`. Do not attempt to repair migrations or assign legacy records automatically. Preserve the audit results and have authorized branch staff review discrepancies.
+
+## 9. Release gate
 
 Do not consider PR #19 ready until:
 - CI passes on the exact release commit.
