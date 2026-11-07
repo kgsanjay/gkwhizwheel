@@ -46,7 +46,7 @@ test('customer account lists owned enquiries separately from confirmed bookings'
     accountStatusEnquiry($this->customer, 'ENQ-OWN-101', 'reviewing');
     accountStatusEnquiry($this->anotherCustomer, 'ENQ-PRIVATE-999', 'requested');
 
-    $this->actingAs($this->customer)->get('/account/bookings')
+    $this->actingAs($this->customer)->get('/account')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Account/Bookings')
@@ -79,7 +79,7 @@ test('service booking account never exposes records owned by another customer ev
         'status' => 'confirmed',
         'total_amount' => 1000,
     ]);
-    $this->actingAs($this->customer)->get('/account/bookings')
+    $this->actingAs($this->customer)->get('/account')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Account/Bookings')
@@ -90,7 +90,7 @@ test('service booking account never exposes records owned by another customer ev
 
 test('enquiry closed status is never treated as a confirmed service reservation', function (): void {
     accountStatusEnquiry($this->customer, 'ENQ-OWN-102', 'closed');
-    $this->actingAs($this->customer)->get('/account/bookings')
+    $this->actingAs($this->customer)->get('/account')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Account/Bookings')
@@ -123,7 +123,7 @@ test('a held or payment-pending service booking counts as active but not confirm
             'total_amount' => 800,
         ]);
     }
-    $this->actingAs($this->customer)->get('/account/bookings')
+    $this->actingAs($this->customer)->get('/account')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Account/Bookings')
