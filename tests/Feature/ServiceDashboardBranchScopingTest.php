@@ -109,7 +109,7 @@ test('relocation tasks appear only in dashboard data for their required branch',
         'channel' => \App\Enums\BookingChannel::ONLINE,
         'start_date' => now()->addDays(3)->toDateString(),
         'end_date' => now()->addDays(4)->toDateString(),
-        'base_amount' => 1200, 'total_amount' => 1200,
+        'base_amount' => 1200, 'total_amount' => 1200, 'deposit_amount' => 0,
         'price_breakdown_json' => [],
         'status' => \App\Enums\BookingStatus::CONFIRMED,
     ];
