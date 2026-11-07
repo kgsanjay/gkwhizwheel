@@ -158,6 +158,14 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
     const bikes = bikesResponse?.data || [];
     const legacyBikes = bikes.filter((bike) => !bike.bike_model_id);
+    // Public comparison uses registered inventory and actual configured rates.
+    // Never advertise non-existent models, made-up weekend surcharges or deposits.
+    const comparisonBikes = [...new Map(
+        bikes.map((bike) => [
+            bike.bike_model_id ? `model-${bike.bike_model_id}` : `bike-${bike.id}`,
+            bike,
+        ])
+    ).values()];
 
     // WCAG Compliant Text Tokens
     const primaryTextColor = isDark ? '#FFFFFF' : '#0F172A';
@@ -1200,7 +1208,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         >
                             <TableContainer
                                 tabIndex={0}
-                                aria-label="Honnavar bike rental pricing and rate comparison table"
+                                aria-label="Configured bike rental rates by model and vehicle"
                                 sx={{ '&:focus-visible': { outline: '2px solid #F59E0B' } }}
                             >
                                 <Table sx={{ minWidth: 700 }}>
@@ -1210,75 +1218,51 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             <TableCell component="th" scope="col" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.9rem' }}>Category & Spec</TableCell>
                                             <TableCell component="th" scope="col" sx={{ color: '#FBBF24', fontWeight: 800, fontSize: '0.9rem' }}>Mon – Thu (Weekday)</TableCell>
                                             <TableCell component="th" scope="col" sx={{ color: '#7DD3FC', fontWeight: 800, fontSize: '0.9rem' }}>Fri – Sun (Weekend)</TableCell>
-                                            <TableCell component="th" scope="col" sx={{ color: '#6EE7B7', fontWeight: 800, fontSize: '0.9rem' }}>Security Deposit</TableCell>
+                                            <TableCell component="th" scope="col" sx={{ color: '#6EE7B7', fontWeight: 800, fontSize: '0.9rem' }}>Online Deposit</TableCell>
                                             <TableCell component="th" scope="col" align="right" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.9rem' }}>Action</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {[
-                                            { name: 'Honda Dio DLX', keyword: 'dio', spec: '110cc • Automatic • Petrol', weekday: 350, weekend: 450 },
-                                            { name: "Honda H'ness CB350", keyword: 'ness', spec: '350cc • Manual Cruiser • Petrol', weekday: 1200, weekend: 1500 },
-                                            { name: 'Royal Enfield Classic 350', keyword: 'classic', spec: '350cc • Manual Cruiser • Petrol', weekday: 1000, weekend: 1200 },
-                                            { name: 'TVS Ntorq 125', keyword: 'ntorq', spec: '125cc • Sport Scooter • Petrol', weekday: 500, weekend: 600 },
-                                            { name: 'Yamaha Fascino 125', keyword: 'fascino', spec: '125cc • Retro Style • Petrol', weekday: 450, weekend: 500 },
-                                            { name: 'Suzuki Access 125', keyword: 'access', spec: '125cc • Classic Scooter • Petrol', weekday: 450, weekend: 500 },
-                                            { name: 'Honda Activa 6G', keyword: 'activa', spec: '110cc • Easy Commuter • Petrol', weekday: 400, weekend: 500 },
-                                            { name: 'Suzuki Burgman Street 125', keyword: 'burgman', spec: '125cc • Maxi Comfort • Petrol', weekday: 500, weekend: 600 },
-                                            { name: 'TVS Orbiter EV', keyword: 'orbiter', spec: 'Electric Scooter • 0 Emissions', weekday: 500, weekend: 600 },
-                                        ].map((row) => {
-                                            const matchedBike = bikes.find((b) =>
-                                                (b.model_name && b.model_name.toLowerCase().includes(row.keyword)) ||
-                                                (b.brand && row.name.toLowerCase().includes(b.brand.toLowerCase()))
-                                            );
-                                            const bookHref = matchedBike ? `/bikes/${matchedBike.id}` : '#fleet-catalog-heading';
-
+                                        {comparisonBikes.map((bike) => {
+                                            const name = [bike.brand, bike.model_name].filter(Boolean).join(' ');
+                                            const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                                            const href = bike.bike_model_id
+                                                ? `/services/bikes/models/${bike.bike_model_id}/${slug}`
+                                                : `/bikes/${bike.id}`;
                                             return (
-                                                <TableRow
-                                                    key={row.name}
-                                                    sx={{
-                                                        '&:nth-of-type(even)': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC' },
-                                                        '&:hover': { bgcolor: isDark ? 'rgba(245, 158, 11, 0.06)' : '#FFFBEB' },
-                                                    }}
-                                                >
+                                                <TableRow key={bike.bike_model_id ? `model-${bike.bike_model_id}` : bike.id}
+                                                    sx={{ '&:nth-of-type(even)': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC' } }}>
                                                     <TableCell sx={{ fontWeight: 800, color: primaryTextColor }}>
-                                                        {row.name}
+                                                        {name}
                                                     </TableCell>
                                                     <TableCell sx={{ color: secondaryTextColor, fontSize: '0.85rem' }}>
-                                                        {row.spec}
+                                                        {[bike.category?.name, bike.fuel_type, bike.transmission].filter(Boolean).join(' · ')}
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekdayPriceColor }}>
-                                                        ₹{row.weekday} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day</Box>
+                                                        ₹{Number(bike.weekday_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekendPriceColor }}>
-                                                        ₹{row.weekend} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day</Box>
+                                                        ₹{Number(bike.weekend_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
-                                                    <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800, fontSize: '0.85rem' }}>
-                                                        ₹1,000 (Refundable)
+                                                    <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800 }}>
+                                                        ₹0 for new online bookings
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        <Button
-                                                            component={matchedBike ? Link : 'a'}
-                                                            href={bookHref}
-                                                            size="small"
-                                                            variant="contained"
-                                                            color="secondary"
-                                                            aria-label={`Select ${row.name} for booking`}
-                                                            sx={{
-                                                                fontWeight: 800,
-                                                                px: 2,
-                                                                borderRadius: 1.5,
-                                                                bgcolor: '#F59E0B',
-                                                                color: '#0F172A',
-                                                                '&:hover': { bgcolor: '#D97706' },
-                                                                '&:focus-visible': { outline: '2px solid #0F172A', outlineOffset: '1px' },
-                                                            }}
-                                                        >
-                                                            Select
+                                                        <Button component={Link} href={href} size="small" variant="contained"
+                                                            color="secondary" aria-label={`View ${name} booking options`}>
+                                                            Check dates
                                                         </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             );
                                         })}
+                                        {!isLoading && comparisonBikes.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    No currently listed bikes. Please check the catalog again later.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
