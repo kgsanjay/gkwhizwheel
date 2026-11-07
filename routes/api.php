@@ -47,7 +47,7 @@ Route::prefix('v1')->group(function (): void {
             'success' => true,
             'data' => \App\Models\PickupPoint::where('store_id', $store->id)
                 ->where('is_active', true)->orderBy('sort_order')->orderBy('name')
-                ->get(['id', 'store_id', 'name', 'slug', 'address_line', 'landmark', 'supports_pickup', 'supports_return']),
+                ->get(['id', 'store_id', 'name', 'slug', 'address_line', 'landmark', 'pickup_fee', 'return_fee', 'supports_pickup', 'supports_return']),
             'message' => '',
         ]);
     });
