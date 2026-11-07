@@ -88,7 +88,7 @@ export default function BranchLanding({ branch, models = [], unlinked_count = 0,
                                     </Typography>}
                                     {branch.whatsapp_enquiry_number && <Button size="small" variant="outlined"
                                         component="a" target="_blank" rel="noopener noreferrer"
-                                        href={`https://wa.me/${branch.whatsapp_enquiry_number.replace(/\\D/g, '')}?text=${encodeURIComponent(`Hello G.K. WhizWheel, I have an enquiry about your ${branch.city} branch.`)}`}>
+                                        href={`https://wa.me/${branch.whatsapp_enquiry_number.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello G.K. WhizWheel, I have an enquiry about your ${branch.city} branch.`)}`}>
                                         WhatsApp enquiry
                                     </Button>}
                                     {(branch.pickup_points || []).length > 0 && <Box>
