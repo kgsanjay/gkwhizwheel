@@ -25,6 +25,7 @@ class Bike extends Model
      */
     protected $fillable = [
         'category_id',
+        'bike_model_id',
         'current_store_id',
         'home_store_id',
         'brand',
@@ -66,6 +67,14 @@ class Bike extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(BikeCategory::class, 'category_id');
+    }
+
+    /**
+     * Shared catalog model (e.g. Honda Activa 6G) for this physical vehicle.
+     */
+    public function bikeModel(): BelongsTo
+    {
+        return $this->belongsTo(BikeModel::class, 'bike_model_id');
     }
 
     /**
