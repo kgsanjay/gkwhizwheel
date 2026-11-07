@@ -86,8 +86,8 @@ export default function CheckoutModal({
     const returnPoint = returnPoints.find((p) => String(p.id) === returnPointId);
     const hasPointOptions = pickupPoints.length > 0 && returnPoints.length > 0;
     const pointSelectionValid = hasPointOptions && Boolean(pickupPoint && returnPoint)
-        && (pickupPoint.name.toLowerCase().includes('hotel') ? pickupDetails.trim().length >= 5 : true)
-        && (returnPoint.name.toLowerCase().includes('hotel') ? returnDetails.trim().length >= 5 : true);
+        && (pickupPoint.slug === 'hotel-delivery' ? pickupDetails.trim().length >= 5 : true)
+        && (returnPoint.slug === 'hotel-delivery' ? returnDetails.trim().length >= 5 : true);
     const requestKey = useRef(null);
     const finalQuote = heldBooking || quote;
     const total = finalQuote ? Number(finalQuote.total_amount || 0) : null;
