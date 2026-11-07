@@ -44,3 +44,77 @@ test('manager cannot select a dashboard store outside their assignment', functio
     $this->actingAs($manager)->get('/admin/dashboard')->assertOk()
         ->assertInertia(fn (Assert $page) => $page->component('Admin/Dashboard')->has('stores',1));
 });
+
+test('manager cannot register a new bike in an unassigned branch', function (): void {
+    $assigned = branchForIsolation('Assigned Bike Hub', '9999999921');
+    $foreign = branchForIsolation('Foreign Bike Hub', '9999999922');
+    $category = BikeCategory::create(['name' => 'Scooter', 'base_daily_rate' => 500, 'default_deposit_amount' => 500]);
+    $manager = managerForIsolation('bike.scope@example.test', '9999999923');
+    $manager->stores()->attach($assigned->id);
+    $details = [
+        'category_id' => $category->id,
+        'brand' => 'Honda', 'model_name' => 'Activa',
+        'registration_number' => 'KA-47-SCOPE-001',
+        'fuel_type' => FuelType::PETROL->value,
+        'transmission' => Transmission::AUTOMATIC->value,
+        'home_store_id' => $assigned->id,
+        'current_store_id' => $foreign->id,
+    ];
+
+    $this->actingAs($manager)->post('/admin/bikes', $details)
+        ->assertSessionHasErrors('current_store_id');
+    expect(Bike::where('registration_number', $details['registration_number'])->exists())->toBeFalse();
+
+    $this->actingAs($manager)->post('/admin/bikes', [
+        ...$details, 'home_store_id' => $foreign->id, 'current_store_id' => $assigned->id,
+    ])->assertSessionHasErrors('home_store_id');
+
+    $this->actingAs($manager)->post('/admin/bikes', [
+        ...$details, 'current_store_id' => $assigned->id,
+    ])->assertRedirect();
+    expect(Bike::where('registration_number', $details['registration_number'])->exists())->toBeTrue();
+});
+
+test('manager cannot reassign an owned bike to an unauthorized branch', function (): void {
+    $assigned = branchForIsolation('Owned Bike Hub', '9999999931');
+    $foreign = branchForIsolation('Foreign Reassignment Hub', '9999999932');
+    $category = BikeCategory::create(['name' => 'Scooter', 'base_daily_rate' => 500, 'default_deposit_amount' => 500]);
+    $manager = managerForIsolation('bike.update@example.test', '9999999933');
+    $manager->stores()->attach($assigned->id);
+    $bike = Bike::create([
+        'category_id' => $category->id, 'home_store_id' => $assigned->id,
+        'current_store_id' => $assigned->id, 'brand' => 'Honda', 'model_name' => 'Activa',
+        'registration_number' => 'KA-47-SCOPE-002',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+        'status' => BikeStatus::AVAILABLE,
+    ]);
+    $this->actingAs($manager)->post("/admin/bikes/{$bike->id}", [
+        'current_store_id' => $foreign->id,
+    ])->assertSessionHasErrors('current_store_id');
+    expect($bike->fresh()->current_store_id)->toBe($assigned->id);
+});
+
+test('staff inventory endpoint excludes foreign bikes and rejects forged branch filter', function (): void {
+    $assigned = branchForIsolation('Staff Bike Hub', '9999999941');
+    $foreign = branchForIsolation('Other Bike Hub', '9999999942');
+    $category = BikeCategory::create(['name' => 'Scooter', 'base_daily_rate' => 500, 'default_deposit_amount' => 500]);
+    $staff = User::create([
+        'name' => 'Branch Staff', 'email' => 'bike.staff.scope@example.test',
+        'phone' => '9999999943', 'password' => 'Password123!',
+        'role' => UserRole::STAFF, 'status' => UserStatus::ACTIVE,
+    ]);
+    $staff->stores()->attach($assigned->id);
+    foreach ([$assigned, $foreign] as $store) {
+        Bike::create([
+            'category_id' => $category->id, 'home_store_id' => $store->id,
+            'current_store_id' => $store->id, 'brand' => 'Honda', 'model_name' => 'Activa',
+            'registration_number' => 'KA-47-SCOPE-'.$store->id,
+            'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+            'status' => BikeStatus::AVAILABLE,
+        ]);
+    }
+
+    \Laravel\Sanctum\Sanctum::actingAs($staff);
+    $this->getJson('/api/v1/staff/bikes')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/api/v1/staff/bikes?store_id='.$foreign->id)->assertForbidden();
+});
