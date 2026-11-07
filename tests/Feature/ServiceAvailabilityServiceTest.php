@@ -174,6 +174,8 @@ test('confirmServiceBooking confirms reservation and clears held_until', functio
         'service_item_id' => $item->id,
         'customer_name' => 'Captain Guest',
         'customer_phone' => '9876555555',
+        // A hold must have an approved positive quote before it can become confirmed.
+        'total_amount' => 20000,
         'start_datetime' => '2026-11-25 15:00:00',
         'quantity' => 4,
         'idempotency_key' => 'yacht-hold-999',
