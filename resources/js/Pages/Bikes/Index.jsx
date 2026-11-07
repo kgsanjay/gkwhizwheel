@@ -56,7 +56,7 @@ import NavigationIcon from '@mui/icons-material/Navigation';
 const BIKE_FAQS = [
     {
         q: 'What is the average honnavar bike rental price?',
-        a: 'At GK WhizWheels, our honnavar bike rental price is transparent and straightforward: Honda Activa scooters start from ₹350–₹400/day, sporty 125cc scooters start from ₹450–₹500/day, and Royal Enfield Classic 350 / Honda CB350 start from ₹1,000–₹1,200/day. We offer additional discounts of 10% for 3+ days and 15% for weekly rentals, with zero surge fees.',
+        a: 'Rates are calculated from the bike, selected dates, rental duration, pickup and return branches, and any applicable fees or discounts. Choose dates to see the actual quote before paying.',
     },
     {
         q: 'Can I get rental bikes delivered to Honnavar Railway Station?',
@@ -181,8 +181,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     return (
         <AppLayout>
             <PageHead
-                title="Browse Fleet & Rates - Bike Rental in Honnavar | GK WhizWheel"
-                description="Browse self-drive bike and scooter rental fleet in Honnavar starting ₹350/day. Honda Activa, Royal Enfield, zero deposit option, and station pickup."
+                title="Bike & Scooter Rentals by Branch | GK WhizWheel"
+                description="Browse self-drive bikes and scooters by branch and dates. Check current pricing and availability with no security deposit for new online bike bookings."
                 canonicalUrl="https://whizwheels.in/services/bikes"
                 ogImage="/images/services/two_wheelers.jpg"
                 ogType="website"
@@ -286,7 +286,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                                     <Chip
                                         icon={<StarIcon aria-hidden="true" sx={{ fontSize: '0.9rem !important', color: '#F59E0B' }} />}
-                                        label="5.0 ★ Google Rated (324+ Reviews)"
+                                        label="Browse Our Rental Fleet"
                                         size="small"
                                         sx={{
                                             bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.1)',
@@ -499,7 +499,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             </Typography>
                                         </Box>
                                         <Chip
-                                            label="From ₹350 / Day"
+                                            label="Check Current Rates"
                                             size="small"
                                             sx={{
                                                 bgcolor: '#F59E0B',
@@ -578,8 +578,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     {/* 3 Metric Pillars Under Image */}
                                     <Grid container sx={{ p: 1.2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0' }}>
                                         {[
-                                            { label: 'DAILY RATE', val: 'Starts ₹350' },
-                                            { label: 'STATION PICKUP', val: 'Platform 1 (5 Min)' },
+                                            { label: 'DAILY RATE', val: 'See Live Quote' },
+                                            { label: 'PICKUP', val: 'Select Branch' },
                                             { label: 'SECURITY DEPOSIT', val: 'Zero Deposit' },
                                         ].map((stat, idx) => (
                                             <Grid key={idx} size={{ xs: 4 }} sx={{ textAlign: 'center', borderRight: idx < 2 ? (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0') : 'none', py: 0.5 }}>
@@ -1606,9 +1606,9 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     },
                                     {
                                         step: '04',
-                                        badge: '💳 Immediate Deposit Refund',
+                                        badge: '✅ Deposit-Free Online',
                                         title: 'Ride & Swift Return',
-                                        desc: 'Ride across Honnavar, Gokarna, and Murudeshwar with 24/7 breakdown help. Return at any hub; deposit refunds initiate on the spot.',
+                                        desc: 'Ride on your booked dates and return to the selected branch. No security deposit is required for new online bike bookings.',
                                         color: '#A855F7',
                                         bgBadge: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(147, 51, 234, 0.1)',
                                     },

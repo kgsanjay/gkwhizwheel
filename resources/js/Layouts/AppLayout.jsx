@@ -1632,17 +1632,17 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             },
                             {
                                 icon: <StarIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-                                title: '5.0 ★ Google Rated',
-                                desc: '324+ Verified traveler & tourist reviews',
+                                title: 'Multiple Travel Services',
+                                desc: 'Bikes, cabs, stays, boating, diving and tours',
                             },
                             {
                                 icon: <LocationOnIcon sx={{ color: '#38BDF8', fontSize: 22 }} />,
-                                title: 'Dual Honnavar Hubs',
-                                desc: 'Palya Main Rd Head Office & Railway Station Hub',
+                                title: 'Active Rental Branches',
+                                desc: locationLabel,
                             },
                             {
                                 icon: <ElectricBoltIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-                                title: 'Zero Deposit Options',
+                                title: 'Deposit-Free Online Bike Rentals',
                                 desc: 'Paperless digital KYC & instant confirmation',
                             },
                         ].map((badge, bIdx) => (
@@ -1682,7 +1682,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 <Box
                                     component="img"
                                     src="/images/logo.png"
-                                    alt="GK WhizWheels — Honnavar Bike Rentals & Travel Hub"
+                                    alt="GK WhizWheel — travel and rental services"
                                     sx={{ height: 48, width: 'auto', borderRadius: 1.5 }}
                                 />
                                 <Box>
@@ -1690,7 +1690,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         GK WhizWheels
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800, letterSpacing: '0.02em' }}>
-                                        #1 Travel & Rental Hub in Honnavar
+                                        Coastal Karnataka Travel & Rental Services
                                     </Typography>
                                 </Box>
                             </Box>
@@ -1978,7 +1978,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B' }}>•</Typography>
                             <Typography variant="caption" sx={{ color: '#38BDF8', fontWeight: 750 }}>
-                                ⚡ Zero Security Deposit Option
+                                ⚡ No Deposit for Online Bike Rentals
                             </Typography>
                         </Box>
                     </Box>
