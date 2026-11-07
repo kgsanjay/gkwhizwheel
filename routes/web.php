@@ -250,6 +250,12 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::match(['post', 'put'], '/bikes/{id}', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'update'])->name('admin.bikes.update');
     Route::delete('/bikes/{id}', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'destroy'])->name('admin.bikes.destroy');
 
+    // Cab inventory foundation — draft-only registration; approval/dispatch is a later gate.
+    Route::get('/cab-inventory/vehicles', [\App\Http\Controllers\Web\Admin\AdminCabInventoryController::class, 'vehicles'])->name('admin.cab-inventory.vehicles.index');
+    Route::post('/cab-inventory/vehicles', [\App\Http\Controllers\Web\Admin\AdminCabInventoryController::class, 'storeVehicle'])->name('admin.cab-inventory.vehicles.store');
+    Route::get('/cab-inventory/drivers', [\App\Http\Controllers\Web\Admin\AdminCabInventoryController::class, 'drivers'])->name('admin.cab-inventory.drivers.index');
+    Route::post('/cab-inventory/drivers', [\App\Http\Controllers\Web\Admin\AdminCabInventoryController::class, 'storeDriver'])->name('admin.cab-inventory.drivers.store');
+
     // Dynamic Pricing Rules
     Route::get('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'index'])->name('admin.pricing.index');
     Route::post('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'store'])->name('admin.pricing.store');
