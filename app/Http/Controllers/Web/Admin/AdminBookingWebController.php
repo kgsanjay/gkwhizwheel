@@ -727,6 +727,14 @@ class AdminBookingWebController extends Controller
             ? (int) $validated['return_store_id']
             : $booking->return_store_id;
 
+        // The selected actual receiving branch must also be authorized.
+        // Access to the original pickup/return booking alone is insufficient.
+        $user = $request->user();
+        if ($user->role !== \App\Enums\UserRole::SUPER_ADMIN) {
+            $authorizedStores = $user->getAuthorizedStoreIds() ?? [];
+            abort_unless(in_array($returnStoreId, $authorizedStores, true), 403, 'Return branch is not assigned.');
+        }
+
         $photoPaths = [];
         if ($request->hasFile('condition_photos')) {
             foreach ($request->file('condition_photos') as $photoFile) {

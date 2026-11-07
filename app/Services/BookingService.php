@@ -88,6 +88,11 @@ class BookingService
         ): Booking {
             // Acquire row-level lock on bike for availability/state transition
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
+            if ($odometerReading < (int) $bike->odometer_reading) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'odometer_reading' => 'Handover odometer cannot be lower than the recorded reading.',
+                ]);
+            }
 
             $booking->update([
                 'status' => BookingStatus::HANDED_OVER,
@@ -153,6 +158,17 @@ class BookingService
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
 
             $actualReturnStoreId = $returnStoreId ?? $booking->return_store_id;
+            if ($odometerReading < (int) $bike->odometer_reading) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'odometer_reading' => 'Return odometer cannot be lower than the handover reading.',
+                ]);
+            }
+            $receivingStore = \App\Models\Store::findOrFail($actualReturnStoreId);
+            if ($receivingStore->status !== \App\Enums\StoreStatus::ACTIVE) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'return_store_id' => 'The receiving branch must be active.',
+                ]);
+            }
             $newTotal = round((float) $booking->total_amount + $lateFee + $damageFee, 2);
 
             $booking->update([
