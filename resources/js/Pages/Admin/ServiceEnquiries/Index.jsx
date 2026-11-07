@@ -1,7 +1,7 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Box, Card, CardContent, Typography, Stack, Table, TableHead, TableRow, TableCell,
-    TableBody, TableContainer, Chip, Button } from '@mui/material';
+    TableBody, TableContainer, Chip, Button, MenuItem, TextField } from '@mui/material';
 import AdminLayout from '../../../Layouts/AdminLayout';
 
 export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [] } }) {
@@ -30,7 +30,18 @@ export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [
                             <TableCell>{e.start_datetime}<Typography variant="body2">{e.pickup_location}</Typography>
                                 <Typography variant="caption">{e.drop_location}</Typography></TableCell>
                             <TableCell>Qty: {e.quantity}<Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', maxWidth: 280 }}>{e.customer_notes}</Typography></TableCell>
-                            <TableCell><Chip label="Requested — unconfirmed" size="small" /></TableCell>
+                            <TableCell>
+                            <Chip size="small" label={`${e.status === 'reviewing' ? 'Under review' : e.status === 'closed' ? 'Closed' : e.status === 'cancelled' ? 'Cancelled' : 'Requested'} — unconfirmed`} />
+                            <TextField size="small" select fullWidth value={e.status} sx={{ mt: 1, minWidth: 145 }}
+                                onChange={(event) => router.post(`/admin/service-enquiries/${e.id}/status`,
+                                    { status: event.target.value }, { preserveScroll: true })}>
+                                {['requested', 'reviewing', 'closed', 'cancelled'].map((status) =>
+                                    <MenuItem key={status} value={status}
+                                        disabled={['closed', 'cancelled'].includes(e.status) && e.status !== status}>
+                                        {status.replace('_', ' ')}
+                                    </MenuItem>)}
+                            </TextField>
+                        </TableCell>
                         </TableRow>)}
                         {!(enquiries.data || []).length && <TableRow><TableCell colSpan={5}>
                             No enquiries received yet.</TableCell></TableRow>}
