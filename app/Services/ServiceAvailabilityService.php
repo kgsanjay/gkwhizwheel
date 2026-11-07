@@ -128,6 +128,7 @@ class ServiceAvailabilityService
      */
     public function createServiceBooking(array $params): ServiceBooking
     {
+        app(ServiceBookingLifecycle::class)->assertCreation($params);
         $idempotencyKey = $params['idempotency_key'] ?? null;
 
         if (! empty($idempotencyKey)) {
@@ -213,6 +214,11 @@ class ServiceAvailabilityService
         $bookingModel = $booking instanceof ServiceBooking ? $booking : ServiceBooking::findOrFail($booking);
 
         return DB::transaction(function () use ($bookingModel): ServiceBooking {
+            $bookingModel = ServiceBooking::whereKey($bookingModel->id)->lockForUpdate()->firstOrFail();
+            if ($bookingModel->status === 'confirmed') {
+                return $bookingModel;
+            }
+            app(ServiceBookingLifecycle::class)->assertTransition($bookingModel, 'confirmed');
             if ($bookingModel->service_item_id) {
                 $item = ServiceItem::where('id', $bookingModel->service_item_id)->lockForUpdate()->firstOrFail();
 
