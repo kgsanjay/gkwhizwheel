@@ -62,6 +62,7 @@ beforeEach(function (): void {
     $this->rental = Booking::create([
         'user_id' => $this->customer->id,
         'booking_reference' => 'BK-P49-REPLAY-001',
+        'idempotency_key' => 'bike49-stale-transition-replay-test',
         'bike_id' => $this->vehicle->id,
         'pickup_store_id' => $this->origin->id,
         'return_store_id' => $this->destination->id,
