@@ -219,3 +219,56 @@ test('expired holds do not affect future branch projection', function (): void {
         null, $this->murudeshwar->id, $this->murudeshwar->id
     ))->toBeTrue();
 });
+
+test('directional one-way fee applies only on the configured Murudeshwar to Honnavar route', function (): void {
+    $pricing = app(\\App\\Services\\PricingService::class);
+    $forward = $pricing->calculateQuote(
+        bike: $this->bike,
+        startDate: $this->dates['earlyStart'],
+        endDate: $this->dates['earlyEnd'],
+        pickupStore: $this->murudeshwar,
+        returnStore: $this->honnavar
+    );
+    $sameBranch = $pricing->calculateQuote(
+        bike: $this->bike,
+        startDate: $this->dates['earlyStart'],
+        endDate: $this->dates['earlyEnd'],
+        pickupStore: $this->murudeshwar,
+        returnStore: $this->murudeshwar
+    );
+
+    expect((float) $forward['one_way_fee_amount'])->toBe(200.0)
+        ->and((float) $sameBranch['one_way_fee_amount'])->toBe(0.0)
+        ->and((float) $forward['total_amount'] - (float) $sameBranch['total_amount'])->toBe(200.0);
+});
+
+test('reverse route is unavailable until an independent reverse one-way fee is configured', function (): void {
+    $pricing = app(\\App\\Services\\PricingService::class);
+    expect(fn () => $pricing->calculateQuote(
+        bike: $this->bike,
+        startDate: $this->dates['earlyStart'],
+        endDate: $this->dates['earlyEnd'],
+        pickupStore: $this->honnavar,
+        returnStore: $this->murudeshwar
+    ))->toThrow(\\Illuminate\\Validation\\ValidationException::class);
+
+    PricingRule::create([
+        'rule_type' => PricingRuleType::ONE_WAY_FEE,
+        'from_store_id' => $this->honnavar->id,
+        'to_store_id' => $this->murudeshwar->id,
+        'rate_type' => PricingRateType::FLAT_ADDON,
+        'value' => 350,
+        'priority' => 1,
+        'is_active' => true,
+    ]);
+
+    $reverse = $pricing->calculateQuote(
+        bike: $this->bike,
+        startDate: $this->dates['earlyStart'],
+        endDate: $this->dates['earlyEnd'],
+        pickupStore: $this->honnavar,
+        returnStore: $this->murudeshwar
+    );
+    expect((float) $reverse['one_way_fee_amount'])->toBe(350.0);
+});
+
