@@ -454,7 +454,7 @@ export default function CheckoutModal({
                 </Button>
 
                 {/* Test / Dev Simulation Trigger when hold is active */}
-                {heldBooking && (
+                {import.meta.env.DEV && heldBooking && (
                     <Button
                         variant="outlined"
                         color="primary"
