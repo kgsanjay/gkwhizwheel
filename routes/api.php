@@ -132,6 +132,10 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/{id}/documents', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'uploadDocument']);
         });
 
+        // Shared catalog models (individual physical bikes stay independent).
+        Route::get('/bike-models', [\App\Http\Controllers\Api\V1\Admin\BikeModelController::class, 'index']);
+        Route::post('/bike-models', [\App\Http\Controllers\Api\V1\Admin\BikeModelController::class, 'store']);
+
         // Pricing Rules
         Route::prefix('pricing-rules')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\V1\Admin\PricingRuleController::class, 'index']);
