@@ -20,13 +20,13 @@ class BikeResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $dailyRate = $this->base_daily_rate_override !== null
-            ? (float) $this->base_daily_rate_override
-            : (float) ($this->category?->base_daily_rate ?? 0.0);
-
-        $weekendRate = $this->weekend_daily_rate_override !== null
-            ? (float) $this->weekend_daily_rate_override
-            : round($dailyRate * 1.2, 2);
+        $pickupStoreId = $request->filled('store_id')
+            ? (int) $request->input('store_id')
+            : (int) $this->current_store_id;
+        // Display exactly the same branch tariff used by server-side quotes.
+        $rates = app(\App\Services\BranchBikePricing::class)->rates($this->resource, $pickupStoreId);
+        $dailyRate = $rates['weekday_rate'];
+        $weekendRate = $rates['weekend_rate'] ?? $dailyRate;
 
         $depositAmount = $this->deposit_amount_override !== null
             ? (float) $this->deposit_amount_override
