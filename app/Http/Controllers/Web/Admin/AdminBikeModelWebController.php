@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\BikeModel;
+use App\Models\BranchBikeModelPrice;
 use App\Models\Store;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class AdminBikeModelWebController extends Controller
         abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
 
         $models = BikeModel::query()
-            ->with('category:id,name')
+            ->with(['category:id,name', 'branchPrices'])
             ->orderBy('brand')
             ->orderBy('name')
             ->get();
@@ -54,6 +55,11 @@ class AdminBikeModelWebController extends Controller
                     'description' => $model->description,
                     'is_active' => (bool) $model->is_active,
                     'total_units' => $units->count(),
+                    'branch_prices' => $model->branchPrices->map(fn (BranchBikeModelPrice $price): array => [
+                        'store_id' => $price->store_id,
+                        'weekday_rate' => (float) $price->weekday_rate,
+                        'weekend_rate' => (float) $price->weekend_rate,
+                    ])->values()->all(),
                     'branches' => $stores->map(function (Store $store) use ($units): array {
                         $atStore = $units->where('current_store_id', $store->id);
 
@@ -79,6 +85,37 @@ class AdminBikeModelWebController extends Controller
             'stores' => $stores,
             'unlinked_units' => Bike::query()->whereNull('bike_model_id')->count(),
         ]);
+    }
+
+    /**
+     * Set an explicit weekday/weekend rate for one model at one active branch.
+     * Unconfigured combinations continue using existing physical-bike rates.
+     */
+    public function saveBranchPrice(int $id, Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+
+        $data = $request->validate([
+            'store_id' => ['required', 'integer', 'exists:stores,id'],
+            'weekday_rate' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'weekend_rate' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+        ]);
+
+        $model = BikeModel::findOrFail($id);
+        $store = Store::findOrFail($data['store_id']);
+        if (! $model->is_active || $store->status !== \App\Enums\StoreStatus::ACTIVE) {
+            throw ValidationException::withMessages([
+                'store_id' => 'Both bike model and branch must be active.',
+            ]);
+        }
+
+        BranchBikeModelPrice::updateOrCreate(
+            ['bike_model_id' => $model->id, 'store_id' => $store->id],
+            ['weekday_rate' => $data['weekday_rate'], 'weekend_rate' => $data['weekend_rate']]
+        );
+
+        return redirect()->route('admin.bike-models.index')
+            ->with('success', 'Branch rental rates saved.');
     }
 
     public function store(Request $request): RedirectResponse

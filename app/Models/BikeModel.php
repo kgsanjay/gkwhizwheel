@@ -31,6 +31,11 @@ class BikeModel extends Model
         return $this->belongsTo(BikeCategory::class, 'category_id');
     }
 
+    public function branchPrices(): HasMany
+    {
+        return $this->hasMany(BranchBikeModelPrice::class);
+    }
+
     public function bikes(): HasMany
     {
         return $this->hasMany(Bike::class, 'bike_model_id');

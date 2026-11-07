@@ -119,10 +119,10 @@ class BikeModelAvailabilityController extends Controller
         }
 
         $models = BikeModel::query()->where('is_active', true)
-            ->with(['category:id,name,base_daily_rate', 'bikes' => function ($query): void {
+            ->with(['category:id,name,base_daily_rate', 'branchPrices', 'bikes' => function ($query): void {
                 $query->select([
                     'id', 'bike_model_id', 'current_store_id', 'status',
-                    'primary_image_path', 'base_daily_rate_override',
+                    'primary_image_path', 'base_daily_rate_override', 'weekend_daily_rate_override',
                 ])->orderBy('id');
             }])
             ->when(! empty($filters['category_id']),
@@ -159,8 +159,8 @@ class BikeModelAvailabilityController extends Controller
                         ? $imagePath
                         : \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath))
                     : null,
-                'indicative_daily_rate' => $model->category?->base_daily_rate === null
-                    ? null : (float) $model->category->base_daily_rate,
+                'indicative_daily_rate' => $this->indicativeRate($model, ! empty($filters['pickup_store_id']) ? (int) $filters['pickup_store_id'] : null),
+                'indicative_weekend_rate' => $this->indicativeRate($model, ! empty($filters['pickup_store_id']) ? (int) $filters['pickup_store_id'] : null, true),
                 'total_units' => $units->count(),
                 'available_units' => $available,
                 'is_available' => $ready ? $available > 0 : null,
@@ -182,5 +182,29 @@ class BikeModelAvailabilityController extends Controller
                 : 'Select pickup and return branches and dates to see bookable units.',
         ]);
     }
+
+    private function indicativeRate(BikeModel $model, ?int $pickupStoreId, bool $weekend = false): ?float
+    {
+        // Without a pickup branch no single price is authoritative.
+        if ($pickupStoreId === null) {
+            return null;
+        }
+
+        $configured = $model->branchPrices->firstWhere('store_id', $pickupStoreId);
+        if ($configured !== null) {
+            return (float) ($weekend ? $configured->weekend_rate : $configured->weekday_rate);
+        }
+
+        $unit = $model->bikes->firstWhere('current_store_id', $pickupStoreId);
+        if ($unit === null) {
+            return null;
+        }
+
+        $rates = app(\App\Services\BranchBikePricing::class)->rates($unit, $pickupStoreId);
+        return $weekend
+            ? ($rates['weekend_rate'] ?? $rates['weekday_rate'])
+            : $rates['weekday_rate'];
+    }
+
 
 }
