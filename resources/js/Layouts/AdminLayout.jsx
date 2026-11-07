@@ -86,6 +86,12 @@ const MENU_SECTIONS = [
                 roles: ['super_admin', 'store_manager', 'staff'],
             },
             {
+                label: 'Service Enquiries',
+                path: '/admin/service-enquiries',
+                icon: <ReceiptLongIcon sx={{ fontSize: 20 }} />,
+                roles: ['super_admin'],
+            },
+            {
                 label: 'Ground Pass Scanner',
                 path: '/admin/check-in',
                 icon: <QrCodeScannerIcon sx={{ fontSize: 20 }} />,

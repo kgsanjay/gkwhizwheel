@@ -75,6 +75,7 @@ export default function CabsBookingModal({
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (auth?.user) {
@@ -114,13 +115,11 @@ export default function CabsBookingModal({
             `Route: ${pickup} ➔ ${drop}`,
             `Pickup Time: ${pickupDatetime}`,
             `Passengers: ${passengers} Pax`,
-            `Estimated Tariff: ₹${estimatedCost.toLocaleString('en-IN')}`,
             specialNotes ? `Notes: ${specialNotes}` : null,
         ].filter(Boolean).join('\n');
 
         return {
             service_type: 'taxi',
-            service_item_id: null,
             customer_name: customerName.trim(),
             customer_phone: sanitizePhone(customerPhone),
             customer_email: customerEmail.trim() || null,
@@ -131,11 +130,11 @@ export default function CabsBookingModal({
             quantity: 1,
             payment_method: 'pay_on_arrival',
             customer_notes: notes,
-            custom_amount: estimatedCost,
         };
     };
 
     const submitBooking = (loggedInUser = null) => {
+        setSuccessMessage('');
         setSubmitting(true);
         const payload = getBookingPayload();
         if (loggedInUser) {
@@ -144,7 +143,8 @@ export default function CabsBookingModal({
             if (loggedInUser.email && !payload.customer_email) payload.customer_email = loggedInUser.email;
         }
 
-        router.post('/services/book', payload, {
+        router.post('/services/enquire', payload, {
+            onSuccess: () => setSuccessMessage('Enquiry received. Our team will check availability and confirm the final price. No booking or payment has been confirmed.'),
             onError: (errs) => {
                 setSubmitting(false);
                 const first = Object.values(errs)[0];
@@ -295,6 +295,11 @@ export default function CabsBookingModal({
                 </DialogTitle>
 
                 <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 }, pt: { xs: 2.5, sm: 3 } }}>
+                    {successMessage && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{successMessage}</Alert>}
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Request only — availability and final prices will be confirmed by our team.
+                        Figures on this form are indicative, not a payable quote.
+                    </Alert>
                     {errorMessage && (
                         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
                             {errorMessage}
@@ -541,7 +546,7 @@ export default function CabsBookingModal({
                                 '&:hover': { bgcolor: '#0369A1' },
                             }}
                         >
-                            {submitting ? 'Confirming Cab...' : 'Confirm Cab Booking (Pay on Arrival) →'}
+                            {submitting ? 'Sending Enquiry...' : 'Request Cab Availability →'}
                         </Button>
                     </Stack>
                 </DialogActions>

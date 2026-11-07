@@ -152,6 +152,10 @@ Route::get('/services/{slug}/{id}', function (string $slug, int $id) {
         'availableItems' => $availableItems,
     ]);
 })->name('services.items.show');
+Route::post('/services/enquire', [\App\Http\Controllers\Web\ServiceEnquiryWebController::class, 'store'])
+    ->middleware(['auth', 'throttle:bookings'])
+    ->name('services.enquire');
+
 Route::post('/services/book', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'store'])
     ->middleware('throttle:bookings')
     ->name('services.book');
@@ -283,6 +287,10 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
         Route::post('/staff/{id}/assign-stores', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'assignStores'])->name('admin.staff.assign-stores');
         Route::delete('/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'destroy'])->name('admin.staff.destroy');
     });
+
+    // Six non-bike service enquiries are not confirmed or payable bookings.
+    Route::get('/service-enquiries', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'index'])
+        ->middleware('role:super_admin')->name('admin.service-enquiries.index');
 
     // Unified Bookings Calendar & Management
     Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'index'])->name('admin.bookings.index');

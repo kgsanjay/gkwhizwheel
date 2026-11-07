@@ -67,6 +67,7 @@ export default function GuideBookingModal({
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (auth?.user) {
@@ -111,13 +112,11 @@ export default function GuideBookingModal({
             `Duration: ${duration === 'full_day' ? 'Full Day (7-8 Hrs)' : 'Half Day (3.5-4 Hrs)'} | Slot: ${timeSlot}`,
             `Group Size: ${groupSize} Pax | Languages: ${language}`,
             `Meeting Point: ${meetingPoint}`,
-            `Flat Tariff: ₹${guideTariff} (No Commission)`,
             specialInterests ? `Special Interests / Notes: ${specialInterests}` : null,
         ].filter(Boolean).join('\n');
 
         return {
             service_type: 'guide',
-            service_item_id: null,
             customer_name: customerName.trim(),
             customer_phone: sanitizePhone(customerPhone),
             customer_email: customerEmail.trim() || null,
@@ -128,11 +127,11 @@ export default function GuideBookingModal({
             quantity: 1, // 1 guide booking
             payment_method: 'pay_on_arrival',
             customer_notes: notes,
-            custom_amount: guideTariff,
         };
     };
 
     const submitBooking = (loggedInUser = null) => {
+        setSuccessMessage('');
         setSubmitting(true);
         const payload = getBookingPayload();
         if (loggedInUser) {
@@ -141,7 +140,8 @@ export default function GuideBookingModal({
             if (loggedInUser.email && !payload.customer_email) payload.customer_email = loggedInUser.email;
         }
 
-        router.post('/services/book', payload, {
+        router.post('/services/enquire', payload, {
+            onSuccess: () => setSuccessMessage('Enquiry received. Our team will check availability and confirm the final price. No booking or payment has been confirmed.'),
             onError: (errs) => {
                 setSubmitting(false);
                 const first = Object.values(errs)[0];
@@ -290,6 +290,11 @@ export default function GuideBookingModal({
                 </DialogTitle>
 
                 <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 }, pt: { xs: 2.5, sm: 3 } }}>
+                    {successMessage && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{successMessage}</Alert>}
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Request only — availability and final prices will be confirmed by our team.
+                        Figures on this form are indicative, not a payable quote.
+                    </Alert>
                     {errorMessage && (
                         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
                             {errorMessage}
@@ -546,7 +551,7 @@ export default function GuideBookingModal({
                                 '&:hover': { bgcolor: '#B45309' },
                             }}
                         >
-                            {submitting ? 'Confirming Guide...' : 'Confirm Guide Booking (Pay on Arrival) →'}
+                            {submitting ? 'Sending Enquiry...' : 'Request Guide Availability'}
                         </Button>
                     </Stack>
                 </DialogActions>
