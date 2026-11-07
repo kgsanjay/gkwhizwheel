@@ -28,6 +28,7 @@ class Store extends Model
         'latitude',
         'longitude',
         'phone',
+        'google_maps_url',
         'operating_hours',
         'status',
     ];
@@ -119,6 +120,11 @@ class Store extends Model
     public function pricingRulesTo(): HasMany
     {
         return $this->hasMany(PricingRule::class, 'to_store_id');
+    }
+
+    public function pickupPoints(): HasMany
+    {
+        return $this->hasMany(PickupPoint::class);
     }
 
     public function serviceItems(): HasMany

@@ -261,6 +261,12 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/coupons/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'toggle'])->name('admin.coupons.toggle');
     Route::delete('/coupons/{id}', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'destroy'])->name('admin.coupons.destroy');
 
+    // Pickup/return points belong to a branch, not an additional store.
+    Route::get('/pickup-points', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'index'])->name('admin.pickup-points.index');
+    Route::post('/pickup-points', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'store'])->name('admin.pickup-points.store');
+    Route::post('/pickup-points/{id}', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'update'])->name('admin.pickup-points.update');
+    Route::post('/pickup-points/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'toggle'])->name('admin.pickup-points.toggle');
+
     // Stores & Hubs
     Route::get('/stores', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'index'])->name('admin.stores.index');
     Route::get('/stores/create', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'create'])->name('admin.stores.create');

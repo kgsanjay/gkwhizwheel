@@ -310,6 +310,7 @@ const MENU_SECTIONS = [
                 basePath: '/admin/stores',
                 children: [
                     { label: 'All Hub Locations', path: '/admin/stores', roles: ['super_admin'] },
+                    { label: 'Pickup & Return Points', path: '/admin/pickup-points', roles: ['super_admin'] },
                     { label: 'Add New Hub', path: '/admin/stores/create', roles: ['super_admin'] },
                 ],
             },

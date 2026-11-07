@@ -81,6 +81,10 @@ class BranchBikeRentalController extends Controller
                 'state' => $store->state,
                 'pincode' => $store->pincode,
                 'phone' => $store->phone,
+                'google_maps_url' => $store->google_maps_url,
+                'whatsapp_enquiry_number' => config('whizwheel.whatsapp_enquiry_number'),
+                'pickup_points' => $store->pickupPoints()->where('is_active', true)
+                    ->orderBy('sort_order')->get(['id', 'name', 'address_line', 'supports_pickup', 'supports_return']),
                 'operating_hours' => $store->operating_hours,
                 'canonical_path' => '/bike-rentals/branches/'.$store->id.'/'.$canonicalSlug,
             ],

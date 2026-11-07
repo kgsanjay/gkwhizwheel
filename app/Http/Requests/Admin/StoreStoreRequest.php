@@ -36,6 +36,7 @@ class StoreStoreRequest extends FormRequest
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'google_maps_url' => ['nullable', 'url:http,https', 'max:500'],
             'operating_hours' => ['nullable', 'array'],
             'status' => ['nullable', new Enum(StoreStatus::class)],
         ];
