@@ -44,7 +44,7 @@ class BookingResource extends JsonResource
             'payment_option' => ($this->price_breakdown_json ?? [])['checkout_payment_option'] ?? null,
             'checkout_amount' => ($this->price_breakdown_json ?? [])['checkout_amount'] ?? null,
             'paid_amount' => (float) $this->payments()->where('status', \App\Enums\PaymentStatus::SUCCESS)->sum('amount'),
-            'balance_due' => \App\Services\BikeBookingPayments::remainder($this),
+            'balance_due' => \App\Services\BikeBookingPayments::remainder($this->resource),
             'late_fee_amount' => (float) $this->late_fee_amount,
             'damage_fee_amount' => (float) $this->damage_fee_amount,
             'held_until' => $this->held_until?->toIso8601String(),
