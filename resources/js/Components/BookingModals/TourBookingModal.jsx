@@ -72,6 +72,7 @@ export default function TourBookingModal({
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (auth?.user) {
@@ -126,13 +127,11 @@ export default function TourBookingModal({
             `Package: ${activePkg.title} (${activePkg.duration})`,
             `Travelers: ${travelers} Pax | Transport: ${transportType} | Stay: ${stayType}`,
             `Addons: Boating=${includeBoating ? 'Yes' : 'No'}, Scuba=${includeScuba ? 'Yes' : 'No'}, Guide=${includeGuide ? 'Yes' : 'No'}`,
-            `Estimate: ₹${estimatedCost.toLocaleString('en-IN')}`,
             specialNotes ? `Customer Notes: ${specialNotes}` : null,
         ].filter(Boolean).join('\n');
 
         return {
             service_type: 'tours',
-            service_item_id: null,
             customer_name: customerName.trim(),
             customer_phone: sanitizePhone(customerPhone),
             customer_email: customerEmail.trim() || null,
@@ -143,11 +142,11 @@ export default function TourBookingModal({
             quantity: Math.max(1, travelers),
             payment_method: 'pay_on_arrival',
             customer_notes: notes,
-            custom_amount: estimatedCost,
         };
     };
 
     const submitBooking = (loggedInUser = null) => {
+        setSuccessMessage('');
         setSubmitting(true);
         const payload = getBookingPayload();
         if (loggedInUser) {
@@ -156,7 +155,8 @@ export default function TourBookingModal({
             if (loggedInUser.email && !payload.customer_email) payload.customer_email = loggedInUser.email;
         }
 
-        router.post('/services/book', payload, {
+        router.post('/services/enquire', payload, {
+            onSuccess: () => setSuccessMessage('Enquiry received. Our team will check availability and confirm the final price. No booking or payment has been confirmed.'),
             onError: (errs) => {
                 setSubmitting(false);
                 const first = Object.values(errs)[0];
@@ -305,6 +305,11 @@ export default function TourBookingModal({
                 </DialogTitle>
 
                 <DialogContent sx={{ p: { xs: 2.5, sm: 3.5 }, pt: { xs: 2.5, sm: 3 } }}>
+                    {successMessage && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{successMessage}</Alert>}
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Request only — availability and final prices will be confirmed by our team.
+                        Figures on this form are indicative, not a payable quote.
+                    </Alert>
                     {errorMessage && (
                         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }} onClose={() => setErrorMessage('')}>
                             {errorMessage}
