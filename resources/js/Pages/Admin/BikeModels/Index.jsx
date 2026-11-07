@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import {
     Alert, Box, Button, Card, CardContent, Chip, Collapse, Dialog, DialogActions,
@@ -14,6 +14,11 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 export default function BikeModelsIndex({ models = [], categories = [], stores = [], unlinked_units = 0 }) {
     const [open, setOpen] = useState(false);
+    const [bulkModel, setBulkModel] = useState(null);
+    const [bulkStore, setBulkStore] = useState('');
+    const [bulkRows, setBulkRows] = useState([{ registration_number: '', odometer_reading: 0 }]);
+    const [bulkErrors, setBulkErrors] = useState({});
+    const [bulkProcessing, setBulkProcessing] = useState(false);
     const [expanded, setExpanded] = useState(null);
     const [search, setSearch] = useState('');
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
@@ -23,6 +28,34 @@ export default function BikeModelsIndex({ models = [], categories = [], stores =
         `${m.brand} ${m.name} ${m.category_name}`.toLowerCase().includes(search.toLowerCase())
     ), [models, search]);
     const storeName = (id) => stores.find((store) => Number(store.id) === Number(id))?.name || `Branch #${id}`;
+
+    const startBulk = (model) => {
+        setBulkModel(model);
+        setBulkStore(stores.find((store) => store.id)?.id || '');
+        setBulkRows([{ registration_number: '', odometer_reading: 0 }]);
+        setBulkErrors({});
+    };
+    const changeRow = (index, key, value) => setBulkRows((rows) =>
+        rows.map((row, i) => i === index ? { ...row, [key]: value } : row)
+    );
+    const submitBulk = (event) => {
+        event.preventDefault();
+        if (!bulkModel || !bulkStore || bulkProcessing || bulkRows.length === 0) return;
+        setBulkErrors({});
+        setBulkProcessing(true);
+        router.post(`/admin/bike-models/${bulkModel.id}/bikes/bulk`, {
+                store_id: bulkStore,
+                bikes: bulkRows.map((row) => ({
+                    registration_number: row.registration_number.trim().toUpperCase(),
+                    odometer_reading: row.odometer_reading === '' ? 0 : Number(row.odometer_reading),
+                })),
+            }, {
+                preserveScroll: true,
+                onSuccess: () => setBulkModel(null),
+                onError: setBulkErrors,
+                onFinish: () => setBulkProcessing(false),
+            });
+    };
 
     const submit = (event) => {
         event.preventDefault();
@@ -139,11 +172,14 @@ export default function BikeModelsIndex({ models = [], categories = [], stores =
                                                         )
                                                     }
                                                     <Divider sx={{ my: 2 }} />
+                                                    <Button size="small" variant="contained" sx={{ mr: 1 }} startIcon={<AddIcon />} onClick={() => startBulk(model)}>
+                                                        Add multiple bikes
+                                                    </Button>
                                                     <Button component={Link} href="/admin/bikes/create" size="small" variant="outlined" startIcon={<AddIcon />}>
                                                         Register another physical bike
                                                     </Button>
                                                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                                                        Catalog association for newly registered bikes is not yet available in this form.
+                                                        Individual registration supports catalog association. Bulk registration adds up to 50 bikes per batch at one branch.
                                                     </Typography>
                                                 </Box>
                                             </Collapse>
@@ -158,6 +194,51 @@ export default function BikeModelsIndex({ models = [], categories = [], stores =
                     </TableContainer>
                 </Card>
             </Stack>
+
+            <Dialog open={Boolean(bulkModel)} onClose={() => !bulkProcessing && setBulkModel(null)} fullWidth maxWidth="md">
+                <Box component="form" onSubmit={submitBulk}>
+                    <DialogTitle>Register multiple {bulkModel?.brand} {bulkModel?.name} bikes</DialogTitle>
+                    <DialogContent dividers>
+                        <Stack spacing={2}>
+                            <Alert severity="info">Each registration creates a distinct vehicle. Shared model specifications are copied automatically. All rows must be valid for this batch to be saved.</Alert>
+                            <TextField select required fullWidth label="Home and current branch" value={bulkStore}
+                                onChange={(e) => setBulkStore(e.target.value)}
+                                error={Boolean(bulkErrors.store_id)} helperText={bulkErrors.store_id}>
+                                {stores.map((store) => <MenuItem key={store.id} value={store.id}>{store.name}</MenuItem>)}
+                            </TextField>
+                            {bulkRows.map((row, index) => (
+                                <Stack key={index} direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
+                                    <Typography variant="caption" sx={{ minWidth: 38 }}>#{index + 1}</Typography>
+                                    <TextField required fullWidth size="small" label="Registration number"
+                                        value={row.registration_number}
+                                        onChange={(e) => changeRow(index, 'registration_number', e.target.value.toUpperCase())}
+                                        error={Boolean(bulkErrors[`bikes.${index}.registration_number`])}
+                                        helperText={bulkErrors[`bikes.${index}.registration_number`]} />
+                                    <TextField size="small" type="number" label="Odometer (km)" sx={{ minWidth: 150 }}
+                                        value={row.odometer_reading}
+                                        onChange={(e) => changeRow(index, 'odometer_reading', e.target.value)}
+                                        inputProps={{ min: 0 }} />
+                                    <Button color="inherit" disabled={bulkRows.length === 1 || bulkProcessing}
+                                        onClick={() => setBulkRows((rows) => rows.filter((_, i) => i !== index))}>Remove</Button>
+                                </Stack>
+                            ))}
+                            <Button variant="outlined" startIcon={<AddIcon />} disabled={bulkRows.length >= 50 || bulkProcessing}
+                                onClick={() => setBulkRows((rows) => [...rows, { registration_number: '', odometer_reading: 0 }])}>
+                                Add another registration ({bulkRows.length}/50)
+                            </Button>
+                            {Object.entries(bulkErrors).filter(([key]) => !key.startsWith('bikes.')).map(([key, message]) =>
+                                <Alert severity="error" key={key}>{message}</Alert>
+                            )}
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button disabled={bulkProcessing} onClick={() => setBulkModel(null)}>Cancel</Button>
+                        <Button type="submit" variant="contained" disabled={bulkProcessing || !bulkStore || bulkRows.some((row) => !row.registration_number.trim())}>
+                            Register {bulkRows.length} bikes
+                        </Button>
+                    </DialogActions>
+                </Box>
+            </Dialog>
 
             <Dialog open={open} onClose={() => !processing && setOpen(false)} fullWidth maxWidth="sm">
                 <Box component="form" onSubmit={submit}>
