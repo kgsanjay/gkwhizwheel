@@ -84,7 +84,20 @@ Use dedicated staging users for each role. Test both regular requests and forged
 - Validate both JSON and browser flows; branch staff can review but cannot confirm or dismiss.
 - Check `activity_logs` for `bike_relocation_receipt_confirmed` and `bike_relocation_dismissed` and confirm no sensitive customer data is added.
 
-## 7. Release gate
+## 7. Fleet location readiness audit — read only
+
+After the two branch migrations are present, review every bike's upcoming scheduled pickup against its recorded current location:
+
+```bash
+php artisan fleet:audit-relocations
+php artisan fleet:audit-relocations --strict
+```
+
+This audit identifies (a) bikes whose upcoming pickup is unfulfillable from the current branch, (b) such conflicts that lack an open matching relocation task, and (c) open tasks that no longer match an active conflict. It performs **no writes**. The strict variant is a release gate, not an instruction to auto-assign bikes or close tasks.
+
+For each failure, review the bike and booking record using the admin operations workflow. Confirm actual physical bike location before approving a transfer. Never resolve a conflict merely by modifying its database location without physical verification. Dismiss an obsolete alert only after verifying the affected booking is inactive.
+
+## 8. Release gate
 
 Do not consider PR #19 ready until:
 - CI passes on the exact release commit.
