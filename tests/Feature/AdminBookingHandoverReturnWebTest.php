@@ -73,6 +73,7 @@ beforeEach(function (): void {
         'transmission' => 'automatic',
         'status' => BikeStatus::AVAILABLE,
     ]);
+        \Tests\Support\VerifiedBikeDocuments::attach($this->bike);
 
     $this->customer = User::create([
         'name' => 'Anand Hegde',
