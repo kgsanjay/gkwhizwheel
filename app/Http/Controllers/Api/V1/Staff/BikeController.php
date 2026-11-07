@@ -24,8 +24,17 @@ class BikeController extends Controller
         $query = Bike::query()
             ->with(['category', 'currentStore', 'homeStore', 'images', 'documents']);
 
+        $authorizedStores = $request->user()->getAuthorizedStoreIds();
+        if ($authorizedStores !== null) {
+            $query->whereIn('current_store_id', $authorizedStores);
+        }
+
         if ($request->filled('store_id')) {
-            $query->where('current_store_id', (int) $request->query('store_id'));
+            $requestedStore = (int) $request->query('store_id');
+            if ($authorizedStores !== null && ! in_array($requestedStore, $authorizedStores, true)) {
+                abort(403, 'You are not assigned to the requested branch.');
+            }
+            $query->where('current_store_id', $requestedStore);
         }
 
         if ($request->filled('status')) {
@@ -70,8 +79,7 @@ class BikeController extends Controller
 
             $authorizedStoreIds = $request->user()->getAuthorizedStoreIds();
             if ($authorizedStoreIds !== null
-                && ! in_array($bike->current_store_id, $authorizedStoreIds, true)
-                && ! in_array($bike->home_store_id, $authorizedStoreIds, true)) {
+                && ! in_array($bike->current_store_id, $authorizedStoreIds, true)) {
                 abort(403, "Unauthorized. You are not assigned to the store for bike {$bike->registration_number}.");
             }
 

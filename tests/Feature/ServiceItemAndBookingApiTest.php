@@ -84,6 +84,7 @@ beforeEach(function (): void {
     ]);
 
     $this->boatItem = ServiceItem::create([
+        'store_id' => $this->storeA->id,
         'service_type' => 'boating',
         'name' => 'Sharavathi Mangrove Cruise',
         'category' => 'Speedboat Safari',
@@ -96,6 +97,7 @@ beforeEach(function (): void {
     ]);
 
     $this->scubaItem = ServiceItem::create([
+        'store_id' => $this->storeB->id,
         'service_type' => 'scuba',
         'name' => 'Netrani Island Shore Dive',
         'category' => 'Introductory Shore Dive',

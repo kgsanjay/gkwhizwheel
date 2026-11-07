@@ -45,6 +45,14 @@ class BikeCategory extends Model
     }
 
     /**
+     * Catalog models belonging to this vehicle category.
+     */
+    public function bikeModels(): HasMany
+    {
+        return $this->hasMany(BikeModel::class, 'category_id');
+    }
+
+    /**
      * Pricing rules applying to this category.
      */
     public function pricingRules(): HasMany

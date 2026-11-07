@@ -26,6 +26,52 @@ use Inertia\Response;
 
 class AdminServiceWebController extends Controller
 {
+
+    /**
+     * Non-superadmins may access only records explicitly owned by assigned branches.
+     * Legacy records without store_id remain accessible solely to headquarters.
+     */
+    private function restrictToAssignedStores(\Illuminate\Database\Eloquent\Builder $query, ?\App\Models\User $user = null): \Illuminate\Database\Eloquent\Builder
+    {
+        $user ??= request()->user();
+        if ($user?->role !== \App\Enums\UserRole::SUPER_ADMIN) {
+            $query->whereIn('store_id', $user?->getAuthorizedStoreIds() ?? []);
+        }
+
+        return $query;
+    }
+
+    private function assertServiceRecordAccess(?int $storeId): void
+    {
+        $user = request()->user();
+        if ($user?->role === \App\Enums\UserRole::SUPER_ADMIN) {
+            return;
+        }
+
+        abort_unless($storeId !== null && in_array($storeId, $user?->getAuthorizedStoreIds() ?? [], true), 403, 'Service record does not belong to an assigned branch.');
+    }
+
+    private function resolveServiceStore(?int $requestedStoreId): ?int
+    {
+        $user = request()->user();
+        if ($user?->role === \App\Enums\UserRole::SUPER_ADMIN) {
+            if ($requestedStoreId !== null) {
+                abort_unless(\App\Models\Store::whereKey($requestedStoreId)->exists(), 422, 'Invalid branch.');
+            }
+            return $requestedStoreId;
+        }
+
+        $authorized = $user?->getAuthorizedStoreIds() ?? [];
+        if ($requestedStoreId !== null) {
+            abort_unless(in_array($requestedStoreId, $authorized, true), 403, 'Branch is not assigned.');
+            return $requestedStoreId;
+        }
+
+        // Existing admin forms have no branch selector. Infer only where unambiguous.
+        abort_unless(count($authorized) === 1, 422, 'Select an assigned branch before creating a service record.');
+        return $authorized[0];
+    }
+
     /**
      * Service type metadata definitions
      */
@@ -168,7 +214,7 @@ class AdminServiceWebController extends Controller
 
         $config = $this->getServiceConfig($serviceType);
 
-        $query = ServiceItem::where('service_type', $serviceType)
+        $query = $this->restrictToAssignedStores(ServiceItem::where('service_type', $serviceType))
             ->with(['images' => fn ($q) => $q->orderBy('sort_order')]);
 
         if ($request->filled('search')) {
@@ -187,9 +233,9 @@ class AdminServiceWebController extends Controller
         $items = $query->orderBy('sort_order')->orderBy('name')->paginate(12)->withQueryString();
 
         $stats = [
-            'total' => ServiceItem::where('service_type', $serviceType)->count(),
-            'available' => ServiceItem::where('service_type', $serviceType)->where('status', 'available')->count(),
-            'maintenance' => ServiceItem::where('service_type', $serviceType)->where('status', 'maintenance')->count(),
+            'total' => $this->restrictToAssignedStores(ServiceItem::where('service_type', $serviceType))->count(),
+            'available' => $this->restrictToAssignedStores(ServiceItem::where('service_type', $serviceType))->where('status', 'available')->count(),
+            'maintenance' => $this->restrictToAssignedStores(ServiceItem::where('service_type', $serviceType))->where('status', 'maintenance')->count(),
         ];
 
         return Inertia::render('Admin/Services/Items/Index', [
@@ -236,6 +282,7 @@ class AdminServiceWebController extends Controller
             'features.*' => ['string', 'max:100'],
             'status' => ['required', 'string', 'in:available,maintenance,booked,inactive'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'documents' => ['nullable', 'array'],
             'documents.*.document_type' => ['required_with:documents', 'string', 'max:100'],
             'documents.*.file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
@@ -245,6 +292,7 @@ class AdminServiceWebController extends Controller
 
         $itemData = collect($validated)->except(['primary_image', 'images', 'primary_image_index', 'documents'])->all();
         $itemData['service_type'] = $serviceType;
+        $itemData['store_id'] = $this->resolveServiceStore(isset($validated['store_id']) ? (int) $validated['store_id'] : null);
         $itemData['sort_order'] = $validated['sort_order'] ?? 0;
         $itemData['features'] = $validated['features'] ?? [];
 
@@ -340,6 +388,7 @@ class AdminServiceWebController extends Controller
                 'documents.uploader:id,name',
             ])
             ->findOrFail($id);
+        $this->assertServiceRecordAccess($item->store_id);
 
         return Inertia::render('Admin/Services/Items/Edit', [
             'serviceConfig' => $config,
@@ -354,6 +403,7 @@ class AdminServiceWebController extends Controller
     {
         $config = $this->getServiceConfig($serviceType);
         $item = ServiceItem::where('service_type', $serviceType)->findOrFail($id);
+        $this->assertServiceRecordAccess($item->store_id);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -381,6 +431,7 @@ class AdminServiceWebController extends Controller
             'features.*' => ['string', 'max:100'],
             'status' => ['required', 'string', 'in:available,maintenance,booked,inactive'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'documents' => ['nullable', 'array'],
             'documents.*.document_type' => ['required_with:documents', 'string', 'max:100'],
             'documents.*.file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:10240'],
@@ -395,6 +446,7 @@ class AdminServiceWebController extends Controller
             'image_order', 'images_meta', 'delete_image_ids', 'documents', 'delete_document_ids',
         ])->all();
 
+        $itemData['store_id'] = $this->resolveServiceStore(isset($validated['store_id']) ? (int) $validated['store_id'] : $item->store_id);
         DB::transaction(function () use ($item, $itemData, $validated, $request) {
             $item->update($itemData);
 
@@ -586,6 +638,7 @@ class AdminServiceWebController extends Controller
         $item = ServiceItem::where('service_type', $serviceType)
             ->with(['images', 'documents'])
             ->findOrFail($id);
+        $this->assertServiceRecordAccess($item->store_id);
         $name = $item->name;
 
         DB::transaction(function () use ($item) {
@@ -616,6 +669,7 @@ class AdminServiceWebController extends Controller
     public function destroyDocument(Request $request, string $serviceType, int $itemId, int $documentId): RedirectResponse
     {
         $item = ServiceItem::where('service_type', $serviceType)->findOrFail($itemId);
+        $this->assertServiceRecordAccess($item->store_id);
         $doc = ServiceItemDocument::where('service_item_id', $item->id)->findOrFail($documentId);
 
         Storage::disk('public')->delete($doc->file_path);
@@ -646,8 +700,8 @@ class AdminServiceWebController extends Controller
 
         $config = $this->getServiceConfig($serviceType);
 
-        $query = ServiceBooking::with(['serviceItem', 'creator'])
-            ->where('service_type', $serviceType);
+        $query = $this->restrictToAssignedStores(ServiceBooking::with(['serviceItem', 'creator'])
+            ->where('service_type', $serviceType));
 
         if ($request->filled('search')) {
             $search = trim((string) $request->query('search'));
@@ -669,11 +723,11 @@ class AdminServiceWebController extends Controller
         $bookings = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
 
         $stats = [
-            'total' => ServiceBooking::where('service_type', $serviceType)->count(),
-            'confirmed' => ServiceBooking::where('service_type', $serviceType)->where('status', 'confirmed')->count(),
-            'in_progress' => ServiceBooking::where('service_type', $serviceType)->where('status', 'in_progress')->count(),
-            'completed' => ServiceBooking::where('service_type', $serviceType)->where('status', 'completed')->count(),
-            'revenue' => ServiceBooking::where('service_type', $serviceType)->whereIn('payment_status', ['partial', 'paid'])->sum('advance_paid'),
+            'total' => $this->restrictToAssignedStores(ServiceBooking::where('service_type', $serviceType))->count(),
+            'confirmed' => $this->restrictToAssignedStores(ServiceBooking::where('service_type', $serviceType))->where('status', 'confirmed')->count(),
+            'in_progress' => $this->restrictToAssignedStores(ServiceBooking::where('service_type', $serviceType))->where('status', 'in_progress')->count(),
+            'completed' => $this->restrictToAssignedStores(ServiceBooking::where('service_type', $serviceType))->where('status', 'completed')->count(),
+            'revenue' => $this->restrictToAssignedStores(ServiceBooking::where('service_type', $serviceType))->whereIn('payment_status', ['partial', 'paid'])->sum('advance_paid'),
         ];
 
         return Inertia::render('Admin/Services/Bookings/Index', [
@@ -691,7 +745,7 @@ class AdminServiceWebController extends Controller
     {
         $config = $this->getServiceConfig($serviceType);
 
-        $items = ServiceItem::where('service_type', $serviceType)
+        $items = $this->restrictToAssignedStores(ServiceItem::where('service_type', $serviceType))
             ->where('status', 'available')
             ->orderBy('name')
             ->get();
@@ -711,6 +765,7 @@ class AdminServiceWebController extends Controller
 
         $validated = $request->validate([
             'service_item_id' => ['nullable', 'exists:service_items,id'],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
             'customer_email' => ['nullable', 'email', 'max:255'],
@@ -728,6 +783,20 @@ class AdminServiceWebController extends Controller
             'customer_notes' => ['nullable', 'string'],
             'admin_notes' => ['nullable', 'string'],
         ]);
+
+        $item = ! empty($validated['service_item_id']) ? ServiceItem::findOrFail($validated['service_item_id']) : null;
+        if ($item !== null) {
+            abort_unless($item->service_type === $serviceType, 422, 'Incorrect service type.');
+            $this->assertServiceRecordAccess($item->store_id);
+        }
+        $storeId = $this->resolveServiceStore(isset($validated['store_id']) ? (int) $validated['store_id'] : $item?->store_id);
+        if ($item !== null && $item->store_id !== $storeId) {
+            abort(422, 'Service item must belong to the booking branch.');
+        }
+        // Unassigned inventory cannot be used in branch-originated bookings.
+        if ($item === null && request()->user()?->role !== \App\Enums\UserRole::SUPER_ADMIN) {
+            abort(422, 'Select an inventory item assigned to your branch.');
+        }
 
         $prefix = $config['prefix'];
         $dateCode = Carbon::now()->format('ymd');
@@ -749,6 +818,7 @@ class AdminServiceWebController extends Controller
         try {
             $booking = $availabilityService->createServiceBooking([
                 'booking_number' => $bookingNumber,
+                'store_id' => $storeId,
                 'service_type' => $serviceType,
                 'service_item_id' => $validated['service_item_id'] ?? null,
                 'customer_name' => $validated['customer_name'],
@@ -820,6 +890,7 @@ class AdminServiceWebController extends Controller
         $booking = ServiceBooking::with(['serviceItem', 'creator', 'user'])
             ->where('service_type', $serviceType)
             ->findOrFail($id);
+        $this->assertServiceRecordAccess($booking->store_id);
 
         return Inertia::render('Admin/Services/Bookings/Show', [
             'serviceConfig' => $config,
@@ -835,6 +906,7 @@ class AdminServiceWebController extends Controller
         $this->getServiceConfig($serviceType);
 
         $booking = ServiceBooking::where('service_type', $serviceType)->findOrFail($id);
+        $this->assertServiceRecordAccess($booking->store_id);
 
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:confirmed,in_progress,completed,cancelled'],
@@ -876,6 +948,7 @@ class AdminServiceWebController extends Controller
         $this->getServiceConfig($serviceType);
 
         $booking = ServiceBooking::where('service_type', $serviceType)->findOrFail($id);
+        $this->assertServiceRecordAccess($booking->store_id);
 
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
@@ -924,6 +997,7 @@ class AdminServiceWebController extends Controller
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('service_type', $serviceType)
             ->findOrFail($id);
+        $this->assertServiceRecordAccess($booking->store_id);
 
         return $voucherService->generateServiceVoucherPdf($booking, $request->boolean('stream'));
     }

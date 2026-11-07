@@ -29,6 +29,10 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/contact', [\App\Http\Controllers\Web\ContactWebController::class, 'store'])
         ->middleware('throttle:contact');
 
+    // Date-based model inventory; must precede generic /bikes/{id} routes.
+    Route::get('/bike-models/availability', [\App\Http\Controllers\Api\V1\Public\BikeModelAvailabilityController::class, 'index']);
+    Route::get('/bike-models/catalog', [\App\Http\Controllers\Api\V1\Public\BikeModelAvailabilityController::class, 'catalog']);
+
     // Public Bikes & Meta
     Route::get('/bikes', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'index']);
     Route::get('/bikes/{id}', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'show']);
@@ -100,6 +104,7 @@ Route::prefix('v1')->group(function (): void {
     // Customer Bookings
     Route::middleware(['auth:sanctum', 'throttle:bookings'])->prefix('bookings')->group(function (): void {
         Route::post('/hold', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'hold']);
+        Route::post('/model-hold', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'holdModel']);
         Route::get('/', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'index']);
         Route::get('/{id}', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'show']);
         Route::post('/{id}/checkout', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'checkout'])->middleware('throttle:payments');
@@ -131,6 +136,10 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'destroy']);
             Route::post('/{id}/documents', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'uploadDocument']);
         });
+
+        // Shared catalog models (individual physical bikes stay independent).
+        Route::get('/bike-models', [\App\Http\Controllers\Api\V1\Admin\BikeModelController::class, 'index']);
+        Route::post('/bike-models', [\App\Http\Controllers\Api\V1\Admin\BikeModelController::class, 'store']);
 
         // Pricing Rules
         Route::prefix('pricing-rules')->group(function (): void {

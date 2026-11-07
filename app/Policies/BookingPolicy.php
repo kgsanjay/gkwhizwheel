@@ -91,8 +91,9 @@ class BookingPolicy
         if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
-            return in_array($booking->pickup_store_id, $userStoreIds, true)
-                || in_array($booking->return_store_id, $userStoreIds, true);
+            // Handover is performed by staff assigned to the pickup branch,
+            // not merely by someone assigned to the future return branch.
+            return in_array($booking->pickup_store_id, $userStoreIds, true);
         }
 
         return false;

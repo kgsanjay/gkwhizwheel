@@ -128,6 +128,55 @@ class RazorpayService
     }
 
     /**
+     * Verify a captured multi-service payment directly with Razorpay.
+     *
+     * Never trust a browser-provided paid amount or order-to-booking association.
+     * Returns the authoritative amount in paise, or null on any mismatch.
+     */
+    public function verifiedServicePaymentAmountPaise(
+        \App\Models\ServiceBooking $booking,
+        string $orderId,
+        string $paymentId
+    ): ?int {
+        $keyId = (string) config('services.razorpay.key_id', '');
+        $keySecret = (string) config('services.razorpay.key_secret', '');
+        if ($keyId === '' || $keySecret === '') {
+            return null;
+        }
+
+        try {
+            $paymentResponse = Http::withBasicAuth($keyId, $keySecret)
+                ->timeout(8)
+                ->get('https://api.razorpay.com/v1/payments/'.rawurlencode($paymentId));
+            $orderResponse = Http::withBasicAuth($keyId, $keySecret)
+                ->timeout(8)
+                ->get('https://api.razorpay.com/v1/orders/'.rawurlencode($orderId));
+            if (! $paymentResponse->successful() || ! $orderResponse->successful()) {
+                return null;
+            }
+
+            $payment = $paymentResponse->json();
+            $order = $orderResponse->json();
+            $amountPaise = (int) ($payment['amount'] ?? 0);
+            if (($payment['id'] ?? null) !== $paymentId
+                || ($payment['order_id'] ?? null) !== $orderId
+                || ($payment['status'] ?? null) !== 'captured'
+                || ($payment['currency'] ?? null) !== 'INR'
+                || $amountPaise <= 0
+                || ($order['id'] ?? null) !== $orderId
+                || ($order['receipt'] ?? null) !== $booking->booking_number
+                || ($order['currency'] ?? null) !== 'INR'
+                || (int) ($order['amount'] ?? 0) !== $amountPaise) {
+                return null;
+            }
+
+            return $amountPaise;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Verify payment signature from checkout callback.
      */
     public function verifyPaymentSignature(string $orderId, string $paymentId, string $signature): bool

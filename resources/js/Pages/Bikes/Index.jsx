@@ -4,6 +4,7 @@ import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
 import apiClient from '../../api/client';
+import ModelRentalCatalog from '../../Components/Bikes/ModelRentalCatalog';
 import { useQuery } from '@tanstack/react-query';
 import {
     Box,
@@ -156,6 +157,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     });
 
     const bikes = bikesResponse?.data || [];
+    const legacyBikes = bikes.filter((bike) => !bike.bike_model_id);
 
     // WCAG Compliant Text Tokens
     const primaryTextColor = isDark ? '#FFFFFF' : '#0F172A';
@@ -861,42 +863,27 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         </Box>
                     )}
 
-                    {/* Empty State */}
-                    {!isLoading && !isError && bikes.length === 0 && (
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                py: 9,
-                                px: 3,
-                                textAlign: 'center',
-                                border: isDark ? '1px dashed rgba(255, 255, 255, 0.2)' : '1px dashed #94A3B8',
-                                borderRadius: 3.5,
-                                bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                                backdropFilter: 'blur(16px)',
-                            }}
-                        >
-                            <TwoWheelerIcon aria-hidden="true" sx={{ fontSize: 64, color: isDark ? '#64748B' : '#94A3B8', mb: 2 }} />
-                            <Typography variant="h5" component="h2" sx={{ fontWeight: 850, mb: 1, color: primaryTextColor }}>
-                                No Bikes Found Matching Your Filter
+                    {stores.length > 0 && (
+                        <Box component="nav" aria-label="Browse rental branches" sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 1.5 }}>
+                                Explore bikes by rental location
                             </Typography>
-                            <Typography variant="body2" sx={{ maxWidth: 480, mx: 'auto', mb: 3, color: secondaryTextColor, lineHeight: 1.6 }}>
-                                We could not find bikes in that specific budget or date bracket. Try widening your price range or clearing the category filter.
-                            </Typography>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={handleReset}
-                                sx={{ fontWeight: 800, px: 3, py: 1, borderRadius: 2 }}
-                            >
-                                Clear All Filters
-                            </Button>
-                        </Paper>
+                            <Stack direction="row" gap={1} flexWrap="wrap">
+                                {stores.map((store) => (
+                                    <Button key={store.id} variant="outlined" size="small" component={Link}
+                                        href={`/bike-rentals/branches/${store.id}/${(store.city || store.name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`}>
+                                        {store.city || store.name}
+                                    </Button>
+                                ))}
+                            </Stack>
+                        </Box>
                     )}
+                    <ModelRentalCatalog filters={filters} stores={stores} />
 
                     {/* =========================================================================
                         3. BIKE CATALOG GRID (Modern 2026 Cards with Exact Specs & Real Rates)
                     ========================================================================== */}
-                    {!isLoading && !isError && bikes.length > 0 && (
+                    {!isLoading && !isError && legacyBikes.length > 0 && (
                         <Box component="section" aria-labelledby="fleet-catalog-heading">
                             <Typography
                                 id="fleet-catalog-heading"
@@ -910,11 +897,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     mb: 3,
                                 }}
                             >
-                                Available Fleet & Models in Honnavar
+                                Additional individually listed bikes
                             </Typography>
 
                             <Grid container spacing={3}>
-                                {bikes.map((bike) => {
+                                {legacyBikes.map((bike) => {
                                     const weekdayRate = bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || bike.category?.base_daily_rate || '350.00';
                                     const weekendRate = bike.weekend_rate || (Number(weekdayRate) + (Number(weekdayRate) >= 1000 ? (Number(weekdayRate) >= 1200 ? 300 : 200) : (Number(weekdayRate) === 450 ? 50 : 100)));
                                     const isElectric = bike.fuel_type === 'electric';

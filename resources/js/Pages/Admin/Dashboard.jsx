@@ -61,6 +61,7 @@ export default function AdminDashboard({
     recent_service_bookings = [],
     assigned_services = [],
     recent_bookings = [],
+    pending_relocations = [],
     current_store = null,
     stores = [],
 }) {
@@ -181,6 +182,18 @@ export default function AdminDashboard({
     return (
         <AdminLayout title="Operational Dashboard" currentStore={current_store}>
             <Head title="Operations Console - GK WhizWheels" />
+
+            {pending_relocations.length > 0 && (
+                <Box sx={{ mb: 2.5, px: 2.5, py: 2, border: '1px solid', borderColor: 'warning.light', bgcolor: 'background.paper', borderRadius: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+                    <Stack spacing={0.5}>
+                        <Typography variant="subtitle2" fontWeight={800}>Fleet relocation requires attention</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {pending_relocations.length} upcoming pickup {pending_relocations.length === 1 ? 'conflict' : 'conflicts'} need branch review.
+                        </Typography>
+                    </Stack>
+                    <Button component={Link} href="/admin/relocations" variant="outlined" size="small" endIcon={<ArrowForwardIcon />}>Review relocations</Button>
+                </Box>
+            )}
 
             {/* Top Toolbar / Ops Header */}
             <Box

@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ServiceItem extends Model
 {
@@ -15,6 +16,7 @@ class ServiceItem extends Model
     protected $table = 'service_items';
 
     protected $fillable = [
+        'store_id',
         'service_type',
         'name',
         'category',
@@ -71,6 +73,11 @@ class ServiceItem extends Model
         }
 
         return ! empty($this->image_url) ? [$this->image_url] : [];
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class, 'store_id');
     }
 
     public function bookings(): HasMany

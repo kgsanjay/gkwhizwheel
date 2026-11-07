@@ -15,6 +15,7 @@ class ServiceBooking extends Model
     protected $table = 'service_bookings';
 
     protected $fillable = [
+        'store_id',
         'booking_number',
         'service_type',
         'service_item_id',
@@ -58,6 +59,11 @@ class ServiceBooking extends Model
             'advance_paid' => 'decimal:2',
             'balance_due' => 'decimal:2',
         ];
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class, 'store_id');
     }
 
     public function serviceItem(): BelongsTo

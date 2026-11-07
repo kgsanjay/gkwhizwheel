@@ -242,6 +242,44 @@ test('resubmitting with the same idempotency key returns the existing booking sa
 });
 
 
+test('reused hold key never returns another customer booking', function (): void {
+    $params = [
+        'bike_id' => $this->bike->id,
+        'user_id' => $this->customer1->id,
+        'pickup_store_id' => $this->store->id,
+        'return_store_id' => $this->store->id,
+        'start_date' => '2026-12-20',
+        'end_date' => '2026-12-22',
+        'channel' => BookingChannel::ONLINE,
+        'idempotency_key' => 'ownership-protected-key',
+    ];
+    $original = $this->availabilityService->holdBooking($params);
+    expect(fn () => $this->availabilityService->holdBooking([
+        ...$params,
+        'user_id' => $this->customer2->id,
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect(Booking::where('idempotency_key', 'ownership-protected-key')->sole()->id)->toBe($original->id);
+});
+
+test('reused hold key cannot silently change return branch or dates', function (): void {
+    $params = [
+        'bike_id' => $this->bike->id,
+        'user_id' => $this->customer1->id,
+        'pickup_store_id' => $this->store->id,
+        'return_store_id' => $this->store->id,
+        'start_date' => '2026-12-20',
+        'end_date' => '2026-12-22',
+        'channel' => BookingChannel::ONLINE,
+        'idempotency_key' => 'payload-protected-key',
+    ];
+    $this->availabilityService->holdBooking($params);
+    expect(fn () => $this->availabilityService->holdBooking([
+        ...$params,
+        'end_date' => '2026-12-23',
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect(Booking::where('idempotency_key', 'payload-protected-key')->count())->toBe(1);
+});
+
 test('booking hold rejects a bike assigned to another pickup branch', function (): void {
     $otherStore = Store::create([
         'name' => 'Honnavar Hub',

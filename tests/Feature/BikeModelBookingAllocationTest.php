@@ -1,0 +1,252 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Enums\BikeStatus;
+use App\Enums\BookingChannel;
+use App\Enums\BookingStatus;
+use App\Enums\FuelType;
+use App\Enums\StoreStatus;
+use App\Enums\Transmission;
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
+use App\Models\Bike;
+use App\Models\BikeCategory;
+use App\Models\BikeModel;
+use App\Models\Booking;
+use App\Models\Store;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $this->honnavar = Store::create([
+        'name' => 'Honnavar', 'address_line' => 'Main Road', 'city' => 'Honnavar',
+        'state' => 'Karnataka', 'pincode' => '581334', 'latitude' => 14.28,
+        'longitude' => 74.44, 'status' => StoreStatus::ACTIVE,
+    ]);
+    $this->murudeshwar = Store::create([
+        'name' => 'Murudeshwar', 'address_line' => 'Bus Stand', 'city' => 'Murudeshwar',
+        'state' => 'Karnataka', 'pincode' => '581350', 'latitude' => 14.09,
+        'longitude' => 74.49, 'status' => StoreStatus::ACTIVE,
+    ]);
+    $category = BikeCategory::create([
+        'name' => 'Scooter', 'base_daily_rate' => 500, 'default_deposit_amount' => 0,
+    ]);
+    $this->model = BikeModel::create([
+        'category_id' => $category->id,
+        'brand' => 'Honda', 'name' => 'Activa 6G',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+    ]);
+    $this->otherModel = BikeModel::create([
+        'category_id' => $category->id,
+        'brand' => 'TVS', 'name' => 'Jupiter',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+    ]);
+    $this->customer = User::create([
+        'name' => 'Rider', 'email' => 'allocation.rider@example.test',
+        'phone' => '9000009501', 'password' => 'Password123!',
+        'role' => UserRole::CUSTOMER, 'status' => UserStatus::ACTIVE,
+    ]);
+    $this->otherCustomer = User::create([
+        'name' => 'Another rider', 'email' => 'allocation.other@example.test',
+        'phone' => '9000009502', 'password' => 'Password123!',
+        'role' => UserRole::CUSTOMER, 'status' => UserStatus::ACTIVE,
+    ]);
+    $this->start = now()->addDays(8)->toDateString();
+    $this->end = now()->addDays(9)->toDateString();
+});
+
+function allocationBike($test, Store $store, string $registration, ?BikeModel $model = null, BikeStatus $status = BikeStatus::AVAILABLE): Bike
+{
+    $model ??= $test->model;
+
+    return Bike::create([
+        'bike_model_id' => $model->id, 'category_id' => $model->category_id,
+        'brand' => $model->brand, 'model_name' => $model->name,
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+        'registration_number' => $registration,
+        'home_store_id' => $store->id, 'current_store_id' => $store->id,
+        'status' => $status,
+    ]);
+}
+
+function allocationPayload($test, ?BikeModel $model = null, ?Store $pickup = null, ?Store $return = null, string $key = 'model-hold-01'): array
+{
+    return [
+        'bike_model_id' => ($model ?? $test->model)->id,
+        'pickup_store_id' => ($pickup ?? $test->honnavar)->id,
+        'return_store_id' => ($return ?? $test->honnavar)->id,
+        'start_date' => $test->start,
+        'end_date' => $test->end,
+        'idempotency_key' => $key,
+    ];
+}
+
+function allocationPriorBooking($test, Bike $bike, Store $pickup, Store $return): Booking
+{
+    return Booking::create([
+        'booking_reference' => 'BK-ALLOC-'.strtoupper(\Illuminate\Support\Str::random(8)),
+        'user_id' => $test->customer->id, 'bike_id' => $bike->id,
+        'pickup_store_id' => $pickup->id, 'return_store_id' => $return->id,
+        'start_date' => now()->addDays(3)->toDateString(),
+        'end_date' => now()->addDays(4)->toDateString(),
+        'channel' => BookingChannel::ONLINE, 'status' => BookingStatus::CONFIRMED,
+        'base_amount' => 1000, 'total_amount' => 1000, 'deposit_amount' => 0,
+        'price_breakdown_json' => [], 'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+    ]);
+}
+
+test('model hold assigns a physical Activa and retains its requested model', function (): void {
+    $bike = allocationBike($this, $this->honnavar, 'KA-47-ALLOC-01');
+    Sanctum::actingAs($this->customer);
+
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.bike_id', $bike->id)
+        ->assertJsonPath('data.bike_model_id', $this->model->id)
+        ->assertJsonPath('data.status', 'held');
+
+    $booking = Booking::sole();
+    expect($booking->bike_id)->toBe($bike->id)
+        ->and($booking->bike_model_id)->toBe($this->model->id)
+        ->and($booking->held_until->isFuture())->toBeTrue();
+});
+
+test('retries return the same physical bike, without a second booking', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-02');
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-03');
+    Sanctum::actingAs($this->customer);
+    $first = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))
+        ->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))
+        ->assertOk()->assertJsonPath('data.id', $first);
+    expect(Booking::count())->toBe(1);
+});
+
+test('same model idempotency key cannot be replayed by a different customer or route', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-04');
+    Sanctum::actingAs($this->customer);
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))->assertCreated();
+
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, return: $this->murudeshwar))
+        ->assertUnprocessable();
+    Sanctum::actingAs($this->otherCustomer);
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))
+        ->assertUnprocessable();
+    expect(Booking::count())->toBe(1);
+});
+
+test('an existing bike-specific hold cannot be reused as a model hold', function (): void {
+    $bike = allocationBike($this, $this->honnavar, 'KA-47-ALLOC-05');
+    Sanctum::actingAs($this->customer);
+    $this->postJson('/api/v1/bookings/hold', [
+        'bike_id' => $bike->id,
+        'pickup_store_id' => $this->honnavar->id, 'return_store_id' => $this->honnavar->id,
+        'start_date' => $this->start, 'end_date' => $this->end,
+        'idempotency_key' => 'shared-mode-key',
+    ])->assertCreated();
+
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'shared-mode-key'))
+        ->assertUnprocessable();
+    expect(Booking::count())->toBe(1);
+});
+
+test('model allocation assigns different physical bikes to overlapping customers and eventually sells out', function (): void {
+    $one = allocationBike($this, $this->honnavar, 'KA-47-ALLOC-06');
+    $two = allocationBike($this, $this->honnavar, 'KA-47-ALLOC-07');
+    Sanctum::actingAs($this->customer);
+    $first = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'one'))
+        ->assertCreated()->json('data.bike_id');
+    Sanctum::actingAs($this->otherCustomer);
+    $second = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'two'))
+        ->assertCreated()->json('data.bike_id');
+    expect($first)->not->toBe($second)
+        ->and([$first, $second])->toContain($one->id, $two->id);
+
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'three'))
+        ->assertUnprocessable();
+    expect(Booking::count())->toBe(2);
+});
+
+test('future return to another branch enables only destination pickup', function (): void {
+    $bike = allocationBike($this, $this->murudeshwar, 'KA-47-ALLOC-08');
+    allocationPriorBooking($this, $bike, $this->murudeshwar, $this->honnavar);
+    Sanctum::actingAs($this->customer);
+
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, pickup: $this->murudeshwar))
+        ->assertUnprocessable();
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))
+        ->assertCreated()->assertJsonPath('data.bike_id', $bike->id);
+});
+
+test('allocation rejects inactive model, maintenance bikes and empty inventory', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-09', status: BikeStatus::MAINTENANCE);
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-10', model: $this->otherModel);
+    Sanctum::actingAs($this->customer);
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))
+        ->assertUnprocessable();
+    $this->model->update(['is_active' => false]);
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'inactive'))
+        ->assertUnprocessable();
+});
+
+test('model hold requires authentication and a valid future date range', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-11');
+    $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this))->assertUnauthorized();
+    Sanctum::actingAs($this->customer);
+    $invalid = allocationPayload($this);
+    $invalid['end_date'] = now()->addDays(2)->toDateString();
+    $this->postJson('/api/v1/bookings/model-hold', $invalid)->assertUnprocessable();
+});
+
+test('expired held reservation cannot start payment before the expiry worker runs', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-EXP-01');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'exp-hold-01'))
+        ->assertCreated()->json('data.id');
+    Booking::findOrFail($bookingId)->update(['held_until' => now()->subSeconds(5)]);
+
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'razorpay',
+    ])->assertUnprocessable()
+        ->assertJsonPath('success', false);
+
+    expect(Booking::findOrFail($bookingId)->status)->toBe(BookingStatus::HELD);
+});
+
+test('expired pending-payment booking cannot create another gateway order', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-EXP-02');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'exp-hold-02'))
+        ->assertCreated()->json('data.id');
+    Booking::findOrFail($bookingId)->update([
+        'status' => BookingStatus::PENDING_PAYMENT,
+        'held_until' => now()->subSeconds(5),
+    ]);
+
+    $this->postJson('/api/v1/bookings/'.$bookingId.'/checkout', [
+        'gateway' => 'phonepe',
+    ])->assertUnprocessable()
+        ->assertJsonPath('success', false);
+
+    expect(Booking::findOrFail($bookingId)->status)->toBe(BookingStatus::PENDING_PAYMENT);
+});
+
+test('booking service itself rejects transition of an expired hold', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ALLOC-EXP-03');
+    Sanctum::actingAs($this->customer);
+
+    $bookingId = $this->postJson('/api/v1/bookings/model-hold', allocationPayload($this, key: 'exp-hold-03'))
+        ->assertCreated()->json('data.id');
+    $booking = Booking::findOrFail($bookingId);
+    $booking->update(['held_until' => now()->subSeconds(5)]);
+
+    expect(fn () => app(\App\Services\BookingService::class)->markPendingPayment($booking->fresh()))
+        ->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect($booking->fresh()->status)->toBe(BookingStatus::HELD);
+});

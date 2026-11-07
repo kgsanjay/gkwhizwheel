@@ -54,6 +54,34 @@ class BookingController extends Controller
     }
 
     /**
+     * Allocate a specific physical bike from the requested model and create
+     * a normal booking hold; checkout remains the existing booking-ID flow.
+     */
+    public function holdModel(
+        \App\Http\Requests\Customer\HoldBikeModelRequest $request,
+        AvailabilityService $availabilityService
+    ): JsonResponse {
+        $booking = $availabilityService->holdModelBooking([
+            'bike_model_id' => (int) $request->validated('bike_model_id'),
+            'user_id' => $request->user()->id,
+            'pickup_store_id' => (int) $request->validated('pickup_store_id'),
+            'return_store_id' => (int) $request->validated('return_store_id'),
+            'start_date' => (string) $request->validated('start_date'),
+            'end_date' => (string) $request->validated('end_date'),
+            'idempotency_key' => (string) $request->validated('idempotency_key'),
+            'coupon_code' => $request->validated('coupon_code'),
+            'addons' => $request->validated('addons') ?? [],
+        ]);
+        $booking->load(['bike.images', 'pickupStore', 'returnStore', 'addons']);
+
+        return response()->json([
+            'success' => true,
+            'data' => new BookingResource($booking),
+            'message' => 'Bike model reservation held successfully.',
+        ], $booking->wasRecentlyCreated ? 201 : 200);
+    }
+
+    /**
      * Initiate online checkout (Razorpay or PhonePe): creates gateway order for advance + deposit combined (Option A)
      * and transitions booking from held to pending_payment.
      */
@@ -83,6 +111,16 @@ class BookingController extends Controller
                 'data' => new BookingResource($booking),
                 'message' => 'Booking cannot be checked out in current status: '.$booking->status->value,
                 'errors' => null,
+            ], 422);
+        }
+
+        // Pending-payment retries must also respect the original deadline.
+        if ($booking->held_until !== null && $booking->held_until->lte(now())) {
+            return response()->json([
+                'success' => false,
+                'data' => new BookingResource($booking),
+                'message' => 'This reservation hold has expired. Please reserve a bike again.',
+                'errors' => ['booking' => ['Reservation hold expired.']],
             ], 422);
         }
 

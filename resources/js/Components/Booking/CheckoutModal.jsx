@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import {
     Dialog,
@@ -45,6 +45,7 @@ export default function CheckoutModal({
     open,
     onClose,
     bike,
+    bikeModelId = null,
     startDate,
     endDate,
     pickupStore,
@@ -59,22 +60,23 @@ export default function CheckoutModal({
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [heldBooking, setHeldBooking] = useState(null);
-    const [timeLeftSeconds, setTimeLeftSeconds] = useState(900); // 15-minute countdown
+    const requestKey = useRef(null);
+    const finalQuote = heldBooking || quote;
+    const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
 
-    // Countdown timer once booking is held
+    // Use the real server deadline, not an independent 15-minute timer.
     useEffect(() => {
-        if (!heldBooking) return;
-        const timer = setInterval(() => {
-            setTimeLeftSeconds((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        if (!heldBooking?.held_until) return;
+        const refreshRemaining = () => {
+            const expiry = Date.parse(heldBooking.held_until);
+            setTimeLeftSeconds(Number.isFinite(expiry)
+                ? Math.max(0, Math.ceil((expiry - Date.now()) / 1000))
+                : 0);
+        };
+        refreshRemaining();
+        const timer = setInterval(refreshRemaining, 1000);
         return () => clearInterval(timer);
-    }, [heldBooking]);
+    }, [heldBooking?.held_until]);
 
     const formatTimer = (secs) => {
         const m = Math.floor(secs / 60);
@@ -89,34 +91,44 @@ export default function CheckoutModal({
     const handleBookAndPay = async () => {
         setIsSubmitting(true);
         setErrorMessage('');
-        setStatusMessage('Generating reservation hold (15-min lock)...');
+        setStatusMessage(heldBooking ? 'Preparing secure payment checkout...' : 'Checking available vehicles and reserving a bike...');
 
         try {
-            // 1. Generate client-side Idempotency-Key UUID at the moment "Book Now" is clicked
-            const idempotencyKey = generateIdempotencyKey();
+            let booking = heldBooking;
+            if (!booking) {
+                // Keep the key stable for a retried hold after network errors.
+                if (!requestKey.current) requestKey.current = generateIdempotencyKey();
+                const holdPayload = {
+                    ...(bikeModelId ? { bike_model_id: bikeModelId } : { bike_id: bike.id }),
+                    start_date: startDate,
+                    end_date: endDate,
+                    pickup_store_id: Number(pickupStore.id),
+                    return_store_id: Number(returnStore.id),
+                    coupon_code: couponCode.trim() || undefined,
+                    addons: selectedAddons,
+                };
+                const holdRes = await apiClient.post(
+                    bikeModelId ? '/bookings/model-hold' : '/bookings/hold',
+                    holdPayload,
+                    { headers: { 'Idempotency-Key': requestKey.current } }
+                );
+                booking = holdRes.data;
+                setHeldBooking(booking);
 
-            // 2. Dispatch POST /api/v1/bookings/hold with Idempotency-Key header
-            const holdPayload = {
-                bike_id: bike.id,
-                start_date: startDate,
-                end_date: endDate,
-                pickup_store_id: Number(pickupStore.id),
-                return_store_id: Number(returnStore.id),
-                coupon_code: couponCode.trim() || undefined,
-                addons: selectedAddons,
-            };
-
-            const holdRes = await apiClient.post('/bookings/hold', holdPayload, {
-                headers: {
-                    'Idempotency-Key': idempotencyKey,
-                },
-            });
-
-            const booking = holdRes.data;
-            setHeldBooking(booking);
-            setStatusMessage(`Hold acquired! Ref: ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
+                if (bikeModelId) {
+                    // A model's exact rate may vary between physical vehicles.
+                    // Require an explicit second click to accept the actual total.
+                    setStatusMessage('Bike reserved. Review the exact amount below before continuing to payment.');
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+            setStatusMessage(`Reservation ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
 
             // 3. Initiate payment order creation on server
+            if (booking.held_until && Date.parse(booking.held_until) <= Date.now()) {
+                throw new Error('Your reservation hold has expired. Close this dialog and start a new booking.');
+            }
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
                 gateway: gateway,
             });
@@ -273,7 +285,7 @@ export default function CheckoutModal({
                         severity={timeLeftSeconds > 180 ? 'info' : 'warning'}
                         sx={{ mb: 2.5, fontWeight: 600 }}
                     >
-                        Reservation Hold Active ({heldBooking.booking_reference}): Expires in{' '}
+                        {timeLeftSeconds > 0 ? 'Reservation hold active' : 'Reservation hold expired'} ({heldBooking.booking_reference}):{' '}
                         <strong>{formatTimer(timeLeftSeconds)}</strong>
                     </Alert>
                 )}
@@ -407,11 +419,11 @@ export default function CheckoutModal({
                                 Total Amount Payable
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                Rental advance + ₹{quote?.deposit_amount || 0} refundable deposit
+                                Rental advance + ₹{finalQuote?.deposit_amount || 0} refundable deposit
                             </Typography>
                         </Box>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                            ₹{Number(quote?.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            {finalQuote ? `₹${Number(finalQuote.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'Calculated after reservation'}
                         </Typography>
                     </Box>
                 </Box>
@@ -423,7 +435,7 @@ export default function CheckoutModal({
                     color="secondary"
                     fullWidth
                     size="large"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (Boolean(heldBooking) && timeLeftSeconds <= 0)}
                     onClick={handleBookAndPay}
                     sx={{
                         py: 1.5,
@@ -435,12 +447,14 @@ export default function CheckoutModal({
                     {isSubmitting ? (
                         <CircularProgress size={26} color="inherit" />
                     ) : (
-                        `Book Now & Pay ₹${Number(quote?.total_amount || 0).toLocaleString('en-IN')}`
+                        bikeModelId && !heldBooking
+                            ? 'Reserve vehicle & check final price'
+                            : `Continue to pay ₹${Number(finalQuote?.total_amount || 0).toLocaleString('en-IN')}`
                     )}
                 </Button>
 
                 {/* Test / Dev Simulation Trigger when hold is active */}
-                {heldBooking && (
+                {import.meta.env.DEV && heldBooking && (
                     <Button
                         variant="outlined"
                         color="primary"

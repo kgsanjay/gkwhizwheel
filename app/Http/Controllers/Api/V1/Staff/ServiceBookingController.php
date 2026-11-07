@@ -64,6 +64,17 @@ class ServiceBookingController extends Controller
         }
     }
 
+    private function authorizeBookingOwnership(Request $request, ServiceBooking $booking): void
+    {
+        $this->authorizeServiceAccess($request, $booking->service_type);
+        if ($request->user()->role !== UserRole::SUPER_ADMIN) {
+            $this->authorizeStoreAccess($request, $booking->store_id ?? 0, $booking, 'access_service_booking');
+        }
+        if ($request->filled('store_id')) {
+            abort_unless((int) $booking->store_id === $request->integer('store_id'), 404);
+        }
+    }
+
     /**
      * Display a listing of service bookings with store and service scoping.
      */
@@ -81,13 +92,18 @@ class ServiceBookingController extends Controller
         // Service Scoping: if not super admin, restrict to assigned services
         if ($user->role !== UserRole::SUPER_ADMIN) {
             $assigned = $user->assignedServicesList();
-            $query->whereIn('service_type', $assigned);
+            $query->whereIn('service_type', $assigned)
+                ->whereIn('store_id', $user->getAuthorizedStoreIds() ?? []);
         }
 
         if ($request->filled('service_type')) {
             $serviceType = (string) $request->query('service_type');
             $this->authorizeServiceAccess($request, $serviceType);
             $query->where('service_type', $serviceType);
+        }
+
+        if ($request->filled('store_id')) {
+            $query->where('store_id', $request->integer('store_id'));
         }
 
         if ($request->filled('status')) {
@@ -142,7 +158,7 @@ class ServiceBookingController extends Controller
 
         $booking = ServiceBooking::with(['serviceItem.images', 'user'])->findOrFail($id);
 
-        $this->authorizeServiceAccess($request, $booking->service_type);
+        $this->authorizeBookingOwnership($request, $booking);
 
         return response()->json([
             'success' => true,
@@ -186,6 +202,14 @@ class ServiceBookingController extends Controller
         ]);
 
         $this->authorizeServiceAccess($request, $validated['service_type']);
+        $serviceItem = ! empty($validated['service_item_id']) ? ServiceItem::findOrFail($validated['service_item_id']) : null;
+        abort_unless($serviceItem !== null && $serviceItem->service_type === $validated['service_type'], 422, 'Select a valid service item.');
+        abort_unless($serviceItem->store_id !== null, 422, 'Service item must be assigned to a branch.');
+        $this->authorizeStoreAccess($request, (int) $serviceItem->store_id, null, 'create_service_booking');
+        if (! empty($validated['store_id'])) {
+            abort_unless((int) $serviceItem->store_id === (int) $validated['store_id'], 422, 'Service item and branch do not match.');
+        }
+        $validated['store_id'] = $serviceItem->store_id;
 
         $booking = DB::transaction(function () use ($validated, $user) {
             $totalAmount = (float) $validated['total_amount'];
@@ -219,6 +243,7 @@ class ServiceBookingController extends Controller
             $booking = ServiceBooking::create([
                 'booking_number' => $bookingNumber,
                 'service_type' => $validated['service_type'],
+                'store_id' => $validated['store_id'],
                 'service_item_id' => $serviceItem?->id,
                 'user_id' => null,
                 'customer_name' => $validated['customer_name'],
@@ -282,7 +307,7 @@ class ServiceBookingController extends Controller
     {
         $booking = ServiceBooking::findOrFail($id);
 
-        $this->authorizeServiceAccess($request, $booking->service_type);
+        $this->authorizeBookingOwnership($request, $booking);
 
         if ($request->filled('store_id')) {
             $this->authorizeStoreAccess($request, (int) $request->input('store_id'), $booking, 'update_service_booking_status');
@@ -333,7 +358,7 @@ class ServiceBookingController extends Controller
     {
         $booking = ServiceBooking::findOrFail($id);
 
-        $this->authorizeServiceAccess($request, $booking->service_type);
+        $this->authorizeBookingOwnership($request, $booking);
 
         if ($request->filled('store_id')) {
             $this->authorizeStoreAccess($request, (int) $request->input('store_id'), $booking, 'mark_service_booking_in_progress');
@@ -366,7 +391,7 @@ class ServiceBookingController extends Controller
     {
         $booking = ServiceBooking::findOrFail($id);
 
-        $this->authorizeServiceAccess($request, $booking->service_type);
+        $this->authorizeBookingOwnership($request, $booking);
 
         if ($request->filled('store_id')) {
             $this->authorizeStoreAccess($request, (int) $request->input('store_id'), $booking, 'mark_service_booking_completed');

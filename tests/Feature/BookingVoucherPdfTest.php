@@ -127,7 +127,7 @@ beforeEach(function (): void {
 });
 
 test('customer can download service booking pdf voucher with correct headers', function (): void {
-    $response = $this->get("/services/bookings/{$this->serviceBooking->booking_number}/voucher");
+    $response = $this->actingAs($this->customer)->get("/services/bookings/{$this->serviceBooking->booking_number}/voucher");
 
     $response->assertOk();
     expect($response->headers->get('content-type'))->toBe('application/pdf');
@@ -135,7 +135,7 @@ test('customer can download service booking pdf voucher with correct headers', f
 });
 
 test('customer can view print-optimized service pass in browser', function (): void {
-    $response = $this->get("/services/bookings/{$this->serviceBooking->booking_number}/print");
+    $response = $this->actingAs($this->customer)->get("/services/bookings/{$this->serviceBooking->booking_number}/print");
 
     $response->assertOk()
         ->assertSee($this->serviceBooking->booking_number)

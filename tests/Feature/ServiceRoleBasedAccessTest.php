@@ -55,6 +55,7 @@ beforeEach(function (): void {
         'phone' => '9876549999',
         'status' => StoreStatus::ACTIVE,
     ]);
+    $this->taxiManager->stores()->attach($this->store->id);
 });
 
 test('super admin can access all service routes without restrictions', function (): void {
@@ -224,7 +225,7 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
         'pickup_location' => 'Murudeshwar Port',
     ]);
 
-    // Until service bookings have branch ownership, manager dashboards must not expose globally shared service data.
+    // Legacy service rows without store ownership remain invisible to branch managers.
     $this->actingAs($this->taxiManager)
         ->get('/admin/dashboard')
         ->assertOk()
@@ -248,6 +249,7 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
 
 test('manager can record offline counter booking with balance calculation', function (): void {
     $item = \App\Models\ServiceItem::create([
+        'store_id' => $this->store->id,
         'service_type' => 'taxi',
         'name' => 'Ertiga Cab',
         'category' => 'SUV / MUV',

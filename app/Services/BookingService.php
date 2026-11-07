@@ -22,6 +22,14 @@ class BookingService
     {
         $this->ensureCurrentStatus($booking, [BookingStatus::HELD], BookingStatus::PENDING_PAYMENT);
 
+        // Expired holds must not enter payment even when the expiry job has
+        // not yet changed the stored booking status.
+        if ($booking->held_until !== null && $booking->held_until->lte(now())) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'booking' => 'This reservation hold has expired. Please reserve a bike again.',
+            ]);
+        }
+
         $booking->update([
             'status' => BookingStatus::PENDING_PAYMENT,
         ]);
@@ -88,6 +96,11 @@ class BookingService
         ): Booking {
             // Acquire row-level lock on bike for availability/state transition
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
+            if ($odometerReading < (int) $bike->odometer_reading) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'odometer_reading' => 'Handover odometer cannot be lower than the recorded reading.',
+                ]);
+            }
 
             $booking->update([
                 'status' => BookingStatus::HANDED_OVER,
@@ -153,6 +166,17 @@ class BookingService
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
 
             $actualReturnStoreId = $returnStoreId ?? $booking->return_store_id;
+            if ($odometerReading < (int) $bike->odometer_reading) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'odometer_reading' => 'Return odometer cannot be lower than the handover reading.',
+                ]);
+            }
+            $receivingStore = \App\Models\Store::findOrFail($actualReturnStoreId);
+            if ($receivingStore->status !== \App\Enums\StoreStatus::ACTIVE) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'return_store_id' => 'The receiving branch must be active.',
+                ]);
+            }
             $newTotal = round((float) $booking->total_amount + $lateFee + $damageFee, 2);
 
             $booking->update([
@@ -170,6 +194,21 @@ class BookingService
                 'current_store_id' => $actualReturnStoreId,
                 'odometer_reading' => $odometerReading,
             ]);
+
+            // Flag the first future pickup that the unexpected physical location
+            // would prevent. Do not cancel the customer booking or invent a transfer.
+            $affected = app(BikeLocationSchedule::class)->firstUnfulfillableReservation($bike);
+            if ($affected !== null) {
+                \App\Models\BikeRelocationTask::firstOrCreate(
+                    ['affected_booking_id' => $affected->id, 'status' => 'open'],
+                    [
+                        'bike_id' => $bike->id,
+                        'triggering_booking_id' => $booking->id,
+                        'from_store_id' => $actualReturnStoreId,
+                        'required_store_id' => $affected->pickup_store_id,
+                    ]
+                );
+            }
 
             // Record return condition log
             $log = BikeConditionLog::create([

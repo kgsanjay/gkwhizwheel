@@ -64,6 +64,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import SwapHorizontalCircleIcon from '@mui/icons-material/SwapHorizontalCircle';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import InstallMobileIcon from '@mui/icons-material/InstallMobile';
 import IosShareIcon from '@mui/icons-material/IosShare';
@@ -96,6 +97,12 @@ const MENU_SECTIONS = [
                 icon: <CalendarMonthIcon sx={{ fontSize: 20 }} />,
                 roles: ['super_admin', 'store_manager', 'staff'],
             },
+            {
+                label: 'Bike Relocations',
+                path: '/admin/relocations',
+                icon: <SwapHorizontalCircleIcon sx={{ fontSize: 20 }} />,
+                roles: ['super_admin', 'store_manager', 'staff'],
+            },
         ],
     },
     {
@@ -110,6 +117,7 @@ const MENU_SECTIONS = [
                 basePath: '/admin/bikes',
                 children: [
                     { label: 'All Fleet Inventory', path: '/admin/bikes', roles: ['super_admin', 'store_manager', 'staff'] },
+                    { label: 'Bike Model Catalog', path: '/admin/bike-models', roles: ['super_admin'] },
                     { label: 'Add New Bike', path: '/admin/bikes/create', roles: ['super_admin', 'store_manager'] },
                     { label: 'Dynamic Tariffs', path: '/admin/pricing', roles: ['super_admin'] },
                     { label: 'Discount Coupons', path: '/admin/coupons', roles: ['super_admin'] },

@@ -12,6 +12,8 @@ use App\Enums\UserStatus;
 use App\Models\NotificationLog;
 use App\Models\ServiceBooking;
 use App\Models\ServiceItem;
+use App\Models\Store;
+use App\Enums\StoreStatus;
 use App\Models\User;
 use App\Notifications\ServiceBookingConfirmedNotification;
 use App\Notifications\ServiceManagerBookingAlertNotification;
@@ -49,8 +51,15 @@ beforeEach(function (): void {
         'status' => UserStatus::ACTIVE,
     ]);
     $this->boatingManager->syncAssignedServices(['boating']);
+    $this->branch = Store::create([
+        'name' => 'Honnavar Boating', 'address_line' => 'Main Road', 'city' => 'Honnavar',
+        'state' => 'Karnataka', 'pincode' => '581334', 'latitude' => 14.28,
+        'longitude' => 74.45, 'phone' => '9998887772', 'status' => StoreStatus::ACTIVE,
+    ]);
+    $this->boatingManager->stores()->attach($this->branch->id);
 
     $this->serviceItem = ServiceItem::create([
+        'store_id' => $this->branch->id,
         'service_type' => 'boating',
         'name' => 'Sharavathi Sunset Shikara',
         'category' => 'Sunset Cruise Yacht',
@@ -62,6 +71,7 @@ beforeEach(function (): void {
     ]);
 
     $this->serviceBooking = ServiceBooking::create([
+        'store_id' => $this->branch->id,
         'booking_number' => 'GKW-BT-260909-TEST',
         'service_type' => 'boating',
         'service_item_id' => $this->serviceItem->id,

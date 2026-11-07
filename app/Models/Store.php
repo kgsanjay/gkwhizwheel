@@ -121,6 +121,16 @@ class Store extends Model
         return $this->hasMany(PricingRule::class, 'to_store_id');
     }
 
+    public function serviceItems(): HasMany
+    {
+        return $this->hasMany(ServiceItem::class, 'store_id');
+    }
+
+    public function serviceBookings(): HasMany
+    {
+        return $this->hasMany(ServiceBooking::class, 'store_id');
+    }
+
     /**
      * Activity logs recorded at this store.
      */

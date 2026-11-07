@@ -6,10 +6,14 @@ namespace App\Services;
 
 use App\Enums\BookingChannel;
 use App\Enums\BookingStatus;
+use App\Enums\BikeStatus;
+use App\Enums\StoreStatus;
 use App\Exceptions\BikeNotAvailableException;
 use App\Exceptions\ServiceItemNotAvailableException;
 use App\Models\Bike;
+use App\Models\BikeModel;
 use App\Models\Booking;
+use App\Models\Store;
 use App\Models\ServiceBooking;
 use App\Models\ServiceItem;
 use Carbon\Carbon;
@@ -135,9 +139,27 @@ class AvailabilityService
     {
         $idempotencyKey = $params['idempotency_key'];
 
-        // If a booking with this idempotency key already exists, return it
+        // An idempotency key may be retried only for the same customer and
+        // exact bike/route/date request. Never disclose another user's booking.
         $existing = Booking::where('idempotency_key', $idempotencyKey)->first();
         if ($existing !== null) {
+            $channel = $params['channel'] instanceof BookingChannel
+                ? $params['channel']
+                : BookingChannel::from((string) $params['channel']);
+            $matches = (int) $existing->user_id === (int) $params['user_id']
+                && (int) $existing->bike_id === (int) $params['bike_id']
+                && (int) ($existing->bike_model_id ?? 0) === (int) ($params['bike_model_id'] ?? 0)
+                && (int) $existing->pickup_store_id === (int) $params['pickup_store_id']
+                && (int) $existing->return_store_id === (int) $params['return_store_id']
+                && $existing->start_date->toDateString() === Carbon::parse($params['start_date'])->toDateString()
+                && $existing->end_date->toDateString() === Carbon::parse($params['end_date'])->toDateString()
+                && $existing->channel === $channel;
+            if (! $matches) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'idempotency_key' => 'This request key was already used for a different booking.',
+                ]);
+            }
+
             return $existing;
         }
 
@@ -170,10 +192,16 @@ class AvailabilityService
             $idempotencyKey,
             $couponCode,
             $addons,
-            $createdBy
+            $createdBy,
+            $params
         ): Booking {
             // 1. Acquire row-level lock on the bike
             $bike = Bike::where('id', $bikeId)->lockForUpdate()->firstOrFail();
+            if (isset($params['bike_model_id'])
+                && ((int) $bike->bike_model_id !== (int) $params['bike_model_id']
+                    || ! BikeModel::whereKey($params['bike_model_id'])->where('is_active', true)->exists())) {
+                throw new BikeNotAvailableException('The selected catalog model is not available.');
+            }
 
             // A vehicle cannot be picked up from another branch, nor rented
             // while physically unavailable or under maintenance.
@@ -238,6 +266,7 @@ class AvailabilityService
             $booking = Booking::create([
                 'booking_reference' => $this->generateBookingReference(),
                 'bike_id' => $bike->id,
+                'bike_model_id' => $params['bike_model_id'] ?? null,
                 'user_id' => $userId,
                 'pickup_store_id' => $pickupStoreId,
                 'return_store_id' => $returnStoreId,
@@ -268,6 +297,83 @@ class AvailabilityService
             }
 
             return $booking;
+        });
+    }
+
+
+    /**
+     * Allocate one specific vehicle under a model for the requested route.
+     * Serializes model allocations and delegates the actual hold and pricing
+     * to holdBooking(), which rechecks vehicle availability under its row lock.
+     *
+     * Retries must use the same model, customer, route, dates and key.
+     *
+     * @param array<string, mixed> $params
+     */
+    public function holdModelBooking(array $params): Booking
+    {
+        return DB::transaction(function () use ($params): Booking {
+            $modelId = (int) $params['bike_model_id'];
+            $model = BikeModel::whereKey($modelId)->lockForUpdate()->firstOrFail();
+            $key = (string) $params['idempotency_key'];
+            $userId = (int) $params['user_id'];
+            $pickupId = (int) $params['pickup_store_id'];
+            $returnId = (int) $params['return_store_id'];
+
+            $existing = Booking::query()->where('idempotency_key', $key)->first();
+            if ($existing !== null) {
+                $matches = (int) $existing->user_id === $userId
+                    && (int) ($existing->bike_model_id ?? 0) === $modelId
+                    && (int) $existing->pickup_store_id === $pickupId
+                    && (int) $existing->return_store_id === $returnId
+                    && $existing->start_date->toDateString() === Carbon::parse($params['start_date'])->toDateString()
+                    && $existing->end_date->toDateString() === Carbon::parse($params['end_date'])->toDateString()
+                    && $existing->channel === BookingChannel::ONLINE;
+                if (! $matches) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'idempotency_key' => 'This request key was already used for a different booking.',
+                    ]);
+                }
+
+                return $existing;
+            }
+
+            if (! $model->is_active
+                || ! Store::whereKey($pickupId)->where('status', StoreStatus::ACTIVE)->exists()
+                || ! Store::whereKey($returnId)->where('status', StoreStatus::ACTIVE)->exists()) {
+                throw new BikeNotAvailableException('This model or route is not currently available.');
+            }
+
+            $candidates = Bike::query()
+                ->where('bike_model_id', $modelId)
+                ->where('status', BikeStatus::AVAILABLE)
+                ->orderBy('id')
+                ->get();
+
+            foreach ($candidates as $bike) {
+                if (! $this->checkAvailability(
+                    $bike,
+                    $params['start_date'],
+                    $params['end_date'],
+                    null,
+                    $pickupId,
+                    $returnId
+                )) {
+                    continue;
+                }
+
+                // The hold path independently locks the vehicle, checks its
+                // schedule, and calculates authoritative pricing.
+                return $this->holdBooking([
+                    ...$params,
+                    'bike_id' => $bike->id,
+                    'channel' => BookingChannel::ONLINE,
+                ]);
+            }
+
+            throw new BikeNotAvailableException(
+                'No vehicles of this model are available for the selected route and dates.'
+            );
         });
     }
 
@@ -349,6 +455,10 @@ class AvailabilityService
                 }
 
                 $params['service_item_id'] = $item->id;
+                if (isset($params['store_id']) && $item->store_id !== null && (int) $params['store_id'] !== (int) $item->store_id) {
+                    throw new ServiceItemNotAvailableException('Service item belongs to another branch.');
+                }
+                $params['store_id'] = $item->store_id;
             }
 
             // Generate booking number if not provided

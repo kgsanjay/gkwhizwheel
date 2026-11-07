@@ -6,6 +6,8 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\ActivityLog;
 use App\Models\ServiceItem;
+use App\Models\Store;
+use App\Enums\StoreStatus;
 use App\Models\ServiceItemDocument;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,6 +36,12 @@ beforeEach(function (): void {
         'status' => UserStatus::ACTIVE,
     ]);
     $this->scubaManager->syncAssignedServices(['scuba']);
+    $this->branch = Store::create([
+        'name' => 'Scuba Test Hub', 'address_line' => 'Main Road', 'city' => 'Murudeshwar',
+        'state' => 'Karnataka', 'pincode' => '581350', 'latitude' => 14.09,
+        'longitude' => 74.49, 'phone' => '9998887771', 'status' => StoreStatus::ACTIVE,
+    ]);
+    $this->scubaManager->stores()->attach($this->branch->id);
 
     $this->taxiManager = User::create([
         'name' => 'Taxi Manager',
@@ -235,6 +243,7 @@ test('deleting a service item cleans up its documents and files', function (): v
     Storage::disk('public')->put($filePath, 'scuba cert');
 
     $item = ServiceItem::create([
+        'store_id' => $this->branch->id,
         'service_type' => 'scuba',
         'name' => 'Dive Center North',
         'price_base' => 5000,

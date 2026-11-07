@@ -30,7 +30,11 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/bike-rentals/branches/{id}/{slug?}', [\App\Http\Controllers\Web\BranchBikeRentalController::class, 'show'])
+    ->whereNumber('id')->name('bike-rentals.branches.show');
 Route::get('/services/bikes', [\App\Http\Controllers\Web\BikeWebController::class, 'index'])->name('bikes.index');
+Route::get('/services/bikes/models/{id}/{slug?}', [\App\Http\Controllers\Web\BikeModelWebController::class, 'show'])
+    ->whereNumber('id')->name('services.bikes.models.show');
 Route::get('/services/bikes/{id}', [\App\Http\Controllers\Web\BikeWebController::class, 'show'])->name('services.bikes.show');
 Route::redirect('/bikes', '/services/bikes', 301);
 Route::redirect('/services/two-wheelers', '/services/bikes', 301);
@@ -209,6 +213,11 @@ Route::post('/admin/2fa/disable', [\App\Http\Controllers\Web\Admin\AdminAuthCont
 Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/', [\App\Http\Controllers\Web\Admin\AdminDashboardController::class, 'index'])->name('admin.index');
     Route::get('/dashboard', [\App\Http\Controllers\Web\Admin\AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/relocations', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'index'])->name('admin.relocations.index');
+    Route::post('/relocations/{id}/confirm-receipt', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'confirmReceipt'])
+        ->middleware('role:super_admin')->name('admin.relocations.confirm-receipt');
+    Route::post('/relocations/{id}/dismiss', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'dismiss'])
+        ->middleware('role:super_admin')->name('admin.relocations.dismiss');
     Route::get('/dispatch', [\App\Http\Controllers\Web\Admin\AdminDispatchWebController::class, 'index'])->name('admin.dispatch.index');
     Route::get('/operations', fn () => redirect()->route('admin.bookings.index', ['status' => 'confirmed']))->name('admin.operations');
     Route::get('/customers', fn () => redirect()->route('admin.bookings.index'))->name('admin.customers');
@@ -220,6 +229,9 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/check-in/{type}/{id}/process', [\App\Http\Controllers\Web\Admin\AdminCheckInWebController::class, 'process'])->name('admin.check-in.process');
 
     // Bike Inventory
+    Route::get('/bike-models', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'index'])->name('admin.bike-models.index');
+    Route::post('/bike-models', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'store'])->name('admin.bike-models.store');
+    Route::post('/bike-models/{id}/bikes/bulk', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'bulkRegister'])->name('admin.bike-models.bulk-register');
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');
     Route::get('/bikes/create', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'create'])->name('admin.bikes.create');
     Route::post('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'store'])->name('admin.bikes.store');

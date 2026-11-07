@@ -126,10 +126,19 @@ class AdminDashboardController extends Controller
             'tours' => 'Tour Packages',
         ];
 
-        if ($isSuperAdmin && ! empty($servicesScope)) {
+        if (! empty($servicesScope)) {
             foreach ($servicesScope as $st) {
                 $serviceItemQuery = \App\Models\ServiceItem::where('service_type', $st);
                 $serviceBookingQuery = \App\Models\ServiceBooking::where('service_type', $st);
+                if (! $isSuperAdmin) {
+                    // Unassigned legacy rows are HQ-only and remain excluded.
+                    $serviceItemQuery->whereIn('store_id', $authorizedStoreIds);
+                    $serviceBookingQuery->whereIn('store_id', $authorizedStoreIds);
+                }
+                if ($storeId !== null) {
+                    $serviceItemQuery->where('store_id', $storeId);
+                    $serviceBookingQuery->where('store_id', $storeId);
+                }
 
                 $availableItems = (clone $serviceItemQuery)->whereIn('status', ['available', 'active'])->count();
                 $totalItems = (clone $serviceItemQuery)->count();
@@ -190,9 +199,16 @@ class AdminDashboardController extends Controller
         }
 
         $recentServiceBookings = [];
-        if ($isSuperAdmin && ! empty($servicesScope)) {
-            $recentServiceBookings = \App\Models\ServiceBooking::with('serviceItem')
-                ->whereIn('service_type', $servicesScope)
+        if (! empty($servicesScope)) {
+            $recentServiceBookingsQuery = \App\Models\ServiceBooking::with('serviceItem')
+                ->whereIn('service_type', $servicesScope);
+            if (! $isSuperAdmin) {
+                $recentServiceBookingsQuery->whereIn('store_id', $authorizedStoreIds);
+            }
+            if ($storeId !== null) {
+                $recentServiceBookingsQuery->where('store_id', $storeId);
+            }
+            $recentServiceBookings = $recentServiceBookingsQuery
                 ->latest()
                 ->take(6)
                 ->get()
@@ -213,6 +229,30 @@ class AdminDashboardController extends Controller
                 ])->values()->all();
         }
 
+        // Operations review data only: the frontend may present these tasks in
+        // a future dedicated workflow. Never expose another branch's records.
+        $relocationQuery = \App\Models\BikeRelocationTask::query()
+            ->where('status', 'open')
+            ->with(['bike', 'affectedBooking']);
+        if (! $isSuperAdmin) {
+            $relocationQuery->whereIn('required_store_id', $authorizedStoreIds);
+        }
+        if ($storeId !== null) {
+            $relocationQuery->where('required_store_id', $storeId);
+        }
+        $pendingRelocations = $relocationQuery->orderBy('id')->limit(20)->get()
+            ->map(fn ($task) => [
+                'id' => $task->id,
+                'bike_id' => $task->bike_id,
+                'bike_registration' => $task->bike?->registration_number,
+                'affected_booking_id' => $task->affected_booking_id,
+                'affected_booking_reference' => $task->affectedBooking?->booking_reference,
+                'from_store_id' => $task->from_store_id,
+                'required_store_id' => $task->required_store_id,
+                'pickup_date' => $task->affectedBooking?->start_date?->toDateString(),
+                'status' => $task->status,
+            ])->values()->all();
+
         return Inertia::render('Admin/Dashboard', [
             'metrics' => [
                 'active_rentals' => $activeRentalsCount,
@@ -226,6 +266,7 @@ class AdminDashboardController extends Controller
                 'month_revenue' => $monthRevenue,
             ],
             'service_metrics' => array_values($serviceMetrics),
+            'pending_relocations' => $pendingRelocations,
             'recent_service_bookings' => $recentServiceBookings,
             'assigned_services' => $servicesScope,
             'recent_bookings' => BookingResource::collection($recentBookings)->resolve(),

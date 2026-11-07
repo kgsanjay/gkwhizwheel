@@ -22,6 +22,47 @@ use Carbon\CarbonInterface;
  */
 class BikeLocationSchedule
 {
+    /**
+     * Find the first upcoming reservation whose pickup branch is no longer
+     * reachable from the physical bike location and preceding reservations.
+     * This is an alert only; actual relocation must be confirmed by staff.
+     */
+    public function firstUnfulfillableReservation(Bike $bike): ?Booking
+    {
+        $bookings = Booking::query()
+            ->where('bike_id', $bike->id)
+            ->whereDate('start_date', '>=', now()->toDateString())
+            ->where(function ($query): void {
+                $query->where('status', BookingStatus::CONFIRMED->value)
+                    ->orWhere(function ($pending): void {
+                        $pending->whereIn('status', [
+                            BookingStatus::HELD->value,
+                            BookingStatus::PENDING_PAYMENT->value,
+                        ])->where(function ($active): void {
+                            $active->whereNull('held_until')
+                                ->orWhere('held_until', '>', now());
+                        });
+                    });
+            })
+            ->orderBy('start_date')
+            ->orderBy('id')
+            ->get();
+
+        $expectedStore = (int) $bike->current_store_id;
+        $previousEnd = null;
+        foreach ($bookings as $reservation) {
+            $start = $reservation->start_date->toDateString();
+            if (($previousEnd !== null && $start <= $previousEnd)
+                || (int) $reservation->pickup_store_id !== $expectedStore) {
+                return $reservation;
+            }
+            $expectedStore = (int) $reservation->return_store_id;
+            $previousEnd = $reservation->end_date->toDateString();
+        }
+
+        return null;
+    }
+
     public function canReserve(
         Bike $bike,
         CarbonInterface|string $startDate,
