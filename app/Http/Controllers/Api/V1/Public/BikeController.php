@@ -40,7 +40,7 @@ class BikeController extends Controller
         // Price filters must use the same pickup-branch rate as the public
         // rate card and booking quote, not legacy SQL unit override values.
         if ($request->filled('min_price') || $request->filled('max_price')) {
-            $branchPricing = app(\App\Services\\BranchBikePricing::class);
+            $branchPricing = app(\App\Services\BranchBikePricing::class);
             $bikes = $bikes->filter(function (Bike $bike) use ($request, $branchPricing): bool {
                 $storeId = $request->filled('store_id')
                     ? (int) $request->validated('store_id')
