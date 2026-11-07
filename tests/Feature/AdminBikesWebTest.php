@@ -198,7 +198,8 @@ test('admin bikes listing can be filtered by search, category, store, status, an
         );
 });
 
-test('store manager can view create bike form', function (): void {
+test('store manager can view only assigned branches in create bike form', function (): void {
+    $this->storeManager->stores()->attach($this->store1->id);
     $this->actingAs($this->storeManager)
         ->get('/admin/bikes/create')
         ->assertOk()
@@ -206,7 +207,8 @@ test('store manager can view create bike form', function (): void {
             fn (Assert $page) => $page
             ->component('Admin/Bikes/Create')
             ->has('categories', 1)
-            ->has('stores', 2)
+            ->has('stores', 1)
+            ->where('stores.0.id', $this->store1->id)
             ->has('fuel_types')
             ->has('transmissions')
             ->has('statuses')
