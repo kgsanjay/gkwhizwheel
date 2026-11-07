@@ -196,16 +196,11 @@ class PricingService
             // unconfigured relocation. The reverse direction needs its own rule.
             $oneWayRule = PricingRule::where('is_active', true)
                 ->where('rule_type', PricingRuleType::ONE_WAY_FEE)
-                ->where(function ($q) use ($pickupStoreModel, $returnStoreModel) {
-                    $q->where(function ($sub) use ($pickupStoreModel, $returnStoreModel) {
-                        $sub->where('from_store_id', $pickupStoreModel->id)
-                            ->where('to_store_id', $returnStoreModel->id);
-                    })->orWhere(function ($sub) {
-                        $sub->whereNull('from_store_id')
-                            ->whereNull('to_store_id');
-                    });
-                })
-                ->orderByRaw('CASE WHEN from_store_id IS NOT NULL AND to_store_id IS NOT NULL THEN 1 ELSE 0 END DESC')
+                // Each direction has its own explicitly approved fee.
+                // A generic/global rule must not silently authorize the
+                // reverse journey or supply an unapproved relocation charge.
+                ->where('from_store_id', $pickupStoreModel->id)
+                ->where('to_store_id', $returnStoreModel->id)
                 ->orderByDesc('priority')
                 ->orderByDesc('id')
                 ->first();

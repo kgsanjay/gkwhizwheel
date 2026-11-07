@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\PickupPoint;
+use App\Enums\BookingChannel;
 use Illuminate\Validation\ValidationException;
 
 class BookingPickupPoints
@@ -22,8 +23,24 @@ class BookingPickupPoints
             'pickup_location_details' => null,
             'return_location_details' => null,
         ];
+        $channel = $params['channel'] ?? null;
+        $isOnline = $channel instanceof BookingChannel
+            ? $channel === BookingChannel::ONLINE : $channel === BookingChannel::ONLINE->value;
+
         foreach (['pickup' => 'pickup_store_id', 'return' => 'return_store_id'] as $kind => $branchField) {
             $id = $params[$kind.'_point_id'] ?? null;
+            // When a branch has selectable points, online checkout must not
+            // omit them to evade pickup/return tariffs. Preserve legacy
+            // integrations in branches not yet configured with any points.
+            if ($isOnline && ($id === null || $id === '')
+                && PickupPoint::query()
+                    ->where('store_id', (int) $params[$branchField])
+                    ->where('is_active', true)
+                    ->where('supports_'.$kind, true)->exists()) {
+                throw ValidationException::withMessages([
+                    $kind.'_point_id' => 'Select your '.$kind.' location to calculate the verified fee.',
+                ]);
+            }
             $details = trim((string) ($params[$kind.'_location_details'] ?? ''));
             if ($id === null || $id === '') {
                 if ($details !== '') {
