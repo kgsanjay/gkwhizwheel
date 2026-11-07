@@ -335,3 +335,42 @@ test('advance-only checkout cannot be used for older bookings with a deposit', f
 
     expect(Booking::findOrFail($bookingId)->status)->toBe(BookingStatus::HELD);
 });
+
+test('advance booking cannot be handed over before the pickup balance is collected', function (): void {
+    $bike = allocationBike($this, $this->honnavar, 'KA-47-NODEP-HANDOVER');
+    Sanctum::actingAs($this->customer);
+    $id = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'pickup-balance-test'))->assertCreated()->json('data.id');
+    $booking = Booking::findOrFail($id);
+    $this->postJson('/api/v1/bookings/'.$id.'/checkout', [
+        'gateway' => 'razorpay', 'payment_option' => 'advance',
+    ])->assertOk();
+    $booking->refresh()->update(['status' => BookingStatus::CONFIRMED]);
+
+    \App\Models\Payment::create([
+        'booking_id' => $id, 'type' => \App\Enums\PaymentType::ADVANCE,
+        'amount' => 100, 'method' => \App\Enums\PaymentMethod::RAZORPAY,
+        'status' => \App\Enums\PaymentStatus::SUCCESS,
+        'gateway_reference' => 'pay_advance_handover_test',
+    ]);
+
+    expect(fn () => app(\App\Services\BookingService::class)->markHandedOver(
+        $booking->fresh(), 0
+    ))->toThrow(\Illuminate\Validation\ValidationException::class);
+
+    expect($booking->fresh()->status)->toBe(BookingStatus::CONFIRMED)
+        ->and($bike->fresh()->status)->toBe(BikeStatus::AVAILABLE);
+
+    \App\Models\Payment::create([
+        'booking_id' => $id, 'type' => \App\Enums\PaymentType::ADVANCE,
+        'amount' => (float) $booking->total_amount - 100,
+        'method' => \App\Enums\PaymentMethod::CASH,
+        'status' => \App\Enums\PaymentStatus::SUCCESS,
+        'gateway_reference' => 'cash_remaining_handover_test',
+    ]);
+
+    $handedOver = app(\App\Services\BookingService::class)->markHandedOver(
+        $booking->fresh(), 0
+    );
+    expect($handedOver->status)->toBe(BookingStatus::HANDED_OVER);
+});
