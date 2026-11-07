@@ -4,6 +4,7 @@ import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
 import apiClient from '../../api/client';
+import ModelRentalCatalog from '../../Components/Bikes/ModelRentalCatalog';
 import { useQuery } from '@tanstack/react-query';
 import {
     Box,
@@ -156,6 +157,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     });
 
     const bikes = bikesResponse?.data || [];
+    const legacyBikes = bikes.filter((bike) => !bike.bike_model_id);
 
     // WCAG Compliant Text Tokens
     const primaryTextColor = isDark ? '#FFFFFF' : '#0F172A';
@@ -862,7 +864,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     )}
 
                     {/* Empty State */}
-                    {!isLoading && !isError && bikes.length === 0 && (
+                    {!isLoading && !isError && legacyBikes.length === 0 && false && (
                         <Paper
                             elevation={0}
                             sx={{
@@ -893,10 +895,12 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         </Paper>
                     )}
 
+                    <ModelRentalCatalog filters={filters} stores={stores} />
+
                     {/* =========================================================================
                         3. BIKE CATALOG GRID (Modern 2026 Cards with Exact Specs & Real Rates)
                     ========================================================================== */}
-                    {!isLoading && !isError && bikes.length > 0 && (
+                    {!isLoading && !isError && legacyBikes.length > 0 && (
                         <Box component="section" aria-labelledby="fleet-catalog-heading">
                             <Typography
                                 id="fleet-catalog-heading"
@@ -910,11 +914,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     mb: 3,
                                 }}
                             >
-                                Available Fleet & Models in Honnavar
+                                Additional individually listed bikes
                             </Typography>
 
                             <Grid container spacing={3}>
-                                {bikes.map((bike) => {
+                                {legacyBikes.map((bike) => {
                                     const weekdayRate = bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || bike.category?.base_daily_rate || '350.00';
                                     const weekendRate = bike.weekend_rate || (Number(weekdayRate) + (Number(weekdayRate) >= 1000 ? (Number(weekdayRate) >= 1200 ? 300 : 200) : (Number(weekdayRate) === 450 ? 50 : 100)));
                                     const isElectric = bike.fuel_type === 'electric';

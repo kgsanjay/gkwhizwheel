@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import {
     Dialog,
@@ -45,6 +45,7 @@ export default function CheckoutModal({
     open,
     onClose,
     bike,
+    bikeModelId = null,
     startDate,
     endDate,
     pickupStore,
@@ -59,6 +60,8 @@ export default function CheckoutModal({
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [heldBooking, setHeldBooking] = useState(null);
+    const requestKey = useRef(null);
+    const finalQuote = heldBooking || quote;
     const [timeLeftSeconds, setTimeLeftSeconds] = useState(900); // 15-minute countdown
 
     // Countdown timer once booking is held
@@ -93,11 +96,12 @@ export default function CheckoutModal({
 
         try {
             // 1. Generate client-side Idempotency-Key UUID at the moment "Book Now" is clicked
-            const idempotencyKey = generateIdempotencyKey();
+            if (!requestKey.current) requestKey.current = generateIdempotencyKey();
+            const idempotencyKey = requestKey.current;
 
             // 2. Dispatch POST /api/v1/bookings/hold with Idempotency-Key header
             const holdPayload = {
-                bike_id: bike.id,
+                ...(bikeModelId ? { bike_model_id: bikeModelId } : { bike_id: bike.id }),
                 start_date: startDate,
                 end_date: endDate,
                 pickup_store_id: Number(pickupStore.id),
@@ -106,7 +110,7 @@ export default function CheckoutModal({
                 addons: selectedAddons,
             };
 
-            const holdRes = await apiClient.post('/bookings/hold', holdPayload, {
+            const holdRes = await apiClient.post(bikeModelId ? '/bookings/model-hold' : '/bookings/hold', holdPayload, {
                 headers: {
                     'Idempotency-Key': idempotencyKey,
                 },
@@ -407,11 +411,11 @@ export default function CheckoutModal({
                                 Total Amount Payable
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                Rental advance + ₹{quote?.deposit_amount || 0} refundable deposit
+                                Rental advance + ₹{finalQuote?.deposit_amount || 0} refundable deposit
                             </Typography>
                         </Box>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                            ₹{Number(quote?.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            {finalQuote ? `₹${Number(finalQuote.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : 'Calculated after reservation'}
                         </Typography>
                     </Box>
                 </Box>
@@ -435,7 +439,7 @@ export default function CheckoutModal({
                     {isSubmitting ? (
                         <CircularProgress size={26} color="inherit" />
                     ) : (
-                        `Book Now & Pay ₹${Number(quote?.total_amount || 0).toLocaleString('en-IN')}`
+                        bikeModelId && !heldBooking ? 'Reserve bike & continue to payment' : `Book Now & Pay ₹${Number(finalQuote?.total_amount || 0).toLocaleString('en-IN')}`
                     )}
                 </Button>
 
