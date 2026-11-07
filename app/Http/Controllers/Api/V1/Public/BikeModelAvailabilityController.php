@@ -200,7 +200,7 @@ class BikeModelAvailabilityController extends Controller
             return null;
         }
 
-        $rates = app(\App\Services\\BranchBikePricing::class)->rates($unit, $pickupStoreId);
+        $rates = app(\App\Services\BranchBikePricing::class)->rates($unit, $pickupStoreId);
         return $weekend
             ? ($rates['weekend_rate'] ?? $rates['weekday_rate'])
             : $rates['weekday_rate'];
