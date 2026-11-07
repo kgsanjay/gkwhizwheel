@@ -122,7 +122,7 @@ class BikeModelAvailabilityController extends Controller
             ->with(['category:id,name,base_daily_rate', 'branchPrices', 'bikes' => function ($query): void {
                 $query->select([
                     'id', 'bike_model_id', 'current_store_id', 'status',
-                    'primary_image_path', 'base_daily_rate_override',
+                    'primary_image_path', 'base_daily_rate_override', 'weekend_daily_rate_override',
                 ])->orderBy('id');
             }])
             ->when(! empty($filters['category_id']),
