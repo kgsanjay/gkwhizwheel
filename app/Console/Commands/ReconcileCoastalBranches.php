@@ -53,7 +53,7 @@ class ReconcileCoastalBranches extends Command
             $this->line('Legacy Honnavar Railway Station Hub #2 remains for history, but will be inactive.');
             $this->line('Physical bike rows referencing legacy store #2: '.$railwayBikes);
             $this->line('Active one-way pricing rules to/from #2 will be disabled (not deleted).');
-            $this->line('Nine suggested pickup points will be created as DRAFT, not customer bookable.');
+            $this->line('Nine pickup points will be created; seven confirmed locations (including custom hotel requests) are published, branch counters stay drafts.');
             if (! $this->option('apply')) {
                 $this->warn('DRY RUN. Database unchanged. Back up staging DB then rerun with --apply.');
                 return self::SUCCESS;
@@ -91,7 +91,7 @@ class ReconcileCoastalBranches extends Command
                                 'name' => $name,
                                 'address_line' => $address,
                                 'delivery_fee' => 0, // Not an advertised fee until operator confirmation.
-                                'is_active' => false,
+                                'is_active' => $slug !== 'branch-counter',
                                 'supports_pickup' => true,
                                 'supports_return' => true,
                             ]
@@ -99,8 +99,8 @@ class ReconcileCoastalBranches extends Command
                     }
                 }
             });
-            $this->info('Applied: two active branches; legacy station retained inactive; candidate points created as drafts.');
-            $this->warn('Verify pickup coverage, instructions, delivery charges, and exact coordinates before activating any point.');
+            $this->info('Applied: two active branches; seven confirmed points published and two unverified branch counters saved as drafts.');
+            $this->warn('Confirm pickup arrangements with each customer; delivery charges remain undecided and are not included in rental quotes.');
             return self::SUCCESS;
         } catch (\Throwable $e) {
             $this->error('Nothing should be applied on failure: '.$e->getMessage());
