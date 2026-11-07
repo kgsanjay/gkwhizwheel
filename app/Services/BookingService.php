@@ -86,7 +86,7 @@ class BookingService
     ): Booking {
         $this->ensureCurrentStatus($booking, [BookingStatus::CONFIRMED], BookingStatus::HANDED_OVER);
 
-        return DB::transaction(function () use (
+        $updated = DB::transaction(function () use (
             $booking,
             $odometerReading,
             $signaturePath,
@@ -147,6 +147,11 @@ class BookingService
 
             return $booking->refresh();
         });
+
+        // Preserve the established caller contract: successful operations
+        // update the original Eloquent instance used by staff controllers.
+        $booking->refresh();
+        return $updated;
     }
 
     /**
@@ -167,7 +172,7 @@ class BookingService
     ): Booking {
         $this->ensureCurrentStatus($booking, [BookingStatus::HANDED_OVER], BookingStatus::RETURNED);
 
-        return DB::transaction(function () use (
+        $updated = DB::transaction(function () use (
             $booking,
             $odometerReading,
             $lateFee,
@@ -252,6 +257,11 @@ class BookingService
 
             return $booking->refresh();
         });
+
+        // Preserve the established caller contract: successful operations
+        // update the original Eloquent instance used by staff controllers.
+        $booking->refresh();
+        return $updated;
     }
 
     /**
