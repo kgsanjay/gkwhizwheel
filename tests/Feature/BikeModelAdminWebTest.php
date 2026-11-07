@@ -117,3 +117,87 @@ test('model screen counts previously registered but unlinked bikes separately', 
             ->where('unlinked_units', 1)
             ->where('models.0.total_units', 0));
 });
+
+test('superadmin bulk registers three Activas as separate bikes at one branch', function (): void {
+    $this->actingAs($this->admin)->post('/admin/bike-models/'.$this->model->id.'/bikes/bulk', [
+        'store_id' => $this->honnavar->id,
+        'bikes' => [
+            ['registration_number' => 'KA-47-BULK-01', 'odometer_reading' => 0],
+            ['registration_number' => 'KA-47-BULK-02', 'odometer_reading' => 124],
+            ['registration_number' => 'KA-47-BULK-03', 'odometer_reading' => 250],
+        ],
+    ])->assertRedirect(route('admin.bike-models.index'));
+
+    $units = $this->model->bikes()->orderBy('registration_number')->get();
+    expect($units)->toHaveCount(3)
+        ->and($units->pluck('registration_number')->all())->toBe([
+            'KA-47-BULK-01', 'KA-47-BULK-02', 'KA-47-BULK-03',
+        ])
+        ->and($units->every(fn (Bike $bike) => $bike->home_store_id === $this->honnavar->id
+            && $bike->current_store_id === $this->honnavar->id
+            && $bike->category_id === $this->model->category_id
+            && $bike->brand === 'Honda' && $bike->model_name === 'Activa 6G'))->toBeTrue();
+});
+
+test('duplicate or invalid bike in bulk batch rejects all rows', function (): void {
+    $this->actingAs($this->admin)->post('/admin/bike-models/'.$this->model->id.'/bikes/bulk', [
+        'store_id' => $this->honnavar->id,
+        'bikes' => [
+            ['registration_number' => 'KA-47-BULK-DUP'],
+            ['registration_number' => 'KA-47-BULK-DUP'],
+        ],
+    ])->assertSessionHasErrors();
+    expect($this->model->bikes()->count())->toBe(0);
+
+    Bike::create([
+        'bike_model_id' => $this->model->id, 'category_id' => $this->category->id,
+        'brand' => 'Honda', 'model_name' => 'Activa 6G',
+        'registration_number' => 'KA-47-BULK-OLD',
+        'fuel_type' => FuelType::PETROL, 'transmission' => Transmission::AUTOMATIC,
+        'home_store_id' => $this->honnavar->id, 'current_store_id' => $this->honnavar->id,
+        'status' => BikeStatus::AVAILABLE,
+    ]);
+    $this->actingAs($this->admin)->post('/admin/bike-models/'.$this->model->id.'/bikes/bulk', [
+        'store_id' => $this->honnavar->id,
+        'bikes' => [
+            ['registration_number' => 'KA-47-BULK-NEW'],
+            ['registration_number' => 'KA-47-BULK-OLD'],
+        ],
+    ])->assertSessionHasErrors();
+    expect($this->model->bikes()->count())->toBe(1)
+        ->and(Bike::where('registration_number', 'KA-47-BULK-NEW')->exists())->toBeFalse();
+});
+
+test('bulk registration refuses inactive branches and models', function (): void {
+    $this->murudeshwar->update(['status' => StoreStatus::INACTIVE]);
+    $payload = [
+        'store_id' => $this->murudeshwar->id,
+        'bikes' => [['registration_number' => 'KA-47-BULK-10']],
+    ];
+    $this->actingAs($this->admin)->post('/admin/bike-models/'.$this->model->id.'/bikes/bulk', $payload)
+        ->assertSessionHasErrors('store_id');
+    $this->model->update(['is_active' => false]);
+    $payload['store_id'] = $this->honnavar->id;
+    $this->actingAs($this->admin)->post('/admin/bike-models/'.$this->model->id.'/bikes/bulk', $payload)
+        ->assertSessionHasErrors('bike_model_id');
+    expect(Bike::count())->toBe(0);
+});
+
+test('branch manager and staff cannot bulk create catalog vehicles', function (): void {
+    $payload = [
+        'store_id' => $this->honnavar->id,
+        'bikes' => [['registration_number' => 'KA-47-BULK-20']],
+    ];
+    $this->actingAs($this->manager)->post('/admin/bike-models/'.$this->model->id.'/bikes/bulk', $payload)
+        ->assertForbidden();
+    expect(Bike::count())->toBe(0);
+});
+
+test('bulk registration limits the batch to fifty bikes', function (): void {
+    $rows = array_map(fn ($i) => ['registration_number' => sprintf('KA-47-BULK-%03d', $i)], range(1, 51));
+    $this->actingAs($this->admin)->post('/admin/bike-models/'.$this->model->id.'/bikes/bulk', [
+        'store_id' => $this->honnavar->id,
+        'bikes' => $rows,
+    ])->assertSessionHasErrors('bikes');
+    expect(Bike::count())->toBe(0);
+});
