@@ -13,7 +13,7 @@ const format = value => value ? new Date(value).toLocaleString('en-IN', {
 
 export default function CabOperations({
     dispatches = [], reschedules = [], refundReviews = [],
-    bookings = [], vehicles = [], drivers = [], disputes = [],
+    bookings = [], vehicles = [], drivers = [], disputes = [], notificationEvents = [],
 }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -34,7 +34,7 @@ export default function CabOperations({
         try {
             await axios.post(url, data);
             setNotice('Request recorded. Reloading current operations data.');
-            router.reload({ only: ['dispatches', 'reschedules', 'refundReviews', 'disputes', 'bookings'] });
+            router.reload({ only: ['dispatches', 'reschedules', 'refundReviews', 'disputes', 'notificationEvents', 'bookings'] });
         } catch (e) {
             const errors = e.response?.data?.errors;
             setError(errors ? Object.values(errors).flat().join(' ') :
@@ -258,6 +258,22 @@ export default function CabOperations({
                                         </Typography>}
                                 </>}
                             </Stack>
+                        </Stack>)}
+                    </Stack>
+                </CardContent></Card>
+
+                <Card variant="outlined"><CardContent>
+                    <Typography variant="h6" gutterBottom>Customer notification events (not sent)</Typography>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        These records are internal notification intents awaiting approved templates, consent and delivery setup.
+                        No message is sent automatically.
+                    </Alert>
+                    {notificationEvents.length === 0 && <Typography color="text.secondary">No cab notification events recorded.</Typography>}
+                    <Stack spacing={1}>
+                        {notificationEvents.map(e => <Stack key={e.id} direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1} justifyContent="space-between" sx={{ p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                            <Typography variant="body2">Booking #{e.service_booking_id} · {e.event_type.replaceAll('_', ' ')}</Typography>
+                            <Chip label={e.status.replaceAll('_', ' ')} size="small" />
                         </Stack>)}
                     </Stack>
                 </CardContent></Card>
