@@ -151,6 +151,30 @@ test('staff lifecycle cannot confirm or skip approval and completion releases al
         ->and(ActivityLog::where('action', 'service_booking.status_updated')->count())->toBe(2);
 });
 
+test('cancelling an approved booking releases allocation once and audits the released count', function (): void {
+    $workflow = app(ServiceBookingApproval::class);
+    $workflow->approve($this->proposal->id, $this->manager, $this->approval);
+    expect(ServiceResourceAllocation::where('status', 'confirmed')->count())->toBe(1);
+    $workflow->transition($this->proposal->id, $this->worker, 'cancelled', 'Customer cancelled');
+    $workflow->transition($this->proposal->id, $this->worker, 'cancelled', 'Repeated request');
+    $audit = ActivityLog::where('action', 'service_booking.status_updated')->firstOrFail();
+    expect($this->proposal->fresh()->status)->toBe('cancelled')
+        ->and(ServiceResourceAllocation::where('status', 'released')->count())->toBe(1)
+        ->and(ActivityLog::where('action', 'service_booking.status_updated')->count())->toBe(1)
+        ->and($audit->old_values['status'])->toBe('confirmed')
+        ->and($audit->new_values['status'])->toBe('cancelled')
+        ->and($audit->new_values['released_allocations'])->toBe(1);
+});
+
+test('cancelling an unallocated hold records zero released allocations', function (): void {
+    $workflow = app(ServiceBookingApproval::class);
+    $workflow->transition($this->proposal->id, $this->worker, 'cancelled', 'Proposal withdrawn');
+    $audit = ActivityLog::where('action', 'service_booking.status_updated')->firstOrFail();
+    expect($this->proposal->fresh()->status)->toBe('cancelled')
+        ->and(ServiceResourceAllocation::count())->toBe(0)
+        ->and($audit->new_values['released_allocations'])->toBe(0);
+});
+
 test('approval supports each non-cab typed reservation without changing its financial proposal', function (string $service, string $type): void {
     $this->manager->syncAssignedServices([$service]);
     $this->item->update(['service_type' => $service]);
