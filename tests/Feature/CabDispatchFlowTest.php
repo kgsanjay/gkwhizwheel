@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\CabDispatch;
 use App\Models\CabDispatchEvent;
+use App\Models\CabRescheduleRequest;
 use App\Models\CabDriver;
 use App\Models\CabVehicle;
 use App\Models\ServiceBooking;
@@ -238,4 +239,55 @@ test('HTTP cab cancellation requires a reason and stores immutable audit context
         'reason' => 'Attempt to cancel again',
     ])->assertUnprocessable();
     expect(CabDispatchEvent::where('cab_dispatch_id', $dispatch->id)->count())->toBe(2);
+});
+
+
+test('authorized cab staff can propose but not immediately execute rescheduling', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-020');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $oldStart = $booking->start_datetime->toDateTimeString();
+    $oldEnd = $booking->end_datetime->toDateTimeString();
+    $proposedStart = $booking->start_datetime->copy()->addDay();
+    $proposedEnd = $booking->end_datetime->copy()->addDay();
+    $url = "/admin/cab-dispatches/{$dispatch->id}/reschedule-requests";
+
+    $this->actingAs($this->staff)->postJson($url, [
+        'proposed_starts_at' => $proposedStart->toDateTimeString(),
+        'proposed_ends_at' => $proposedEnd->toDateTimeString(),
+        'reason' => 'Customer requested one-day postponement',
+    ])->assertCreated()->assertJsonPath('data.status', 'pending');
+
+    expect(CabRescheduleRequest::count())->toBe(1)
+        ->and($booking->fresh()->start_datetime->toDateTimeString())->toBe($oldStart)
+        ->and($booking->fresh()->end_datetime->toDateTimeString())->toBe($oldEnd)
+        ->and($dispatch->fresh()->starts_at->toDateTimeString())->toBe($oldStart)
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)->where('status', 'confirmed')->count())->toBe(2);
+
+    $this->actingAs($this->staff)->postJson($url, [
+        'proposed_starts_at' => $proposedStart->toDateTimeString(),
+        'proposed_ends_at' => $proposedEnd->toDateTimeString(),
+        'reason' => 'Repeated postponement',
+    ])->assertUnprocessable();
+});
+
+test('reschedule proposal blocks wrong branch, invalid period and started trips', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-021');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $url = "/admin/cab-dispatches/{$dispatch->id}/reschedule-requests";
+    $payload = [
+        'proposed_starts_at' => now()->addDays(7)->toDateTimeString(),
+        'proposed_ends_at' => now()->addDays(8)->toDateTimeString(),
+        'reason' => 'Requested schedule adjustment',
+    ];
+    $this->actingAs($this->outsider)->postJson($url, $payload)->assertForbidden();
+    $this->staff->stores()->detach($this->honn->id);
+    $this->staff->stores()->attach($this->muru->id);
+    $this->actingAs($this->staff)->postJson($url, $payload)->assertForbidden();
+    $this->actingAs($this->admin)->postJson($url, array_merge($payload, [
+        'proposed_ends_at' => now()->addDays(6)->toDateTimeString(),
+    ]))->assertUnprocessable()->assertJsonValidationErrors(['proposed_ends_at']);
+    expect(CabRescheduleRequest::count())->toBe(0);
+    app(CabDispatchService::class)->start($dispatch, $this->admin);
+    $this->actingAs($this->admin)->postJson($url, $payload)->assertUnprocessable();
+    expect(CabRescheduleRequest::count())->toBe(0);
 });
