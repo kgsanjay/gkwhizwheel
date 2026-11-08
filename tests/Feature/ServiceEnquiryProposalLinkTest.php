@@ -268,6 +268,42 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
         ]);
     }
 
+
+    public function test_scheduled_expiry_is_audited_and_idempotent(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $item = $this->makeItem();
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/proposal", [
+            'service_item_id' => $item->id,
+            'reviewed_total_paise' => 125050,
+            'review_notes' => 'Reviewed price for scheduled expiry',
+        ])->assertRedirect();
+        $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)->firstOrFail();
+        $proposal->update(['held_until' => now()->subMinute()]);
+
+        $this->artisan('services:release-expired-holds')->assertSuccessful();
+        $this->assertSame('expired', $proposal->fresh()->status);
+        $this->artisan('services:release-expired-holds')->assertSuccessful();
+        $this->assertSame(1, \App\Models\ActivityLog::where('action', 'service_booking.hold_expired')
+            ->where('subject_id', (string) $proposal->id)->count());
+    }
+
+    public function test_scheduled_expiry_does_not_release_unexpired_proposal(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $item = $this->makeItem();
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/proposal", [
+            'service_item_id' => $item->id,
+            'reviewed_total_paise' => 125050,
+            'review_notes' => 'Reviewed price for future hold',
+        ])->assertRedirect();
+        $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)->firstOrFail();
+        $this->artisan('services:release-expired-holds')->assertSuccessful();
+        $this->assertSame('held', $proposal->fresh()->status);
+    }
+
     public function test_enquiry_link_is_nullable_for_historical_bookings(): void
     {
         $this->assertTrue(Schema::hasColumn('service_bookings', 'service_enquiry_id'));
