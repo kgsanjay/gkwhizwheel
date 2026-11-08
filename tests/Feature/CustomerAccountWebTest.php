@@ -102,6 +102,10 @@ beforeEach(function (): void {
         'verified' => true,
     ]);
 
+    foreach ([$this->rcDoc, $this->insuranceDoc] as $document) {
+        Storage::disk('local')->put($document->file_path, 'private account fixture');
+    }
+
     $this->customer = User::create([
         'name' => 'Aditya Verma',
         'email' => 'aditya@example.com',
@@ -232,7 +236,8 @@ test('customer can retrieve short-lived signed URLs for bike documents on active
     // Verify download link is a valid signed URL
     $firstDocUrl = $docs[0]['temporary_url'];
     $downloadResponse = $this->get($firstDocUrl);
-    $downloadResponse->assertOk();
+    $downloadResponse->assertOk()->assertDownload();
+    expect($downloadResponse->streamedContent())->toBe('private account fixture');
 });
 
 test('customer cannot retrieve bike documents for another customer booking', function (): void {

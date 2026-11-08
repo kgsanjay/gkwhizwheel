@@ -20,8 +20,10 @@ use App\Models\Booking;
 use App\Models\Store;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
+    Storage::fake('local');
     $this->store = Store::create([
         'name' => 'Documents Test Store',
         'address_line' => '50 Tech Park',
@@ -85,6 +87,10 @@ beforeEach(function (): void {
         'uploaded_by' => $this->staff->id,
         'verified' => true,
     ]);
+
+    foreach ([$this->docRc, $this->docInsurance, $this->docEmission] as $document) {
+        Storage::disk('local')->put($document->file_path, 'private fixture document');
+    }
 
     $this->owner = User::create([
         'name' => 'Booking Owner',
@@ -191,14 +197,8 @@ test('signed document URL can be accessed successfully and rejects tampered sign
 
     // 1. Calling the valid signed URL succeeds
     $downloadResponse = $this->get($validSignedUrl);
-    $downloadResponse->assertOk()
-        ->assertJson([
-            'success' => true,
-            'data' => [
-                'id' => $this->docRc->id,
-                'document_type' => 'rc',
-            ],
-        ]);
+    $downloadResponse->assertOk()->assertDownload('fz_rc.pdf');
+    expect($downloadResponse->streamedContent())->toBe('private fixture document');
 
     // 2. Tampering with the signed URL signature results in 403
     $tamperedUrl = $validSignedUrl.'&tampered=1';
