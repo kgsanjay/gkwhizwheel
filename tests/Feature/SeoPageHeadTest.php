@@ -141,8 +141,9 @@ test('Boating, Guide, Tours, Homestays, Cabs, and Scuba pages integrate PageHead
             'canonical' => 'https://whizwheels.in/services/cabs',
             'title' => 'Honnavar Taxi Service & AC Cab Rentals | Station Pickup – GK WhizWheel',
             'schemaType' => "'@type': 'Product'",
-            'lowPrice' => "lowPrice: '1400'",
-            'highPrice' => "highPrice: '6000'",
+            // Cab rates are not published until operationally approved.
+            'lowPrice' => null,
+            'highPrice' => null,
         ],
         'ScubaPage.jsx' => [
             'canonical' => 'https://whizwheels.in/services/scuba',
@@ -168,9 +169,16 @@ test('Boating, Guide, Tours, Homestays, Cabs, and Scuba pages integrate PageHead
             ->toContain("canonicalUrl=\"{$expected['canonical']}\"")
             ->toContain("title=\"{$expected['title']}\"")
             ->toContain($expected['schemaType'])
-            ->toContain($expected['lowPrice'])
-            ->toContain($expected['highPrice'])
             ->toContain('structuredData=');
+
+        if ($filename === 'CabsPage.jsx') {
+            expect($content)->not->toContain('lowPrice:')
+                ->not->toContain('highPrice:')
+                ->toContain('Fare on request');
+        } else {
+            expect($content)->toContain($expected['lowPrice'])
+                ->toContain($expected['highPrice']);
+        }
 
         // Verify title is unique across all pages and doesn't reuse the homepage
         expect(in_array($expected['title'], $seenTitles, true))->toBeFalse();
