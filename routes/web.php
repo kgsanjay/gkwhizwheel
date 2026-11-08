@@ -264,6 +264,13 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/cab-fares', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'store'])->name('admin.cab-fares.store');
     Route::post('/cab-fares/simulate', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'simulate'])->name('admin.cab-fares.simulate');
 
+    // Verified cab dispatch (no customer instant booking or payment).
+    Route::get('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'index'])->name('admin.cab-dispatches.index');
+    Route::post('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'assign'])->name('admin.cab-dispatches.assign');
+    Route::post('/cab-dispatches/{id}/start', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'start'])->name('admin.cab-dispatches.start');
+    Route::post('/cab-dispatches/{id}/complete', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'complete'])->name('admin.cab-dispatches.complete');
+    Route::post('/cab-dispatches/{id}/cancel', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'cancel'])->name('admin.cab-dispatches.cancel');
+
     // Dynamic Pricing Rules
     Route::get('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'index'])->name('admin.pricing.index');
     Route::post('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'store'])->name('admin.pricing.store');
