@@ -4,7 +4,7 @@ import { Box, Card, CardContent, Typography, Stack, Table, TableHead, TableRow, 
     TableBody, TableContainer, Chip, Button, MenuItem, TextField } from '@mui/material';
 import AdminLayout from '../../../Layouts/AdminLayout';
 
-function ProposalAction({ enquiry }) {
+function ProposalAction({ enquiry, proposalItems = [] }) {
     const [open, setOpen] = useState(false);
     const [itemId, setItemId] = useState('');
     const [total, setTotal] = useState('');
@@ -15,6 +15,7 @@ function ProposalAction({ enquiry }) {
         return <Typography variant="caption">Proposal {enquiry.proposal.booking_number} ({enquiry.proposal.status})</Typography>;
     }
     if (!['requested', 'reviewing'].includes(enquiry.status)) return null;
+    const eligibleItems = proposalItems.filter(item => item.service_type === enquiry.service_type);
     const submit = () => {
         const amount = Number(total);
         if (!Number.isSafeInteger(amount) || amount <= 0 || !Number.isSafeInteger(Number(itemId)) || Number(itemId) <= 0 || notes.trim().length < 5) {
@@ -30,7 +31,10 @@ function ProposalAction({ enquiry }) {
     return <Stack spacing={1} sx={{ mt: 1, minWidth: 210 }}>
         <Button size="small" variant="outlined" onClick={() => setOpen(!open)}>Create unpaid proposal</Button>
         {open && <>
-            <TextField size="small" label="Verified service item ID" value={itemId} onChange={e => setItemId(e.target.value)} />
+            <TextField size="small" select label="Available service item / branch" value={itemId} onChange={e => setItemId(e.target.value)} helperText="Choose inventory assigned to an active branch">
+                {eligibleItems.map(item => <MenuItem key={item.id} value={String(item.id)}>{item.name} — Branch #{item.store_id}</MenuItem>)}
+            </TextField>
+            {!eligibleItems.length && <Typography variant="caption" color="error">No eligible inventory found for this service.</Typography>}
             <TextField size="small" label="Reviewed total (paise)" value={total} onChange={e => setTotal(e.target.value)} helperText="10000 paise = ₹100; no tariff is calculated" />
             <TextField size="small" multiline minRows={2} label="Manual price review notes" value={notes} onChange={e => setNotes(e.target.value)} />
             {error && <Typography color="error" variant="caption">{error}</Typography>}
@@ -39,7 +43,7 @@ function ProposalAction({ enquiry }) {
     </Stack>;
 }
 
-export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [] } }) {
+export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [] }, proposalItems = [] }) {
     return <AdminLayout title="Service Enquiries">
         <Head title="Service Enquiries | G.K. WhizWheel" />
         <Stack spacing={3}>
@@ -76,7 +80,7 @@ export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [
                                         {status.replace('_', ' ')}
                                     </MenuItem>)}
                             </TextField>
-                            <ProposalAction enquiry={e} />
+                            <ProposalAction enquiry={e} proposalItems={proposalItems} />
                         </TableCell>
                         </TableRow>)}
                         {!(enquiries.data || []).length && <TableRow><TableCell colSpan={5}>
