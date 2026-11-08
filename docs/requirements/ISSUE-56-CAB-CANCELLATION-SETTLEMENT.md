@@ -32,6 +32,15 @@
 - Rejection leaves the confirmed booking and allocations untouched. Duplicate or stale decisions are rejected. No automatic customer notification is generated, so staff must inform customer through approved communication procedures.
 - **Staging MySQL concurrency test required** before operational use. Staff attestations are not independently verified; enforce owner policy and document approval procedures before accepting requests.
 
+## Slice 4: cab-specific refund review intake (no refund execution)
+
+- Bike `RefundService` and `refunds` records belong to bike `Booking` / `Payment`, and MUST NOT be used for cab `ServiceBooking` refunds.
+- Additive `cab_refund_reviews` table with unique `service_booking_id`, requester, reason, server-summed verified `service_payment_receipts.amount_paise`, and the separately recorded `advance_paid` snapshot.
+- Branch-authorized POST `/admin/cab-bookings/{bookingId}/refund-reviews` only accepts cancelled taxi bookings, returns the existing review on repeat submissions (idempotent); never invokes Razorpay, PhonePe or changes `payment_status`, booking amounts or ledger receipts.
+- `reconciliation_required` flags a difference between recorded advance and gateway receipts. These can represent legitimate offline/manual payments: mismatch is **not** a financial fraud claim, nor is agreement proof of payout eligibility. Finance must reconcile all sources.
+- **No refund amount, cancellation fee, percentage or entitlement is calculated or promised.** Payout approval requires published owner policy, verified captured payment and any prior refunds, dedicated idempotent service-refund ledger, gateway authorization and webhook reconciliation.
+- Tests cover cancellation-only/branch guards, repeat requests without duplicate records, receipt reconciliation, and unchanged booking payment state. Verify again on staging database.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
