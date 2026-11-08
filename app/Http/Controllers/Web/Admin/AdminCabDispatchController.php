@@ -65,7 +65,8 @@ final class AdminCabDispatchController extends Controller
     public function cancel(Request $request, int $id, CabDispatchService $dispatch): JsonResponse
     {
         abort_unless($request->user()?->canManageService('taxi'), 403);
-        $updated = $dispatch->cancel($id, $request->user());
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:1000', 'not_regex:/^\\s*$/']]);
+        $updated = $dispatch->cancel($id, $request->user(), trim($data['reason']));
         return response()->json(['data' => ['id' => $updated->id, 'status' => $updated->status]]);
     }
 }
