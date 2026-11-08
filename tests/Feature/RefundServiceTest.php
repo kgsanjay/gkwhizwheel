@@ -22,8 +22,22 @@ use App\Models\Refund;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\RefundService;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function (): void {
+    config()->set('services.razorpay.key_id', 'rzp_test_refund_fixture');
+    config()->set('services.razorpay.key_secret', 'refund_fixture_secret');
+    Http::fake([
+        'api.razorpay.com/v1/payments/*/refund' => function (\Illuminate\Http\Client\Request $request) {
+            return Http::response([
+                'id' => 'rfnd_fixture_123',
+                'amount' => (int) $request['amount'],
+                'payment_id' => 'pay_rzp_orig_001',
+                'status' => 'pending',
+            ], 200);
+        },
+    ]);
+    Http::preventStrayRequests();
     $this->refundService = app(RefundService::class);
 
     $this->store = Store::create([
