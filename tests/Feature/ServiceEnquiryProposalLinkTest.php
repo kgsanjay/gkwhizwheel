@@ -128,6 +128,20 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
         $this->assertDatabaseMissing('service_bookings', ['service_enquiry_id' => $enquiry->id]);
     }
 
+    public function test_inactive_branch_cannot_receive_proposal(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $item = $this->makeItem();
+        $item->store->update(['status' => StoreStatus::INACTIVE]);
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/proposal", [
+            'service_item_id' => $item->id,
+            'reviewed_total_paise' => 10000,
+            'review_notes' => 'Inactive branch must be rejected',
+        ])->assertSessionHasErrors('service_item_id');
+        $this->assertDatabaseMissing('service_bookings', ['service_enquiry_id' => $enquiry->id]);
+    }
+
     public function test_cancelled_enquiry_cannot_be_converted(): void
     {
         $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
