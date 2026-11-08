@@ -53,10 +53,10 @@ class ServiceAvailabilityService
                     && (int) ($existing->service_item_id ?? 0) === (int) ($params['service_item_id'] ?? 0)
                     && $existing->service_type === (string) ($params['service_type'] ?? '')
                     && (int) $existing->quantity === (int) ($params['quantity'] ?? 1)
-                    && $existing->start_datetime?->equalTo(Carbon::parse($params['start_datetime']))
+                    && $existing->start_datetime?->toDateTimeString() === Carbon::parse($params['start_datetime'])->toDateTimeString()
                     && (($existing->end_datetime === null && empty($params['end_datetime']))
                         || ($existing->end_datetime !== null && ! empty($params['end_datetime'])
-                            && $existing->end_datetime->equalTo(Carbon::parse($params['end_datetime']))));
+                            && $existing->end_datetime->toDateTimeString() === Carbon::parse($params['end_datetime'])->toDateTimeString()));
                 if (! $matches) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         'idempotency_key' => 'This request key was already used for a different service booking.',
