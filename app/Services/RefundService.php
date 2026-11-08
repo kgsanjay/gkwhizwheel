@@ -122,6 +122,8 @@ class RefundService
                 throw new \InvalidArgumentException('No captured payment balance remains refundable.');
             }
 
+            $this->assertPaymentRefundCapacity($booking, $targetPayment, $refundAmount);
+
             $gatewayResult = $this->dispatchGatewayRefund(
                 payment: $targetPayment,
                 booking: $booking,
@@ -176,6 +178,8 @@ class RefundService
                 throw new \InvalidArgumentException('Deposit refund exceeds remaining captured payment balance.');
             }
 
+            $this->assertPaymentRefundCapacity($booking, $targetPayment, $refundAmount);
+
             $gatewayResult = $this->dispatchGatewayRefund(
                 payment: $targetPayment,
                 booking: $booking,
@@ -221,6 +225,8 @@ class RefundService
                 throw new \InvalidArgumentException('Refund exceeds the remaining captured payment balance.');
             }
 
+            $this->assertPaymentRefundCapacity($booking, $targetPayment, $amount);
+
             $gatewayResult = $this->dispatchGatewayRefund(
                 payment: $targetPayment,
                 booking: $booking,
@@ -238,6 +244,27 @@ class RefundService
                 'status' => $gatewayResult['status'],
             ]);
         });
+    }
+
+    /**
+     * A gateway refund must never exceed the captured amount of its own
+     * payment, even when the booking has several successful payments.
+     */
+    protected function assertPaymentRefundCapacity(Booking $booking, ?Payment $payment, float $amount): void
+    {
+        if ($payment === null) {
+            throw new \InvalidArgumentException('No successful captured payment is available for refund.');
+        }
+
+        $alreadyReserved = (float) $booking->refunds()
+            ->where('payment_id', $payment->id)
+            ->whereIn('status', [RefundStatus::PENDING->value, RefundStatus::COMPLETED->value])
+            ->sum('amount');
+
+        if (! is_finite($amount) || $amount <= 0
+            || round($amount + $alreadyReserved, 2) > round((float) $payment->amount, 2)) {
+            throw new \InvalidArgumentException('Refund exceeds the remaining balance of the selected payment.');
+        }
     }
 
     /**
