@@ -25,7 +25,8 @@ final class CabDispatchService
     public function __construct(
         private readonly ServiceResourceAllocator $allocator,
         private readonly CabDispatchEligibility $eligibility,
-        private readonly ServiceBookingLifecycle $lifecycle
+        private readonly ServiceBookingLifecycle $lifecycle,
+        private readonly CabNotificationEventRecorder $notificationEvents
     ) {}
 
     public function assign(
@@ -179,6 +180,7 @@ final class CabDispatchService
             $current->update(['status' => 'cancelled', 'closed_by' => $actor->id]);
             $this->releaseAllocations($current);
             $this->event($current, $actor, 'assigned', 'cancelled', $reason);
+            $this->notificationEvents->record($booking, 'dispatch_cancelled', $current->id);
             return $current->fresh();
         });
     }
