@@ -50,3 +50,10 @@
 - The MySQL workflow now includes **two distinct cross-process races**: allocator capacity-one contention and a full `CabDispatchService::assign` race for the same cab plus driver. The paired test requires exactly one dispatch, one allocation per resource, and matching booking IDs for both allocations. Approval is contingent on a green workflow for this added test.
 - **Full rescheduling vs competing assignment**, and real staging browser/transaction tests, remain blocking acceptance requirements.
 - The CI MySQL service credentials are disposable test values, never credentials for the real business servers.
+
+
+## Discovered MySQL isolation issue — November 8, 2026
+
+- The first paired dispatch race **failed**: both workers reported success despite overlapping bookings. This is a real overbooking blocker; SQLite-only CI had passed.
+- Root-cause hypothesis: a plain aggregate overlap read inside `ServiceResourceAllocator` can reuse a REPEATABLE READ snapshot established before waiting for the resource row lock. The allocator now uses `lockForUpdate()->get(['quantity'])->sum('quantity')` after resource locking to obtain a current read. The cab reschedule conflict query similarly uses `lockForUpdate()->first(['id'])` instead of a snapshot `exists()`.
+- Neither fix should be accepted merely on code review. **Block merge until green independent-process MySQL race runs on the corrected head.** Retest full cab+driver dispatch, allocation counts, and then add reschedule-vs-assignment concurrency on actual MySQL.
