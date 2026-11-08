@@ -242,6 +242,46 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
     }
 
 
+    public function test_pending_payment_proposal_blocks_enquiry_closure(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $item = $this->makeItem();
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/proposal", [
+            'service_item_id' => $item->id,
+            'reviewed_total_paise' => 125050,
+            'review_notes' => 'Reviewed for pending payment guard',
+        ])->assertRedirect();
+        $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)->firstOrFail();
+        $proposal->update(['status' => 'pending_payment', 'held_until' => null]);
+        foreach (['closed', 'cancelled'] as $status) {
+            $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/status", [
+                'status' => $status,
+            ])->assertSessionHasErrors('status');
+            $this->assertSame('reviewing', $enquiry->fresh()->status);
+            $this->assertSame('pending_payment', $proposal->fresh()->status);
+        }
+    }
+
+    public function test_hold_without_expiry_blocks_enquiry_closure(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $item = $this->makeItem();
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/proposal", [
+            'service_item_id' => $item->id,
+            'reviewed_total_paise' => 125050,
+            'review_notes' => 'Reviewed for indefinite hold guard',
+        ])->assertRedirect();
+        $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)->firstOrFail();
+        $proposal->update(['held_until' => null]);
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/status", [
+            'status' => 'closed',
+        ])->assertSessionHasErrors('status');
+        $this->assertSame('held', $proposal->fresh()->status);
+        $this->assertSame('reviewing', $enquiry->fresh()->status);
+    }
+
     public function test_expired_proposal_hold_does_not_prevent_enquiry_closure(): void
     {
         $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
