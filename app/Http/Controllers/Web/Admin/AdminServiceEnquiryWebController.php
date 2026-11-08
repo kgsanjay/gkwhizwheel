@@ -54,6 +54,9 @@ class AdminServiceEnquiryWebController extends Controller
                     || $item->store_id === null || ! Store::whereKey($item->store_id)->where('status', StoreStatus::ACTIVE->value)->exists()) {
                     throw ValidationException::withMessages(['service_item_id' => 'Choose an active item assigned to an active branch and matching the enquiry service.']);
                 }
+                if (! $item->checkAvailability($enquiry->start_datetime, $enquiry->end_datetime, (int) $enquiry->quantity)) {
+                    throw ValidationException::withMessages(['service_item_id' => 'Selected inventory has insufficient capacity for the enquiry schedule.']);
+                }
                 $total = number_format($data['reviewed_total_paise'] / 100, 2, '.', '');
                 $booking = app(\App\Services\AvailabilityService::class)->holdServiceBooking([
                     'service_enquiry_id' => $enquiry->id,
