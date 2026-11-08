@@ -417,3 +417,25 @@ test('cab review explicitly flags receipt and recorded advance mismatch', functi
         ->assertJsonPath('data.verified_receipts_paise', 0)
         ->assertJsonPath('data.recorded_advance_paise', 20000);
 });
+
+test('cab operations desk is permission-scoped and only renders authorized branch rows', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-050');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+
+    $this->actingAs($this->outsider)->get('/admin/cab-operations')->assertForbidden();
+    $this->actingAs($this->staff)->get('/admin/cab-operations')
+        ->assertOk()->assertInertia(fn ($page) => $page
+            ->component('Admin/Cabs/Operations')
+            ->has('dispatches', 1)
+            ->where('dispatches.0.id', $dispatch->id)
+        );
+
+    $this->staff->stores()->detach($this->honn->id);
+    $this->staff->stores()->attach($this->muru->id);
+    $this->actingAs($this->staff)->get('/admin/cab-operations')
+        ->assertOk()->assertInertia(fn ($page) => $page
+            ->component('Admin/Cabs/Operations')
+            ->has('dispatches', 0)
+            ->has('bookings', 0)
+        );
+});
