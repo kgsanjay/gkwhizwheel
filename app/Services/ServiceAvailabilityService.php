@@ -302,9 +302,33 @@ class ServiceAvailabilityService
      */
     public function releaseExpiredServiceHolds(): int
     {
-        return ServiceBooking::where('status', 'held')
-            ->where('held_until', '<', now())
-            ->update(['status' => 'expired']);
+        $released = 0;
+        ServiceBooking::query()->where('status', 'held')
+            ->whereNotNull('held_until')->where('held_until', '<=', now())
+            ->orderBy('id')->chunkById(100, function ($holds) use (&$released): void {
+                foreach ($holds as $hold) {
+                    DB::transaction(function () use ($hold, &$released): void {
+                        $locked = ServiceBooking::whereKey($hold->id)->lockForUpdate()->first();
+                        if ($locked === null || $locked->status !== 'held'
+                            || $locked->held_until === null || $locked->held_until->isFuture()) {
+                            return;
+                        }
+                        app(ServiceBookingLifecycle::class)->assertTransition($locked, 'expired');
+                        $locked->update(['status' => 'expired']);
+                        \App\Models\ActivityLog::create([
+                            'user_id' => null,
+                            'store_id' => $locked->store_id,
+                            'action' => 'service_booking.hold_expired',
+                            'subject_type' => ServiceBooking::class,
+                            'subject_id' => (string) $locked->id,
+                            'old_values' => ['status' => 'held'],
+                            'new_values' => ['status' => 'expired'],
+                        ]);
+                        $released++;
+                    });
+                }
+            });
+        return $released;
     }
 
     /**
