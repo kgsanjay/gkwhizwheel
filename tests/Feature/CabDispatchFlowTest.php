@@ -580,3 +580,29 @@ test('cab confirmation with missing branch phone does not invent a coordinator n
     expect(implode(' ', $message->introLines))->toContain('contact details pending verification')
         ->not->toContain('94815 12341');
 });
+
+
+test('cab cancellation records one unsent notification intent and no actual delivery', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-090');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $this->actingAs($this->admin)->postJson("/admin/cab-dispatches/{$dispatch->id}/cancel", [
+        'reason' => 'Customer requested cancellation',
+    ])->assertOk();
+    $event = \App\Models\CabNotificationEvent::firstOrFail();
+    expect($event->event_type)->toBe('dispatch_cancelled')
+        ->and($event->status)->toBe('pending_approval')
+        ->and($event->event_key)->toBe("dispatch_cancelled:{$dispatch->id}")
+        ->and(\App\Models\CabNotificationEvent::count())->toBe(1);
+    app(\App\Services\CabNotificationEventRecorder::class)->record($booking->fresh(), 'dispatch_cancelled', $dispatch->id);
+    expect(\App\Models\CabNotificationEvent::count())->toBe(1);
+});
+
+test('cab notification intent recorder rejects non-taxi bookings and unsupported events', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-091');
+    $recorder = app(\App\Services\CabNotificationEventRecorder::class);
+    expect(fn () => $recorder->record($booking, 'refund_sent', 1))->toThrow(\Illuminate\Validation\ValidationException::class);
+    $booking->update(['service_type' => 'boating']);
+    expect(fn () => $recorder->record($booking->fresh(), 'dispatch_cancelled', 1))
+        ->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect(\App\Models\CabNotificationEvent::count())->toBe(0);
+});
