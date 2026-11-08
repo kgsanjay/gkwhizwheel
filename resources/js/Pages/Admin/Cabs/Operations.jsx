@@ -16,6 +16,7 @@ export default function CabOperations({
     bookings = [], vehicles = [], drivers = [], disputes = [], notificationEvents = [],
 }) {
     const [busy, setBusy] = useState(false);
+    const [financePreview, setFinancePreview] = useState({});
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [assignment, setAssignment] = useState({ service_booking_id: '', cab_vehicle_id: '', cab_driver_id: '' });
@@ -39,6 +40,20 @@ export default function CabOperations({
             const errors = e.response?.data?.errors;
             setError(errors ? Object.values(errors).flat().join(' ') :
                 (e.response?.data?.message || 'Request could not be completed. No success has been assumed.'));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const inspectFinance = async bookingId => {
+        if (busy) return;
+        setBusy(true);
+        setError('');
+        try {
+            const response = await axios.get(`/admin/cab-bookings/${bookingId}/settlement-preview`);
+            setFinancePreview(prev => ({ ...prev, [bookingId]: response.data.data }));
+        } catch (e) {
+            setError(e.response?.data?.message || 'Financial reconciliation was unavailable.');
         } finally {
             setBusy(false);
         }
@@ -288,7 +303,22 @@ export default function CabOperations({
                             <Typography color={r.reconciliation_required ? 'error.main' : 'text.secondary'} variant="body2">
                                 {r.reconciliation_required ? 'Payment reconciliation required' : 'Recorded advance matches verified receipts'}
                             </Typography>
-                            <Typography variant="caption">No refund has been initiated or authorized.</Typography>
+                            <Typography variant="caption" display="block">No refund has been initiated or authorized.</Typography>
+                            <Button size="small" disabled={busy} onClick={() => inspectFinance(r.service_booking_id)}>
+                                Inspect recorded payments
+                            </Button>
+                            {financePreview[r.service_booking_id] && <Box sx={{ mt: 1 }}>
+                                <Typography variant="body2">
+                                    Recorded receipts: ₹{(financePreview[r.service_booking_id].gateway_receipts_recorded_paise / 100).toFixed(2)}
+                                    {' · '}Recorded advance: ₹{(financePreview[r.service_booking_id].recorded_advance_paise / 100).toFixed(2)}
+                                </Typography>
+                                <Typography variant="body2" color={financePreview[r.service_booking_id].requires_manual_reconciliation ? 'warning.main' : 'text.secondary'}>
+                                    {financePreview[r.service_booking_id].issues.length
+                                        ? `Review needed: ${financePreview[r.service_booking_id].issues.join(', ').replaceAll('_', ' ')}`
+                                        : 'Arithmetic matches; refund eligibility remains unverified.'}
+                                </Typography>
+                                <Typography variant="caption">Read-only preview. No refund payout supported.</Typography>
+                            </Box>
                         </CardContent></Card>
                     </Grid>)}
                 </Grid>
