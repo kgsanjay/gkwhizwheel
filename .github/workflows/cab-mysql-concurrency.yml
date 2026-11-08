@@ -29,6 +29,7 @@ jobs:
           --health-retries=15
     env:
       APP_ENV: testing
+      CAB_REQUIRE_MYSQL_RACE: '1'
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
