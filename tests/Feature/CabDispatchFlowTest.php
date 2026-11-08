@@ -291,3 +291,74 @@ test('reschedule proposal blocks wrong branch, invalid period and started trips'
     $this->actingAs($this->admin)->postJson($url, $payload)->assertUnprocessable();
     expect(CabRescheduleRequest::count())->toBe(0);
 });
+
+
+test('unpaid offline cab reschedule approval moves paired allocations and booking atomically', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-030');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $start = $booking->start_datetime->copy()->addDay();
+    $end = $booking->end_datetime->copy()->addDay();
+    $this->actingAs($this->staff)->postJson("/admin/cab-dispatches/{$dispatch->id}/reschedule-requests", [
+        'proposed_starts_at' => $start->toDateTimeString(),
+        'proposed_ends_at' => $end->toDateTimeString(),
+        'reason' => 'Customer confirmed later departure',
+    ])->assertCreated();
+    $proposal = CabRescheduleRequest::firstOrFail();
+    $this->actingAs($this->staff)->postJson("/admin/cab-reschedule-requests/{$proposal->id}/resolve", [
+        'decision' => 'approved',
+        'customer_consent_confirmed' => true,
+        'unchanged_fare_approved' => true,
+    ])->assertOk()->assertJsonPath('data.status', 'approved');
+    expect($booking->fresh()->start_datetime->toDateTimeString())->toBe($start->toDateTimeString())
+        ->and($dispatch->fresh()->ends_at->toDateTimeString())->toBe($end->toDateTimeString())
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)
+            ->where('starts_at', $start->toDateTimeString())->where('status', 'confirmed')->count())->toBe(2);
+    $this->actingAs($this->staff)->postJson("/admin/cab-reschedule-requests/{$proposal->id}/resolve", [
+        'decision' => 'approved', 'customer_consent_confirmed' => true, 'unchanged_fare_approved' => true,
+    ])->assertUnprocessable();
+});
+
+test('reschedule approval with conflicting driver or vehicle preserves old allocations', function (): void {
+    $first = cab55Booking($this, 'GKW-CAB56-031');
+    $dispatch = app(CabDispatchService::class)->assign($first, $this->cab, $this->driver, $this->admin);
+    $other = cab55Booking($this, 'GKW-CAB56-032', offsetDays: 6);
+    $old = $dispatch->starts_at->toDateTimeString();
+    $this->actingAs($this->admin)->postJson("/admin/cab-dispatches/{$dispatch->id}/reschedule-requests", [
+        'proposed_starts_at' => $other->start_datetime->toDateTimeString(),
+        'proposed_ends_at' => $other->end_datetime->toDateTimeString(),
+        'reason' => 'Move to next date',
+    ])->assertCreated();
+    // Simulate a separately reserved vehicle for another legitimate booking.
+    ServiceResourceAllocation::create([
+        'service_resource_id' => $this->cab->service_resource_id,
+        'service_booking_id' => $other->id,
+        'starts_at' => $other->start_datetime,
+        'ends_at' => $other->end_datetime,
+        'quantity' => 1, 'status' => 'confirmed',
+    ]);
+    $proposal = CabRescheduleRequest::firstOrFail();
+    $this->actingAs($this->admin)->postJson("/admin/cab-reschedule-requests/{$proposal->id}/resolve", [
+        'decision' => 'approved', 'customer_consent_confirmed' => true, 'unchanged_fare_approved' => true,
+    ])->assertUnprocessable();
+    expect($first->fresh()->start_datetime->toDateTimeString())->toBe($old)
+        ->and($dispatch->fresh()->starts_at->toDateTimeString())->toBe($old)
+        ->and($proposal->fresh()->status)->toBe('pending')
+        ->and(ServiceResourceAllocation::where('service_booking_id', $first->id)
+            ->where('starts_at', $old)->where('status', 'confirmed')->count())->toBe(2);
+});
+
+test('paid and online cab reservations cannot use unchanged-fare reschedule approval', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-033');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $this->actingAs($this->admin)->postJson("/admin/cab-dispatches/{$dispatch->id}/reschedule-requests", [
+        'proposed_starts_at' => $booking->start_datetime->copy()->addDay()->toDateTimeString(),
+        'proposed_ends_at' => $booking->end_datetime->copy()->addDay()->toDateTimeString(),
+        'reason' => 'Customer requested change',
+    ])->assertCreated();
+    $booking->update(['advance_paid' => 100, 'payment_status' => 'partial']);
+    $proposal = CabRescheduleRequest::firstOrFail();
+    $this->actingAs($this->admin)->postJson("/admin/cab-reschedule-requests/{$proposal->id}/resolve", [
+        'decision' => 'approved', 'customer_consent_confirmed' => true, 'unchanged_fare_approved' => true,
+    ])->assertUnprocessable();
+    expect($proposal->fresh()->status)->toBe('pending');
+});
