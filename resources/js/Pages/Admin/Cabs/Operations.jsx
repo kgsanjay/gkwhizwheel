@@ -318,7 +318,7 @@ export default function CabOperations({
                                         : 'Arithmetic matches; refund eligibility remains unverified.'}
                                 </Typography>
                                 <Typography variant="caption">Read-only preview. No refund payout supported.</Typography>
-                            </Box>
+                            </Box>}
                         </CardContent></Card>
                     </Grid>)}
                 </Grid>
