@@ -19,7 +19,10 @@ use Illuminate\Validation\ValidationException;
  */
 final class CabRescheduleService
 {
-    public function __construct(private readonly CabDispatchEligibility $eligibility) {}
+    public function __construct(
+        private readonly CabDispatchEligibility $eligibility,
+        private readonly CabNotificationEventRecorder $notificationEvents
+    ) {}
 
     public function resolve(int $id, User $actor, string $decision, ?string $reason = null): CabRescheduleRequest
     {
@@ -112,6 +115,7 @@ final class CabRescheduleService
                 'ends_at' => $proposal->proposed_ends_at]);
             $proposal->update(['status' => 'approved', 'reviewed_by' => $actor->id,
                 'reviewed_at' => now(), 'review_notes' => $reason !== null ? trim($reason) : null]);
+            $this->notificationEvents->record($booking, 'reschedule_approved', $proposal->id);
             return $proposal->fresh();
         }, 3);
     }
