@@ -156,6 +156,53 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
         $this->assertDatabaseMissing('service_bookings', ['service_enquiry_id' => $enquiry->id]);
     }
 
+
+    public function test_hold_idempotency_rejects_different_customer_and_schedule(): void
+    {
+        $first = User::factory()->create();
+        $second = User::factory()->create();
+        $item = $this->makeItem();
+        $params = [
+            'idempotency_key' => 'service-hold-isolation-1',
+            'store_id' => $item->store_id,
+            'service_item_id' => $item->id,
+            'service_type' => 'homestay',
+            'user_id' => $first->id,
+            'customer_name' => 'First Customer',
+            'customer_phone' => '9876543210',
+            'booking_channel' => 'offline_phone',
+            'start_datetime' => now()->addDays(10),
+            'end_datetime' => now()->addDays(11),
+            'pickup_location' => 'Honnavar',
+            'quantity' => 1,
+            'base_amount' => 500,
+            'tax_amount' => 0,
+            'discount_amount' => 0,
+            'total_amount' => 500,
+            'advance_paid' => 0,
+            'balance_due' => 500,
+            'payment_status' => 'pending',
+            'payment_method' => 'pay_on_arrival',
+        ];
+        $service = app(\App\Services\ServiceAvailabilityService::class);
+        $booking = $service->holdServiceBooking($params);
+        $this->assertSame($booking->id, $service->holdServiceBooking($params)->id);
+
+        foreach ([
+            [...$params, 'user_id' => $second->id],
+            [...$params, 'start_datetime' => now()->addDays(12)],
+            [...$params, 'quantity' => 2],
+        ] as $changed) {
+            try {
+                $service->holdServiceBooking($changed);
+                $this->fail('Reusing a key with different booking details must fail.');
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                $this->assertArrayHasKey('idempotency_key', $exception->errors());
+            }
+        }
+        $this->assertSame(1, ServiceBooking::where('idempotency_key', $params['idempotency_key'])->count());
+    }
+
     public function test_enquiry_link_is_nullable_for_historical_bookings(): void
     {
         $this->assertTrue(Schema::hasColumn('service_bookings', 'service_enquiry_id'));
