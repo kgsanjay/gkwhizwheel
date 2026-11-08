@@ -16,6 +16,14 @@
 4. Deploy to staging only after review; preserve all historical bookings and payment/ledger records. Capture redacted screenshots/logs and exact SHA.
 5. Request owner acceptance and verify customer notification/financial policy before changing any refund or settlement behaviour.
 
+## Slice 2: cab rescheduling proposal intake
+
+- Branch-authorized POST `/admin/cab-dispatches/{id}/reschedule-requests` records a future, valid new start/end schedule and required reason for an assigned, confirmed, not-yet-started cab trip.
+- Pending requests block duplicate outstanding proposals; immutable original and proposed schedules are recorded separately.
+- This is **proposal-only**: booking/dispatch schedule, allocations, vehicle/driver assignment, price and payment remain unchanged. The requested period is NOT confirmed or held. Customer must not be told the changed time is approved.
+- Automated coverage checks pending duplicate, cross-branch/customer 403, invalid dates, in-progress rejection and no existing schedule/allocation mutations.
+- Before implementing approval: add resource-level transactional reallocation with locked vehicle and driver, conflict detection, explicit customer consent, tariff difference review, acceptance/rejection audit and notification.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
