@@ -41,6 +41,11 @@ final class CabNotificationEventRecorder
                 $booking->status !== 'confirmed'
                 || $source->dispatch?->status !== 'assigned'
                 || $source->reviewed_at === null
+                || $source->reviewed_by === null
+                || $source->dispatch?->starts_at === null
+                || $source->dispatch?->ends_at === null
+                || ! $source->dispatch->starts_at->equalTo($source->proposed_starts_at)
+                || ! $source->dispatch->ends_at->equalTo($source->proposed_ends_at)
                 || $booking->start_datetime === null
                 || $booking->end_datetime === null
                 || ! $booking->start_datetime->equalTo($source->proposed_starts_at)
