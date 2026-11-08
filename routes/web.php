@@ -152,6 +152,8 @@ Route::get('/services/{slug}/{id}', function (string $slug, int $id) {
         'availableItems' => $availableItems,
     ]);
 })->name('services.items.show');
+Route::post('/services/cabs/enquire', [\App\Http\Controllers\Web\CabEnquiryWebController::class, 'store'])
+    ->name('services.cabs.enquire');
 Route::post('/services/enquire', [\App\Http\Controllers\Web\ServiceEnquiryWebController::class, 'store'])
     ->middleware(['auth', 'throttle:bookings'])
     ->name('services.enquire');
