@@ -552,3 +552,31 @@ test('cab dispute review requires substantive notes', function (): void {
     expect($dispute->fresh()->status)->toBe('open')
         ->and(\App\Models\CabDisputeEvent::count())->toBe(0);
 });
+
+
+test('cab confirmation contact uses its actual branch rather than placeholder taxi coordinator', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-080');
+    $this->honn->update(['phone' => '8660989586']);
+    $booking->update(['pickup_location' => 'Confirmed railway station pickup']);
+    $notification = new \App\Notifications\ServiceBookingConfirmedNotification($booking->fresh());
+    $details = $notification->getCoordinatorDetails();
+    expect($details['phone'])->toBe('8660989586')
+        ->and($details['spot'])->toBe('Confirmed railway station pickup')
+        ->and($details['name'])->toContain('Honnavar');
+    $message = $notification->toMail($this->staff);
+    expect(implode(' ', $message->introLines))->toContain('8660989586')
+        ->not->toContain('94815 12341');
+});
+
+test('cab confirmation with missing branch phone does not invent a coordinator number', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-081');
+    $this->honn->update(['phone' => null]);
+    $booking->update(['pickup_location' => null]);
+    $notification = new \App\Notifications\ServiceBookingConfirmedNotification($booking->fresh());
+    $details = $notification->getCoordinatorDetails();
+    expect($details['phone'])->toBe('')
+        ->and($details['spot'])->toBe('Pickup point to be confirmed by staff');
+    $message = $notification->toMail($this->staff);
+    expect(implode(' ', $message->introLines))->toContain('contact details pending verification')
+        ->not->toContain('94815 12341');
+});
