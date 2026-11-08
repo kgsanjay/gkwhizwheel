@@ -41,6 +41,15 @@
 - **No refund amount, cancellation fee, percentage or entitlement is calculated or promised.** Payout approval requires published owner policy, verified captured payment and any prior refunds, dedicated idempotent service-refund ledger, gateway authorization and webhook reconciliation.
 - Tests cover cancellation-only/branch guards, repeat requests without duplicate records, receipt reconciliation, and unchanged booking payment state. Verify again on staging database.
 
+## Slice 5: cab staff operations desk
+
+- `GET /admin/cab-operations` renders a responsive Inertia/MUI staff page via `AdminCabOperationsController`, using branch-filtered taxi booking, vehicle, driver, dispatch, pending reschedule and refund review data. A dedicated sidebar link is added under Taxi Bookings.
+- UI actions call existing branch-authorized JSON endpoints; the interface cannot bypass compliance, booking lifecycle, schedule overlap or refund guards. Shows explicit confirmations for high-impact operations; errors are displayed rather than assuming success.
+- Cab assignment selection includes matching branch and service item only; server remains authoritative on document validity and exact availability. Dashboard is deliberately limited to the latest 100 dispatches/proposals/reviews; pagination and search are later enhancements.
+- Rescheduling UI describes proposal vs approval; approval requires explicit staff attestation of customer consent and unchanged fare, limited by backend to unpaid offline cab bookings. The system does not itself collect a customer e-signature.
+- Refund action is labeled **review only/no payout**. No payment gateway or refund API is exposed in the interface.
+- Feature tests cover customer denial and branch-scoped Inertia content. CI + manual keyboard/mobile/staging verification and real staff acceptance still required.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
