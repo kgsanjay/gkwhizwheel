@@ -84,6 +84,14 @@
 - **Future authorization requirements:** verified recipient and opt-in, approved copy/WhatsApp templates, outbox dispatch with delivery-provider idempotency and webhook tracking, retry/backoff policy and explicit customer-facing notification status. Do NOT mark pending intents as delivered without provider receipt.
 - The shared cab email fallback was corrected after CI identified that its second coordinator-info use still inserted empty parentheses for a missing branch phone. CI needs to be rerun before acceptance.
 
+## Slice 10: read-only settlement reconciliation (no transfers)
+
+- Branch-authorized `GET /admin/cab-bookings/{bookingId}/settlement-preview` calculates amounts from the current taxi `service_bookings` record and `service_payment_receipts` ledger (paise integers); returns booking amount, recorded advance, recorded balance, receipt total/count, review status and explicit discrepancy flags.
+- Flags: receipt/advance mismatch, invalid booking arithmetic, receipt total over booking total, booked advance without a gateway receipt, and cancelled paid booking without a refund-review request. A cash/manual payment can create a flagged mismatch; this is **not** an assertion of fraud or proof of error.
+- `refund_eligible` and `refund_amount_paise` remain explicitly **null**, while `payout_status` is `not_supported`. No finance policy can be inferred and no gateway calls are issued.
+- Staff dashboard provides a read-only per-refund-review inspection action and shows reconciliation issues without marking money refunded.
+- Owner must approve cancellation policy and finance controls, independent payment verification and refund ledger before any actual settlement workflow. Browser, MySQL and branch-scope tests remain acceptance gates.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
