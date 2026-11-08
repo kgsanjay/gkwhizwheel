@@ -116,8 +116,24 @@ class AdminServiceEnquiryWebController extends Controller
         DB::transaction(function () use ($id, $validated, $lifecycle): void {
             $enquiry = ServiceEnquiry::whereKey($id)->lockForUpdate()->firstOrFail();
             $lifecycle->assertTransition($enquiry, $validated['status']);
+            if (in_array($validated['status'], ['closed', 'cancelled'], true)
+                && ServiceBooking::where('service_enquiry_id', $enquiry->id)
+                    ->whereIn('status', ['held', 'confirmed', 'in_progress'])->exists()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Resolve the linked booking before closing or cancelling this enquiry.',
+                ]);
+            }
             if ($enquiry->status !== $validated['status']) {
+                $previousStatus = $enquiry->status;
                 $enquiry->update(['status' => $validated['status']]);
+                ActivityLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'service_enquiry.status_changed',
+                    'subject_type' => ServiceEnquiry::class,
+                    'subject_id' => (string) $enquiry->id,
+                    'old_values' => ['status' => $previousStatus],
+                    'new_values' => ['status' => $validated['status']],
+                ]);
             }
         });
 
