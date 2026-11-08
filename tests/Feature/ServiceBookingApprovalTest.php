@@ -173,3 +173,32 @@ test('staff cannot inject an advance or online channel when creating an unpaid p
     ], $injection))->assertUnprocessable();
     expect(ServiceBooking::count())->toBe(1)->and(ServiceResourceAllocation::count())->toBe(0);
 })->with([[['advance_paid' => 100]], [['booking_channel' => 'online']]]);
+
+test('manager booking screen exposes safe branch resource candidates and exact review context', function (): void {
+    $other = $this->resource->replicate();
+    $other->code = 'WRONG-TYPE';
+    $other->resource_type = 'stay_room';
+    $other->save();
+    $this->actingAs($this->manager)->get("/admin/services/boating/bookings/{$this->proposal->id}")
+        ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->component('Admin/Services/Bookings/Show')->where('approvalReview.blocked', false)
+            ->where('approvalReview.expected_total_paise', 200000)
+            ->where('approvalReview.expected_starts_at', $this->approval['expected_starts_at'])
+            ->has('approvalReview.resources', 1)->where('approvalReview.resources.0.id', $this->resource->id)
+            ->where('allowedStatuses', ['cancelled']));
+    expect(ServiceResourceAllocation::count())->toBe(0)->and($this->proposal->fresh()->status)->toBe('held');
+});
+
+test('staff booking screen offers no manager approval candidates and foreign manager cannot inspect them', function (): void {
+    $this->actingAs($this->worker)->get("/admin/services/boating/bookings/{$this->proposal->id}")
+        ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page->where('approvalReview', null));
+    $this->manager->stores()->detach();
+    $this->actingAs($this->manager)->get("/admin/services/boating/bookings/{$this->proposal->id}")->assertForbidden();
+});
+
+test('expired proposal review withholds candidates without mutating historical values', function (): void {
+    $this->proposal->update(['held_until' => now()->subMinute()]);
+    $review = app(ServiceBookingApproval::class)->review($this->proposal->fresh(), $this->manager);
+    expect($review['blocked'])->toBeTrue()->and($review['resources'])->toBe([])
+        ->and($this->proposal->fresh()->status)->toBe('held')->and(ServiceResourceAllocation::count())->toBe(0);
+});

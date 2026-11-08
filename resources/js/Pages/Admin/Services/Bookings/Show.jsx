@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ApprovalReview from './ApprovalReview';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '../../../../Layouts/AdminLayout';
 import {
@@ -33,11 +34,11 @@ import PrintIcon from '@mui/icons-material/Print';
 import DownloadIcon from '@mui/icons-material/Download';
 import PaymentsIcon from '@mui/icons-material/Payments';
 
-export default function ServiceBookingShow({ serviceConfig = {}, booking = {} }) {
+export default function ServiceBookingShow({ serviceConfig = {}, booking = {}, approvalReview = null, allowedStatuses = [] }) {
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
-    const { data: statusData, setData: setStatusData, post: postStatus, processing: statusProcessing } = useForm({
-        status: booking.status || 'confirmed',
+    const { data: statusData, setData: setStatusData, post: postStatus, processing: statusProcessing, errors: statusErrors } = useForm({
+        status: allowedStatuses[0] || '',
         admin_notes: booking.admin_notes || '',
     });
 
@@ -275,6 +276,7 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {} })
 
                     {/* Right Column: Financials, Balance Collection & Operations Status */}
                     <Grid item xs={12} md={5}>
+                        <ApprovalReview key={`${booking.id}-${booking.updated_at}`} review={approvalReview} booking={booking} serviceSlug={serviceConfig.slug} />
                         {/* Financial Card */}
                         <Card sx={{ borderRadius: 3, mb: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
                             <CardContent sx={{ p: 3 }}>
@@ -317,7 +319,7 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {} })
                                     </Box>
                                 </Stack>
 
-                                {parseFloat(booking.balance_due) > 0 && (
+                                {['confirmed', 'in_progress'].includes(booking.status) && parseFloat(booking.balance_due) > 0 && (
                                     <Button
                                         variant="contained"
                                         color="secondary"
@@ -340,6 +342,8 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {} })
                                 </Typography>
 
                                 <Box component="form" onSubmit={handleStatusSubmit}>
+                                    {!allowedStatuses.length && <Alert severity="info">{booking.service_type === 'taxi' && ['confirmed', 'in_progress'].includes(booking.status) ? 'Use Cab Dispatch to manage the paired trip.' : 'No operational status changes are available.'}</Alert>}
+                                    {Object.entries(statusErrors).map(([key, message]) => <Alert severity="error" key={key}>{message}</Alert>)}
                                     <TextField
                                         select
                                         label="Change Booking Status"
@@ -348,10 +352,7 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {} })
                                         onChange={(e) => setStatusData('status', e.target.value)}
                                         sx={{ mb: 2 }}
                                     >
-                                        <MenuItem value="confirmed">Confirmed (Scheduled)</MenuItem>
-                                        <MenuItem value="in_progress">In Progress (Tour / Ride Active)</MenuItem>
-                                        <MenuItem value="completed">Completed (Trip Finished)</MenuItem>
-                                        <MenuItem value="cancelled">Cancelled</MenuItem>
+                                        {allowedStatuses.map(status => <MenuItem key={status} value={status}>{status.replaceAll('_', ' ')}</MenuItem>)}
                                     </TextField>
 
                                     <TextField
@@ -369,7 +370,7 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {} })
                                         type="submit"
                                         variant="contained"
                                         fullWidth
-                                        disabled={statusProcessing}
+                                        disabled={statusProcessing || !statusData.status || !allowedStatuses.length}
                                         sx={{ fontWeight: 800, textTransform: 'none' }}
                                     >
                                         {statusProcessing ? 'Updating...' : 'Update Status & Notes'}

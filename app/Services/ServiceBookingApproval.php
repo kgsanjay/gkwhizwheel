@@ -29,6 +29,58 @@ final class ServiceBookingApproval
         }
     }
 
+    /** Read-only candidates, never a capacity reservation or price calculation. */
+    public function review(ServiceBooking $booking, User $actor): array
+    {
+        $this->authorize($actor, $booking, true);
+        $blocked = ! in_array($booking->status, ['held', 'pending_payment'], true)
+            || ! in_array($booking->booking_channel, ['offline_walkin', 'offline_phone'], true)
+            || $booking->start_datetime === null || ! $booking->start_datetime->isFuture()
+            || $booking->end_datetime === null || ! $booking->end_datetime->gt($booking->start_datetime)
+            || ($booking->held_until !== null && $booking->held_until->isPast())
+            || (float) $booking->total_amount <= 0 || (float) $booking->advance_paid !== 0.0
+            || (float) $booking->balance_due !== (float) $booking->total_amount
+            || ! in_array($booking->payment_status, ['pending', 'unpaid'], true)
+            || ServicePaymentReceipt::where('service_booking_id', $booking->id)->exists()
+            || ServiceQuoteSnapshot::where('service_booking_id', $booking->id)->exists();
+        $item = $booking->serviceItem;
+        $type = match ($booking->service_type) {
+            'boating' => 'boat', 'scuba' => 'scuba_slot', 'homestay' => 'stay_room',
+            'guide' => 'tour_guide', 'tours' => 'tour_departure', default => null,
+        };
+        $blocked = $blocked || $item === null || ! $item->isAvailable()
+            || $item->store_id !== $booking->store_id
+            || $item->store?->status !== \App\Enums\StoreStatus::ACTIVE
+            || ($type === null && $booking->service_type !== 'taxi');
+        $review = [
+            'blocked' => $blocked, 'resources' => [], 'vehicles' => [], 'drivers' => [],
+            'expected_total_paise' => (int) round((float) $booking->total_amount * 100),
+            'expected_starts_at' => $booking->start_datetime?->toDateTimeString(),
+            'expected_ends_at' => $booking->end_datetime?->toDateTimeString(),
+        ];
+        if ($blocked) {
+            return $review;
+        }
+        if ($type !== null) {
+            $review['resources'] = \App\Models\ServiceResource::where('service_item_id', $booking->service_item_id)
+                ->where('store_id', $booking->store_id)->where('resource_type', $type)
+                ->where('status', 'available')->where('capacity_units', '>=', $booking->quantity)
+                ->orderBy('code')->get(['id', 'code', 'name', 'capacity_units'])->toArray();
+        } else {
+            $eligibility = app(CabDispatchEligibility::class);
+            $review['vehicles'] = \App\Models\CabVehicle::with(['store', 'serviceItem', 'resource'])
+                ->where('store_id', $booking->store_id)->where('service_item_id', $booking->service_item_id)
+                ->where('seats', '>=', $booking->quantity)->orderBy('registration_number')->get()
+                ->filter(fn ($cab) => $eligibility->vehicle($cab))
+                ->map(fn ($cab) => ['id' => $cab->id, 'name' => $cab->registration_number, 'seats' => $cab->seats])->values()->all();
+            $review['drivers'] = \App\Models\CabDriver::with(['store', 'serviceItem', 'resource'])
+                ->where('store_id', $booking->store_id)->where('service_item_id', $booking->service_item_id)->orderBy('name')->get()
+                ->filter(fn ($driver) => $eligibility->driver($driver))
+                ->map(fn ($driver) => ['id' => $driver->id, 'name' => $driver->name])->values()->all();
+        }
+        return $review;
+    }
+
     public function approve(int $id, User $actor, array $input): ServiceBooking
     {
         $data = validator($input, [

@@ -832,3 +832,14 @@ test('cab approval audit failure rolls back both allocations dispatch event and 
         ->and(CabDispatch::count())->toBe(0)->and(CabDispatchEvent::count())->toBe(0)
         ->and(ServiceResourceAllocation::count())->toBe(0);
 });
+
+test('cab approval review exposes minimal eligible candidates and excludes unverified drivers', function (): void {
+    $booking = cab55Booking($this, 'CAB-REVIEW');
+    $booking->update(['status' => 'held', 'held_until' => now()->addMinutes(10), 'payment_status' => 'pending']);
+    $review = app(\App\Services\ServiceBookingApproval::class)->review($booking->fresh(), $this->admin);
+    expect($review['blocked'])->toBeFalse()->and($review['vehicles'])->toBe([
+        ['id' => $this->cab->id, 'name' => $this->cab->registration_number, 'seats' => 4],
+    ])->and($review['drivers'])->toBe([['id' => $this->driver->id, 'name' => $this->driver->name]]);
+    $this->driver->update(['documents_verified' => false]);
+    expect(app(\App\Services\ServiceBookingApproval::class)->review($booking->fresh(), $this->admin)['drivers'])->toBe([]);
+});
