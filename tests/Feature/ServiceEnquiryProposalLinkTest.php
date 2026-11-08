@@ -241,6 +241,28 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
         }
     }
 
+
+    public function test_expired_proposal_hold_does_not_prevent_enquiry_closure(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $item = $this->makeItem();
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/proposal", [
+            'service_item_id' => $item->id,
+            'reviewed_total_paise' => 125050,
+            'review_notes' => 'Reviewed price before expiry',
+        ])->assertRedirect();
+        $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)->firstOrFail();
+        $proposal->update(['held_until' => now()->subMinute()]);
+
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/status", [
+            'status' => 'closed',
+        ])->assertRedirect();
+        $this->assertSame('closed', $enquiry->fresh()->status);
+        $this->assertSame('held', $proposal->fresh()->status);
+        $this->assertTrue($proposal->fresh()->held_until->isPast());
+    }
+
     public function test_enquiry_link_is_nullable_for_historical_bookings(): void
     {
         $this->assertTrue(Schema::hasColumn('service_bookings', 'service_enquiry_id'));
