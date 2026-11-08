@@ -24,7 +24,8 @@ test('cancellation refund successfully processes via razorpay api', function ():
         'api.razorpay.com/v1/payments/*/refund' => Http::response([
             'id' => 'rfnd_1234567890',
             'entity' => 'refund',
-            'amount' => 50000,
+            'amount' => 100000,
+            'payment_id' => 'pay_1234567890',
             'status' => 'processed',
         ], 200),
     ]);
