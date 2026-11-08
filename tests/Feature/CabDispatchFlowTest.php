@@ -439,3 +439,44 @@ test('cab operations desk is permission-scoped and only renders authorized branc
             ->has('bookings', 0)
         );
 });
+
+
+test('cab dispute intake is branch scoped, audit only and does not change payment state', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-060');
+    $url = "/admin/cab-bookings/{$booking->id}/disputes";
+    $this->actingAs($this->outsider)->postJson($url, [
+        'category' => 'billing', 'description' => 'Customer questioned an invoice item',
+    ])->assertForbidden();
+
+    $this->actingAs($this->staff)->postJson($url, [
+        'category' => 'billing', 'description' => 'Customer questioned an invoice item',
+    ])->assertCreated()->assertJsonPath('data.status', 'open');
+
+    expect(\App\Models\CabDispute::count())->toBe(1)
+        ->and(\App\Models\CabDispute::first()->store_id)->toBe($this->honn->id)
+        ->and($booking->fresh()->status)->toBe('confirmed')
+        ->and($booking->fresh()->payment_status)->toBe('pending');
+
+    $this->staff->stores()->detach($this->honn->id);
+    $this->staff->stores()->attach($this->muru->id);
+    $this->actingAs($this->staff)->postJson($url, [
+        'category' => 'refund', 'description' => 'Cannot log cross branch financial dispute',
+    ])->assertForbidden();
+    $this->actingAs($this->staff)->get('/admin/cab-operations')
+        ->assertOk()->assertInertia(fn ($page) => $page
+            ->component('Admin/Cabs/Operations')
+            ->has('disputes', 0)
+        );
+});
+
+test('cab dispute intake rejects unknown category and blank incident narrative', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-061');
+    $url = "/admin/cab-bookings/{$booking->id}/disputes";
+    $this->actingAs($this->admin)->postJson($url, [
+        'category' => 'refund_execute', 'description' => 'Not an allowed incident category',
+    ])->assertUnprocessable()->assertJsonValidationErrors(['category']);
+    $this->actingAs($this->admin)->postJson($url, [
+        'category' => 'billing', 'description' => '   ',
+    ])->assertUnprocessable()->assertJsonValidationErrors(['description']);
+    expect(\App\Models\CabDispute::count())->toBe(0);
+});
