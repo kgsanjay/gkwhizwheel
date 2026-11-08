@@ -74,6 +74,16 @@
 - Added cab feature tests for approved branch phone/pickup and unknown contact fallback.
 - **This does not authorize automatic notification dispatch** on cancellation, reschedule proposal, disputed payment or refund. Before enabling new sends: verify customer consent, notification provider/templates, approved branch contacts and event deduplication. Do not publicize customer document details.
 
+## Slice 9: notification intent tracking, no delivery
+
+- A separate `cab_notification_events` ledger stores durable intent records, with globally unique `event_key`, booking ID, event type, recorded timestamp and `pending_approval` status.
+- Successful pre-departure cancellation and approved unpaid offline rescheduling atomically record the matching event in the same database transaction. Failed operations roll back intents as well as bookings.
+- Unique keys (`dispatch_cancelled:<dispatch_id>` and `reschedule_approved:<proposal_id>`) prevent duplicate event records from retries/replay. No attempts are made to send email, WhatsApp, SMS or mobile push from this ledger.
+- Staff Cab Operations Desk displays branch-scoped notification intents, explicitly marked not sent. No attempt is made to infer delivery from a pending event.
+- Tests cover cancellation intent, idempotent re-recording, rejected event types and non-taxi booking protection.
+- **Future authorization requirements:** verified recipient and opt-in, approved copy/WhatsApp templates, outbox dispatch with delivery-provider idempotency and webhook tracking, retry/backoff policy and explicit customer-facing notification status. Do NOT mark pending intents as delivered without provider receipt.
+- The shared cab email fallback was corrected after CI identified that its second coordinator-info use still inserted empty parentheses for a missing branch phone. CI needs to be rerun before acceptance.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
