@@ -362,6 +362,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
         Route::get('/bookings/create', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'createBooking'])->name('admin.services.bookings.create');
         Route::post('/bookings', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'storeBooking'])->name('admin.services.bookings.store');
         Route::get('/bookings/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'showBooking'])->name('admin.services.bookings.show');
+        Route::post('/bookings/{id}/approve', [\App\Http\Controllers\Web\Admin\AdminServiceApprovalController::class, 'approveForService'])->name('admin.services.bookings.approve');
         Route::post('/bookings/{id}/status', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'updateBookingStatus'])->name('admin.services.bookings.update-status');
         Route::post('/bookings/{id}/payment', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'recordPayment'])->name('admin.services.bookings.record-payment');
         Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'downloadVoucher'])->name('admin.services.bookings.voucher');

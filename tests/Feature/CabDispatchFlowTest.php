@@ -776,3 +776,35 @@ test('cab payment readiness requires its complete eligible dispatch pair', funct
         ->where('service_resource_id', $this->driver->service_resource_id)->update(['status' => 'released']);
     expect($eligibility->issue($booking))->not->toBeNull();
 });
+
+test('unpaid cab approval confirms booking cab driver and audit atomically with safe replay', function (): void {
+    $booking = cab55Booking($this, 'CAB-APPROVAL');
+    $booking->update(['status' => 'held', 'held_until' => now()->addMinutes(10), 'payment_status' => 'pending']);
+    $input = [
+        'expected_total_paise' => 200000, 'expected_starts_at' => $booking->start_datetime->toDateTimeString(),
+        'expected_ends_at' => $booking->end_datetime->toDateTimeString(), 'approval_notes' => 'Manager reviewed cab proposal',
+        'cab_vehicle_id' => $this->cab->id, 'cab_driver_id' => $this->driver->id,
+    ];
+    $workflow = app(\App\Services\ServiceBookingApproval::class);
+    $workflow->approve($booking->id, $this->admin, $input);
+    $workflow->approve($booking->id, $this->admin, $input);
+    expect($booking->fresh()->status)->toBe('confirmed')
+        ->and(CabDispatch::where('service_booking_id', $booking->id)->count())->toBe(1)
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)->count())->toBe(2)
+        ->and(\App\Models\ActivityLog::where('action', 'service_booking.approved')->count())->toBe(1);
+    expect(fn () => $workflow->transition($booking->id, $this->staff, 'in_progress'))
+        ->toThrow(\Illuminate\Validation\ValidationException::class);
+});
+
+test('failed cab approval restores hold and creates no partial dispatch or resource pair', function (): void {
+    $booking = cab55Booking($this, 'CAB-APPROVAL-FAILED');
+    $booking->update(['status' => 'held', 'held_until' => now()->addMinutes(10), 'payment_status' => 'pending']);
+    $this->driver->update(['documents_verified' => false]);
+    expect(fn () => app(\App\Services\ServiceBookingApproval::class)->approve($booking->id, $this->admin, [
+        'expected_total_paise' => 200000, 'expected_starts_at' => $booking->start_datetime->toDateTimeString(),
+        'expected_ends_at' => $booking->end_datetime->toDateTimeString(), 'approval_notes' => 'Manager reviewed cab proposal',
+        'cab_vehicle_id' => $this->cab->id, 'cab_driver_id' => $this->driver->id,
+    ]))->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect($booking->fresh()->status)->toBe('held')->and($booking->fresh()->held_until)->not->toBeNull()
+        ->and(CabDispatch::count())->toBe(0)->and(ServiceResourceAllocation::count())->toBe(0);
+});

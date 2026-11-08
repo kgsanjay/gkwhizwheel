@@ -185,7 +185,7 @@ test('unallocated customer service checkout creates no confirmed booking or noti
     Notification::assertNothingSent();
 });
 
-test('admin offline counter booking dispatches customer confirmation notification', function (): void {
+test('admin offline counter booking creates an unpaid hold without customer confirmation', function (): void {
     Http::fake([
         'https://graph.facebook.com/*' => Http::response([
             'messaging_product' => 'whatsapp',
@@ -203,10 +203,10 @@ test('admin offline counter booking dispatches customer confirmation notificatio
         'pickup_location' => 'Sharavathi Jetty, Mavinkurve',
         'quantity' => 2,
         'base_amount' => 3000.00,
-        'advance_paid' => 1000.00,
+        'advance_paid' => 0.00,
         'booking_channel' => 'offline_walkin',
         'payment_method' => 'cash',
-        'status' => 'confirmed',
+        'status' => 'held',
     ]);
 
     $response->assertRedirect(route('admin.services.bookings.index', 'boating'));
@@ -214,8 +214,9 @@ test('admin offline counter booking dispatches customer confirmation notificatio
     $offlineBooking = ServiceBooking::where('customer_name', 'Walkin Guest')->first();
     expect($offlineBooking)->not->toBeNull();
 
-    // Verify notification log created with service_booking_id
-    $this->assertDatabaseHas('notification_logs', [
+    expect($offlineBooking->status)->toBe('held');
+    Http::assertNothingSent();
+    $this->assertDatabaseMissing('notification_logs', [
         'service_booking_id' => $offlineBooking->id,
         'channel' => NotificationChannel::WHATSAPP->value,
         'template' => 'service_booking_confirmed',

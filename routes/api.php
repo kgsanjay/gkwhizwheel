@@ -246,6 +246,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'index']);
             Route::post('/', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'store']);
             Route::get('/{id}', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'show']);
+            Route::post('/{id}/approve', [\App\Http\Controllers\Web\Admin\AdminServiceApprovalController::class, 'approve']);
             Route::put('/{id}/status', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'updateStatus']);
             Route::patch('/{id}/status', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'updateStatus']);
             Route::post('/{id}/mark-in-progress', [\App\Http\Controllers\Api\V1\Staff\ServiceBookingController::class, 'markInProgress']);

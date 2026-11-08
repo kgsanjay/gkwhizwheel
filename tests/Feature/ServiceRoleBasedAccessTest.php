@@ -255,7 +255,7 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
         );
 });
 
-test('manager can record offline counter booking with balance calculation', function (): void {
+test('manager can record offline counter booking as an unpaid hold', function (): void {
     $item = \App\Models\ServiceItem::create([
         'store_id' => $this->store->id,
         'service_type' => 'taxi',
@@ -278,10 +278,10 @@ test('manager can record offline counter booking with balance calculation', func
         'quantity' => 1,
         'base_amount' => 2800.00,
         'discount_amount' => 0.00,
-        'advance_paid' => 800.00,
+        'advance_paid' => 0.00,
         'payment_method' => 'cash',
         'booking_channel' => 'offline_walkin',
-        'status' => 'confirmed',
+        'status' => 'held',
         'customer_notes' => 'Airport pickup request',
     ];
 
@@ -295,9 +295,11 @@ test('manager can record offline counter booking with balance calculation', func
     expect($booking)->not->toBeNull();
     expect($booking->service_type)->toBe('taxi');
     expect((float) $booking->total_amount)->toBe(2800.00);
-    expect((float) $booking->advance_paid)->toBe(800.00);
-    expect((float) $booking->balance_due)->toBe(2000.00);
-    expect($booking->payment_status)->toBe('partial');
+    expect((float) $booking->advance_paid)->toBe(0.00);
+    expect((float) $booking->balance_due)->toBe(2800.00);
+    expect($booking->payment_status)->toBe('pending');
+    expect($booking->status)->toBe('held');
+    expect($booking->held_until)->not->toBeNull();
     expect($booking->booking_channel)->toBe('offline_walkin');
 });
 

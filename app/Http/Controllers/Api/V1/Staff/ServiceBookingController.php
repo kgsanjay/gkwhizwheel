@@ -184,7 +184,7 @@ class ServiceBookingController extends Controller
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30'],
             'customer_email' => ['nullable', 'email', 'max:255'],
-            'booking_channel' => ['nullable', 'string', 'in:offline_walkin,offline_phone,online'],
+            'booking_channel' => ['nullable', 'string', 'in:offline_walkin,offline_phone'],
             'start_datetime' => ['required', 'date'],
             'end_datetime' => ['nullable', 'date', 'after_or_equal:start_datetime'],
             'pickup_location' => ['nullable', 'string', 'max:255'],
@@ -194,7 +194,7 @@ class ServiceBookingController extends Controller
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'total_amount' => ['required', 'numeric', 'min:0'],
-            'advance_paid' => ['nullable', 'numeric', 'min:0'],
+            'advance_paid' => ['nullable', 'numeric', 'min:0', 'max:0'],
             'payment_method' => ['nullable', 'string', 'in:cash,upi,card,pay_on_arrival,online'],
             'customer_notes' => ['nullable', 'string'],
             'admin_notes' => ['nullable', 'string'],
@@ -216,11 +216,7 @@ class ServiceBookingController extends Controller
             $advancePaid = (float) ($validated['advance_paid'] ?? 0);
             $balanceDue = max(0.0, round($totalAmount - $advancePaid, 2));
 
-            $paymentStatus = match (true) {
-                $advancePaid >= $totalAmount => 'paid',
-                $advancePaid > 0 => 'partial',
-                default => 'pending',
-            };
+            $paymentStatus = 'pending';
 
             $prefix = match ($validated['service_type']) {
                 'two_wheelers' => 'TW',
@@ -235,8 +231,13 @@ class ServiceBookingController extends Controller
             $bookingNumber = $prefix . '-' . date('ymd') . '-' . strtoupper(Str::random(4));
 
             $serviceItem = ! empty($validated['service_item_id'])
-                ? ServiceItem::find($validated['service_item_id'])
+                ? ServiceItem::whereKey($validated['service_item_id'])->lockForUpdate()->firstOrFail()
                 : null;
+
+            abort_unless($serviceItem !== null
+                && $serviceItem->service_type === $validated['service_type']
+                && (int) $serviceItem->store_id === (int) $validated['store_id']
+                && in_array($serviceItem->status, ['active', 'available'], true), 422, 'Service item changed or is unavailable.');
 
             $quantity = (int) ($validated['quantity'] ?? 1);
 
@@ -263,15 +264,13 @@ class ServiceBookingController extends Controller
                 'balance_due' => $balanceDue,
                 'payment_status' => $paymentStatus,
                 'payment_method' => $validated['payment_method'] ?? 'cash',
-                'status' => 'confirmed',
+                'status' => 'held', 'held_until' => now()->addMinutes(10),
                 'customer_notes' => $validated['customer_notes'] ?? null,
                 'admin_notes' => $validated['admin_notes'] ?? null,
                 'created_by' => $user->id,
             ]);
 
-            if ($serviceItem) {
-                $serviceItem->decrementAvailability($quantity);
-            }
+
 
             return $booking;
         });
@@ -319,36 +318,10 @@ class ServiceBookingController extends Controller
             'store_id' => ['nullable', 'integer'],
         ]);
 
-        $oldStatus = $booking->status;
-        $newStatus = $validated['status'];
-
-        DB::transaction(function () use ($booking, $validated, $newStatus) {
-            $updateData = ['status' => $newStatus];
-            if (isset($validated['admin_notes'])) {
-                $updateData['admin_notes'] = $validated['admin_notes'];
-            }
-            $booking->update($updateData);
-
-            if (in_array($newStatus, ['completed', 'cancelled'], true) && $booking->serviceItem) {
-                $booking->serviceItem->releaseAvailability();
-            }
-        });
-
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'store_id' => $validated['store_id'] ?? null,
-            'action' => 'service_booking_status_updated',
-            'subject_type' => ServiceBooking::class,
-            'subject_id' => $booking->id,
-            'old_values' => ['status' => $oldStatus],
-            'new_values' => ['status' => $newStatus],
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $booking->fresh(['serviceItem', 'user']),
-            'message' => "Service booking status updated to {$newStatus}.",
-        ]);
+        $updated = app(\App\Services\ServiceBookingApproval::class)->transition(
+            $id, $request->user(), $validated['status'], $validated['admin_notes'] ?? null
+        );
+        return response()->json(['success' => true, 'data' => $updated]);
     }
 
     /**
@@ -357,69 +330,16 @@ class ServiceBookingController extends Controller
     public function markInProgress(int $id, Request $request): JsonResponse
     {
         $booking = ServiceBooking::findOrFail($id);
-
         $this->authorizeBookingOwnership($request, $booking);
-
-        if ($request->filled('store_id')) {
-            $this->authorizeStoreAccess($request, (int) $request->input('store_id'), $booking, 'mark_service_booking_in_progress');
-        }
-
-        $oldStatus = $booking->status;
-        $booking->update(['status' => 'in_progress']);
-
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'store_id' => $request->input('store_id'),
-            'action' => 'service_booking_marked_in_progress',
-            'subject_type' => ServiceBooking::class,
-            'subject_id' => $booking->id,
-            'old_values' => ['status' => $oldStatus],
-            'new_values' => ['status' => 'in_progress'],
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $booking->fresh(['serviceItem', 'user']),
-            'message' => 'Service booking marked as in progress.',
-        ]);
+        $updated = app(\App\Services\ServiceBookingApproval::class)->transition($id, $request->user(), 'in_progress');
+        return response()->json(['success' => true, 'data' => $updated]);
     }
 
-    /**
-     * Mark a service booking as completed.
-     */
     public function markCompleted(int $id, Request $request): JsonResponse
     {
         $booking = ServiceBooking::findOrFail($id);
-
         $this->authorizeBookingOwnership($request, $booking);
-
-        if ($request->filled('store_id')) {
-            $this->authorizeStoreAccess($request, (int) $request->input('store_id'), $booking, 'mark_service_booking_completed');
-        }
-
-        $oldStatus = $booking->status;
-
-        DB::transaction(function () use ($booking) {
-            $booking->update(['status' => 'completed']);
-            if ($booking->serviceItem) {
-                $booking->serviceItem->releaseAvailability();
-            }
-        });
-
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'store_id' => $request->input('store_id'),
-            'action' => 'service_booking_marked_completed',
-            'subject_type' => ServiceBooking::class,
-            'subject_id' => $booking->id,
-            'old_values' => ['status' => $oldStatus],
-            'new_values' => ['status' => 'completed'],
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'data' => $booking->fresh(['serviceItem', 'user']),
-            'message' => 'Service booking marked as completed.',
-        ]);
+        $updated = app(\App\Services\ServiceBookingApproval::class)->transition($id, $request->user(), 'completed');
+        return response()->json(['success' => true, 'data' => $updated]);
     }
 }

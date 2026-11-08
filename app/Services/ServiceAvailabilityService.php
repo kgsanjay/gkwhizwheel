@@ -215,6 +215,9 @@ class ServiceAvailabilityService
 
         return DB::transaction(function () use ($bookingModel): ServiceBooking {
             $bookingModel = ServiceBooking::whereKey($bookingModel->id)->lockForUpdate()->firstOrFail();
+            if ($message = app(ServiceReservationReadiness::class)->issue($bookingModel)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['resources' => $message]);
+            }
             if ($bookingModel->status === 'confirmed') {
                 return $bookingModel;
             }

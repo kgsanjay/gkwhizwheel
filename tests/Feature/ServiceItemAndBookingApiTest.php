@@ -239,9 +239,10 @@ test('staff can list, show, create, and update service bookings for assigned ser
         'customer_phone' => '9876500001',
         'customer_email' => 'rahul@example.com',
         'start_datetime' => now()->addDays(1)->format('Y-m-d H:i:s'),
+        'end_datetime' => now()->addDays(1)->addHours(2)->format('Y-m-d H:i:s'),
         'quantity' => 2,
         'total_amount' => 1200.00,
-        'advance_paid' => 400.00,
+        'advance_paid' => 0.00,
         'payment_method' => 'upi',
         'pickup_location' => 'Honnavar Estuary Jetty',
         'store_id' => $this->storeA->id,
@@ -250,8 +251,8 @@ test('staff can list, show, create, and update service bookings for assigned ser
     $createRes->assertStatus(201)
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.customer_name', 'Rahul Sharma')
-        ->assertJsonPath('data.payment_status', 'partial')
-        ->assertJsonPath('data.balance_due', '800.00');
+        ->assertJsonPath('data.payment_status', 'pending')
+        ->assertJsonPath('data.balance_due', '1200.00');
 
     $bookingId = $createRes->json('data.id');
     expect($bookingId)->not->toBeNull();
@@ -273,8 +274,21 @@ test('staff can list, show, create, and update service bookings for assigned ser
         'admin_notes' => 'Customer confirmed arrival time via phone',
         'store_id' => $this->storeA->id,
     ]);
-    $statusRes->assertOk()
-        ->assertJsonPath('data.status', 'confirmed');
+    $statusRes->assertUnprocessable();
+    $booking = ServiceBooking::findOrFail($bookingId);
+    $resource = \App\Models\ServiceResource::create([
+        'service_item_id' => $this->boatItem->id, 'store_id' => $this->storeA->id,
+        'resource_type' => 'boat', 'code' => 'API-BOAT', 'name' => 'API Boat',
+        'capacity_units' => 2, 'status' => 'available',
+    ]);
+    Sanctum::actingAs($this->boatManager);
+    $this->postJson("/api/v1/staff/service-bookings/{$bookingId}/approve", [
+        'expected_total_paise' => 120000,
+        'expected_starts_at' => $booking->start_datetime->toDateTimeString(),
+        'expected_ends_at' => $booking->end_datetime->toDateTimeString(),
+        'approval_notes' => 'Reviewed offline proposal', 'resource_ids' => [$resource->id],
+    ])->assertOk()->assertJsonPath('data.status', 'confirmed');
+    Sanctum::actingAs($this->staff);
 
     // Mark in progress
     $progressRes = $this->postJson("/api/v1/staff/service-bookings/{$bookingId}/mark-in-progress", [
@@ -291,7 +305,7 @@ test('staff can list, show, create, and update service bookings for assigned ser
         ->assertJsonPath('data.status', 'completed');
 
     // Verify activity logs created
-    expect(ActivityLog::where('action', 'service_booking_marked_completed')->where('subject_id', $bookingId)->exists())->toBeTrue();
+    expect(ActivityLog::where('action', 'service_booking.status_updated')->where('subject_id', $bookingId)->exists())->toBeTrue();
 });
 
 test('staff store-scoping pattern blocks actions on unassigned store and permits explicit cross-store with audit log', function (): void {

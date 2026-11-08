@@ -784,7 +784,7 @@ class AdminServiceWebController extends Controller
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
             'customer_email' => ['nullable', 'email', 'max:255'],
-            'booking_channel' => ['required', 'string', 'in:offline_walkin,offline_phone,online'],
+            'booking_channel' => ['required', 'string', 'in:offline_walkin,offline_phone'],
             'start_datetime' => ['required', 'date'],
             'end_datetime' => ['nullable', 'date', 'after_or_equal:start_datetime'],
             'pickup_location' => ['nullable', 'string', 'max:255'],
@@ -792,9 +792,9 @@ class AdminServiceWebController extends Controller
             'quantity' => ['required', 'integer', 'min:1'],
             'base_amount' => ['required', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
-            'advance_paid' => ['required', 'numeric', 'min:0'],
+            'advance_paid' => ['required', 'numeric', 'min:0', 'max:0'],
             'payment_method' => ['required', 'string', 'in:cash,upi,card,pay_on_arrival,online'],
-            'status' => ['required', 'string', 'in:confirmed,in_progress,completed,cancelled'],
+            'status' => ['required', 'string', 'in:held'],
             'customer_notes' => ['nullable', 'string'],
             'admin_notes' => ['nullable', 'string'],
         ]);
@@ -832,7 +832,7 @@ class AdminServiceWebController extends Controller
 
         $availabilityService = app(\App\Services\AvailabilityService::class);
         try {
-            $booking = $availabilityService->createServiceBooking([
+            $booking = $availabilityService->holdServiceBooking([
                 'booking_number' => $bookingNumber,
                 'store_id' => $storeId,
                 'service_type' => $serviceType,
@@ -875,25 +875,8 @@ class AdminServiceWebController extends Controller
             ],
         ]);
 
-        // Dispatch booking confirmation to customer (WhatsApp & Email)
-        $customerUser = null;
-        if (! empty($booking->customer_email)) {
-            $customerUser = User::where('email', $booking->customer_email)->first();
-        }
-        if (! $customerUser && ! empty($booking->customer_phone)) {
-            $customerUser = User::where('phone', $booking->customer_phone)->first();
-        }
-
-        if ($customerUser) {
-            $customerUser->notify(new ServiceBookingConfirmedNotification($booking));
-        } elseif (! empty($booking->customer_phone) || ! empty($booking->customer_email)) {
-            Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
-                ->route(\App\Channels\WhatsAppChannel::class, $booking->customer_phone)
-                ->notify(new ServiceBookingConfirmedNotification($booking));
-        }
-
         return redirect()->route('admin.services.bookings.index', $serviceType)
-            ->with('success', "Offline booking #{$bookingNumber} created successfully!");
+            ->with('success', "Offline booking #{$bookingNumber} saved as an unpaid hold for resource approval.");
     }
 
     /**
@@ -919,46 +902,15 @@ class AdminServiceWebController extends Controller
      */
     public function updateBookingStatus(Request $request, string $serviceType, int $id): RedirectResponse
     {
-        $this->getServiceConfig($serviceType);
-
-        $booking = ServiceBooking::where('service_type', $serviceType)->findOrFail($id);
-        $this->assertServiceRecordAccess($booking->store_id);
-
-        $validated = $request->validate([
-            'status' => ['required', 'string', 'in:confirmed,in_progress,completed,cancelled'],
-            'admin_notes' => ['nullable', 'string'],
+        ServiceBooking::where('service_type', $serviceType)->findOrFail($id);
+        $data = $request->validate([
+            'status' => ['required', 'in:confirmed,in_progress,completed,cancelled'],
+            'admin_notes' => ['nullable', 'string', 'max:1200'],
         ]);
-
-        app(\App\Services\ServiceBookingLifecycle::class)->assertTransition($booking, $validated['status']);
-
-        if ($validated['status'] === 'confirmed' && $booking->status !== 'confirmed') {
-            try {
-                app(\App\Services\ServiceAvailabilityService::class)->confirmServiceBooking($booking);
-                if (isset($validated['admin_notes'])) {
-                    $booking->update(['admin_notes' => $validated['admin_notes']]);
-                }
-            } catch (\App\Exceptions\ServiceItemNotAvailableException $e) {
-                return back()->with('error', $e->getMessage());
-            }
-        } else {
-            $oldStatus = $booking->status;
-            $booking->update($validated);
-            if ($oldStatus !== $validated['status']
-                && in_array($validated['status'], ['completed', 'cancelled'], true)
-                && $booking->serviceItem) {
-                $booking->serviceItem->releaseAvailability();
-            }
-        }
-
-        ActivityLog::create([
-            'user_id' => $request->user()?->id,
-            'action' => 'service_booking.status_updated',
-            'description' => "Updated {$booking->booking_number} status to {$validated['status']}",
-            'subject_type' => ServiceBooking::class,
-            'subject_id' => (string) $booking->id,
-        ]);
-
-        return back()->with('success', "Booking status updated to {$validated['status']}.");
+        app(\App\Services\ServiceBookingApproval::class)->transition(
+            $id, $request->user(), $data['status'], $data['admin_notes'] ?? null
+        );
+        return back()->with('success', 'Service booking state updated.');
     }
 
     /**
