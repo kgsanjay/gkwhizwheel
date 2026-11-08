@@ -6,6 +6,7 @@ use App\Enums\StoreStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\ActivityLog;
+use App\Notifications\ServiceBookingCancelledNotification;
 use App\Models\ServiceBooking;
 use App\Models\ServiceItem;
 use App\Models\ServiceResource;
@@ -267,4 +268,69 @@ test('super admin can still inspect branchless historical booking without approv
     $this->proposal->update(['store_id' => null]);
     $this->actingAs($admin)->get("/admin/services/boating/bookings/{$this->proposal->id}")
         ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page->where('approvalReview', null));
+});
+
+
+test('cancelling a service proposal sends one distinct customer email', function (): void {
+    $this->proposal->update(['customer_email' => 'guest@example.com']);
+    app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'cancelled');
+    Notification::assertSentOnDemand(ServiceBookingCancelledNotification::class, function ($notification, $channels, $notifiable): bool {
+        return $notification->booking->status === 'cancelled'
+            && $notifiable->routes['mail'] === 'guest@example.com';
+    });
+});
+
+test('cancelled notification does not claim that a refund is completed', function (): void {
+    $this->proposal->update(['customer_email' => 'guest@example.com', 'advance_paid' => 100]);
+    $notice = new ServiceBookingCancelledNotification($this->proposal->fresh());
+    $mail = $notice->toMail((object) ['name' => 'Guest']);
+    expect(implode(' ', $mail->introLines))->toContain('does not mean a refund has been approved or completed');
+});
+
+test('cancellation without a verified customer email sends nothing', function (): void {
+    $this->proposal->update(['customer_email' => 'not-an-email']);
+    app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'cancelled');
+    Notification::assertNothingSent();
+});
+
+test('cancellation without a customer email sends nothing', function (): void {
+    $this->proposal->update(['customer_email' => null]);
+    app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'cancelled');
+    Notification::assertNothingSent();
+});
+
+test('cancelled notification uses booking number in subject', function (): void {
+    $mail = (new ServiceBookingCancelledNotification($this->proposal))->toMail((object) ['name' => 'Guest']);
+    expect($mail->subject)->toContain($this->proposal->booking_number);
+});
+
+test('cancelled notification includes service type', function (): void {
+    $mail = (new ServiceBookingCancelledNotification($this->proposal))->toMail((object) ['name' => 'Guest']);
+    expect(implode(' ', $mail->introLines))->toContain('Boating');
+});
+
+test('cancelled notification includes recorded payment without refund promise', function (): void {
+    $this->proposal->update(['advance_paid' => 125]);
+    $mail = (new ServiceBookingCancelledNotification($this->proposal->fresh()))->toMail((object) ['name' => 'Guest']);
+    expect(implode(' ', $mail->introLines))->toContain('125.00');
+});
+
+test('cancelled notification has email-only delivery channel', function (): void {
+    $notice = new ServiceBookingCancelledNotification($this->proposal);
+    expect($notice->via((object) []))->toBe(['mail']);
+});
+
+test('non-cancellation transition sends no cancellation notice', function (): void {
+    app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'cancelled');
+    Notification::assertNothingSent();
+    expect($this->proposal->fresh()->status)->toBe('cancelled');
+});
+
+test('unauthorized cancellation does not send a customer notice', function (): void {
+    $this->proposal->update(['customer_email' => 'guest@example.com']);
+    $outsider = User::factory()->create(['role' => UserRole::STAFF, 'status' => UserStatus::ACTIVE]);
+    $outsider->syncAssignedServices(['boating']);
+    expect(fn () => app(ServiceBookingApproval::class)->transition($this->proposal->id, $outsider, 'cancelled'))
+        ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    Notification::assertNothingSent();
 });
