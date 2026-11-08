@@ -82,25 +82,29 @@ test('only authenticated customers can issue a quote and unpriced offers are rej
     expect(ServiceQuoteSnapshot::count())->toBe(0);
 });
 
-test('accepted server quote drives actual booked total, despite client tampering', function (): void {
+test('unallocated generic checkout rolls back booking without consuming its server quote', function (): void {
     $this->actingAs($this->customer);
     $quote = $this->postJson('/services/quote', serviceQuoteRequest($this))->assertOk()->json();
     $this->post('/services/book', serviceQuoteBooking($this, $quote['quote_id']))
-        ->assertRedirect();
-    expect(ServiceBooking::count())->toBe(1)
-        ->and((float) ServiceBooking::first()->total_amount)->toBe(1600.0)
-        ->and((float) ServiceBooking::first()->advance_paid)->toBe(0.0)
-        ->and(ServiceQuoteSnapshot::first()->service_booking_id)->toBe(ServiceBooking::first()->id);
+        ->assertSessionHasErrors('resources');
+    expect(ServiceBooking::count())->toBe(0)
+        ->and((float) ServiceQuoteSnapshot::first()->total_amount)->toBe(1600.0)
+        ->and(ServiceQuoteSnapshot::first()->service_booking_id)->toBeNull();
 });
 
-test('quote cannot be re-used and a booking without quote id is rejected', function (): void {
+test('a consumed server quote and a booking without quote id are rejected', function (): void {
     $this->actingAs($this->customer);
     $this->post('/services/book', array_diff_key(
         serviceQuoteBooking($this, '00000000-0000-0000-0000-000000000000'), ['quote_id' => true]
     ))->assertSessionHasErrors('quote_id');
-
     $quote = $this->postJson('/services/quote', serviceQuoteRequest($this))->json();
-    $this->post('/services/book', serviceQuoteBooking($this, $quote['quote_id']))->assertRedirect();
+    $existing = ServiceBooking::create([
+        'booking_number' => 'CONSUMED-QUOTE-CI', 'service_type' => 'taxi',
+        'service_item_id' => $this->item->id, 'customer_name' => 'Fixture',
+        'customer_phone' => '9000009742', 'start_datetime' => serviceQuoteRequest($this)['start_datetime'],
+        'quantity' => 2, 'total_amount' => 1600, 'status' => 'confirmed',
+    ]);
+    ServiceQuoteSnapshot::where('public_id', $quote['quote_id'])->update(['service_booking_id' => $existing->id]);
     $this->post('/services/book', serviceQuoteBooking($this, $quote['quote_id']))->assertSessionHasErrors('quote_id');
     expect(ServiceBooking::count())->toBe(1);
 });
@@ -128,5 +132,40 @@ test('changed service or date is not bookable against an old snapshot', function
     $payload = serviceQuoteBooking($this, $quote['quote_id']);
     $payload['start_datetime'] = now()->addDays(9)->startOfHour()->toDateTimeString();
     $this->post('/services/book', $payload)->assertSessionHasErrors('quote_id');
+    expect(ServiceBooking::count())->toBe(0);
+});
+
+test('quote binds end time including explicit null and rejects changed duration', function (): void {
+    $this->actingAs($this->customer);
+    $request = serviceQuoteRequest($this);
+    $end = \Carbon\Carbon::parse($request['start_datetime'])->addHours(3)->toDateTimeString();
+    $quote = $this->postJson('/services/quote', [...$request, 'end_datetime' => $end])->assertOk()->json();
+    expect($quote['quote']['reservation_context']['end_datetime'])->toBe($end);
+    $this->post('/services/book', [...serviceQuoteBooking($this, $quote['quote_id']),
+        'end_datetime' => \Carbon\Carbon::parse($end)->addDay()->toDateTimeString(),
+    ])->assertSessionHasErrors('quote_id');
+    $this->post('/services/book', serviceQuoteBooking($this, $quote['quote_id']))->assertSessionHasErrors('quote_id');
+    $nullQuote = $this->postJson('/services/quote', $request)->assertOk()->json();
+    $this->post('/services/book', [...serviceQuoteBooking($this, $nullQuote['quote_id']), 'end_datetime' => $end])
+        ->assertSessionHasErrors('quote_id');
+    expect(ServiceBooking::count())->toBe(0);
+});
+
+test('quote rejects branch unit and legacy context changes', function (): void {
+    $this->actingAs($this->customer);
+    $quote = $this->postJson('/services/quote', serviceQuoteRequest($this))->assertOk()->json();
+    $this->item->update(['price_unit' => 'per_hour']);
+    $this->post('/services/book', serviceQuoteBooking($this, $quote['quote_id']))->assertSessionHasErrors('quote_id');
+    $this->item->update(['price_unit' => 'per_trip']);
+    $store = \App\Models\Store::create([
+        'name' => 'Different quote branch', 'address_line' => 'Test Road', 'city' => 'Test City',
+        'state' => 'Karnataka', 'pincode' => '581334', 'latitude' => 14.28, 'longitude' => 74.45,
+        'status' => \App\Enums\StoreStatus::ACTIVE,
+    ]);
+    $this->item->update(['store_id' => $store->id]);
+    $this->post('/services/book', serviceQuoteBooking($this, $quote['quote_id']))->assertSessionHasErrors('quote_id');
+    $this->item->update(['store_id' => null]);
+    ServiceQuoteSnapshot::where('public_id', $quote['quote_id'])->update(['breakdown_json' => ['total_amount' => 1600]]);
+    $this->post('/services/book', serviceQuoteBooking($this, $quote['quote_id']))->assertSessionHasErrors('quote_id');
     expect(ServiceBooking::count())->toBe(0);
 });

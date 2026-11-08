@@ -66,11 +66,9 @@ test('customer booking does not honor custom amount', function (): void {
         'pickup_location' => 'Murudeshwar',
         'payment_method' => 'pay_on_arrival',
         'custom_amount' => 1,
-    ])->assertRedirect();
-
-    $booking = ServiceBooking::where('user_id', $this->customer->id)->latest('id')->firstOrFail();
-    expect((float) $booking->total_amount)->toBeGreaterThanOrEqual(3000);
-    expect($booking->store_id)->toBe($this->branch->id);
+    ])->assertSessionHasErrors('resources');
+    expect(ServiceBooking::count())->toBe(0);
+    expect((float) \App\Models\ServiceQuoteSnapshot::first()->total_amount)->toBe(3000.0);
 });
 
 test('another customer cannot view an unrelated booking confirmation', function (): void {
@@ -91,9 +89,10 @@ test('another customer cannot view an unrelated booking confirmation', function 
 
 
 test('same gateway payment reference cannot be credited twice', function (): void {
+    $this->item->update(['service_type' => 'boating']);
     $booking = ServiceBooking::create([
         'booking_number' => 'GKW-TX-REPLAY-01',
-        'service_type' => 'taxi',
+        'service_type' => 'boating',
         'service_item_id' => $this->item->id,
         'store_id' => $this->branch->id,
         'user_id' => $this->customer->id,
@@ -108,6 +107,7 @@ test('same gateway payment reference cannot be credited twice', function (): voi
         'status' => 'confirmed',
     ]);
 
+    gkwAllocatePaymentFixture($booking);
     $payload = [
         'razorpay_payment_id' => 'pay_replay_fixture_123',
         'amount' => 3000,

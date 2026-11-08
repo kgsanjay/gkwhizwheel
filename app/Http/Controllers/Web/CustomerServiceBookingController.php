@@ -72,7 +72,7 @@ class CustomerServiceBookingController extends Controller
         $quoteSnapshot = \App\Models\ServiceQuoteSnapshot::where('public_id', $validated['quote_id'])->firstOrFail();
         app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
             $quoteSnapshot, $request->user()->id, $item,
-            $validated['start_datetime'], $quantity
+            $validated['start_datetime'], $quantity, $validated['end_datetime'] ?? null
         );
         $quote = $quoteSnapshot->breakdown_json;
         $baseAmount = (float) $quoteSnapshot->base_amount;
@@ -107,7 +107,7 @@ class CustomerServiceBookingController extends Controller
                     ->lockForUpdate()->firstOrFail();
                 app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
                     $lockedQuote, $request->user()->id, $item,
-                    $validated['start_datetime'], $quantity
+                    $validated['start_datetime'], $quantity, $validated['end_datetime'] ?? null
                 );
                 $booking = $availabilityService->createServiceBooking([
                 'booking_number' => $bookingNumber,
@@ -135,6 +135,9 @@ class CustomerServiceBookingController extends Controller
                 'status' => 'confirmed',
                 'customer_notes' => $customerNotes ?: null,
             ]);
+                if ($message = app(\App\Services\ServiceReservationReadiness::class)->issue($booking)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['resources' => $message]);
+                }
                 $lockedQuote->update(['service_booking_id' => $booking->id]);
                 return $booking;
             });
@@ -428,6 +431,7 @@ class CustomerServiceBookingController extends Controller
             'service_type' => ['required', 'in:taxi,boating,scuba,homestay,guide,tours'],
             'service_item_id' => ['required', 'integer', 'exists:service_items,id'],
             'start_datetime' => ['required', 'date', 'after:now'],
+            'end_datetime' => ['nullable', 'date', 'after:start_datetime'],
             'quantity' => ['required', 'integer', 'between:1,50'],
         ]);
 
@@ -437,12 +441,13 @@ class CustomerServiceBookingController extends Controller
 
         $snapshot = app(\App\Services\ServiceQuoteSnapshots::class)->issue(
             $request->user()->id, $item, $validated['start_datetime'],
-            (int) $validated['quantity']
+            (int) $validated['quantity'], $validated['end_datetime'] ?? null
         );
         $quote = $snapshot->breakdown_json;
 
         return response()->json([
             'success' => true,
+            'confirmation_available' => false,
             'quote' => $quote,
             'quote_id' => $snapshot->public_id,
             'expires_at' => $snapshot->expires_at->toIso8601String(),

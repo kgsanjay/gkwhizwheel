@@ -765,3 +765,14 @@ test('cancellation rolls back paired resources and audit when durable recording 
     'audit insert failure' => [CabDispatchEvent::class],
     'notification intent insert failure' => [\App\Models\CabNotificationEvent::class],
 ]);
+
+test('cab payment readiness requires its complete eligible dispatch pair', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB-PAYMENT-READY');
+    $eligibility = app(\App\Services\ServicePaymentEligibility::class);
+    expect($eligibility->issue($booking))->not->toBeNull();
+    app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    expect($eligibility->issue($booking))->toBeNull();
+    ServiceResourceAllocation::where('service_booking_id', $booking->id)
+        ->where('service_resource_id', $this->driver->service_resource_id)->update(['status' => 'released']);
+    expect($eligibility->issue($booking))->not->toBeNull();
+});

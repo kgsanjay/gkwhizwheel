@@ -11,12 +11,17 @@ final class ServicePaymentEligibility
 {
     public function issue(ServiceBooking $booking): ?string
     {
+        $booking->unsetRelation('serviceItem');
         if (! in_array($booking->status, ['confirmed', 'in_progress'], true)) {
             return 'This service request is not confirmed. Payment is unavailable.';
         }
         if ($booking->service_item_id === null || $booking->serviceItem === null
             || $booking->serviceItem->service_type !== $booking->service_type) {
             return 'The service inventory is not verified. Payment is unavailable.';
+        }
+
+        if ($message = app(ServiceReservationReadiness::class)->issue($booking)) {
+            return $message;
         }
 
         $totalPaise = (int) round((float) $booking->total_amount * 100);
@@ -35,6 +40,12 @@ final class ServicePaymentEligibility
             if ($quote === null
                 || $quote->service_item_id !== $booking->service_item_id
                 || $quote->user_id !== $booking->user_id
+                || $quote->service_type !== $booking->service_type
+                || $quote->quantity !== $booking->quantity
+                || ! $quote->start_datetime->equalTo($booking->start_datetime)
+                || ! app(ServiceQuoteSnapshots::class)->contextMatches(
+                    $quote, $booking->serviceItem, $booking->end_datetime?->toDateTimeString()
+                )
                 || (int) round((float) $quote->total_amount * 100) !== $totalPaise) {
                 return 'The approved online quote is missing or inconsistent.';
             }

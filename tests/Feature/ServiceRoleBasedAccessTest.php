@@ -341,6 +341,7 @@ test('customer can initiate and verify online payment for service booking', func
         'pickup_location' => 'Sharavathi Jetty',
     ]);
 
+    gkwAllocatePaymentFixture($booking);
     \App\Models\ServiceQuoteSnapshot::create([
         'public_id' => (string) \Illuminate\Support\Str::uuid(),
         'user_id' => $customer->id,
@@ -351,7 +352,8 @@ test('customer can initiate and verify online payment for service booking', func
         'base_amount' => 1500,
         'discount_amount' => 0,
         'total_amount' => 1500,
-        'breakdown_json' => ['base_amount' => 1500, 'total_amount' => 1500],
+        'breakdown_json' => ['base_amount' => 1500, 'total_amount' => 1500,
+            'reservation_context' => gkwPaymentQuoteContext($booking)],
         'expires_at' => now()->addMinutes(15),
         'service_booking_id' => $booking->id,
     ]);

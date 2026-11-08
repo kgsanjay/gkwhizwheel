@@ -62,6 +62,10 @@ jobs:
         env:
           RESOURCE_SCHEMA_RECOVERY_TESTS: '1'
         run: php artisan test tests/Integration/ServiceResourceMySqlRecoveryTest.php --stop-on-failure
+      - name: Verify service quote and payment allocation gates on MySQL
+        run: |
+          php artisan test tests/Feature/ServiceQuoteSnapshotTest.php --stop-on-failure
+          php artisan test tests/Feature/ServicePaymentEligibilityTest.php --stop-on-failure
       - name: Verify private document boundaries on MySQL
         run: |
           php artisan test tests/Feature/DocumentDownloadAuthorizationTest.php --stop-on-failure

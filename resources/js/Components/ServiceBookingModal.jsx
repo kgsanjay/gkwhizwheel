@@ -278,6 +278,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
                     service_type: selectedService,
                     service_item_id: selectedServiceItem.id,
                     start_datetime: currentStartDatetime,
+                    end_datetime: selectedService === 'homestay' ? `${stayCheckout}T10:00:00` : null,
                     quantity: Math.max(1, quoteQuantity),
                 });
                 if (isMounted && res.data?.quote && res.data?.quote_id) {
@@ -300,7 +301,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             isMounted = false;
             clearTimeout(timer);
         };
-    }, [open, selectedService, selectedServiceItem?.id, currentStartDatetime, quoteQuantity]);
+    }, [open, selectedService, selectedServiceItem?.id, currentStartDatetime, quoteQuantity, stayCheckout]);
 
     // Build rich formatted notes and payload
     const getBookingPayload = () => {
@@ -387,7 +388,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
 
         const notesSummary = [
             `Service: ${activeService.title}`,
-            finalAmount === null ? 'Pricing: pending server quote' : `Server quote: ₹${finalAmount.toLocaleString('en-IN')}`,
+            finalAmount === null ? 'Pricing: pending server quote' : `Indicative server estimate: ₹${finalAmount.toLocaleString('en-IN')}`,
             dynamicQuote?.applied_rules?.length
                 ? `Pricing adjustments: ${dynamicQuote.applied_rules.map((rule) => rule.rule_name).join(', ')}`
                 : null,
@@ -414,10 +415,6 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
 
     // Submit payload to server
     const submitBookingNow = (loggedInUser = null) => {
-        if (!selectedServiceItem || !dynamicQuote || !serverQuoteId || loadingQuote || (serverQuoteExpiresAt && Date.parse(serverQuoteExpiresAt) <= Date.now())) {
-            setErrorMessage('Select an available service and request a fresh server quote before booking.');
-            return;
-        }
         setSubmitting(true);
         const payload = getBookingPayload();
         if (loggedInUser) {
@@ -426,7 +423,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             if (loggedInUser.email && !payload.customer_email) payload.customer_email = loggedInUser.email;
         }
 
-        router.post('/services/book', payload, {
+        router.post('/services/enquire', payload, {
             onError: (errs) => {
                 setSubmitting(false);
                 const firstErr = Object.values(errs)[0];
@@ -1299,7 +1296,7 @@ _Sent via whizwheels.in - Service pricing subject to official booking quote_`;
                         <Box>
                             <Stack direction="row" alignItems="center" spacing={1}>
                                 <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600, display: 'block' }}>
-                                    Live Service Price · Server Quote
+                                    Indicative Service Estimate
                                 </Typography>
                                 {loadingQuote && <CircularProgress size={12} sx={{ color: activeService.color }} />}
                             </Stack>
@@ -1313,7 +1310,7 @@ _Sent via whizwheels.in - Service pricing subject to official booking quote_`;
                                     </Typography>
                                 )}
                                 <Typography component="span" variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600 }}>
-                                    (Pay on Arrival / Zero Advance)
+                                    Enquiry only — availability and final terms require approval
                                 </Typography>
                             </Stack>
                         </Box>
@@ -1393,7 +1390,7 @@ _Sent via whizwheels.in - Service pricing subject to official booking quote_`;
                         },
                     }}
                 >
-                    {submitting ? 'Confirming Reservation...' : 'Confirm Reservation (Pay on Arrival)'}
+                    {submitting ? 'Sending Enquiry...' : 'Request Availability'}
                 </Button>
             </DialogActions>
         </Dialog>
