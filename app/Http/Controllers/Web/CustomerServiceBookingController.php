@@ -303,7 +303,8 @@ class CustomerServiceBookingController extends Controller
         $paidAmount = (float) $validated['amount'];
 
         if (! app()->environment('testing')) {
-            // Payment proof is mandatory in every running application environment.\n            // Only the isolated automated test environment uses fixture payments.
+            // Payment proof is mandatory in every running application environment.
+            // Only the isolated automated test environment uses fixture payments.
             $orderId = (string) ($validated['razorpay_order_id'] ?? '');
             $signature = (string) ($validated['razorpay_signature'] ?? '');
             if ($orderId === '' || $signature === ''
