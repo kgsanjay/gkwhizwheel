@@ -47,5 +47,6 @@
 - `.github/workflows/cab-mysql-concurrency.yml` starts a **disposable MySQL 8.0 service** with a CI-only database; it does not connect to staging or production.
 - `tests/Feature/CabMySqlConcurrencyTest.php` migrates this isolated database, creates two confirmed taxi bookings competing for a single capacity-one cab resource, forks two independent PHP processes with separate DB connections, and simultaneously calls `ServiceResourceAllocator::allocate`. Accept only exactly one successful reservation and exactly one capacity rejection, with one confirmed allocation in storage.
 - The CI test explicitly **fails** if the required MySQL driver or process-fork extension is missing; silent SQLite-only success is not acceptable.
-- This tests **allocator race behavior**, not yet the full cab+driver paired assignment/reschedule race. A separate paired transactional staging test remains a blocking acceptance requirement.
+- The MySQL workflow now includes **two distinct cross-process races**: allocator capacity-one contention and a full `CabDispatchService::assign` race for the same cab plus driver. The paired test requires exactly one dispatch, one allocation per resource, and matching booking IDs for both allocations. Approval is contingent on a green workflow for this added test.
+- **Full rescheduling vs competing assignment**, and real staging browser/transaction tests, remain blocking acceptance requirements.
 - The CI MySQL service credentials are disposable test values, never credentials for the real business servers.
