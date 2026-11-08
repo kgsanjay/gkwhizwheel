@@ -275,3 +275,189 @@ test('concurrent mysql cab dispatch assigns paired vehicle and driver to only on
         @unlink($signal);
     }
 });
+
+
+test('mysql reschedule and competing cab assignment cannot claim the same new time slot', function (): void {
+    if (DB::getDriverName() !== 'mysql' || ! function_exists('pcntl_fork')) {
+        if (getenv('CAB_REQUIRE_MYSQL_RACE') === '1') {
+            throw new RuntimeException('Reschedule race gate requires MySQL and pcntl.');
+        }
+        $this->markTestSkipped('Requires independent MySQL connections.');
+    }
+
+    $store = Store::create([
+        'name' => 'Reschedule Race CI', 'address_line' => 'Race Test Road',
+        'city' => 'Test City', 'state' => 'Karnataka', 'pincode' => '581334',
+        'latitude' => 14.28, 'longitude' => 74.45, 'status' => StoreStatus::ACTIVE,
+    ]);
+    $item = ServiceItem::create([
+        'store_id' => $store->id, 'service_type' => 'taxi',
+        'name' => 'Concurrent Paired Cab',
+        'price_base' => 1200, 'price_unit' => 'per_trip', 'status' => 'available',
+    ]);
+    $operator = \App\Models\User::create([
+        'name' => 'MySQL Dispatch Admin',
+        'email' => 'mysql-cab-dispatch@example.test',
+        'phone' => '9000012345', 'password' => 'Password123!',
+        'role' => \App\Enums\UserRole::SUPER_ADMIN,
+        'status' => \App\Enums\UserStatus::ACTIVE,
+    ]);
+    $vehicleResource = ServiceResource::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'resource_type' => 'cab_vehicle', 'code' => 'MYSQL-RES-VEHICLE',
+        'name' => 'Reschedule CI Cab', 'capacity_units' => 1, 'status' => 'available',
+    ]);
+    $driverResource = ServiceResource::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'resource_type' => 'cab_driver', 'code' => 'MYSQL-RES-DRIVER',
+        'name' => 'Reschedule CI Driver', 'capacity_units' => 1, 'status' => 'available',
+    ]);
+    $cab = \App\Models\CabVehicle::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'service_resource_id' => $vehicleResource->id,
+        'registration_number' => 'KA47RES2026',
+        'vehicle_class' => 'sedan', 'make' => 'Test', 'model_name' => 'CI Cab',
+        'ownership_type' => 'owned', 'seats' => 4, 'luggage_capacity' => 2,
+        'documents_verified' => true, 'status' => 'available',
+        'insurance_expires_on' => now()->addYear(),
+        'permit_expires_on' => now()->addYear(),
+        'fitness_expires_on' => now()->addYear(),
+        'last_inspected_on' => now(),
+    ]);
+    $driver = \App\Models\CabDriver::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'service_resource_id' => $driverResource->id,
+        'name' => 'Reschedule Race Driver',
+        'license_fingerprint' => hash('sha256', 'mysql-reschedule-race-licence'),
+        'license_last_four' => '9876', 'documents_verified' => true,
+        'license_expires_on' => now()->addYear(),
+        'last_verified_on' => now(), 'status' => 'available',
+    ]);
+    $start = now()->addDays(8)->startOfDay()->addHours(9);
+    $end = $start->copy()->addHours(3);
+    $bookings = [];
+    foreach ([1, 2] as $n) {
+        $slotStart = $n === 1 ? $start : $start->copy()->addDay();
+        $slotEnd = $slotStart->copy()->addHours(3);
+        $bookings[] = ServiceBooking::create([
+            'store_id' => $store->id, 'service_item_id' => $item->id,
+            'service_type' => 'taxi', 'booking_number' => 'MYSQL-RES-CAB-'.$n,
+            'booking_channel' => 'offline_walkin', 'customer_name' => 'Reschedule CI '.$n,
+            'customer_phone' => '900001000'.$n,
+            'start_datetime' => $slotStart, 'end_datetime' => $slotEnd,
+            'quantity' => 2, 'total_amount' => 1200,
+            'advance_paid' => 0, 'balance_due' => 1200, 'status' => 'confirmed',
+        ]);
+    }
+
+
+    $dispatch = app(\App\Services\CabDispatchService::class)->assign(
+        $bookings[0], $cab, $driver, $operator
+    );
+    $proposal = \App\Models\CabRescheduleRequest::create([
+        'cab_dispatch_id' => $dispatch->id,
+        'requested_by' => $operator->id,
+        'original_starts_at' => $start,
+        'original_ends_at' => $end,
+        'proposed_starts_at' => $bookings[1]->start_datetime,
+        'proposed_ends_at' => $bookings[1]->end_datetime,
+        'status' => 'pending',
+        'reason' => 'CI verifies reschedule and simultaneous allocation',
+    ]);
+
+    // The fixture transaction must commit before independent child connections.
+    while (DB::transactionLevel() > 0) {
+        DB::commit();
+    }
+    DB::disconnect();
+    $signal = tempnam(sys_get_temp_dir(), 'cab-move-start-');
+    $outcomes = [];
+    $pids = [];
+    try {
+        foreach (['reschedule', 'assign'] as $operation) {
+            $output = tempnam(sys_get_temp_dir(), 'cab-move-result-');
+            $outcomes[] = $output;
+            $pid = pcntl_fork();
+            if ($pid === -1) {
+                throw new RuntimeException('Cannot fork independent cab-reschedule race worker.');
+            }
+            if ($pid === 0) {
+                try {
+                    DB::purge();
+                    $deadline = microtime(true) + 8.0;
+                    while (! file_exists($signal.'.go') && microtime(true) < $deadline) {
+                        usleep(10000);
+                    }
+                    if (! file_exists($signal.'.go')) {
+                        throw new RuntimeException('Cab-reschedule race barrier timed out.');
+                    }
+                    if ($operation === 'reschedule') {
+                        app(\App\Services\CabRescheduleService::class)->resolve(
+                            $proposal->id, $operator, 'approved'
+                        );
+                    } else {
+                        app(\App\Services\CabDispatchService::class)->assign(
+                            $bookings[1]->id, $cab->id, $driver->id, $operator
+                        );
+                    }
+                    file_put_contents($output, $operation.':success');
+                } catch (ValidationException $e) {
+                    file_put_contents($output, $operation.':rejected');
+                } catch (Throwable $e) {
+                    file_put_contents($output, $operation.':unexpected:'.get_class($e).':'.$e->getMessage());
+                }
+                exit(0);
+            }
+            $pids[] = $pid;
+        }
+        touch($signal.'.go');
+        foreach ($pids as $pid) {
+            pcntl_waitpid($pid, $status);
+            expect(pcntl_wifexited($status))->toBeTrue()
+                ->and(pcntl_wexitstatus($status))->toBe(0);
+        }
+        DB::purge();
+        $results = array_map(fn (string $path): string => (string) file_get_contents($path), $outcomes);
+        sort($results);
+        expect($results)->toBeIn([
+            ['assign:rejected', 'reschedule:success'],
+            ['assign:success', 'reschedule:rejected'],
+        ]);
+        $finalDispatch = \App\Models\CabDispatch::findOrFail($dispatch->id);
+        $finalProposal = \App\Models\CabRescheduleRequest::findOrFail($proposal->id);
+        $otherDispatch = \App\Models\CabDispatch::where('service_booking_id', $bookings[1]->id)->first();
+        $newStart = $bookings[1]->start_datetime->toDateTimeString();
+        $vehicleAllocations = ServiceResourceAllocation::where('service_resource_id', $vehicleResource->id)
+            ->where('status', 'confirmed')->get();
+        $driverAllocations = ServiceResourceAllocation::where('service_resource_id', $driverResource->id)
+            ->where('status', 'confirmed')->get();
+        expect($vehicleAllocations)->toHaveCount($driverAllocations->count());
+        foreach ($vehicleAllocations as $allocation) {
+            $matching = $driverAllocations->firstWhere('service_booking_id', $allocation->service_booking_id);
+            expect($matching)->not->toBeNull()
+                ->and($matching->starts_at->toDateTimeString())->toBe($allocation->starts_at->toDateTimeString());
+        }
+        if ($finalProposal->status === 'approved') {
+            expect($otherDispatch)->toBeNull()
+                ->and($finalDispatch->starts_at->toDateTimeString())->toBe($newStart)
+                ->and(\App\Models\CabNotificationEvent::where('event_type', 'reschedule_approved')->count())->toBe(1);
+        } else {
+            expect($finalProposal->status)->toBe('pending')
+                ->and($otherDispatch)->not->toBeNull()
+                ->and($finalDispatch->starts_at->toDateTimeString())->toBe($start->toDateTimeString())
+                ->and(\App\Models\CabNotificationEvent::where('event_type', 'reschedule_approved')->count())->toBe(0);
+        }
+    } finally {
+        foreach ($pids as $pid) {
+            if (pcntl_waitpid($pid, $status, WNOHANG) === 0) {
+                posix_kill($pid, SIGTERM);
+                pcntl_waitpid($pid, $status);
+            }
+        }
+        foreach ($outcomes as $path) {
+            @unlink($path);
+        }
+        @unlink($signal.'.go');
+        @unlink($signal);
+    }
+});
