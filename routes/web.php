@@ -264,6 +264,9 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/cab-fares', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'store'])->name('admin.cab-fares.store');
     Route::post('/cab-fares/simulate', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'simulate'])->name('admin.cab-fares.simulate');
 
+    // Branch-scoped cab operations UI (no gateway refunds or customer confirmations).
+    Route::get('/cab-operations', [\App\Http\Controllers\Web\Admin\AdminCabOperationsController::class, 'index'])->name('admin.cab-operations.index');
+
     // Verified cab dispatch (no customer instant booking or payment).
     Route::get('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'index'])->name('admin.cab-dispatches.index');
     Route::post('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'assign'])->name('admin.cab-dispatches.assign');
