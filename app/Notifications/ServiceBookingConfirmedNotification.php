@@ -131,7 +131,9 @@ class ServiceBookingConfirmedNotification extends Notification
         $coord = $this->getCoordinatorDetails();
         $itemName = $this->serviceBooking->serviceItem?->name ?? ucfirst(str_replace('_', ' ', $this->serviceBooking->service_type));
         $meetingSpot = $this->serviceBooking->pickup_location ?: $coord['spot'];
-        $coordinatorInfo = "{$coord['name']} ({$coord['phone']})";
+        $coordinatorInfo = $coord['phone'] !== ''
+            ? "{$coord['name']} ({$coord['phone']})"
+            : "{$coord['name']} — contact details pending verification";
         $voucherUrl = url("/services/booking/confirmation/{$this->serviceBooking->booking_number}");
         $customerName = $notifiable->name ?? $this->serviceBooking->customer_name ?? 'Valued Customer';
         $startDate = $this->serviceBooking->start_datetime ? Carbon::parse($this->serviceBooking->start_datetime)->toFormattedDateString() : '';
