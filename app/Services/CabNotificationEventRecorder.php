@@ -24,6 +24,10 @@ final class CabNotificationEventRecorder
             throw ValidationException::withMessages(['event' => 'Invalid cab notification event.']);
         }
 
+        // Never trust a potentially stale in-memory booking status when recording
+        // an operation intent. The persisted booking is the source of truth.
+        $booking = ServiceBooking::findOrFail($booking->id);
+
         // Bind every notification intent to the actual cab operation.
         // A caller must not associate a valid operation from another booking.
         $source = $type === 'dispatch_cancelled'
