@@ -116,6 +116,23 @@ class AdminServiceEnquiryWebController extends Controller
         DB::transaction(function () use ($id, $validated, $lifecycle): void {
             $enquiry = ServiceEnquiry::whereKey($id)->lockForUpdate()->firstOrFail();
             $lifecycle->assertTransition($enquiry, $validated['status']);
+            // Lock the linked proposal before changing the enquiry, so an
+            // operator cannot close it concurrently with booking approval.
+            $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)
+                ->lockForUpdate()->first();
+            if ($proposal !== null && $proposal->status === 'held'
+                && ($proposal->held_until === null || $proposal->held_until->isPast())) {
+                app(\App\Services\ServiceBookingLifecycle::class)->assertTransition($proposal, 'expired');
+                $proposal->update(['status' => 'expired']);
+                ActivityLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'service_booking.hold_expired',
+                    'subject_type' => ServiceBooking::class,
+                    'subject_id' => (string) $proposal->id,
+                    'old_values' => ['status' => 'held'],
+                    'new_values' => ['status' => 'expired'],
+                ]);
+            }
             if (in_array($validated['status'], ['closed', 'cancelled'], true)
                 && ServiceBooking::where('service_enquiry_id', $enquiry->id)
                     ->where(function ($query): void {
@@ -155,7 +172,7 @@ class AdminServiceEnquiryWebController extends Controller
                 ->whereHas('store', fn ($q) => $q->where('status', StoreStatus::ACTIVE->value))
                 ->orderBy('service_type')->orderBy('name')
                 ->get(['id', 'name', 'service_type', 'store_id']),
-            'enquiries' => ServiceEnquiry::query()->with('proposal:id,service_enquiry_id,booking_number,status')->latest()
+            'enquiries' => ServiceEnquiry::query()->with('proposal:id,service_enquiry_id,booking_number,status,held_until')->latest()
                 ->paginate(30)
                 ->through(fn (ServiceEnquiry $e): array => [
                     'id' => $e->id,
