@@ -14,6 +14,7 @@ use App\Models\ServiceResourceAllocation;
 use App\Models\User;
 use App\Notifications\ServiceBookingCancelledNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -203,11 +204,20 @@ final class ServiceBookingApproval
             return $booking->fresh();
         });
         if ($changedToCancelled) {
-            $notice = new ServiceBookingCancelledNotification($result);
-            if ($result->user && filter_var($result->user->email, FILTER_VALIDATE_EMAIL)) {
-                $result->user->notify($notice);
-            } elseif ($result->customer_email && filter_var($result->customer_email, FILTER_VALIDATE_EMAIL)) {
-                Notification::route('mail', $result->customer_email)->notify($notice);
+            // The cancellation is already committed; email delivery failures
+            // must never cause the caller to retry a successful state change.
+            try {
+                $notice = new ServiceBookingCancelledNotification($result);
+                if ($result->user && filter_var($result->user->email, FILTER_VALIDATE_EMAIL)) {
+                    $result->user->notify($notice);
+                } elseif ($result->customer_email && filter_var($result->customer_email, FILTER_VALIDATE_EMAIL)) {
+                    Notification::route('mail', $result->customer_email)->notify($notice);
+                }
+            } catch (\Throwable $exception) {
+                Log::warning('Service cancellation notification failed after commit', [
+                    'booking_id' => $result->id,
+                    'exception_type' => get_class($exception),
+                ]);
             }
         }
         return $result;
