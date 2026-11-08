@@ -725,3 +725,43 @@ test('driver-only reschedule overlap rolls back cab allocation change and notifi
             ->where('starts_at', $oldStart)->where('status', 'confirmed')->count())->toBe(2)
         ->and(\App\Models\CabNotificationEvent::count())->toBe(0);
 });
+
+
+test('cancellation rolls back paired resources and audit when durable recording fails', function (string $failureModel): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-CANCEL-ROLLBACK');
+    $service = app(CabDispatchService::class);
+    $dispatch = $service->assign($booking, $this->cab, $this->driver, $this->admin);
+    $fail = true;
+    $failureModel::creating(function () use (&$fail): void {
+        if ($fail) {
+            throw new RuntimeException('Injected durable cancellation recording failure');
+        }
+    });
+
+    expect(fn () => $service->cancel($dispatch, $this->admin, 'Customer requested cancellation'))
+        ->toThrow(RuntimeException::class, 'Injected durable cancellation recording failure');
+    expect($booking->fresh()->status)->toBe('confirmed')
+        ->and($dispatch->fresh()->status)->toBe('assigned')
+        ->and($dispatch->fresh()->closed_by)->toBeNull()
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)
+            ->where('status', 'confirmed')->count())->toBe(2)
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)
+            ->where('status', 'released')->count())->toBe(0)
+        ->and(CabDispatchEvent::where('cab_dispatch_id', $dispatch->id)->count())->toBe(1)
+        ->and(\App\Models\CabNotificationEvent::where('service_booking_id', $booking->id)->count())->toBe(0);
+
+    // A retry after the failed transaction must produce one complete cancellation.
+    $fail = false;
+    $service->cancel($dispatch, $this->admin, 'Customer requested cancellation');
+    expect($booking->fresh()->status)->toBe('cancelled')
+        ->and($dispatch->fresh()->status)->toBe('cancelled')
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)
+            ->where('status', 'released')->count())->toBe(2)
+        ->and(CabDispatchEvent::where('cab_dispatch_id', $dispatch->id)
+            ->where('to_status', 'cancelled')->count())->toBe(1)
+        ->and(\App\Models\CabNotificationEvent::where('service_booking_id', $booking->id)->sole()->status)
+            ->toBe('pending_approval');
+})->with([
+    'audit insert failure' => [CabDispatchEvent::class],
+    'notification intent insert failure' => [\App\Models\CabNotificationEvent::class],
+]);

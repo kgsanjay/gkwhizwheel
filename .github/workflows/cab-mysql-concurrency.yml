@@ -58,6 +58,8 @@ jobs:
         run: |
           php -r 'if (!extension_loaded("pdo_mysql") || !function_exists("pcntl_fork")) exit(1);'
           php artisan tinker --execute='if (DB::getDriverName() !== "mysql") throw new Exception("MySQL connection was not selected");'
+      - name: Verify cancellation recording failures roll back on MySQL
+        run: php artisan test tests/Feature/CabDispatchFlowTest.php --filter='cancellation rolls back paired resources' --stop-on-failure
       - name: Repeat isolated cross-process races ten times
         run: |
           set -euo pipefail

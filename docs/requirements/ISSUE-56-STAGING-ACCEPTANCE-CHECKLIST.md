@@ -71,3 +71,12 @@
 - Workers must reject on the expected capacity validation field; unrelated business validation errors fail the race assertion. Unexpected exceptions and database errors remain failures.
 - The allocator winner is replayed twice after the race and must return the original allocation ID with exactly one allocation row.
 - The strengthened gate requires its own current-head green run before acceptance. Cancellation-versus-assignment coverage, longer stress runs, staging checks and owner sign-off remain pending.
+
+## Cancellation versus assignment and durable recording failure
+
+- Independent MySQL workers now race cancellation of an assigned pre-departure trip against another booking assigning (a) the same cab and driver, or (b) a separate cab with the same driver. The existing ten-repetition gate includes both cases.
+- Cancellation must succeed. Assignment may succeed after release or reject on capacity before release; a rejected assignment must leave no dispatch or allocation and must succeed when retried after cancellation. Both original allocations remain released and both replacement allocations belong to the competing booking.
+- The shared-driver fixture creates the free cab resource before the driver resource; an explicit pre-race attempt verifies rollback of the first allocation when the driver is occupied.
+- Cancellation creates one audit transition and one pending, unsent notification intent. Duplicate cancellation cannot add either record or release the replacement booking's allocations.
+- Injected audit-row and notification-intent insert failures must roll back booking/dispatch status, both releases, audit and notification intent together; retry must then complete once. These failure-injection cases run on SQLite in standard CI and on MySQL in the dedicated gate.
+- This slice awaits its own green CI evidence. Staging/role/browser acceptance, long-running stress, owner-approved policy and customer notification delivery remain pending. No real sends, refunds, database deployment or merge is authorized by these tests.

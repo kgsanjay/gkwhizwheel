@@ -477,3 +477,224 @@ test('mysql reschedule and competing cab assignment cannot claim the same new ti
         @unlink($signal);
     }
 });
+
+
+test('mysql cancellation safely releases paired resources during competing assignment', function (bool $differentCab): void {
+    if (DB::getDriverName() !== 'mysql' || ! function_exists('pcntl_fork')) {
+        if (getenv('CAB_REQUIRE_MYSQL_RACE') === '1') {
+            throw new RuntimeException('Cancellation race gate requires MySQL and pcntl.');
+        }
+        $this->markTestSkipped('Requires independent MySQL connections.');
+    }
+
+    $fixtureKey = $differentCab ? 'SPARE' : 'PAIR';
+    $store = Store::create([
+        'name' => 'Cancellation Race CI', 'address_line' => 'Race Test Road',
+        'city' => 'Test City', 'state' => 'Karnataka', 'pincode' => '581334',
+        'latitude' => 14.28, 'longitude' => 74.45, 'status' => StoreStatus::ACTIVE,
+    ]);
+    $item = ServiceItem::create([
+        'store_id' => $store->id, 'service_type' => 'taxi',
+        'name' => 'Concurrent Paired Cab',
+        'price_base' => 1200, 'price_unit' => 'per_trip', 'status' => 'available',
+    ]);
+    $operator = \App\Models\User::create([
+        'name' => 'MySQL Cancellation Admin',
+        'email' => 'mysql-cab-cancellation-'.strtolower($fixtureKey).'@example.test',
+        'phone' => '9000012345', 'password' => 'Password123!',
+        'role' => \App\Enums\UserRole::SUPER_ADMIN,
+        'status' => \App\Enums\UserStatus::ACTIVE,
+    ]);
+    $vehicleResource = ServiceResource::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'resource_type' => 'cab_vehicle', 'code' => 'MYSQL-CANCEL-VEHICLE-'.$fixtureKey,
+        'name' => 'Cancellation CI Cab', 'capacity_units' => 1, 'status' => 'available',
+    ]);
+    $spareVehicleResource = ServiceResource::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'resource_type' => 'cab_vehicle', 'code' => 'MYSQL-CANCEL-SPARE-'.$fixtureKey,
+        'name' => 'Separate competing cab', 'capacity_units' => 1, 'status' => 'available',
+    ]);
+    $driverResource = ServiceResource::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'resource_type' => 'cab_driver', 'code' => 'MYSQL-CANCEL-DRIVER-'.$fixtureKey,
+        'name' => 'Cancellation CI Driver', 'capacity_units' => 1, 'status' => 'available',
+    ]);
+    $cab = \App\Models\CabVehicle::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'service_resource_id' => $vehicleResource->id,
+        'registration_number' => 'KA47CAN2026-'.$fixtureKey,
+        'vehicle_class' => 'sedan', 'make' => 'Test', 'model_name' => 'CI Cab',
+        'ownership_type' => 'owned', 'seats' => 4, 'luggage_capacity' => 2,
+        'documents_verified' => true, 'status' => 'available',
+        'insurance_expires_on' => now()->addYear(),
+        'permit_expires_on' => now()->addYear(),
+        'fitness_expires_on' => now()->addYear(),
+        'last_inspected_on' => now(),
+    ]);
+    $driver = \App\Models\CabDriver::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'service_resource_id' => $driverResource->id,
+        'name' => 'Cancellation Race Driver',
+        'license_fingerprint' => hash('sha256', 'mysql-cancellation-race-licence-'.$fixtureKey),
+        'license_last_four' => '9876', 'documents_verified' => true,
+        'license_expires_on' => now()->addYear(),
+        'last_verified_on' => now(), 'status' => 'available',
+    ]);
+    $start = now()->addDays(8)->startOfDay()->addHours(9);
+    $end = $start->copy()->addHours(3);
+    $bookings = [];
+    foreach ([1, 2] as $n) {
+        $slotStart = $start->copy();
+        $slotEnd = $slotStart->copy()->addHours(3);
+        $bookings[] = ServiceBooking::create([
+            'store_id' => $store->id, 'service_item_id' => $item->id,
+            'service_type' => 'taxi', 'booking_number' => 'MYSQL-CANCEL-CAB-'.$fixtureKey.'-'.$n,
+            'booking_channel' => 'offline_walkin', 'customer_name' => 'Cancellation CI '.$n,
+            'customer_phone' => '900001000'.$n,
+            'start_datetime' => $slotStart, 'end_datetime' => $slotEnd,
+            'quantity' => 2, 'total_amount' => 1200,
+            'advance_paid' => 0, 'balance_due' => 1200, 'status' => 'confirmed',
+        ]);
+    }
+
+
+    $dispatch = app(\App\Services\CabDispatchService::class)->assign(
+        $bookings[0], $cab, $driver, $operator
+    );
+    $competingCab = $cab;
+    if ($differentCab) {
+        $competingCab = $cab->replicate();
+        $competingCab->service_resource_id = $spareVehicleResource->id;
+        $competingCab->registration_number = 'KA47CAN2027';
+        $competingCab->save();
+        // Always exercise rollback after the free cab was reserved, even when
+        // cancellation happens to win every subsequent concurrent attempt.
+        try {
+            app(\App\Services\CabDispatchService::class)->assign(
+                $bookings[1]->id, $competingCab->id, $driver->id, $operator
+            );
+            throw new RuntimeException('An occupied driver was assigned to another booking.');
+        } catch (ValidationException $e) {
+            expect(array_keys($e->errors()))->toBe(['resource']);
+        }
+        expect(ServiceResourceAllocation::where('service_booking_id', $bookings[1]->id)->count())->toBe(0)
+            ->and(\App\Models\CabDispatch::where('service_booking_id', $bookings[1]->id)->count())->toBe(0);
+    }
+
+    // The fixture transaction must commit before independent child connections.
+    while (DB::transactionLevel() > 0) {
+        DB::commit();
+    }
+    DB::disconnect();
+    $signal = tempnam(sys_get_temp_dir(), 'cab-cancel-start-');
+    $outcomes = [];
+    $pids = [];
+    try {
+        foreach (['cancel', 'assign'] as $operation) {
+            $output = tempnam(sys_get_temp_dir(), 'cab-cancel-result-');
+            $outcomes[] = $output;
+            $pid = pcntl_fork();
+            if ($pid === -1) {
+                throw new RuntimeException('Cannot fork independent cab-cancel race worker.');
+            }
+            if ($pid === 0) {
+                try {
+                    DB::purge();
+                    $deadline = microtime(true) + 8.0;
+                    while (! file_exists($signal.'.go') && microtime(true) < $deadline) {
+                        usleep(10000);
+                    }
+                    if (! file_exists($signal.'.go')) {
+                        throw new RuntimeException('Cab-cancel race barrier timed out.');
+                    }
+                    if ($operation === 'cancel') {
+                        app(\App\Services\CabDispatchService::class)->cancel(
+                            $dispatch->id, $operator, 'CI cancellation race'
+                        );
+                    } else {
+                        app(\App\Services\CabDispatchService::class)->assign(
+                            $bookings[1]->id, $competingCab->id, $driver->id, $operator
+                        );
+                    }
+                    file_put_contents($output, $operation.':success');
+                } catch (ValidationException $e) {
+                    $expectedField = 'resource';
+                    file_put_contents($output, $operation.':'.($operation === 'assign' && array_keys($e->errors()) === [$expectedField]
+                        ? 'rejected' : 'unexpected_validation:'.json_encode($e->errors())));
+                } catch (Throwable $e) {
+                    file_put_contents($output, $operation.':unexpected:'.get_class($e).':'.$e->getMessage());
+                }
+                exit(0);
+            }
+            $pids[] = $pid;
+        }
+        touch($signal.'.go');
+        foreach ($pids as $pid) {
+            pcntl_waitpid($pid, $status);
+            expect(pcntl_wifexited($status))->toBeTrue()
+                ->and(pcntl_wexitstatus($status))->toBe(0);
+        }
+        DB::purge();
+        $results = array_map(fn (string $path): string => (string) file_get_contents($path), $outcomes);
+        sort($results);
+        expect($results)->toBeIn([
+            ['assign:rejected', 'cancel:success'],
+            ['assign:success', 'cancel:success'],
+        ]);
+        $service = app(\App\Services\CabDispatchService::class);
+        expect($dispatch->fresh()->status)->toBe('cancelled')
+            ->and($bookings[0]->fresh()->status)->toBe('cancelled');
+        $released = ServiceResourceAllocation::where('service_booking_id', $bookings[0]->id)->get();
+        expect($released)->toHaveCount(2)
+            ->and($released->pluck('status')->unique()->all())->toBe(['released']);
+        expect(\App\Models\CabDispatchEvent::where('cab_dispatch_id', $dispatch->id)
+            ->where('to_status', 'cancelled')->count())->toBe(1);
+        $intent = \App\Models\CabNotificationEvent::where('service_booking_id', $bookings[0]->id)->sole();
+        expect($intent->event_key)->toBe('dispatch_cancelled:'.$dispatch->id)
+            ->and($intent->status)->toBe('pending_approval');
+
+        if (in_array('assign:rejected', $results, true)) {
+            // The different-cab scenario reserves a free vehicle before reaching
+            // the occupied driver. The rejected transaction must retain neither.
+            expect(ServiceResourceAllocation::where('service_booking_id', $bookings[1]->id)->count())->toBe(0)
+                ->and(\App\Models\CabDispatch::where('service_booking_id', $bookings[1]->id)->count())->toBe(0);
+            $service->assign($bookings[1]->id, $competingCab->id, $driver->id, $operator);
+        }
+        $replacement = \App\Models\CabDispatch::where('service_booking_id', $bookings[1]->id)->sole();
+        expect($replacement->status)->toBe('assigned')
+            ->and($replacement->cab_vehicle_id)->toBe($competingCab->id)
+            ->and($replacement->cab_driver_id)->toBe($driver->id);
+        $expectedResources = [$competingCab->service_resource_id, $driverResource->id];
+        sort($expectedResources, SORT_NUMERIC);
+        $allocations = ServiceResourceAllocation::where('status', 'confirmed')
+            ->whereIn('service_resource_id', [$vehicleResource->id, $spareVehicleResource->id, $driverResource->id])
+            ->orderBy('service_resource_id')->get();
+        expect($allocations)->toHaveCount(2)
+            ->and($allocations->pluck('service_resource_id')->all())->toBe($expectedResources);
+        foreach ($allocations as $allocation) {
+            expect($allocation->service_booking_id)->toBe($bookings[1]->id)
+                ->and($allocation->starts_at->equalTo($start))->toBeTrue()
+                ->and($allocation->ends_at->equalTo($end))->toBeTrue();
+        }
+        expect(fn () => $service->cancel($dispatch->id, $operator, 'Duplicate CI cancellation'))
+            ->toThrow(ValidationException::class);
+        expect(\App\Models\CabDispatchEvent::where('cab_dispatch_id', $dispatch->id)->count())->toBe(2)
+            ->and(\App\Models\CabNotificationEvent::where('service_booking_id', $bookings[0]->id)->count())->toBe(1)
+            ->and(\App\Models\CabNotificationEvent::where('service_booking_id', $bookings[1]->id)->count())->toBe(0)
+            ->and(ServiceResourceAllocation::where('service_booking_id', $bookings[1]->id)
+                ->where('status', 'confirmed')->count())->toBe(2);
+    } finally {
+        foreach ($pids as $pid) {
+            if (pcntl_waitpid($pid, $status, WNOHANG) === 0) {
+                posix_kill($pid, SIGTERM);
+                pcntl_waitpid($pid, $status);
+            }
+        }
+        foreach ($outcomes as $path) {
+            @unlink($path);
+        }
+        @unlink($signal.'.go');
+        @unlink($signal);
+    }
+})->with(['same cab and driver' => [false], 'different cab and shared driver' => [true]]);
