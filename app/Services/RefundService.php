@@ -43,6 +43,9 @@ class RefundService
     ): array {
         $thresholdHours = $fullRefundHours ?? (int) config('booking.cancellation.full_refund_hours', 24);
         $partialPercentage = $partialRefundPercentage ?? (float) config('booking.cancellation.partial_refund_percentage', 50.0);
+        if ($thresholdHours < 0 || ! is_finite($partialPercentage) || $partialPercentage < 0 || $partialPercentage > 100) {
+            throw new \InvalidArgumentException('Invalid cancellation refund policy.');
+        }
 
         $pickupTime = Carbon::parse($booking->start_date)->startOfDay();
         $currentTime = $cancellationTime !== null ? Carbon::parse($cancellationTime) : now();
@@ -115,6 +118,9 @@ class RefundService
                 RefundStatus::PENDING->value, RefundStatus::COMPLETED->value,
             ])->sum('amount');
             $refundAmount = min($calculation['refund_amount'], max(0, round($paid - $alreadyRefunded, 2)));
+            if ($refundAmount <= 0) {
+                throw new \InvalidArgumentException('No captured payment balance remains refundable.');
+            }
 
             $gatewayResult = $this->dispatchGatewayRefund(
                 payment: $targetPayment,
@@ -147,6 +153,10 @@ class RefundService
         ?int $paymentId = null
     ): Refund {
         $depositAmount = (float) $booking->deposit_amount;
+        if (! is_finite($damageDeductions) || ! is_finite($lateFeeDeductions)
+            || $damageDeductions < 0 || $lateFeeDeductions < 0) {
+            throw new \InvalidArgumentException('Refund deductions must be non-negative finite amounts.');
+        }
         $refundAmount = max(0.0, round($depositAmount - $damageDeductions - $lateFeeDeductions, 2));
 
         return DB::transaction(function () use (
@@ -156,7 +166,15 @@ class RefundService
             $processedBy,
             $paymentId
         ): Refund {
+            Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
             $targetPayment = $this->resolveTargetPayment($booking, $paymentId);
+            $paid = (float) $booking->payments()->where('status', PaymentStatus::SUCCESS)->sum('amount');
+            $reserved = (float) $booking->refunds()->whereIn('status', [
+                RefundStatus::PENDING->value, RefundStatus::COMPLETED->value,
+            ])->sum('amount');
+            if ($refundAmount <= 0 || $refundAmount > round($paid - $reserved, 2)) {
+                throw new \InvalidArgumentException('Deposit refund exceeds remaining captured payment balance.');
+            }
 
             $gatewayResult = $this->dispatchGatewayRefund(
                 payment: $targetPayment,
@@ -199,7 +217,7 @@ class RefundService
             $targetPayment = $this->resolveTargetPayment($booking, $paymentId);
             $alreadyRefunded = (float) $booking->refunds()->whereIn('status', [RefundStatus::PENDING->value, RefundStatus::COMPLETED->value])->sum('amount');
             $paid = (float) $booking->payments()->where('status', PaymentStatus::SUCCESS)->sum('amount');
-            if ($amount <= 0 || round($amount + $alreadyRefunded, 2) > round($paid, 2)) {
+            if (! is_finite($amount) || $amount <= 0 || round($amount + $alreadyRefunded, 2) > round($paid, 2)) {
                 throw new \InvalidArgumentException('Refund exceeds the remaining captured payment balance.');
             }
 
@@ -234,7 +252,7 @@ class RefundService
         return $booking->payments()
             ->where('status', PaymentStatus::SUCCESS)
             ->latest('id')
-            ->first() ?? $booking->payments()->latest('id')->first();
+            ->first();
     }
 
     /**
