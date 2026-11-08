@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Web\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CabDispatch;
 use App\Models\CabDriver;
+use App\Models\CabDispute;
 use App\Models\CabRefundReview;
 use App\Models\CabRescheduleRequest;
 use App\Models\CabVehicle;
@@ -54,6 +55,14 @@ final class AdminCabOperationsController extends Controller
                     $r->verified_receipts_paise !== $r->recorded_advance_paise,
             ]);
 
+        $disputes = $scope(CabDispute::query())->orderByDesc('id')->limit(100)
+            ->get(['id', 'service_booking_id', 'store_id', 'category', 'status', 'created_at'])
+            ->map(fn (CabDispute $d): array => [
+                'id' => $d->id, 'service_booking_id' => $d->service_booking_id,
+                'store_id' => $d->store_id, 'category' => $d->category,
+                'status' => $d->status, 'created_at' => $d->created_at?->toIso8601String(),
+            ]);
+
         $bookings = $scope(ServiceBooking::query()->where('service_type', 'taxi'))
             ->where('status', 'confirmed')->orderBy('id')->limit(100)
             ->get(['id', 'booking_number', 'store_id', 'service_item_id', 'status', 'booking_channel']);
@@ -66,7 +75,7 @@ final class AdminCabOperationsController extends Controller
 
         return Inertia::render('Admin/Cabs/Operations', [
             'dispatches' => $dispatches, 'reschedules' => $proposals,
-            'refundReviews' => $reviews, 'bookings' => $bookings,
+            'refundReviews' => $reviews, 'disputes' => $disputes, 'bookings' => $bookings,
             'vehicles' => $vehicles, 'drivers' => $drivers,
         ]);
     }
