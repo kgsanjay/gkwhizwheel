@@ -71,6 +71,8 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
             'city' => 'Honnavar',
             'state' => 'Karnataka',
             'pincode' => '581334',
+            'latitude' => 14.2800,
+            'longitude' => 74.4400,
             'phone' => '9876543210',
             'status' => StoreStatus::ACTIVE,
         ]);
