@@ -355,6 +355,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
         Route::get('/items/{id}/edit', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'editItem'])->name('admin.services.items.edit');
         Route::match(['post', 'put'], '/items/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'updateItem'])->name('admin.services.items.update');
         Route::delete('/items/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'destroyItem'])->name('admin.services.items.destroy');
+        Route::get('/items/{itemId}/documents/{documentId}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'downloadDocument'])->name('admin.services.items.documents.download');
         Route::delete('/items/{itemId}/documents/{documentId}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'destroyDocument'])->name('admin.services.items.documents.destroy');
 
         Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'bookings'])->name('admin.services.bookings.index');

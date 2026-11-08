@@ -348,7 +348,7 @@ class AdminServiceWebController extends Controller
             if (! empty($validated['documents']) && is_array($validated['documents'])) {
                 foreach ($validated['documents'] as $docData) {
                     if (isset($docData['file']) && $docData['file'] instanceof UploadedFile) {
-                        $path = $docData['file']->store('services/documents', 'public');
+                        $path = $docData['file']->store('services/private-documents', 'local');
                         ServiceItemDocument::create([
                             'service_item_id' => $item->id,
                             'document_type' => $docData['document_type'],
@@ -567,7 +567,7 @@ class AdminServiceWebController extends Controller
                     ->whereIn('id', $validated['delete_document_ids'])
                     ->get();
                 foreach ($docsToDelete as $delDoc) {
-                    Storage::disk('public')->delete($delDoc->file_path);
+                    $delDoc->deleteStoredFile();
                     $delDoc->delete();
                 }
             }
@@ -593,10 +593,10 @@ class AdminServiceWebController extends Controller
                     }
 
                     if (isset($docData['file']) && $docData['file'] instanceof UploadedFile) {
-                        if ($existingDoc && Storage::disk('public')->exists($existingDoc->file_path)) {
-                            Storage::disk('public')->delete($existingDoc->file_path);
+                        if ($existingDoc) {
+                            $existingDoc->deleteStoredFile();
                         }
-                        $path = $docData['file']->store('services/documents', 'public');
+                        $path = $docData['file']->store('services/private-documents', 'local');
                         $payload['file_path'] = $path;
                         $payload['uploaded_by'] = $request->user()?->id;
                     }
@@ -647,7 +647,7 @@ class AdminServiceWebController extends Controller
                 Storage::disk('public')->delete($image->image_path);
             }
             foreach ($item->documents as $doc) {
-                Storage::disk('public')->delete($doc->file_path);
+                $doc->deleteStoredFile();
             }
             $item->delete();
         });
@@ -664,6 +664,20 @@ class AdminServiceWebController extends Controller
             ->with('success', "{$config['item_label']} '{$name}' deleted.");
     }
 
+    /** Download private compliance files through the existing service/branch boundary. */
+    public function downloadDocument(Request $request, string $serviceType, int $itemId, int $documentId): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        abort_unless($request->user()?->status === \App\Enums\UserStatus::ACTIVE, 403);
+        $item = ServiceItem::where('service_type', $serviceType)->findOrFail($itemId);
+        $this->assertServiceRecordAccess($item->store_id);
+        $doc = ServiceItemDocument::where('service_item_id', $item->id)->findOrFail($documentId);
+        abort_unless($doc->usesPrivateStorage() && Storage::disk('local')->exists($doc->file_path), 404);
+        return Storage::disk('local')->download($doc->file_path, null, [
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     /**
      * Delete an uploaded document from a service item
      */
@@ -673,7 +687,7 @@ class AdminServiceWebController extends Controller
         $this->assertServiceRecordAccess($item->store_id);
         $doc = ServiceItemDocument::where('service_item_id', $item->id)->findOrFail($documentId);
 
-        Storage::disk('public')->delete($doc->file_path);
+        $doc->deleteStoredFile();
         $doc->delete();
 
         ActivityLog::create([

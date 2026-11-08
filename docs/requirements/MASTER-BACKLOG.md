@@ -4,6 +4,8 @@
 
 **Scope:** Laravel + React/Inertia WEB ONLY; seven services (bike, cab, boating, scuba, homestay, guide, tours); Honnavar and Murudeshwar operational branches; no mobile app.
 
+Current release-tree and acceptance reconciliation: [release baseline](RELEASE-BASELINE-20261108.md). Historical issue closure or preview success is not full acceptance.
+
 ## Status convention (must follow)
 
 - **Open, no PR:** Not started or pending validation of pre-existing code.
