@@ -24,6 +24,14 @@
 - Automated coverage checks pending duplicate, cross-branch/customer 403, invalid dates, in-progress rejection and no existing schedule/allocation mutations.
 - Before implementing approval: add resource-level transactional reallocation with locked vehicle and driver, conflict detection, explicit customer consent, tariff difference review, acceptance/rejection audit and notification.
 
+## Slice 3: guarded reschedule approval and rejection
+
+- Authorized admin/staff resolves proposals at `POST /admin/cab-reschedule-requests/{id}/resolve` with `decision=approved|rejected`. Reject requires reason; approval requires explicit confirmed customer consent and unchanged-fare authorization.
+- Approval is limited to **unpaid offline** cab bookings (walk-in/phone); online priced snapshots and any paid booking require a future repricing/settlement integration and are rejected.
+- While holding a database transaction, lock dispatch, booking and assigned vehicle/driver resources in stable resource ID order; reject overlaps with other confirmed or unexpired held allocations; update *both* allocation windows, dispatch and booking times together. Failure reverts everything. Reviewed actor/time/reason retained.
+- Rejection leaves the confirmed booking and allocations untouched. Duplicate or stale decisions are rejected. No automatic customer notification is generated, so staff must inform customer through approved communication procedures.
+- **Staging MySQL concurrency test required** before operational use. Staff attestations are not independently verified; enforce owner policy and document approval procedures before accepting requests.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
