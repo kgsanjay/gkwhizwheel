@@ -401,14 +401,9 @@ class CustomerServiceBookingController extends Controller
         }
         $booking->refresh();
 
-        // Send updated confirmation to customer
-        if ($booking->user) {
-            $booking->user->notify(new ServiceBookingConfirmedNotification($booking));
-        } elseif (! empty($booking->customer_phone)) {
-            Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
-                ->route(\App\Channels\WhatsAppChannel::class, $booking->customer_phone)
-                ->notify(new ServiceBookingConfirmedNotification($booking));
-        }
+        // A successful payment is not a booking-status transition. Do not send
+        // another "booking confirmed" message for an already confirmed booking.
+        // Payment receipts require their own notification template and delivery flow.
 
         return response()->json([
             'success' => true,
