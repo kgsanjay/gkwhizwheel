@@ -65,6 +65,7 @@ jobs:
       - name: Verify atomic unpaid offline approval on MySQL
         run: |
           php artisan test tests/Feature/ServiceBookingApprovalTest.php --stop-on-failure
+          php artisan test tests/Feature/CabDispatchFlowTest.php --filter='cab approval' --stop-on-failure
           php artisan test tests/Feature/ServiceApprovalMySqlConcurrencyTest.php --stop-on-failure
       - name: Verify service quote and payment allocation gates on MySQL
         run: |
