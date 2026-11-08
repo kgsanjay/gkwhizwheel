@@ -58,6 +58,14 @@
 - Tests verify role/branch boundary, unchanged booking/payment state, required narrative and fixed incident categories.
 - This is **not** a finalized dispute resolution system. Owner-approved review escalation, append-only actions, evidence retention, notification and customer access are outstanding. Staging and real staff acceptance remain necessary.
 
+## Slice 7: internal dispute review lifecycle
+
+- Add `cab_dispute_events` append-only log: staff actor, from/to state, review notes and timestamp. All changes are serialized under a dispute row lock, preserving a non-overwritable history of recorded transitions.
+- Authorized cab staff may move `open → reviewing → closed_internal` with required 10–2000 character review notes. Cannot skip states, replay transitions, or alter another branch's dispute.
+- **Billing and refund disputes must stay under review** until future payment reconciliation and settlement controls exist. They are blocked from `closed_internal` to prevent false claims that money was returned.
+- UI displays internal review control on the Cab Operations Desk. `closed_internal` means only incident triage is complete; it cannot confirm customer communication, payment or external resolution.
+- No customer notifications, refunds, payment changes or sensitive evidence uploads are triggered. Requires staged role and browser tests before acceptance.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
