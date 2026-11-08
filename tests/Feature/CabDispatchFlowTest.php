@@ -659,3 +659,69 @@ test('cab finance preview does not disclose another branch or non taxi booking',
     $booking->update(['service_type' => 'boating']);
     $this->actingAs($this->admin)->getJson($url)->assertForbidden();
 });
+
+
+test('cab reschedule approval refuses receipt-backed booking even with zero cached advance', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-110');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $start = $booking->start_datetime->copy()->addDay()->toDateTimeString();
+    $end = $booking->end_datetime->copy()->addDay()->toDateTimeString();
+    $this->actingAs($this->admin)->postJson("/admin/cab-dispatches/{$dispatch->id}/reschedule-requests", [
+        'proposed_starts_at' => $start,
+        'proposed_ends_at' => $end,
+        'reason' => 'Customer requested adjusted cab time',
+    ])->assertCreated();
+
+    ServicePaymentReceipt::create([
+        'service_booking_id' => $booking->id,
+        'provider' => 'razorpay',
+        'payment_id' => 'pay_cab56_cached_zero',
+        'amount_paise' => 25000,
+    ]);
+    $proposal = CabRescheduleRequest::firstOrFail();
+    $oldStart = $booking->start_datetime->toDateTimeString();
+    $this->actingAs($this->admin)->postJson("/admin/cab-reschedule-requests/{$proposal->id}/resolve", [
+        'decision' => 'approved',
+        'customer_consent_confirmed' => true,
+        'unchanged_fare_approved' => true,
+    ])->assertUnprocessable();
+
+    expect($booking->fresh()->start_datetime->toDateTimeString())->toBe($oldStart)
+        ->and($dispatch->fresh()->starts_at->toDateTimeString())->toBe($oldStart)
+        ->and($proposal->fresh()->status)->toBe('pending')
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)
+            ->where('status', 'confirmed')->where('starts_at', $oldStart)->count())->toBe(2)
+        ->and(\App\Models\CabNotificationEvent::count())->toBe(0);
+});
+
+test('driver-only reschedule overlap rolls back cab allocation change and notification intent', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-111');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $other = cab55Booking($this, 'GKW-CAB56-112', offsetDays: 6);
+    $this->actingAs($this->admin)->postJson("/admin/cab-dispatches/{$dispatch->id}/reschedule-requests", [
+        'proposed_starts_at' => $other->start_datetime->toDateTimeString(),
+        'proposed_ends_at' => $other->end_datetime->toDateTimeString(),
+        'reason' => 'Travel moved to following day',
+    ])->assertCreated();
+    ServiceResourceAllocation::create([
+        'service_resource_id' => $this->driver->service_resource_id,
+        'service_booking_id' => $other->id,
+        'starts_at' => $other->start_datetime,
+        'ends_at' => $other->end_datetime,
+        'quantity' => 1,
+        'status' => 'confirmed',
+    ]);
+    $proposal = CabRescheduleRequest::firstOrFail();
+    $oldStart = $booking->start_datetime->toDateTimeString();
+    $this->actingAs($this->admin)->postJson("/admin/cab-reschedule-requests/{$proposal->id}/resolve", [
+        'decision' => 'approved', 'customer_consent_confirmed' => true,
+        'unchanged_fare_approved' => true,
+    ])->assertUnprocessable();
+
+    expect($proposal->fresh()->status)->toBe('pending')
+        ->and($dispatch->fresh()->starts_at->toDateTimeString())->toBe($oldStart)
+        ->and($booking->fresh()->start_datetime->toDateTimeString())->toBe($oldStart)
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)
+            ->where('starts_at', $oldStart)->where('status', 'confirmed')->count())->toBe(2)
+        ->and(\App\Models\CabNotificationEvent::count())->toBe(0);
+});
