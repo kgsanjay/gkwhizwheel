@@ -446,6 +446,6 @@ test('customer can view travel service bookings on /account with coordinator inf
             ->has('serviceBookings', 1)
             ->where('serviceBookings.0.booking_number', 'GKW-BT-260910-ACCT')
             ->has('serviceBookings.0.coordinator')
-            ->where('serviceBookings.0.coordinator.name', 'Captain Boating Desk')
+            ->where('serviceBookings.0.coordinator.name', 'GK WhizWheel Boating Desk')
         );
 });
