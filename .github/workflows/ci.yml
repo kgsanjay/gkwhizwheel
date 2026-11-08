@@ -1,81 +1,37 @@
-name: CI
+name: UI Preview CI
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ui-preview]
+    paths:
+      - 'preview-src/**'
+      - 'preview-vite.config.js'
+      - 'resources/js/**'
+      - 'resources/css/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/ci.yml'
   pull_request:
-    branches: [ "main" ]
+    branches: [ui-preview]
+
+permissions:
+  contents: read
 
 jobs:
-  test-laravel:
-    name: Laravel Tests & Build
+  static-ui:
+    name: Static website preview build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, libxml, json, phar
-          coverage: none
-
-      - name: Install Composer Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-
-      - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Install NPM Dependencies & Build (Laravel root)
+          cache: npm
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Validate GitHub Pages React UI
+        run: npx vite build --config preview-vite.config.js
+      - name: Verify static entry and assets
         run: |
-          npm ci
-          npm run build
-
-      - name: Run Laravel Tests
-        run: php artisan test --parallel
-        env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
-          MAIL_FROM_ADDRESS: "noreply@example.test"
-
-  test-mobile-customer:
-    name: Mobile Customer TS Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install NPM Dependencies & TS Check
-        working-directory: ./mobile-customer
-        run: |
-          npm ci
-          npx tsc --noEmit
-
-  test-mobile-ops:
-    name: Mobile Ops TS Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install NPM Dependencies & TS Check
-        working-directory: ./mobile-ops
-        run: |
-          npm ci
-          npx tsc --noEmit
+          test -f preview-dist/preview-src/template.html
+          test -d preview-dist/preview-bundle
