@@ -30,8 +30,11 @@ final class CabNotificationEventRecorder
             ? CabDispatch::find($sourceId)
             : CabRescheduleRequest::find($sourceId);
         $expectedStatus = $type === 'dispatch_cancelled' ? 'cancelled' : 'approved';
+        $sourceBookingId = $type === 'dispatch_cancelled'
+            ? $source?->service_booking_id
+            : $source?->dispatch?->service_booking_id;
         if ($source === null
-            || (int) $source->service_booking_id !== (int) $booking->id
+            || (int) $sourceBookingId !== (int) $booking->id
             || $source->status !== $expectedStatus
             || ($type === 'dispatch_cancelled' && $booking->status !== 'cancelled')) {
             throw ValidationException::withMessages(['event' => 'Cab notification source does not match a completed operation.']);
