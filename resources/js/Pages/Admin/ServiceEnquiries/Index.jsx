@@ -12,7 +12,7 @@ function ProposalAction({ enquiry, proposalItems = [] }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     if (enquiry.proposal) {
-        return <Typography variant="caption">Proposal {enquiry.proposal.booking_number} ({enquiry.proposal.status})</Typography>;
+        return <Typography variant="caption">Proposal {enquiry.proposal.booking_number} ({enquiry.proposal.hold_expired ? 'hold expired — not reserved' : enquiry.proposal.status})</Typography>;
     }
     if (!['requested', 'reviewing'].includes(enquiry.status)) return null;
     const eligibleItems = proposalItems.filter(item => item.service_type === enquiry.service_type);
@@ -44,6 +44,7 @@ function ProposalAction({ enquiry, proposalItems = [] }) {
 }
 
 export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [] }, proposalItems = [] }) {
+    const [statusErrors, setStatusErrors] = useState({});
     return <AdminLayout title="Service Enquiries">
         <Head title="Service Enquiries | G.K. WhizWheel" />
         <Stack spacing={3}>
@@ -73,13 +74,19 @@ export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [
                             <Chip size="small" label={`${e.status === 'reviewing' ? 'Under review' : e.status === 'closed' ? 'Closed' : e.status === 'cancelled' ? 'Cancelled' : 'Requested'} — unconfirmed`} />
                             <TextField size="small" select fullWidth value={e.status} sx={{ mt: 1, minWidth: 145 }}
                                 onChange={(event) => router.post(`/admin/service-enquiries/${e.id}/status`,
-                                    { status: event.target.value }, { preserveScroll: true })}>
+                                    { status: event.target.value }, { preserveScroll: true,
+                                        onError: errors => setStatusErrors(previous => ({ ...previous, [e.id]: Object.values(errors).join(' ') || 'Status update rejected.' })),
+                                        onSuccess: () => setStatusErrors(previous => ({ ...previous, [e.id]: '' })) })}>
                                 {['requested', 'reviewing', 'closed', 'cancelled'].map((status) =>
                                     <MenuItem key={status} value={status}
-                                        disabled={['closed', 'cancelled'].includes(e.status) && e.status !== status}>
+                                        disabled={(['closed', 'cancelled'].includes(e.status) && e.status !== status) ||
+                                            (['closed', 'cancelled'].includes(status) && e.proposal &&
+                                                (['confirmed', 'in_progress'].includes(e.proposal.status) ||
+                                                    (e.proposal.status === 'held' && !e.proposal.hold_expired)))}>
                                         {status.replace('_', ' ')}
                                     </MenuItem>)}
                             </TextField>
+                            {statusErrors[e.id] && <Typography variant="caption" color="error">{statusErrors[e.id]}</Typography>}
                             <ProposalAction enquiry={e} proposalItems={proposalItems} />
                         </TableCell>
                         </TableRow>)}
