@@ -132,7 +132,7 @@ const POPULAR_CAB_ROUTES = [
         sedanRate: 'Quote on request',
         suvRate: 'Quote on request',
         tempoRate: 'Quote on request',
-        highlights: 'Smooth 4-lane coastal highway cruise via Bhatkal, Kundapura & Udupi. Punctual airport terminal drop-off guaranteed.',
+        highlights: 'Smooth 4-lane coastal highway cruise via Bhatkal, Kundapura & Udupi. Airport terminal transfer scheduling subject to driver and vehicle confirmation.',
         bestTime: '24/7 Available for Flights',
         tag: 'Express Airport Link',
         icon: <FlightTakeoffIcon sx={{ color: '#EC4899' }} />,
@@ -288,14 +288,6 @@ export default function CabsPage({ availableItems = [] }) {
                         name: 'Honnavar AC Cab & Taxi Rental Service',
                         description: 'Reliable chauffeur-driven taxi service in Honnavar with railway station transfers, full-day sightseeing, and outstation trips across Karnataka and Goa.',
                         category: 'Taxi & Cab Rental',
-                        offers: {
-                            '@type': 'AggregateOffer',
-                            priceCurrency: 'INR',
-                            lowPrice: '1400',
-                            highPrice: '6000',
-                            offerCount: '6',
-                            price: '1400',
-                        },
                         provider: {
                             '@type': 'LocalBusiness',
                             name: 'GK WhizWheel',
