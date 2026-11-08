@@ -63,3 +63,11 @@
 - Added a third disposable MySQL integration scenario: an existing assigned taxi trip requests an unpaid offline move into tomorrow's slot while a competing confirmed booking attempts to assign the **same** documented cab and driver to that slot simultaneously.
 - Children use separate MySQL connections and a start barrier. Exactly one operation must succeed, no overlapping confirmed allocations for the target slot, both resource allocations must follow the same booking, and a rescheduling notification intent can exist only if the reschedule was approved.
 - This is a **blocking CI assertion**; do not infer safety from SQLite or the earlier paired assignment check. It is not an external payment settlement test, customer-notification delivery test, or staging acceptance.
+
+## Repeated MySQL gate and retry checks
+
+- Baseline `c30b0fc`: CI and MySQL run [42442620327](https://github.com/kgsanjay/gkwhizwheel/actions/runs/42442620327) passed all three race scenarios (29 assertions). This verifies the reschedule-versus-assignment test on that exact commit.
+- The MySQL workflow now executes ten separate suite processes, stopping on the first failure; each starts with a fresh migrated disposable database through RefreshDatabase. This is bounded repeatability coverage, not long-running load or staging acceptance.
+- Workers must reject on the expected capacity validation field; unrelated business validation errors fail the race assertion. Unexpected exceptions and database errors remain failures.
+- The allocator winner is replayed twice after the race and must return the original allocation ID with exactly one allocation row.
+- The strengthened gate requires its own current-head green run before acceptance. Cancellation-versus-assignment coverage, longer stress runs, staging checks and owner sign-off remain pending.

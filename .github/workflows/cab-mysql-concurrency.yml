@@ -58,5 +58,10 @@ jobs:
         run: |
           php -r 'if (!extension_loaded("pdo_mysql") || !function_exists("pcntl_fork")) exit(1);'
           php artisan tinker --execute='if (DB::getDriverName() !== "mysql") throw new Exception("MySQL connection was not selected");'
-      - name: Run isolated cross-process race test
-        run: php artisan test tests/Feature/CabMySqlConcurrencyTest.php --stop-on-failure
+      - name: Repeat isolated cross-process races ten times
+        run: |
+          set -euo pipefail
+          for attempt in {1..10}; do
+            echo "MySQL race repetition ${attempt}/10"
+            php artisan test tests/Feature/CabMySqlConcurrencyTest.php --stop-on-failure
+          done

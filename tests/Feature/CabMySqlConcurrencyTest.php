@@ -92,7 +92,8 @@ test('two concurrent mysql allocator writers cannot reserve the same cab resourc
                     );
                     file_put_contents($result, 'success');
                 } catch (ValidationException $e) {
-                    file_put_contents($result, 'capacity_rejected');
+                    file_put_contents($result, array_keys($e->errors()) === ['resource']
+                        ? 'capacity_rejected' : 'unexpected_validation:'.json_encode($e->errors()));
                 } catch (Throwable $e) {
                     file_put_contents($result, 'unexpected:'.get_class($e).':'.$e->getMessage());
                 }
@@ -112,6 +113,18 @@ test('two concurrent mysql allocator writers cannot reserve the same cab resourc
         expect($outcomes)->toBe(['capacity_rejected', 'success']);
         expect(ServiceResourceAllocation::where('service_resource_id', $resource->id)
             ->where('status', 'confirmed')->count())->toBe(1);
+        // Replay the winning request on a fresh parent connection: retries must
+        // return the same committed allocation without consuming capacity twice.
+        $winner = ServiceResourceAllocation::where('service_resource_id', $resource->id)
+            ->where('status', 'confirmed')->sole();
+        foreach ([1, 2] as $retry) {
+            $replayed = app(ServiceResourceAllocator::class)->allocate(
+                $resource->id, $winner->service_booking_id,
+                $start->toDateTimeString(), $end->toDateTimeString(), 1, 'confirmed'
+            );
+            expect($replayed->id)->toBe($winner->id);
+        }
+        expect(ServiceResourceAllocation::where('service_resource_id', $resource->id)->count())->toBe(1);
     } finally {
         foreach ($children as $pid) {
             if (pcntl_waitpid($pid, $status, WNOHANG) === 0) {
@@ -231,7 +244,8 @@ test('concurrent mysql cab dispatch assigns paired vehicle and driver to only on
                     );
                     file_put_contents($output, 'success');
                 } catch (ValidationException $e) {
-                    file_put_contents($output, 'rejected');
+                    file_put_contents($output, array_keys($e->errors()) === ['resource']
+                        ? 'rejected' : 'unexpected_validation:'.json_encode($e->errors()));
                 } catch (Throwable $e) {
                     file_put_contents($output, 'unexpected:'.get_class($e).':'.$e->getMessage());
                 }
@@ -402,7 +416,9 @@ test('mysql reschedule and competing cab assignment cannot claim the same new ti
                     }
                     file_put_contents($output, $operation.':success');
                 } catch (ValidationException $e) {
-                    file_put_contents($output, $operation.':rejected');
+                    $expectedField = $operation === 'reschedule' ? 'resources' : 'resource';
+                    file_put_contents($output, $operation.':'.(array_keys($e->errors()) === [$expectedField]
+                        ? 'rejected' : 'unexpected_validation:'.json_encode($e->errors())));
                 } catch (Throwable $e) {
                     file_put_contents($output, $operation.':unexpected:'.get_class($e).':'.$e->getMessage());
                 }
