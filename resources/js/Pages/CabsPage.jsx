@@ -64,9 +64,9 @@ const POPULAR_CAB_ROUTES = [
         destination: 'Jog Falls (Gersoppa)',
         distance: '60 km each way (140 km round trip)',
         duration: 'Full Day (8 - 10 Hours)',
-        sedanRate: '₹3,200',
-        suvRate: '₹4,500',
-        tempoRate: '₹7,500',
+        sedanRate: 'Quote on request',
+        suvRate: 'Quote on request',
+        tempoRate: 'Quote on request',
         highlights: 'Highest plunge falls in India, British era viewpoint, Sharavathi hanging bridge & lush Western Ghats vistas.',
         bestTime: 'Morning 8:00 AM Departure',
         tag: 'Most Popular Day Tour',
@@ -77,9 +77,9 @@ const POPULAR_CAB_ROUTES = [
         destination: 'Murudeshwar Beach & Temple',
         distance: '27 km each way (60 km round trip)',
         duration: 'Half Day (4 - 5 Hours)',
-        sedanRate: '₹2,200',
-        suvRate: '₹3,200',
-        tempoRate: '₹5,500',
+        sedanRate: 'Quote on request',
+        suvRate: 'Quote on request',
+        tempoRate: 'Quote on request',
         highlights: '123-ft colossal Shiva statue, 18-storey Raja Gopura with lift, beach water sports & morning Netrani scuba boat boarding.',
         bestTime: 'Early Morning / Evening Sunset',
         tag: 'Temple & Scuba Express',
@@ -90,9 +90,9 @@ const POPULAR_CAB_ROUTES = [
         destination: 'Gokarna & Mirjan',
         distance: '48 km each way (110 km round trip)',
         duration: 'Full Day (8 Hours)',
-        sedanRate: '₹2,800',
-        suvRate: '₹4,000',
-        tempoRate: '₹6,800',
+        sedanRate: 'Quote on request',
+        suvRate: 'Quote on request',
+        tempoRate: 'Quote on request',
         highlights: 'Om Beach, Kudle Beach cliff walks, Mahabaleshwar Temple Atmalinga & 16th-century laterite stone Mirjan Fort.',
         bestTime: 'Depart 9:00 AM',
         tag: 'Top Coastal Circuit',
@@ -103,9 +103,9 @@ const POPULAR_CAB_ROUTES = [
         destination: 'Yana Rocks & Falls',
         distance: '50 km each way (120 km round trip)',
         duration: 'Full Day (7 - 9 Hours)',
-        sedanRate: '₹3,200',
-        suvRate: '₹4,400',
-        tempoRate: '₹7,200',
+        sedanRate: 'Quote on request',
+        suvRate: 'Quote on request',
+        tempoRate: 'Quote on request',
         highlights: 'Massive Karst limestone black rock monoliths, shaded rainforest trek, and natural jungle plunge pool dipping.',
         bestTime: 'Morning 8:30 AM',
         tag: 'Adventure & Trekking',
@@ -116,9 +116,9 @@ const POPULAR_CAB_ROUTES = [
         destination: 'Goa International Airports',
         distance: '165 - 195 km one-way',
         duration: '3.5 - 4.5 Hours on NH-66',
-        sedanRate: '₹4,200',
-        suvRate: '₹5,800',
-        tempoRate: '₹9,500',
+        sedanRate: 'Quote on request',
+        suvRate: 'Quote on request',
+        tempoRate: 'Quote on request',
         highlights: 'Direct door-to-terminal highway transfer via scenic Karwar & South Goa NH-66 bypass with zero luggage stress.',
         bestTime: '24/7 Schedule Matching Flight',
         tag: 'Interstate Airport Transfer',
@@ -129,10 +129,10 @@ const POPULAR_CAB_ROUTES = [
         destination: 'Mangalore (Bajpe) Airport',
         distance: '175 km one-way',
         duration: '3.5 - 4 Hours on 4-Lane NH-66',
-        sedanRate: '₹4,400',
-        suvRate: '₹6,000',
-        tempoRate: '₹9,800',
-        highlights: 'Smooth 4-lane coastal highway cruise via Bhatkal, Kundapura & Udupi. Punctual airport terminal drop-off guaranteed.',
+        sedanRate: 'Quote on request',
+        suvRate: 'Quote on request',
+        tempoRate: 'Quote on request',
+        highlights: 'Smooth 4-lane coastal highway cruise via Bhatkal, Kundapura & Udupi. Airport terminal transfer scheduling subject to driver and vehicle confirmation.',
         bestTime: '24/7 Available for Flights',
         tag: 'Express Airport Link',
         icon: <FlightTakeoffIcon sx={{ color: '#EC4899' }} />,
@@ -144,36 +144,36 @@ const OUTSTATION_FARE_MATRIX = [
     {
         vehicle: 'Maruti Suzuki Dzire AC',
         category: 'Sedan (4+1 Seater)',
-        perKm: '₹12 / km',
+        perKm: 'On request',
         minKmPerDay: '250 km / day',
-        driverBatta: '₹400 / day',
+        driverBatta: 'As quoted',
         tollParking: 'At Actuals',
         idealFor: 'Couples, solo executives & small families (up to 4 pax + 2 bags)',
     },
     {
         vehicle: 'Maruti Suzuki Ertiga AC',
         category: 'Compact MUV (6+1 Seater)',
-        perKm: '₹15 / km',
+        perKm: 'On request',
         minKmPerDay: '250 km / day',
-        driverBatta: '₹450 / day',
+        driverBatta: 'As quoted',
         tollParking: 'At Actuals',
         idealFor: 'Families of 5-6 pax seeking extra legroom and roof luggage space',
     },
     {
         vehicle: 'Toyota Innova Crysta AC',
         category: 'Premium SUV (7+1 Seater)',
-        perKm: '₹18 / km',
+        perKm: 'On request',
         minKmPerDay: '300 km / day',
-        driverBatta: '₹500 / day',
+        driverBatta: 'As quoted',
         tollParking: 'At Actuals',
         idealFor: 'VIP comfort, ghat road smoothness, executive groups & long tours',
     },
     {
         vehicle: 'Force Tempo Traveller AC',
         category: 'Group Van (12+1 Seater)',
-        perKm: '₹24 / km',
+        perKm: 'On request',
         minKmPerDay: '300 km / day',
-        driverBatta: '₹600 / day',
+        driverBatta: 'As quoted',
         tollParking: 'At Actuals',
         idealFor: 'Extended family reunions, college groups & wedding guest shuttles',
     },
@@ -258,35 +258,8 @@ export default function CabsPage({ availableItems = [] }) {
     const cardBgColor = isDark ? '#111827' : '#FFFFFF';
     const cardBorderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0';
 
-    // Estimated fare calculation logic
-    const estimatedFare = useMemo(() => {
-        let ratePerKm = 12;
-        let driverBattaPerDay = 400;
-
-        if (calcVehicle === 'ertiga') {
-            ratePerKm = 15;
-            driverBattaPerDay = 450;
-        } else if (calcVehicle === 'innova') {
-            ratePerKm = 18;
-            driverBattaPerDay = 500;
-        } else if (calcVehicle === 'tempo') {
-            ratePerKm = 24;
-            driverBattaPerDay = 600;
-        }
-
-        const effectiveKm = calcTrip === 'round' ? Math.max(calcDistance * 2, calcDays * 250) : Math.max(calcDistance, 250);
-        const kmCost = effectiveKm * ratePerKm;
-        const driverCost = calcDays * driverBattaPerDay;
-        const total = kmCost + driverCost;
-
-        return {
-            ratePerKm,
-            effectiveKm,
-            kmCost,
-            driverCost,
-            total,
-        };
-    }, [calcVehicle, calcTrip, calcDistance, calcDays]);
+    // Distance/day selections are request preferences, not validated meter inputs.
+    // Display no client-computed payable prices until an approved server quote exists.
 
     // Filter available DB items
     const filteredVehicles = useMemo(() => {
@@ -304,7 +277,7 @@ export default function CabsPage({ availableItems = [] }) {
         <AppLayout>
             <PageHead
                 title="Honnavar Taxi Service & AC Cab Rentals | Station Pickup – GK WhizWheel"
-                description="Hire verified AC cabs & taxis in Honnavar starting ₹12/km or ₹1,400/day. Station pickup, Innova Crysta, Dzire, outstation trips to Gokarna, Jog Falls & Goa."
+                description="Hire verified AC cabs & taxis in Honnavar starting confirmed prices after route review. Station pickup, Innova Crysta, Dzire, outstation trips to Gokarna, Jog Falls & Goa."
                 canonicalUrl="https://whizwheels.in/services/cabs"
                 ogImage="/images/services/four_wheelers.jpg"
                 ogType="website"
@@ -315,14 +288,6 @@ export default function CabsPage({ availableItems = [] }) {
                         name: 'Honnavar AC Cab & Taxi Rental Service',
                         description: 'Reliable chauffeur-driven taxi service in Honnavar with railway station transfers, full-day sightseeing, and outstation trips across Karnataka and Goa.',
                         category: 'Taxi & Cab Rental',
-                        offers: {
-                            '@type': 'AggregateOffer',
-                            priceCurrency: 'INR',
-                            lowPrice: '1400',
-                            highPrice: '6000',
-                            offerCount: '6',
-                            price: '1400',
-                        },
                         provider: {
                             '@type': 'LocalBusiness',
                             name: 'GK WhizWheel',
@@ -616,7 +581,7 @@ export default function CabsPage({ availableItems = [] }) {
                                             </Typography>
                                         </Box>
                                         <Chip
-                                            label="Starting ₹12 / km"
+                                            label="Fare on request"
                                             size="small"
                                             sx={{
                                                 bgcolor: '#0284C7',
@@ -693,8 +658,8 @@ export default function CabsPage({ availableItems = [] }) {
                                     {/* 3 Metric Pillars Under Image */}
                                     <Grid container sx={{ p: 1.2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0' }}>
                                         {[
-                                            { label: 'STATION TARIFF', val: 'Flat ₹300 - ₹600' },
-                                            { label: 'OUTSTATION RATE', val: 'From ₹12 / Km' },
+                                            { label: 'STATION TARIFF', val: 'Fare on request' },
+                                            { label: 'OUTSTATION RATE', val: 'Fare on request' },
                                             { label: 'STATION PICKUP', val: '0-Min Punctual' },
                                         ].map((stat, idx) => (
                                             <Grid key={idx} size={{ xs: 4 }} sx={{ textAlign: 'center', borderRight: idx < 2 ? (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0') : 'none', py: 0.5 }}>
@@ -774,15 +739,15 @@ export default function CabsPage({ availableItems = [] }) {
                     >
                         <Box sx={{ mb: 3 }}>
                             <Chip
-                                label="TRANSPARENT PRICING CALCULATOR"
+                                label="CAB FARE REQUEST"
                                 size="small"
                                 sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 900, mb: 1.2 }}
                             />
                             <Typography variant="h4" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em' }}>
-                                Instant Honnavar Cab Fare Estimator
+                                Request a Verified Cab Fare
                             </Typography>
                             <Typography variant="body2" sx={{ color: secondaryTextColor, maxWidth: 650, mt: 0.5 }}>
-                                Calculate your realistic cab fare with zero hidden surge multipliers. Driver allowance is calculated transparently.
+                                Enter your travel preferences. Our team will verify distances, vehicle availability and full itemized pricing before any booking or payment.
                             </Typography>
                         </Box>
 
@@ -801,10 +766,10 @@ export default function CabsPage({ availableItems = [] }) {
                                             value={calcVehicle}
                                             onChange={(e) => setCalcVehicle(e.target.value)}
                                         >
-                                            <MenuItem value="sedan">Maruti Dzire AC Sedan (4+1) - ₹12/km</MenuItem>
-                                            <MenuItem value="ertiga">Maruti Ertiga AC (6+1) - ₹15/km</MenuItem>
-                                            <MenuItem value="innova">Toyota Innova Crysta (7+1) - ₹18/km</MenuItem>
-                                            <MenuItem value="tempo">Tempo Traveller AC (12+1) - ₹24/km</MenuItem>
+                                            <MenuItem value="sedan">Maruti Dzire AC Sedan (4+1) — Fare on request</MenuItem>
+                                            <MenuItem value="ertiga">Maruti Ertiga AC (6+1) — Fare on request</MenuItem>
+                                            <MenuItem value="innova">Toyota Innova Crysta (7+1) — Fare on request</MenuItem>
+                                            <MenuItem value="tempo">Tempo Traveller AC (12+1) — Fare on request</MenuItem>
                                         </TextField>
                                     </Grid>
 
@@ -885,25 +850,25 @@ export default function CabsPage({ availableItems = [] }) {
                                 >
                                     <Box>
                                         <Typography variant="caption" sx={{ color: '#0284C7', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                            Estimated Total Tariff
+                                            Fare status: awaiting verification
                                         </Typography>
                                         <Typography variant="h3" component="p" sx={{ fontWeight: 950, color: primaryTextColor, my: 0.8 }}>
-                                            ₹{estimatedFare.total.toLocaleString('en-IN')}
+                                            Quote after review
                                         </Typography>
                                         <Divider sx={{ my: 1.5, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#BAE6FD' }} />
 
                                         <Stack spacing={1}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <Typography variant="caption" sx={{ color: secondaryTextColor }}>Billable Distance:</Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 800, color: primaryTextColor }}>{estimatedFare.effectiveKm} km (@ ₹{estimatedFare.ratePerKm}/km)</Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: primaryTextColor }}>Subject to route verification</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <Typography variant="caption" sx={{ color: secondaryTextColor }}>Distance Charge:</Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 800, color: primaryTextColor }}>₹{estimatedFare.kmCost.toLocaleString('en-IN')}</Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: primaryTextColor }}>Calculated by our team</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <Typography variant="caption" sx={{ color: secondaryTextColor }}>Driver Batta ({calcDays} Day{calcDays > 1 ? 's' : ''}):</Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 800, color: primaryTextColor }}>₹{estimatedFare.driverCost.toLocaleString('en-IN')}</Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, color: primaryTextColor }}>Quoted before confirmation</Typography>
                                             </Box>
                                         </Stack>
                                     </Box>
@@ -1025,7 +990,7 @@ export default function CabsPage({ availableItems = [] }) {
                             Popular Sightseeing Cab Packages from Honnavar
                         </Typography>
                         <Typography variant="body1" sx={{ color: secondaryTextColor, maxWidth: 680, mx: 'auto', lineHeight: 1.7 }}>
-                            All-inclusive fixed fares with pickup right from Honnavar Railway Station, resorts, or local hotels. No meter anxiety.
+                            Explore possible routes. Actual vehicle availability, inclusions and fares are confirmed individually after enquiry.
                         </Typography>
                     </Box>
 
@@ -1076,7 +1041,7 @@ export default function CabsPage({ availableItems = [] }) {
 
                                         <Box sx={{ p: 1.5, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderRadius: 2, border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0', mb: 2.5 }}>
                                             <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 800, textTransform: 'uppercase', display: 'block', mb: 1, fontSize: '0.68rem' }}>
-                                                Fixed Round-Trip Tariffs:
+                                                Fare estimates: awaiting route verification
                                             </Typography>
                                             <Grid container spacing={1}>
                                                 <Grid size={{ xs: 4 }} sx={{ textAlign: 'center' }}>
@@ -1089,7 +1054,7 @@ export default function CabsPage({ availableItems = [] }) {
                                                 </Grid>
                                                 <Grid size={{ xs: 4 }} sx={{ textAlign: 'center', borderLeft: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0' }}>
                                                     <Typography variant="caption" sx={{ color: secondaryTextColor, display: 'block', fontSize: '0.68rem' }}>Innova Crysta</Typography>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, color: '#F59E0B' }}>{route.suvRate === '₹4,500' ? '₹5,500' : '₹4,200'}</Typography>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, color: '#F59E0B' }}>'Quote on request'</Typography>
                                                 </Grid>
                                             </Grid>
                                         </Box>
@@ -1292,7 +1257,7 @@ export default function CabsPage({ availableItems = [] }) {
                                                             Base Tariff
                                                         </Typography>
                                                         <Typography variant="h6" component="span" sx={{ fontWeight: 900, color: '#0284C7', lineHeight: 1.1 }}>
-                                                            ₹{Number(item.price_base).toLocaleString('en-IN')}
+                                                            Fare on request
                                                             <Typography component="span" variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, ml: 0.5 }}>
                                                                 / {item.price_unit?.replace('per_', '')}
                                                             </Typography>
@@ -1463,9 +1428,9 @@ export default function CabsPage({ availableItems = [] }) {
                                         'Chilled Air-Conditioned commercial cab maintained to showroom standards',
                                         'Verified, courteous chauffeur with deep local Uttara Kannada route expertise',
                                         'Fuel charges and routine maintenance included in fare calculation',
-                                        'Punctual railway station platform exit pickup with name sign placard',
-                                        'Complimentary bottled drinking water, umbrella, and phone charging points',
-                                        '24x7 phone & WhatsApp live dispatch helpline assistance',
+                                        'Pickup instructions and meet-and-greet arrangements confirmed for each trip',
+                                        'Vehicle amenities and luggage capacity confirmed before booking',
+                                        'Phone and WhatsApp support subject to published operating hours',
                                     ].map((inc, i) => (
                                         <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#10B981', flexShrink: 0 }} />
@@ -1498,9 +1463,9 @@ export default function CabsPage({ availableItems = [] }) {
                                     {[
                                         'State border permits (applicable only when entering Goa boundary)',
                                         'Toll plazas and monument / beach parking fees (payable at actuals)',
-                                        'Driver night allowance (₹300 applicable only for journeys running past 10:00 PM)',
+                                        'Night-time driver charges, if applicable, will be itemized in the approved quote',
                                         'Strict non-smoking and neat cleanliness policy maintained inside cabs',
-                                        'Free cancellation up to 4 hours before scheduled railway station arrival',
+                                        'Cancellation and refund terms are provided before final booking confirmation',
                                     ].map((exc, i) => (
                                         <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#EF4444', flexShrink: 0 }} />

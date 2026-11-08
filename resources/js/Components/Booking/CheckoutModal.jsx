@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { router } from '@inertiajs/react';
+import { useQuery } from '@tanstack/react-query';
 import {
     Dialog,
     DialogTitle,
@@ -19,6 +20,8 @@ import {
     Stack,
     IconButton,
     Chip,
+    TextField,
+    MenuItem,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -45,6 +48,7 @@ export default function CheckoutModal({
     open,
     onClose,
     bike,
+    bikeModelId = null,
     startDate,
     endDate,
     pickupStore,
@@ -55,24 +59,55 @@ export default function CheckoutModal({
     currentUser,
 }) {
     const [gateway, setGateway] = useState('razorpay');
+    const [paymentOption, setPaymentOption] = useState('advance');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [heldBooking, setHeldBooking] = useState(null);
+    const [pickupPointId, setPickupPointId] = useState('');
+    const [returnPointId, setReturnPointId] = useState('');
+    const [pickupDetails, setPickupDetails] = useState('');
+    const [returnDetails, setReturnDetails] = useState('');
+    const pickupPointsQuery = useQuery({
+        queryKey: ['checkout-pickup-points', pickupStore?.id],
+        queryFn: () => apiClient.get('/pickup-points', { params: { store_id: pickupStore.id } }),
+        enabled: Boolean(open && pickupStore?.id),
+        retry: false,
+    });
+    const returnPointsQuery = useQuery({
+        queryKey: ['checkout-return-points', returnStore?.id],
+        queryFn: () => apiClient.get('/pickup-points', { params: { store_id: returnStore.id } }),
+        enabled: Boolean(open && returnStore?.id),
+        retry: false,
+    });
+    const pickupPoints = (pickupPointsQuery.data?.data || []).filter((point) => point.supports_pickup);
+    const returnPoints = (returnPointsQuery.data?.data || []).filter((point) => point.supports_return);
+    const pickupPoint = pickupPoints.find((p) => String(p.id) === pickupPointId);
+    const returnPoint = returnPoints.find((p) => String(p.id) === returnPointId);
+    const hasPointOptions = pickupPoints.length > 0 && returnPoints.length > 0;
+    const pointFeesConfigured = pickupPoint?.pickup_fee != null && returnPoint?.return_fee != null;
+    const pointSelectionValid = hasPointOptions && pointFeesConfigured && Boolean(pickupPoint && returnPoint)
+        && (pickupPoint.slug === 'hotel-delivery' ? pickupDetails.trim().length >= 5 : true)
+        && (returnPoint.slug === 'hotel-delivery' ? returnDetails.trim().length >= 5 : true);
+    const requestKey = useRef(null);
+    const finalQuote = heldBooking || quote;
+    const total = finalQuote ? Number(finalQuote.total_amount || 0) : null;
+    const advance = total === null ? 100 : Math.min(total, 100);
+    const payNow = total === null ? null : paymentOption === 'advance' ? advance : total;
+    const balanceAtPickup = total === null ? null : Math.max(0, total - payNow);
     const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
 
-    // Always show the actual expiry timestamp issued by Laravel. The backend
-    // reserves bikes for 10 minutes; a hardcoded 15-minute UI is misleading.
+    // Use the real server deadline, not an independent 15-minute timer.
     useEffect(() => {
-        if (!heldBooking?.held_until) {
-            setTimeLeftSeconds(0);
-            return;
-        }
-
-        const expiration = new Date(heldBooking.held_until).getTime();
-        const update = () => setTimeLeftSeconds(Math.max(0, Math.ceil((expiration - Date.now()) / 1000)));
-        update();
-        const timer = setInterval(update, 1000);
+        if (!heldBooking?.held_until) return;
+        const refreshRemaining = () => {
+            const expiry = Date.parse(heldBooking.held_until);
+            setTimeLeftSeconds(Number.isFinite(expiry)
+                ? Math.max(0, Math.ceil((expiry - Date.now()) / 1000))
+                : 0);
+        };
+        refreshRemaining();
+        const timer = setInterval(refreshRemaining, 1000);
         return () => clearInterval(timer);
     }, [heldBooking?.held_until]);
 
@@ -87,38 +122,57 @@ export default function CheckoutModal({
      * then initiate payment checkout.
      */
     const handleBookAndPay = async () => {
+        if (!heldBooking && !pointSelectionValid) {
+            setErrorMessage('Choose pickup and return points with configured charges. Hotel/custom requests also need an address.');
+            return;
+        }
         setIsSubmitting(true);
         setErrorMessage('');
-        setStatusMessage('Generating a time-limited reservation hold...');
+        setStatusMessage(heldBooking ? 'Preparing secure payment checkout...' : 'Checking available vehicles and reserving a bike...');
 
         try {
-            // 1. Generate client-side Idempotency-Key UUID at the moment "Book Now" is clicked
-            const idempotencyKey = generateIdempotencyKey();
+            let booking = heldBooking;
+            if (!booking) {
+                // Keep the key stable for a retried hold after network errors.
+                if (!requestKey.current) requestKey.current = generateIdempotencyKey();
+                const holdPayload = {
+                    ...(bikeModelId ? { bike_model_id: bikeModelId } : { bike_id: bike.id }),
+                    start_date: startDate,
+                    end_date: endDate,
+                    pickup_store_id: Number(pickupStore.id),
+                    return_store_id: Number(returnStore.id),
+                    pickup_point_id: Number(pickupPointId),
+                    return_point_id: Number(returnPointId),
+                    pickup_location_details: pickupPoint?.slug === 'hotel-delivery' ? pickupDetails.trim() : null,
+                    return_location_details: returnPoint?.slug === 'hotel-delivery' ? returnDetails.trim() : null,
+                    coupon_code: couponCode.trim() || undefined,
+                    addons: selectedAddons,
+                };
+                const holdRes = await apiClient.post(
+                    bikeModelId ? '/bookings/model-hold' : '/bookings/hold',
+                    holdPayload,
+                    { headers: { 'Idempotency-Key': requestKey.current } }
+                );
+                booking = holdRes.data;
+                setHeldBooking(booking);
 
-            // 2. Dispatch POST /api/v1/bookings/hold with Idempotency-Key header
-            const holdPayload = {
-                bike_id: bike.id,
-                start_date: startDate,
-                end_date: endDate,
-                pickup_store_id: Number(pickupStore.id),
-                return_store_id: Number(returnStore.id),
-                coupon_code: couponCode.trim() || undefined,
-                addons: selectedAddons,
-            };
-
-            const holdRes = await apiClient.post('/bookings/hold', holdPayload, {
-                headers: {
-                    'Idempotency-Key': idempotencyKey,
-                },
-            });
-
-            const booking = holdRes.data;
-            setHeldBooking(booking);
-            setStatusMessage(`Hold acquired! Ref: ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
+                if (bikeModelId) {
+                    // A model's exact rate may vary between physical vehicles.
+                    // Require an explicit second click to accept the actual total.
+                    setStatusMessage('Bike reserved. Review the exact amount below before continuing to payment.');
+                    setIsSubmitting(false);
+                    return;
+                }
+            }
+            setStatusMessage(`Reservation ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
 
             // 3. Initiate payment order creation on server
+            if (booking.held_until && Date.parse(booking.held_until) <= Date.now()) {
+                throw new Error('Your reservation hold has expired. Close this dialog and start a new booking.');
+            }
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
                 gateway: gateway,
+                payment_option: paymentOption,
             });
 
             const paymentData = checkoutRes.data;
@@ -165,7 +219,7 @@ export default function CheckoutModal({
                 modal: {
                     ondismiss: function () {
                         setIsSubmitting(false);
-                        setStatusMessage('Payment cancelled or dismissed. Check the reservation timer before retrying.');
+                        setStatusMessage('Payment cancelled or dismissed. Hold is still active for 15 minutes.');
                     },
                 },
             };
@@ -273,7 +327,7 @@ export default function CheckoutModal({
                         severity={timeLeftSeconds > 180 ? 'info' : 'warning'}
                         sx={{ mb: 2.5, fontWeight: 600 }}
                     >
-                        Reservation Hold ({heldBooking.booking_reference}): {timeLeftSeconds > 0 ? 'Expires in' : 'Expired'}{' '}
+                        {timeLeftSeconds > 0 ? 'Reservation hold active' : 'Reservation hold expired'} ({heldBooking.booking_reference}):{' '}
                         <strong>{formatTimer(timeLeftSeconds)}</strong>
                     </Alert>
                 )}
@@ -326,6 +380,94 @@ export default function CheckoutModal({
                         </Stack>
                     </CardContent>
                 </Card>
+
+                <Card variant="outlined" sx={{ borderRadius: 2, mb: 2, p: 2 }}>
+                    <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
+                        Pickup and return locations
+                    </Typography>
+                    <Stack spacing={2}>
+                        {(pickupPointsQuery.isError || returnPointsQuery.isError) && <Alert severity="error">
+                            Unable to load pickup points. Retry after checking the connection.
+                        </Alert>}
+                        {!pickupPointsQuery.isLoading && !returnPointsQuery.isLoading && !hasPointOptions && <Alert severity="warning">
+                            Pickup points are not published for both selected branches yet. Booking cannot continue until staff enables them.
+                        </Alert>}
+                        <TextField fullWidth select label={`Pickup point — ${pickupStore?.city || pickupStore?.name}`}
+                            value={pickupPointId} disabled={Boolean(heldBooking) || !hasPointOptions}
+                            onChange={(event) => { setPickupPointId(event.target.value); setPickupDetails(''); }}>
+                            {pickupPoints.map((point) => <MenuItem key={point.id} value={String(point.id)}>{point.name} {point.pickup_fee == null ? '(charge pending)' : `(+₹${Number(point.pickup_fee).toFixed(2)})`}</MenuItem>)}
+                        </TextField>
+                        {pickupPoint?.slug === 'hotel-delivery' && <TextField
+                            fullWidth required label="Hotel name / exact pickup address" value={pickupDetails}
+                            disabled={Boolean(heldBooking)} onChange={(event) => setPickupDetails(event.target.value)}
+                            inputProps={{ maxLength: 255 }} />}
+                        <TextField fullWidth select label={`Return point — ${returnStore?.city || returnStore?.name}`}
+                            value={returnPointId} disabled={Boolean(heldBooking) || !hasPointOptions}
+                            onChange={(event) => { setReturnPointId(event.target.value); setReturnDetails(''); }}>
+                            {returnPoints.map((point) => <MenuItem key={point.id} value={String(point.id)}>{point.name} {point.return_fee == null ? '(charge pending)' : `(+₹${Number(point.return_fee).toFixed(2)})`}</MenuItem>)}
+                        </TextField>
+                        {returnPoint?.slug === 'hotel-delivery' && <TextField
+                            fullWidth required label="Hotel name / exact return address" value={returnDetails}
+                            disabled={Boolean(heldBooking)} onChange={(event) => setReturnDetails(event.target.value)}
+                            inputProps={{ maxLength: 255 }} />}
+                        <Alert severity="info">
+                            Each location has its own pickup and return charge. Configured fees are
+                            included in the final rental quote before payment. Locations with pending fees
+                            cannot be booked online until the branch sets an amount (₹0 only when free).
+                        </Alert>
+                    </Stack>
+                </Card>
+                {finalQuote && <Alert severity="info" sx={{ mb: 2 }}>
+                    Pickup-point fee: ₹{Number(finalQuote.pickup_fee_amount || 0).toLocaleString('en-IN')} ·
+                    Return-point fee: ₹{Number(finalQuote.return_fee_amount || 0).toLocaleString('en-IN')} ·
+                    Total location fees: ₹{Number(finalQuote.location_fee_amount || 0).toLocaleString('en-IN')}.
+                    These are included in the total above, alongside any applicable inter-branch fee.
+                </Alert>}
+                {/* No refundable security deposit is required for new online bike bookings. */}
+                <Alert severity="success" sx={{ mb: 2 }}>
+                    No security deposit required. Pay ₹100 now to reserve, or pay the full rental amount.
+                </Alert>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#0F172A' }}>
+                    Choose payment option
+                </Typography>
+                <RadioGroup row value={paymentOption} onChange={(e) => setPaymentOption(e.target.value)}
+                    sx={{ gap: 1.5, mb: 3 }}>
+                    <Card variant="outlined" sx={{ flex: '1 1 190px', borderRadius: 2,
+                        borderColor: paymentOption === 'advance' ? '#C66A42' : '#E2E8F0' }}>
+                        <FormControlLabel value="advance" control={<Radio color="secondary" />}
+                            sx={{ m: 0, p: 1.5, alignItems: 'flex-start', width: '100%' }}
+                            label={<Box>
+                                <Typography fontWeight={800}>Advance Payment</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Reserve your bike now. Pay the remaining rental amount at pickup.
+                                </Typography>
+                                <Typography fontWeight={800} sx={{ mt: 1, color: '#C66A42' }}>
+                                    {total === null ? '₹100' : `Pay now ₹${advance.toLocaleString('en-IN')}`}
+                                </Typography>
+                            </Box>} />
+                    </Card>
+                    <Card variant="outlined" sx={{ flex: '1 1 190px', borderRadius: 2,
+                        borderColor: paymentOption === 'full' ? '#C66A42' : '#E2E8F0' }}>
+                        <FormControlLabel value="full" control={<Radio color="secondary" />}
+                            sx={{ m: 0, p: 1.5, alignItems: 'flex-start', width: '100%' }}
+                            label={<Box>
+                                <Typography fontWeight={800}>Full Payment</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Pay the full rental amount online. No rental balance at pickup.
+                                </Typography>
+                                <Typography fontWeight={800} sx={{ mt: 1, color: '#C66A42' }}>
+                                    {total === null ? 'See total after reservation' : `Pay now ₹${total.toLocaleString('en-IN')}`}
+                                </Typography>
+                            </Box>} />
+                    </Card>
+                </RadioGroup>
+                {finalQuote && (
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        {paymentOption === 'advance'
+                            ? `Pay ₹${advance.toLocaleString('en-IN')} online and ₹${balanceAtPickup.toLocaleString('en-IN')} at pickup. No deposit.`
+                            : `Pay ₹${total.toLocaleString('en-IN')} online. Nothing due for the quoted rental at pickup.`}
+                    </Alert>
+                )}
 
                 {/* Payment Gateway Selection */}
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#0F172A' }}>
@@ -399,50 +541,19 @@ export default function CheckoutModal({
                     </Card>
                 </RadioGroup>
 
-                {/* Final server-generated one-way fee disclosure */}
-                <Card variant="outlined" sx={{ mt: 2, bgcolor: '#F8FAFC', borderRadius: 2 }}>
-                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                        <Stack spacing={1}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-                                <Typography variant="body2" color="text.secondary">Rental and adjustments</Typography>
-                                <Typography variant="body2" fontWeight={700}>
-                                    ₹{(Number(quote?.base_amount || 0)
-                                        + Number(quote?.pricing_adjustments_amount || 0)
-                                        + Number(quote?.addon_amount || 0)
-                                        - Number(quote?.discount_amount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    {String(pickupStore.id) === String(returnStore.id) ? 'Same-branch return fee' : 'One-way return fee'}
-                                </Typography>
-                                <Typography variant="body2" fontWeight={700}>
-                                    ₹{Number(quote?.one_way_fee_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
-                                <Typography variant="body2" color="text.secondary">Refundable deposit (subject to terms)</Typography>
-                                <Typography variant="body2" fontWeight={700}>
-                                    ₹{Number(quote?.deposit_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                                </Typography>
-                            </Box>
-                        </Stack>
-                    </CardContent>
-                </Card>
-
                 {/* Amount Due Summary */}
                 <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #E2E8F0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                         <Box>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                                Total Amount Payable
+                                Amount to Pay Now
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                Rental advance + ₹{quote?.deposit_amount || 0} refundable deposit
+                                No security deposit · Total rental {total === null ? 'calculated at reservation' : `₹${total.toLocaleString('en-IN')}`}
                             </Typography>
                         </Box>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
-                            ₹{Number(quote?.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            {payNow === null ? 'After reservation' : `₹${payNow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
                         </Typography>
                     </Box>
                 </Box>
@@ -454,7 +565,7 @@ export default function CheckoutModal({
                     color="secondary"
                     fullWidth
                     size="large"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (!heldBooking && !pointSelectionValid) || (Boolean(heldBooking) && timeLeftSeconds <= 0)}
                     onClick={handleBookAndPay}
                     sx={{
                         py: 1.5,
@@ -466,7 +577,9 @@ export default function CheckoutModal({
                     {isSubmitting ? (
                         <CircularProgress size={26} color="inherit" />
                     ) : (
-                        `Book Now & Pay ₹${Number(quote?.total_amount || 0).toLocaleString('en-IN')}`
+                        bikeModelId && !heldBooking
+                            ? 'Reserve vehicle & check final price'
+                            : `Pay ₹${Number(payNow || 0).toLocaleString('en-IN')} now`
                     )}
                 </Button>
 
@@ -488,7 +601,7 @@ export default function CheckoutModal({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
                     <SecurityIcon sx={{ fontSize: 14, color: '#64748B' }} />
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                        Secure payment processing • Reserved bike hold • Refunds subject to rental terms
+                        Secure checkout • Concurrency-safe reservation • No security deposit
                     </Typography>
                 </Box>
             </DialogActions>
