@@ -326,11 +326,11 @@ test('deposit refund rejects non-finite deductions', function (): void {
         ->toThrow(\InvalidArgumentException::class);
 });
 
-test('deposit refund cannot be repeated when remaining funds are insufficient', function (): void {
+test('deposit refund may only use remaining captured balance after a prior refund', function (): void {
     $this->refundService->createDepositRefund($this->booking);
-    expect(fn () => $this->refundService->createDepositRefund($this->booking, 1000))
-        ->toThrow(\InvalidArgumentException::class);
-    expect(Refund::where('booking_id', $this->booking->id)->count())->toBe(1);
+    $second = $this->refundService->createDepositRefund($this->booking, 1000);
+    expect((float) $second->amount)->toBe(2000.0);
+    expect(Refund::where('booking_id', $this->booking->id)->count())->toBe(2);
 });
 
 test('manual refund rejects non-finite amount', function (): void {
@@ -345,10 +345,10 @@ test('manual refund cannot exceed explicitly selected payment', function (): voi
         ->toThrow(\InvalidArgumentException::class);
 });
 
-test('cancellation refund cannot exceed explicitly selected payment', function (): void {
+test('cancellation refund is capped to the remaining captured payment', function (): void {
     $this->payment->update(['amount' => 1000]);
-    expect(fn () => $this->refundService->processCancellationRefund($this->booking, 'Cancel', paymentId: $this->payment->id, cancellationTime: '2026-10-08'))
-        ->toThrow(\InvalidArgumentException::class);
+    $refund = $this->refundService->processCancellationRefund($this->booking, 'Cancel', paymentId: $this->payment->id, cancellationTime: '2026-10-08');
+    expect((float) $refund->amount)->toBe(1000.0);
 });
 
 test('deposit refund cannot exceed explicitly selected payment', function (): void {
@@ -372,7 +372,7 @@ test('manual refund allows remaining balance of selected payment', function (): 
 test('failed refunds do not reserve the selected payment balance', function (): void {
     Refund::create([
         'booking_id' => $this->booking->id, 'payment_id' => $this->payment->id,
-        'amount' => 4000, 'reason' => 'Previously failed',
+        'amount' => 4000, 'reason' => 'Previously failed', 'processed_by' => $this->staff->id,
         'status' => RefundStatus::FAILED,
     ]);
     $refund = $this->refundService->processManualRefund($this->booking, 5000, 'Retry', paymentId: $this->payment->id);
@@ -382,7 +382,7 @@ test('failed refunds do not reserve the selected payment balance', function (): 
 test('pending refunds reserve the selected payment balance', function (): void {
     Refund::create([
         'booking_id' => $this->booking->id, 'payment_id' => $this->payment->id,
-        'amount' => 4500, 'reason' => 'Pending refund',
+        'amount' => 4500, 'reason' => 'Pending refund', 'processed_by' => $this->staff->id,
         'status' => RefundStatus::PENDING,
     ]);
     expect(fn () => $this->refundService->processManualRefund($this->booking, 501, 'Excess', paymentId: $this->payment->id))
@@ -392,7 +392,7 @@ test('pending refunds reserve the selected payment balance', function (): void {
 test('completed refunds reserve the selected payment balance', function (): void {
     Refund::create([
         'booking_id' => $this->booking->id, 'payment_id' => $this->payment->id,
-        'amount' => 4500, 'reason' => 'Completed refund',
+        'amount' => 4500, 'reason' => 'Completed refund', 'processed_by' => $this->staff->id,
         'status' => RefundStatus::COMPLETED,
     ]);
     expect(fn () => $this->refundService->processManualRefund($this->booking, 501, 'Excess', paymentId: $this->payment->id))
