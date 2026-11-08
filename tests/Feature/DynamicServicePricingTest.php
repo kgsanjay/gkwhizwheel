@@ -201,7 +201,7 @@ test('customer quote API endpoint POST /services/quote returns calculated dynami
         ]);
 });
 
-test('customer booking creation stores dynamic surge quote in customer_notes', function (): void {
+test('dynamic surge estimate remains server owned when unallocated checkout is rejected', function (): void {
     PricingRule::create([
         'name' => 'Weekend Scuba Surge',
         'service_type' => 'scuba',
@@ -246,17 +246,14 @@ test('customer booking creation stores dynamic surge quote in customer_notes', f
         'quote_id' => $quoteId,
     ]);
 
-    $response->assertSessionHasNoErrors();
-    $response->assertRedirect();
+    $response->assertSessionHasErrors('resources');
+    $this->assertDatabaseMissing('service_bookings', ['customer_name' => 'Vikram Shenoy']);
+    $snapshot = \App\Models\ServiceQuoteSnapshot::where('public_id', $quoteId)->firstOrFail();
+    expect((float) $snapshot->total_amount)->toBe(7800.0)
+        ->and(collect($snapshot->breakdown_json['applied_rules'])->pluck('rule_name')->all())
+        ->toContain('Weekend Scuba Surge')
+        ->and($snapshot->service_booking_id)->toBeNull();
 
-    $this->assertDatabaseHas('service_bookings', [
-        'customer_name' => 'Vikram Shenoy',
-        'service_type' => 'scuba',
-        'total_amount' => 7800.00, // (3500 + 400) * 2 pax
-    ]);
-
-    $booking = ServiceBooking::where('customer_phone', '9845112233')->first();
-    expect($booking->customer_notes)->toContain('Weekend Scuba Surge');
 });
 
 test('admin pricing quote simulation POST /admin/pricing/simulate-quote works for travel services', function (): void {

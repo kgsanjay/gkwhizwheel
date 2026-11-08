@@ -195,9 +195,9 @@ test('locked payment verification rechecks allocation after provider verificatio
         return 100000;
     });
     $this->app->instance(\App\Services\RazorpayService::class, $provider);
-    $this->actingAs($this->paymentCustomer)->postJson('/services/bookings/'.$booking->booking_number.'/verify-payment', [
+    $this->withSession(['_token' => 'readiness-test-csrf'])->actingAs($this->paymentCustomer)->postJson('/services/bookings/'.$booking->booking_number.'/verify-payment', [
         'razorpay_payment_id' => 'pay_readiness_race', 'razorpay_order_id' => 'order_readiness_race',
-        'razorpay_signature' => 'verified_test_signature', 'amount' => 1000,
+        'razorpay_signature' => 'verified_test_signature', 'amount' => 1000, '_token' => 'readiness-test-csrf',
     ])->assertUnprocessable();
     expect(ServicePaymentReceipt::count())->toBe(0)->and((float) $booking->fresh()->advance_paid)->toBe(0.0);
 });

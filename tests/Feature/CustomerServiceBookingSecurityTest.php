@@ -98,7 +98,7 @@ test('same gateway payment reference cannot be credited twice', function (): voi
         'user_id' => $this->customer->id,
         'customer_name' => 'Booking Customer',
         'customer_phone' => '9888801001',
-        'start_datetime' => now()->addDays(3),
+        'start_datetime' => now()->addDays(3), 'quantity' => 1,
         'total_amount' => 3000,
         'advance_paid' => 0,
         'balance_due' => 3000,

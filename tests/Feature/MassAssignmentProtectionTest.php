@@ -244,15 +244,12 @@ class MassAssignmentProtectionTest extends TestCase
             'status' => 'completed',
         ]);
 
-        $response->assertRedirect();
+        $response->assertSessionHasErrors('resources');
+        $this->assertDatabaseMissing('service_bookings', ['service_item_id' => $item->id]);
+        $snapshot = \App\Models\ServiceQuoteSnapshot::where('public_id', $quoteId)->firstOrFail();
+        $this->assertEquals(2400.00, (float) $snapshot->total_amount);
+        $this->assertSame($this->customer->id, $snapshot->user_id);
+        $this->assertNull($snapshot->service_booking_id);
 
-        $booking = \App\Models\ServiceBooking::where('service_item_id', $item->id)->firstOrFail();
-
-        // Total amount is server-calculated: 2 * 1200 = 2400, not 10.00
-        $this->assertEquals(2400.00, (float) $booking->total_amount);
-        $this->assertEquals(2400.00, (float) $booking->balance_due);
-        $this->assertSame('pending', $booking->payment_status);
-        $this->assertSame('confirmed', $booking->status);
-        $this->assertSame($this->customer->id, $booking->user_id);
     }
 }
