@@ -328,10 +328,9 @@ test('deposit refund rejects non-finite deductions', function (): void {
 
 test('deposit refund cannot be repeated when remaining funds are insufficient', function (): void {
     $this->refundService->createDepositRefund($this->booking);
-    $this->refundService->createDepositRefund($this->booking, 1000);
-    expect(fn () => $this->refundService->createDepositRefund($this->booking))
+    expect(fn () => $this->refundService->createDepositRefund($this->booking, 1000))
         ->toThrow(\InvalidArgumentException::class);
-    expect(Refund::where('booking_id', $this->booking->id)->count())->toBe(2);
+    expect(Refund::where('booking_id', $this->booking->id)->count())->toBe(1);
 });
 
 test('manual refund rejects non-finite amount', function (): void {
