@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\CabNotificationEvent;
+use App\Models\CabDispatch;
+use App\Models\CabRescheduleRequest;
 use App\Models\ServiceBooking;
 use Illuminate\Validation\ValidationException;
 
@@ -20,6 +22,19 @@ final class CabNotificationEventRecorder
             || ! in_array($type, ['dispatch_cancelled', 'reschedule_approved'], true)
             || $sourceId < 1) {
             throw ValidationException::withMessages(['event' => 'Invalid cab notification event.']);
+        }
+
+        // Bind every notification intent to the actual cab operation.
+        // A caller must not associate a valid operation from another booking.
+        $source = $type === 'dispatch_cancelled'
+            ? CabDispatch::find($sourceId)
+            : CabRescheduleRequest::find($sourceId);
+        $expectedStatus = $type === 'dispatch_cancelled' ? 'cancelled' : 'approved';
+        if ($source === null
+            || (int) $source->service_booking_id !== (int) $booking->id
+            || $source->status !== $expectedStatus
+            || ($type === 'dispatch_cancelled' && $booking->status !== 'cancelled')) {
+            throw ValidationException::withMessages(['event' => 'Cab notification source does not match a completed operation.']);
         }
 
         $key = $type.':'.$sourceId;
