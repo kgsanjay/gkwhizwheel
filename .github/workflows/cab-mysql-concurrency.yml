@@ -58,6 +58,10 @@ jobs:
         run: |
           php -r 'if (!extension_loaded("pdo_mysql") || !function_exists("pcntl_fork")) exit(1);'
           php artisan tinker --execute='if (DB::getDriverName() !== "mysql") throw new Exception("MySQL connection was not selected");'
+      - name: Verify existing and partial resource migration safety on disposable MySQL
+        env:
+          RESOURCE_SCHEMA_RECOVERY_TESTS: '1'
+        run: php artisan test tests/Integration/ServiceResourceMySqlRecoveryTest.php --stop-on-failure
       - name: Verify private document boundaries on MySQL
         run: |
           php artisan test tests/Feature/DocumentDownloadAuthorizationTest.php --stop-on-failure
