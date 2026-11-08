@@ -220,11 +220,7 @@ class CustomerServiceBookingController extends Controller
 
         $this->authorizeBookingAccess($request->user(), $booking);
 
-        $coordinator = \App\Notifications\ServiceBookingConfirmedNotification::SERVICE_COORDINATORS[$booking->service_type] ?? [
-            'name' => 'WhizWheel Operations Desk',
-            'phone' => '+91 94815 12340',
-            'spot' => 'Palya Main Rd Hub, Honnavar',
-        ];
+        $coordinator = (new ServiceBookingConfirmedNotification($booking))->getCoordinatorDetails();
 
         return Inertia::render('ServiceBookingConfirmation', [
             'booking' => $booking,
