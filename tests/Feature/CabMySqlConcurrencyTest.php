@@ -296,8 +296,8 @@ test('mysql reschedule and competing cab assignment cannot claim the same new ti
         'price_base' => 1200, 'price_unit' => 'per_trip', 'status' => 'available',
     ]);
     $operator = \App\Models\User::create([
-        'name' => 'MySQL Dispatch Admin',
-        'email' => 'mysql-cab-dispatch@example.test',
+        'name' => 'MySQL Reschedule Admin',
+        'email' => 'mysql-cab-reschedule@example.test',
         'phone' => '9000012345', 'password' => 'Password123!',
         'role' => \App\Enums\UserRole::SUPER_ADMIN,
         'status' => \App\Enums\UserStatus::ACTIVE,
