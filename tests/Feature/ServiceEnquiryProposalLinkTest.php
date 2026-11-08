@@ -14,6 +14,11 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_proposal_route_requires_authentication(): void
+    {
+        $this->post('/admin/service-enquiries/1/proposal', [])->assertRedirect();
+    }
+
     public function test_enquiry_link_is_nullable_for_historical_bookings(): void
     {
         $this->assertTrue(Schema::hasColumn('service_bookings', 'service_enquiry_id'));
