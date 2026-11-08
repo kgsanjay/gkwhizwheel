@@ -36,7 +36,16 @@ final class CabNotificationEventRecorder
         if ($source === null
             || (int) $sourceBookingId !== (int) $booking->id
             || $source->status !== $expectedStatus
-            || ($type === 'dispatch_cancelled' && $booking->status !== 'cancelled')) {
+            || ($type === 'dispatch_cancelled' && $booking->status !== 'cancelled')
+            || ($type === 'reschedule_approved' && (
+                $booking->status !== 'confirmed'
+                || $source->dispatch?->status !== 'assigned'
+                || $source->reviewed_at === null
+                || $booking->start_datetime === null
+                || $booking->end_datetime === null
+                || ! $booking->start_datetime->equalTo($source->proposed_starts_at)
+                || ! $booking->end_datetime->equalTo($source->proposed_ends_at)
+            ))) {
             throw ValidationException::withMessages(['event' => 'Cab notification source does not match a completed operation.']);
         }
 
