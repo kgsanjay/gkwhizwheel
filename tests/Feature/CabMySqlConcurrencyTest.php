@@ -9,11 +9,8 @@ use App\Models\ServiceResource;
 use App\Models\ServiceResourceAllocation;
 use App\Models\Store;
 use App\Services\ServiceResourceAllocator;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-
-uses(DatabaseMigrations::class);
 
 /**
  * Separate MySQL processes are necessary: in-memory SQLite and Laravel's
@@ -59,8 +56,12 @@ test('two concurrent mysql allocator writers cannot reserve the same cab resourc
         $bookingIds[] = $booking->id;
     }
 
-    // Fork only after fixtures have committed and the shared PDO connection
-    // is disconnected. Each child obtains a fresh InnoDB connection.
+    // The shared Pest suite wraps feature tests in a transaction. Commit the
+    // dedicated CI-only MySQL fixtures before forking, otherwise isolated
+    // child connections cannot see the parent rows. Never do this in SQLite.
+    while (DB::transactionLevel() > 0) {
+        DB::commit();
+    }
     DB::disconnect();
     $barrier = tempnam(sys_get_temp_dir(), 'cab-race-start-');
     $files = [];
