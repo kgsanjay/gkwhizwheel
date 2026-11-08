@@ -896,7 +896,12 @@ test('cab notification intent rejects an un-cancelled booking with cancelled dis
     $booking = cab55Booking($this, 'GKW-CAB56-INT-09');
     $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
     app(CabDispatchService::class)->cancel($dispatch, $this->admin, 'Cancelled by customer');
+    // The dispatch service updates a separate booking instance. Refresh before
+    // changing status, otherwise Eloquent sees no dirty field and skips SQL.
+    $booking->refresh();
+    expect($booking->status)->toBe('cancelled');
     $booking->update(['status' => 'confirmed']);
+    expect($booking->fresh()->status)->toBe('confirmed');
     expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking->fresh(), 'dispatch_cancelled', $dispatch->id))
         ->toThrow(ValidationException::class);
 });
