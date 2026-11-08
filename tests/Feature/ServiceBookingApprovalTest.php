@@ -351,7 +351,6 @@ test('cancellation retry does not send a duplicate email', function (): void {
     $service = app(ServiceBookingApproval::class);
     $service->transition($this->proposal->id, $this->worker, 'cancelled');
     Notification::assertSentOnDemand(ServiceBookingCancelledNotification::class, 1);
-    expect(fn () => $service->transition($this->proposal->id, $this->worker, 'cancelled'))
-        ->toThrow(ValidationException::class);
+    expect($service->transition($this->proposal->id, $this->worker, 'cancelled')->status)->toBe('cancelled');
     Notification::assertSentOnDemand(ServiceBookingCancelledNotification::class, 1);
 });
