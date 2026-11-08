@@ -40,3 +40,12 @@
 - Validate labels for `refund review`, `reschedule proposal`, `notification pending approval`, and `closed internally` avoid suggesting paid refunds or already-delivered notifications.
 - Capture screenshots, exact test date, build commit SHA, approver identity, recorded defects and remediations.
 - Owner/finance must approve cancellation/refund/notification policies **before** any gateway refund, pricing adjustment or automated delivery work. Only close #56 after sign-off and accepted staging evidence.
+
+
+## CI: real MySQL race gate
+
+- `.github/workflows/cab-mysql-concurrency.yml` starts a **disposable MySQL 8.0 service** with a CI-only database; it does not connect to staging or production.
+- `tests/Feature/CabMySqlConcurrencyTest.php` migrates this isolated database, creates two confirmed taxi bookings competing for a single capacity-one cab resource, forks two independent PHP processes with separate DB connections, and simultaneously calls `ServiceResourceAllocator::allocate`. Accept only exactly one successful reservation and exactly one capacity rejection, with one confirmed allocation in storage.
+- The CI test explicitly **fails** if the required MySQL driver or process-fork extension is missing; silent SQLite-only success is not acceptable.
+- This tests **allocator race behavior**, not yet the full cab+driver paired assignment/reschedule race. A separate paired transactional staging test remains a blocking acceptance requirement.
+- The CI MySQL service credentials are disposable test values, never credentials for the real business servers.
