@@ -11,6 +11,7 @@ use App\Models\ServiceBooking;
 use App\Models\ServiceItem;
 use App\Models\User;
 use App\Notifications\ServiceBookingConfirmedNotification;
+use App\Notifications\ServicePaymentReceivedNotification;
 use App\Notifications\ServiceManagerBookingAlertNotification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -400,6 +401,17 @@ class CustomerServiceBookingController extends Controller
             ], 422);
         }
         $booking->refresh();
+
+        // Notify only after the payment transaction commits. This is a receipt,
+        // not another reservation confirmation. Never use a placeholder address.
+        $receiptNotification = new ServicePaymentReceivedNotification(
+            $booking, $validated['razorpay_payment_id'], $paidPaise
+        );
+        if ($booking->user && filter_var($booking->user->email, FILTER_VALIDATE_EMAIL)) {
+            $booking->user->notify($receiptNotification);
+        } elseif ($booking->customer_email && filter_var($booking->customer_email, FILTER_VALIDATE_EMAIL)) {
+            Notification::route('mail', $booking->customer_email)->notify($receiptNotification);
+        }
 
         // A successful payment is not a booking-status transition. Do not send
         // another "booking confirmed" message for an already confirmed booking.
