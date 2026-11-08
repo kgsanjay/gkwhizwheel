@@ -185,15 +185,16 @@ final class ServiceBookingApproval
             }
             $old = $booking->status;
             $booking->update(['status' => $status, 'admin_notes' => $notes ?? $booking->admin_notes]);
+            $releasedAllocations = 0;
             if (in_array($status, ['completed', 'cancelled'], true)) {
-                ServiceResourceAllocation::where('service_booking_id', $id)->whereIn('status', ['held', 'confirmed'])
-                    ->update(['status' => 'released']);
+                $releasedAllocations = ServiceResourceAllocation::where('service_booking_id', $id)
+                    ->whereIn('status', ['held', 'confirmed'])->update(['status' => 'released']);
                 $booking->serviceItem?->releaseAvailability();
             }
             ActivityLog::create([
                 'user_id' => $actor->id, 'store_id' => $booking->store_id,
                 'action' => 'service_booking.status_updated', 'subject_type' => ServiceBooking::class,
-                'subject_id' => (string) $id, 'old_values' => ['status' => $old], 'new_values' => ['status' => $status],
+                'subject_id' => (string) $id, 'old_values' => ['status' => $old], 'new_values' => ['status' => $status, 'released_allocations' => $releasedAllocations],
             ]);
             return $booking->fresh();
         });
