@@ -175,6 +175,40 @@ test('cancelling an unallocated hold records zero released allocations', functio
         ->and($audit->new_values['released_allocations'])->toBe(0);
 });
 
+test('cancellation audit failure rolls back booking status and resource release', function (): void {
+    $workflow = app(ServiceBookingApproval::class);
+    $workflow->approve($this->proposal->id, $this->manager, $this->approval);
+    $dispatcher = ActivityLog::getEventDispatcher();
+    ActivityLog::setEventDispatcher(clone $dispatcher);
+    ActivityLog::creating(function (ActivityLog $log): void {
+        if ($log->action === 'service_booking.status_updated') {
+            throw new RuntimeException('Synthetic cancellation audit failure');
+        }
+    });
+    try {
+        expect(fn () => $workflow->transition($this->proposal->id, $this->worker, 'cancelled'))
+            ->toThrow(RuntimeException::class, 'Synthetic cancellation audit failure');
+    } finally {
+        ActivityLog::setEventDispatcher($dispatcher);
+    }
+    expect($this->proposal->fresh()->status)->toBe('confirmed')
+        ->and(ServiceResourceAllocation::where('status', 'confirmed')->count())->toBe(1)
+        ->and(ServiceResourceAllocation::where('status', 'released')->count())->toBe(0)
+        ->and(ActivityLog::where('action', 'service_booking.status_updated')->count())->toBe(0);
+});
+
+test('unauthorized staff cannot cancel another branch booking or release its resources', function (): void {
+    $workflow = app(ServiceBookingApproval::class);
+    $workflow->approve($this->proposal->id, $this->manager, $this->approval);
+    $outsider = User::factory()->create(['role' => UserRole::STAFF, 'status' => UserStatus::ACTIVE]);
+    $outsider->syncAssignedServices(['boating']);
+    expect(fn () => $workflow->transition($this->proposal->id, $outsider, 'cancelled'))
+        ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+    expect($this->proposal->fresh()->status)->toBe('confirmed')
+        ->and(ServiceResourceAllocation::where('status', 'confirmed')->count())->toBe(1)
+        ->and(ActivityLog::where('action', 'service_booking.status_updated')->count())->toBe(0);
+});
+
 test('approval supports each non-cab typed reservation without changing its financial proposal', function (string $service, string $type): void {
     $this->manager->syncAssignedServices([$service]);
     $this->item->update(['service_type' => $service]);
