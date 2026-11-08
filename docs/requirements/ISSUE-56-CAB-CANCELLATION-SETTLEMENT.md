@@ -66,6 +66,14 @@
 - UI displays internal review control on the Cab Operations Desk. `closed_internal` means only incident triage is complete; it cannot confirm customer communication, payment or external resolution.
 - No customer notifications, refunds, payment changes or sensitive evidence uploads are triggered. Requires staged role and browser tests before acceptance.
 
+## Slice 8: cab customer-confirmation contact accuracy
+
+- Cab-specific `ServiceBookingConfirmedNotification::getCoordinatorDetails()` now derives its desk name, contact number and meeting spot from the actual `ServiceBooking.store` and explicitly saved pickup location. Never use old unverified fixed taxi coordinator phone/spot for taxi messages.
+- When branch phone is absent, message states contact details are pending verification. When pickup spot is absent, state that the pickup point needs staff confirmation. Do not claim assigned driver identity.
+- Both mail and WhatsApp use the same cab-specific contact metadata. Existing notification templates for the other six service types are unchanged.
+- Added cab feature tests for approved branch phone/pickup and unknown contact fallback.
+- **This does not authorize automatic notification dispatch** on cancellation, reschedule proposal, disputed payment or refund. Before enabling new sends: verify customer consent, notification provider/templates, approved branch contacts and event deduplication. Do not publicize customer document details.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
