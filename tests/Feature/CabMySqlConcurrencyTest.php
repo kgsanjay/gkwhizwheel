@@ -49,6 +49,7 @@ test('two concurrent mysql allocator writers cannot reserve the same cab resourc
             'service_type' => 'taxi', 'booking_number' => 'MYSQL-CAB-RACE-'.$suffix,
             'booking_channel' => 'offline_walkin',
             'customer_name' => 'MySQL Test Customer '.$suffix,
+            'customer_phone' => '900000010'.$suffix,
             'start_datetime' => $start, 'end_datetime' => $end,
             'quantity' => 1, 'total_amount' => 1000,
             'advance_paid' => 0, 'balance_due' => 1000, 'status' => 'confirmed',
