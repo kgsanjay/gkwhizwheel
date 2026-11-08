@@ -274,6 +274,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'assign'])->name('admin.cab-dispatches.assign');
     Route::post('/cab-dispatches/{id}/start', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'start'])->name('admin.cab-dispatches.start');
     Route::post('/cab-dispatches/{id}/complete', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'complete'])->name('admin.cab-dispatches.complete');
+    Route::get('/cab-bookings/{bookingId}/settlement-preview', [\App\Http\Controllers\Web\Admin\AdminCabSettlementPreviewController::class, 'show'])->name('admin.cab-bookings.settlement-preview.show');
     Route::post('/cab-bookings/{bookingId}/refund-reviews', [\App\Http\Controllers\Web\Admin\AdminCabRefundReviewController::class, 'store'])->name('admin.cab-bookings.refund-reviews.store');
     Route::post('/cab-reschedule-requests/{id}/resolve', [\App\Http\Controllers\Web\Admin\AdminCabRescheduleController::class, 'resolve'])->name('admin.cab-reschedule-requests.resolve');
     Route::post('/cab-dispatches/{id}/reschedule-requests', [\App\Http\Controllers\Web\Admin\AdminCabRescheduleController::class, 'store'])->name('admin.cab-dispatches.reschedule-requests.store');
