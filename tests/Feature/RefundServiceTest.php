@@ -338,3 +338,76 @@ test('manual refund rejects non-finite amount', function (): void {
     expect(fn () => $this->refundService->processManualRefund($this->booking, INF, 'Invalid amount'))
         ->toThrow(\InvalidArgumentException::class);
 });
+
+
+test('manual refund cannot exceed explicitly selected payment', function (): void {
+    $this->payment->update(['amount' => 1000]);
+    expect(fn () => $this->refundService->processManualRefund($this->booking, 1500, 'Too large', paymentId: $this->payment->id))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('cancellation refund cannot exceed explicitly selected payment', function (): void {
+    $this->payment->update(['amount' => 1000]);
+    expect(fn () => $this->refundService->processCancellationRefund($this->booking, 'Cancel', paymentId: $this->payment->id, cancellationTime: '2026-10-08'))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('deposit refund cannot exceed explicitly selected payment', function (): void {
+    $this->payment->update(['amount' => 1000]);
+    expect(fn () => $this->refundService->createDepositRefund($this->booking, paymentId: $this->payment->id))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('manual refund reserves the selected payment balance against a repeat', function (): void {
+    $this->refundService->processManualRefund($this->booking, 3000, 'First', paymentId: $this->payment->id);
+    expect(fn () => $this->refundService->processManualRefund($this->booking, 2500, 'Second', paymentId: $this->payment->id))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('manual refund allows remaining balance of selected payment', function (): void {
+    $this->refundService->processManualRefund($this->booking, 3000, 'First', paymentId: $this->payment->id);
+    $second = $this->refundService->processManualRefund($this->booking, 2000, 'Remaining', paymentId: $this->payment->id);
+    expect((float) $second->amount)->toBe(2000.0);
+});
+
+test('failed refunds do not reserve the selected payment balance', function (): void {
+    Refund::create([
+        'booking_id' => $this->booking->id, 'payment_id' => $this->payment->id,
+        'amount' => 4000, 'reason' => 'Previously failed',
+        'status' => RefundStatus::FAILED,
+    ]);
+    $refund = $this->refundService->processManualRefund($this->booking, 5000, 'Retry', paymentId: $this->payment->id);
+    expect((float) $refund->amount)->toBe(5000.0);
+});
+
+test('pending refunds reserve the selected payment balance', function (): void {
+    Refund::create([
+        'booking_id' => $this->booking->id, 'payment_id' => $this->payment->id,
+        'amount' => 4500, 'reason' => 'Pending refund',
+        'status' => RefundStatus::PENDING,
+    ]);
+    expect(fn () => $this->refundService->processManualRefund($this->booking, 501, 'Excess', paymentId: $this->payment->id))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('completed refunds reserve the selected payment balance', function (): void {
+    Refund::create([
+        'booking_id' => $this->booking->id, 'payment_id' => $this->payment->id,
+        'amount' => 4500, 'reason' => 'Completed refund',
+        'status' => RefundStatus::COMPLETED,
+    ]);
+    expect(fn () => $this->refundService->processManualRefund($this->booking, 501, 'Excess', paymentId: $this->payment->id))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('refund cannot select a failed payment record', function (): void {
+    $this->payment->update(['status' => PaymentStatus::FAILED]);
+    expect(fn () => $this->refundService->processManualRefund($this->booking, 100, 'Invalid source', paymentId: $this->payment->id))
+        ->toThrow(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+});
+
+test('refund without a captured payment is rejected', function (): void {
+    $this->payment->update(['status' => PaymentStatus::FAILED]);
+    expect(fn () => $this->refundService->processManualRefund($this->booking, 100, 'No captured payment'))
+        ->toThrow(\InvalidArgumentException::class);
+});
