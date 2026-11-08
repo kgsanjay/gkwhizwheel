@@ -322,6 +322,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/service-enquiries', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'index'])
         ->middleware('role:super_admin')->name('admin.service-enquiries.index');
 
+    Route::post('/service-enquiries/{id}/proposal', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'createProposal'])
+        ->middleware('role:super_admin')->name('admin.service-enquiries.proposal');
     Route::post('/service-enquiries/{id}/status', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'updateStatus'])
         ->middleware('role:super_admin')->name('admin.service-enquiries.status');
 
