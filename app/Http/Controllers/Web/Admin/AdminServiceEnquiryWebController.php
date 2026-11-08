@@ -129,7 +129,7 @@ class AdminServiceEnquiryWebController extends Controller
         abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
 
         return Inertia::render('Admin/ServiceEnquiries/Index', [
-            'proposalItems' => ServiceItem::query()->whereNotNull('store_id')->where('status', 'available')
+            'proposalItems' => ServiceItem::query()->whereNotNull('store_id')->whereIn('status', ['available', 'active'])
                 ->whereHas('store', fn ($q) => $q->where('status', StoreStatus::ACTIVE->value))
                 ->orderBy('service_type')->orderBy('name')
                 ->get(['id', 'name', 'service_type', 'store_id']),
