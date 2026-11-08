@@ -108,7 +108,7 @@ class ServiceBookingConfirmedNotification extends Notification
         $coordinatorInfo = $coord['phone'] !== ''
             ? "{$coord['name']} ({$coord['phone']})"
             : "{$coord['name']} — contact details pending verification";
-        $voucherUrl = url("/services/bookings/{$this->serviceBooking->booking_number}/confirmation");
+        $voucherUrl = url("/services/booking/confirmation/{$this->serviceBooking->booking_number}");
         $customerName = $notifiable->name ?? $this->serviceBooking->customer_name ?? 'Valued Customer';
 
         return WhatsAppMessage::create('service_booking_confirmed')
