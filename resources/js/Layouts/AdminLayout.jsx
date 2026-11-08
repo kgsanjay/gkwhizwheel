@@ -165,6 +165,7 @@ const MENU_SECTIONS = [
                 basePath: '/admin/services/taxi/bookings',
                 children: [
                     { label: 'All Taxi Bookings', path: '/admin/services/taxi/bookings', roles: ['super_admin', 'store_manager', 'staff'] },
+                    { label: 'Cab Operations Desk', path: '/admin/cab-operations', roles: ['super_admin', 'store_manager', 'staff'] },
                     { label: '+ New Offline Booking', path: '/admin/services/taxi/bookings/create', roles: ['super_admin', 'store_manager', 'staff'] },
                 ],
             },
