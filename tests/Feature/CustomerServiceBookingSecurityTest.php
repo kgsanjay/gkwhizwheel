@@ -10,6 +10,7 @@ use App\Models\ServiceItem;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
@@ -113,6 +114,7 @@ test('same gateway payment reference cannot be credited twice', function (): voi
         'amount' => 3000,
     ];
 
+    Notification::fake();
     $url = '/services/bookings/'.$booking->booking_number.'/verify-payment';
     $this->actingAs($this->customer)->postJson($url, $payload)
         ->assertOk()
@@ -125,4 +127,5 @@ test('same gateway payment reference cannot be credited twice', function (): voi
     expect((float) $booking->advance_paid)->toBe(3000.0);
     expect((float) $booking->balance_due)->toBe(0.0);
     $this->assertDatabaseCount('service_payment_receipts', 1);
+    Notification::assertNothingSent();
 });
