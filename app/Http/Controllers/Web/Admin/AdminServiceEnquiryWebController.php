@@ -121,7 +121,7 @@ class AdminServiceEnquiryWebController extends Controller
             $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)
                 ->lockForUpdate()->first();
             if ($proposal !== null && $proposal->status === 'held'
-                && ($proposal->held_until === null || $proposal->held_until->isPast())) {
+                && ($proposal->held_until !== null && $proposal->held_until->isPast())) {
                 app(\App\Services\ServiceBookingLifecycle::class)->assertTransition($proposal, 'expired');
                 $proposal->update(['status' => 'expired']);
                 ActivityLog::create([
@@ -178,7 +178,7 @@ class AdminServiceEnquiryWebController extends Controller
                 ->paginate(30)
                 ->through(fn (ServiceEnquiry $e): array => [
                     'id' => $e->id,
-                    'proposal' => $e->proposal ? ['id' => $e->proposal->id, 'booking_number' => $e->proposal->booking_number, 'status' => $e->proposal->status, 'hold_expired' => $e->proposal->status === 'held' && ($e->proposal->held_until === null || $e->proposal->held_until->isPast())] : null,
+                    'proposal' => $e->proposal ? ['id' => $e->proposal->id, 'booking_number' => $e->proposal->booking_number, 'status' => $e->proposal->status, 'hold_expired' => $e->proposal->status === 'held' && ($e->proposal->held_until !== null && $e->proposal->held_until->isPast())] : null,
                     'reference' => $e->reference,
                     'service_type' => $e->service_type,
                     'customer_name' => $e->customer_name,
