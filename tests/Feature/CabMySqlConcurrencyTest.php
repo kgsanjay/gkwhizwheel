@@ -22,6 +22,9 @@ uses(DatabaseMigrations::class);
  */
 test('two concurrent mysql allocator writers cannot reserve the same cab resource', function (): void {
     if (DB::getDriverName() !== 'mysql' || ! function_exists('pcntl_fork')) {
+        if (getenv('CAB_REQUIRE_MYSQL_RACE') === '1') {
+            throw new RuntimeException('Required concurrency test must use a real MySQL driver with pcntl.');
+        }
         $this->markTestSkipped('Requires real MySQL and pcntl_fork.');
     }
 
