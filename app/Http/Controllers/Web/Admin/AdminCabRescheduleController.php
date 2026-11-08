@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CabDispatch;
 use App\Models\CabRescheduleRequest;
 use App\Models\ServiceBooking;
+use App\Services\CabRescheduleService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,26 @@ final class AdminCabRescheduleController extends Controller
     /**
      * Record a proposal only. No booking, dispatch, allocation or price changes.
      */
+    public function resolve(Request $request, int $id, CabRescheduleService $service): JsonResponse
+    {
+        abort_unless($request->user()?->canManageService('taxi'), 403);
+        $data = $request->validate([
+            'decision' => ['required', 'in:approved,rejected'],
+            'reason' => ['required_if:decision,rejected', 'nullable', 'string', 'max:1000'],
+            'customer_consent_confirmed' => ['required_if:decision,approved', 'boolean'],
+            'unchanged_fare_approved' => ['required_if:decision,approved', 'boolean'],
+        ]);
+        if ($data['decision'] === 'approved'
+            && (($data['customer_consent_confirmed'] ?? false) !== true
+                || ($data['unchanged_fare_approved'] ?? false) !== true)) {
+            throw ValidationException::withMessages([
+                'decision' => 'Customer consent and unchanged fare approval are required.',
+            ]);
+        }
+        $proposal = $service->resolve($id, $request->user(), $data['decision'], $data['reason'] ?? null);
+        return response()->json(['data' => ['id' => $proposal->id, 'status' => $proposal->status]]);
+    }
+
     public function store(Request $request, int $id): JsonResponse
     {
         abort_unless($request->user()?->canManageService('taxi'), 403);
