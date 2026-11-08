@@ -23,6 +23,7 @@ export default function CabOperations({
     const [dates, setDates] = useState({});
     const [confirmations, setConfirmations] = useState({});
     const [odometer, setOdometer] = useState({});
+    const [disputeReviewNotes, setDisputeReviewNotes] = useState({});
     const [dispute, setDispute] = useState({ bookingId: '', category: 'service_quality', description: '' });
 
     const submit = async (url, data, confirmation) => {
@@ -237,7 +238,26 @@ export default function CabOperations({
                         {disputes.map(d => <Stack key={d.id} direction={{ xs: 'column', sm: 'row' }}
                             justifyContent="space-between" spacing={1} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                             <Typography variant="body2">#{d.id} · Booking #{d.service_booking_id} · {d.category.replaceAll('_', ' ')}</Typography>
-                            <Chip size="small" label={d.status}/>
+                            <Stack spacing={1}>
+                                <Chip size="small" label={d.status.replaceAll('_', ' ')} />
+                                {['open', 'reviewing'].includes(d.status) && <>
+                                    <TextField size="small" multiline label="Internal review notes (required)" inputProps={{ maxLength: 2000 }}
+                                        value={disputeReviewNotes[d.id] || ''}
+                                        onChange={e => setDisputeReviewNotes({ ...disputeReviewNotes, [d.id]: e.target.value })}/>
+                                    <Button size="small" disabled={busy || (disputeReviewNotes[d.id] || '').trim().length < 10}
+                                        onClick={() => submit(`/admin/cab-disputes/${d.id}/transition`, {
+                                            status: d.status === 'open' ? 'reviewing' : 'closed_internal',
+                                            review_notes: disputeReviewNotes[d.id],
+                                        }, d.status === 'open' ? 'Move incident into internal review?' :
+                                            'Close this non-financial incident internally? This does not settle a payment or refund.')}>
+                                        {d.status === 'open' ? 'Begin review' : 'Close internal incident'}
+                                    </Button>
+                                    {d.status === 'reviewing' && ['billing', 'refund'].includes(d.category) &&
+                                        <Typography variant="caption" color="warning.main">
+                                            Financial cases cannot be closed without approved settlement workflow.
+                                        </Typography>}
+                                </>}
+                            </Stack>
                         </Stack>)}
                     </Stack>
                 </CardContent></Card>
