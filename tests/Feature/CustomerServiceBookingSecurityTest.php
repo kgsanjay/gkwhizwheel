@@ -6,6 +6,8 @@ use App\Enums\StoreStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\ServiceBooking;
+use App\Notifications\ServicePaymentReceivedNotification;
+use App\Notifications\ServiceBookingConfirmedNotification;
 use App\Models\ServiceItem;
 use App\Models\Store;
 use App\Models\User;
@@ -127,5 +129,11 @@ test('same gateway payment reference cannot be credited twice', function (): voi
     expect((float) $booking->advance_paid)->toBe(3000.0);
     expect((float) $booking->balance_due)->toBe(0.0);
     $this->assertDatabaseCount('service_payment_receipts', 1);
-    Notification::assertNothingSent();
+    Notification::assertSentTo($this->customer, ServicePaymentReceivedNotification::class, function ($notification) use ($booking): bool {
+        return $notification->booking->id === $booking->id
+            && $notification->amountPaise === 300000
+            && $notification->paymentId === 'pay_replay_fixture_123';
+    });
+    Notification::assertNotSentTo($this->customer, ServiceBookingConfirmedNotification::class);
+    expect(Notification::sent($this->customer, ServicePaymentReceivedNotification::class))->toHaveCount(1);
 });
