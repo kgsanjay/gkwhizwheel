@@ -575,7 +575,7 @@ test('cab confirmation with missing branch phone does not invent a coordinator n
     $notification = new \App\Notifications\ServiceBookingConfirmedNotification($booking->fresh());
     $details = $notification->getCoordinatorDetails();
     expect($details['phone'])->toBe('')
-        ->and($details['spot'])->toBe('Pickup point to be confirmed by staff');
+        ->and($details['spot'])->toBe('Meeting point to be confirmed by staff');
     $message = $notification->toMail($this->staff);
     expect(implode(' ', $message->introLines))->toContain('contact details pending verification')
         ->not->toContain('94815 12341');
