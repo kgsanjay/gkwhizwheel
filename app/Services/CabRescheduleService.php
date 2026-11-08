@@ -104,7 +104,11 @@ final class CabRescheduleService
                                         $expiry->whereNull('held_until')->orWhere('held_until', '>', now());
                                     });
                             });
-                    })->exists();
+                    })
+                    // Use a current locking read after acquiring the resource
+                    // row lock; a snapshot EXISTS query can miss a rival commit
+                    // under MySQL REPEATABLE READ.
+                    ->lockForUpdate()->first(['id']) !== null;
                 if ($conflict) {
                     throw ValidationException::withMessages(['resources' => 'Cab or driver is booked in the proposed window.']);
                 }
