@@ -480,3 +480,75 @@ test('cab dispute intake rejects unknown category and blank incident narrative',
     ])->assertUnprocessable()->assertJsonValidationErrors(['description']);
     expect(\App\Models\CabDispute::count())->toBe(0);
 });
+
+
+test('authorized staff reviews and internally closes a non-financial cab dispute with event history', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-070');
+    $this->actingAs($this->staff)->postJson("/admin/cab-bookings/{$booking->id}/disputes", [
+        'category' => 'service_quality', 'description' => 'Passenger reports a dispatch communication concern',
+    ])->assertCreated();
+    $dispute = \App\Models\CabDispute::firstOrFail();
+    $url = "/admin/cab-disputes/{$dispute->id}/transition";
+
+    $this->actingAs($this->staff)->postJson($url, [
+        'status' => 'closed_internal', 'review_notes' => 'Attempt to skip review',
+    ])->assertUnprocessable();
+
+    $this->actingAs($this->staff)->postJson($url, [
+        'status' => 'reviewing', 'review_notes' => 'Assigning the issue for internal investigation',
+    ])->assertOk()->assertJsonPath('data.status', 'reviewing');
+
+    $this->actingAs($this->admin)->postJson($url, [
+        'status' => 'closed_internal', 'review_notes' => 'Operations investigation completed, no money was refunded',
+    ])->assertOk()->assertJsonPath('data.status', 'closed_internal');
+
+    expect($dispute->fresh()->status)->toBe('closed_internal')
+        ->and(\App\Models\CabDisputeEvent::where('cab_dispute_id', $dispute->id)->count())->toBe(2)
+        ->and(\App\Models\CabDisputeEvent::where('cab_dispute_id', $dispute->id)->orderBy('id')->first()->from_status)->toBe('open')
+        ->and($booking->fresh()->status)->toBe('confirmed')
+        ->and($booking->fresh()->payment_status)->toBe('pending');
+
+    $this->actingAs($this->staff)->postJson($url, [
+        'status' => 'reviewing', 'review_notes' => 'Cannot reopen a closed incident',
+    ])->assertUnprocessable();
+    expect(\App\Models\CabDisputeEvent::count())->toBe(2);
+});
+
+test('financial cab disputes cannot be internally closed and role branch checks hold', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-071');
+    $this->actingAs($this->admin)->postJson("/admin/cab-bookings/{$booking->id}/disputes", [
+        'category' => 'refund', 'description' => 'Customer asks for payment reconciliation',
+    ])->assertCreated();
+    $dispute = \App\Models\CabDispute::firstOrFail();
+    $url = "/admin/cab-disputes/{$dispute->id}/transition";
+    $this->actingAs($this->outsider)->postJson($url, [
+        'status' => 'reviewing', 'review_notes' => 'Not an authorized operator',
+    ])->assertForbidden();
+    $this->staff->stores()->detach($this->honn->id);
+    $this->staff->stores()->attach($this->muru->id);
+    $this->actingAs($this->staff)->postJson($url, [
+        'status' => 'reviewing', 'review_notes' => 'Not permitted across branch',
+    ])->assertForbidden();
+
+    $this->actingAs($this->admin)->postJson($url, [
+        'status' => 'reviewing', 'review_notes' => 'Review financial receipt ledger',
+    ])->assertOk();
+    $this->actingAs($this->admin)->postJson($url, [
+        'status' => 'closed_internal', 'review_notes' => 'Premature closure of refund case',
+    ])->assertUnprocessable();
+    expect($dispute->fresh()->status)->toBe('reviewing')
+        ->and(\App\Models\CabDisputeEvent::where('cab_dispute_id', $dispute->id)->count())->toBe(1);
+});
+
+test('cab dispute review requires substantive notes', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-072');
+    $this->actingAs($this->admin)->postJson("/admin/cab-bookings/{$booking->id}/disputes", [
+        'category' => 'schedule', 'description' => 'Unexpected travel time changed pickup',
+    ])->assertCreated();
+    $dispute = \App\Models\CabDispute::firstOrFail();
+    $this->actingAs($this->admin)->postJson("/admin/cab-disputes/{$dispute->id}/transition", [
+        'status' => 'reviewing', 'review_notes' => '    ',
+    ])->assertUnprocessable()->assertJsonValidationErrors(['review_notes']);
+    expect($dispute->fresh()->status)->toBe('open')
+        ->and(\App\Models\CabDisputeEvent::count())->toBe(0);
+});
