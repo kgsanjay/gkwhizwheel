@@ -8,6 +8,8 @@ use App\Enums\UserStatus;
 use App\Models\CabDispatch;
 use App\Models\CabDispatchEvent;
 use App\Models\CabRescheduleRequest;
+use App\Models\CabRefundReview;
+use App\Models\ServicePaymentReceipt;
 use App\Models\CabDriver;
 use App\Models\CabVehicle;
 use App\Models\ServiceBooking;
@@ -361,4 +363,57 @@ test('paid and online cab reservations cannot use unchanged-fare reschedule appr
         'decision' => 'approved', 'customer_consent_confirmed' => true, 'unchanged_fare_approved' => true,
     ])->assertUnprocessable();
     expect($proposal->fresh()->status)->toBe('pending');
+});
+
+test('cancelled cab refund review records receipt evidence once without issuing any refund', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-040');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $this->actingAs($this->admin)->postJson("/admin/cab-dispatches/{$dispatch->id}/cancel", [
+        'reason' => 'Customer cancelled before pickup',
+    ])->assertOk();
+    ServicePaymentReceipt::create([
+        'service_booking_id' => $booking->id, 'provider' => 'razorpay',
+        'payment_id' => 'pay_cab56_verified', 'amount_paise' => 50000,
+    ]);
+    $booking->update(['advance_paid' => 500]);
+    $url = "/admin/cab-bookings/{$booking->id}/refund-reviews";
+    $this->actingAs($this->staff)->postJson($url, [
+        'reason' => 'Customer requested payment reconciliation',
+    ])->assertOk()->assertJsonPath('data.status', 'requires_policy_review')
+        ->assertJsonPath('data.verified_receipts_paise', 50000)
+        ->assertJsonPath('data.reconciliation_required', false);
+    $this->actingAs($this->staff)->postJson($url, [
+        'reason' => 'Repeated request must not create another review',
+    ])->assertOk();
+    expect(CabRefundReview::count())->toBe(1)
+        ->and(CabRefundReview::first()->verified_receipts_paise)->toBe(50000)
+        ->and($booking->fresh()->payment_status)->toBe('pending');
+});
+
+test('cab refund review denies noncancelled bookings and cross-branch staff', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-041');
+    $url = "/admin/cab-bookings/{$booking->id}/refund-reviews";
+    $this->actingAs($this->admin)->postJson($url, [
+        'reason' => 'Must be cancelled before refund review',
+    ])->assertUnprocessable();
+    $booking->update(['status' => 'cancelled']);
+    $this->actingAs($this->outsider)->postJson($url, [
+        'reason' => 'Should be denied',
+    ])->assertForbidden();
+    $this->staff->stores()->detach($this->honn->id);
+    $this->staff->stores()->attach($this->muru->id);
+    $this->actingAs($this->staff)->postJson($url, [
+        'reason' => 'Should be denied',
+    ])->assertForbidden();
+    expect(CabRefundReview::count())->toBe(0);
+});
+
+test('cab review explicitly flags receipt and recorded advance mismatch', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-042');
+    $booking->update(['status' => 'cancelled', 'advance_paid' => 200]);
+    $this->actingAs($this->admin)->postJson("/admin/cab-bookings/{$booking->id}/refund-reviews", [
+        'reason' => 'Review unmatched customer payment',
+    ])->assertOk()->assertJsonPath('data.reconciliation_required', true)
+        ->assertJsonPath('data.verified_receipts_paise', 0)
+        ->assertJsonPath('data.recorded_advance_paise', 20000);
 });
