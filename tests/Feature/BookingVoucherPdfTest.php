@@ -141,7 +141,7 @@ test('customer can view print-optimized service pass in browser', function (): v
         ->assertSee($this->serviceBooking->booking_number)
         ->assertSee('Sharavathi Riverfront Shikara Cruise')
         ->assertSee('Ananya Hegde')
-        ->assertSee('Captain Boating Desk');
+        ->assertSee('GK WhizWheel Boating Desk');
 });
 
 test('customer can download bike rental pdf voucher with correct headers', function (): void {
