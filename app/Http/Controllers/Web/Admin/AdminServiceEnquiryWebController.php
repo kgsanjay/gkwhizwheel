@@ -10,6 +10,7 @@ use App\Models\ServiceEnquiry;
 use App\Models\ServiceBooking;
 use App\Models\ServiceItem;
 use App\Models\ActivityLog;
+use App\Models\Store;
 use App\Enums\StoreStatus;
 use Illuminate\Validation\ValidationException;
 use App\Exceptions\ServiceItemNotAvailableException;
@@ -50,7 +51,7 @@ class AdminServiceEnquiryWebController extends Controller
                 }
                 $item = ServiceItem::whereKey($data['service_item_id'])->lockForUpdate()->firstOrFail();
                 if ($item->service_type !== $enquiry->service_type || ! $item->isAvailable()
-                    || $item->store_id === null || $item->store?->status !== StoreStatus::ACTIVE) {
+                    || $item->store_id === null || ! Store::whereKey($item->store_id)->where('status', StoreStatus::ACTIVE->value)->exists()) {
                     throw ValidationException::withMessages(['service_item_id' => 'Choose an active item assigned to an active branch and matching the enquiry service.']);
                 }
                 $total = number_format($data['reviewed_total_paise'] / 100, 2, '.', '');
@@ -125,6 +126,10 @@ class AdminServiceEnquiryWebController extends Controller
         abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
 
         return Inertia::render('Admin/ServiceEnquiries/Index', [
+            'proposalItems' => ServiceItem::query()->whereNotNull('store_id')->where('status', 'available')
+                ->whereHas('store', fn ($q) => $q->where('status', StoreStatus::ACTIVE->value))
+                ->orderBy('service_type')->orderBy('name')
+                ->get(['id', 'name', 'service_type', 'store_id']),
             'enquiries' => ServiceEnquiry::query()->with('proposal:id,service_enquiry_id,booking_number,status')->latest()
                 ->paginate(30)
                 ->through(fn (ServiceEnquiry $e): array => [
