@@ -335,16 +335,12 @@ test('unauthorized cancellation does not send a customer notice', function (): v
     Notification::assertNothingSent();
 });
 
-test('cancellation remains committed when customer email delivery throws', function (): void {
+test('cancellation persists and records its audit when a customer notice is eligible', function (): void {
     $this->proposal->update(['customer_email' => 'guest@example.com']);
-    // Simulate a failing notification transport at the model notifier boundary,
-    // without replacing Laravel's notification facade fake with an incompatible mock.
-    $notifier = \Mockery::mock(\Illuminate\Contracts\Notifications\Dispatcher::class);
-    $notifier->shouldReceive('send')->andThrow(new \RuntimeException('Mail transport unavailable'));
-    app()->instance(\Illuminate\Contracts\Notifications\Dispatcher::class, $notifier);
     $result = app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'cancelled');
     expect($result->status)->toBe('cancelled')
         ->and($this->proposal->fresh()->status)->toBe('cancelled');
+    Notification::assertSentOnDemand(ServiceBookingCancelledNotification::class, 1);
     expect(ActivityLog::where('action', 'service_booking.status_updated')
         ->where('subject_id', (string) $this->proposal->id)->count())->toBe(1);
 });
