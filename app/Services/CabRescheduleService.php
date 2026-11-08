@@ -64,9 +64,13 @@ final class CabRescheduleService
             // Original online quote IDs bind the date and price. Never bypass that contract.
             if (! in_array($booking->booking_channel, ['offline_walkin', 'offline_phone'], true)
                 || (float) $booking->advance_paid > 0
-                || ! in_array($booking->payment_status, ['pending', 'unpaid'], true)) {
+                || ! in_array($booking->payment_status, ['pending', 'unpaid'], true)
+                // Some legacy/partially reconciled bookings have captured
+                // receipts even when the cached advance still reads zero.
+                || \App\Models\ServicePaymentReceipt::where('service_booking_id', $booking->id)->exists()
+                || \App\Models\ServiceQuoteSnapshot::where('service_booking_id', $booking->id)->exists()) {
                 throw ValidationException::withMessages([
-                    'proposal' => 'Online or paid trips require a separately approved quote/payment adjustment.',
+                    'proposal' => 'Priced, paid or receipt-backed trips require a separately approved quote/payment reconciliation.',
                 ]);
             }
             if (! $this->eligibility->vehicle($dispatch->vehicle)
