@@ -843,3 +843,80 @@ test('cab approval review exposes minimal eligible candidates and excludes unver
     $this->driver->update(['documents_verified' => false]);
     expect(app(\App\Services\ServiceBookingApproval::class)->review($booking->fresh(), $this->admin)['drivers'])->toBe([]);
 });
+
+
+test('cab notification intent rejects nonexistent dispatch source', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-01');
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking, 'dispatch_cancelled', 999999))
+        ->toThrow(ValidationException::class);
+});
+
+test('cab notification intent rejects nonexistent reschedule source', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-02');
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking, 'reschedule_approved', 999999))
+        ->toThrow(ValidationException::class);
+});
+
+test('cab notification intent rejects zero source id', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-03');
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking, 'dispatch_cancelled', 0))
+        ->toThrow(ValidationException::class);
+});
+
+test('cab notification intent rejects negative source id', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-04');
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking, 'dispatch_cancelled', -1))
+        ->toThrow(ValidationException::class);
+});
+
+test('cab notification intent rejects unsupported event name', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-05');
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking, 'refund_completed', 1))
+        ->toThrow(ValidationException::class);
+});
+
+test('cab notification intent rejects a dispatch that is only assigned', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-06');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking, 'dispatch_cancelled', $dispatch->id))
+        ->toThrow(ValidationException::class);
+});
+
+test('cab notification intent rejects another booking claiming dispatch cancellation', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-07');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    app(CabDispatchService::class)->cancel($dispatch, $this->admin, 'Cancelled by customer');
+    $other = cab55Booking($this, 'GKW-CAB56-INT-08');
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($other, 'dispatch_cancelled', $dispatch->id))
+        ->toThrow(ValidationException::class);
+    expect(\App\Models\CabNotificationEvent::count())->toBe(1);
+});
+
+test('cab notification intent rejects an un-cancelled booking with cancelled dispatch source', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-09');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    app(CabDispatchService::class)->cancel($dispatch, $this->admin, 'Cancelled by customer');
+    $booking->update(['status' => 'confirmed']);
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($booking->fresh(), 'dispatch_cancelled', $dispatch->id))
+        ->toThrow(ValidationException::class);
+});
+
+test('cab notification intent replay keeps a single immutable event', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-10');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    app(CabDispatchService::class)->cancel($dispatch, $this->admin, 'Cancelled by customer');
+    $recorder = app(\App\Services\CabNotificationEventRecorder::class);
+    $first = $recorder->record($booking->fresh(), 'dispatch_cancelled', $dispatch->id);
+    $again = $recorder->record($booking->fresh(), 'dispatch_cancelled', $dispatch->id);
+    expect($again->id)->toBe($first->id)
+        ->and(\App\Models\CabNotificationEvent::count())->toBe(1);
+});
+
+test('cab notification intent does not create a record for unrelated booking', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-11');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $other = cab55Booking($this, 'GKW-CAB56-INT-12');
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)->record($other, 'dispatch_cancelled', $dispatch->id))
+        ->toThrow(ValidationException::class);
+    expect(\App\Models\CabNotificationEvent::count())->toBe(0);
+});
