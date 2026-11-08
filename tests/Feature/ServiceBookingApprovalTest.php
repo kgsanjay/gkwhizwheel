@@ -202,3 +202,10 @@ test('expired proposal review withholds candidates without mutating historical v
     expect($review['blocked'])->toBeTrue()->and($review['resources'])->toBe([])
         ->and($this->proposal->fresh()->status)->toBe('held')->and(ServiceResourceAllocation::count())->toBe(0);
 });
+
+test('super admin can still inspect branchless historical booking without approval candidates', function (): void {
+    $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN, 'status' => UserStatus::ACTIVE]);
+    $this->proposal->update(['store_id' => null]);
+    $this->actingAs($admin)->get("/admin/services/boating/bookings/{$this->proposal->id}")
+        ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page->where('approvalReview', null));
+});

@@ -894,7 +894,7 @@ class AdminServiceWebController extends Controller
         return Inertia::render('Admin/Services/Bookings/Show', [
             'serviceConfig' => $config,
             'booking' => $booking,
-            'approvalReview' => in_array(auth()->user()->role, [\App\Enums\UserRole::SUPER_ADMIN, \App\Enums\UserRole::STORE_MANAGER], true)
+            'approvalReview' => $booking->store_id !== null && in_array(auth()->user()->role, [\App\Enums\UserRole::SUPER_ADMIN, \App\Enums\UserRole::STORE_MANAGER], true)
                 ? app(\App\Services\ServiceBookingApproval::class)->review($booking, auth()->user()) : null,
             'allowedStatuses' => $booking->service_type === 'taxi' && in_array($booking->status, ['confirmed', 'in_progress'], true)
                 ? [] : array_values(array_diff(app(\App\Services\ServiceBookingLifecycle::class)->allowed($booking->status), ['confirmed', 'expired'])),
