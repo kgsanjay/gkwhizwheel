@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CabDispatch;
 use App\Models\CabDriver;
 use App\Models\CabDispute;
+use App\Models\CabNotificationEvent;
 use App\Models\CabRefundReview;
 use App\Models\CabRescheduleRequest;
 use App\Models\CabVehicle;
@@ -63,6 +64,16 @@ final class AdminCabOperationsController extends Controller
                 'status' => $d->status, 'created_at' => $d->created_at?->toIso8601String(),
             ]);
 
+        $notifications = CabNotificationEvent::query()->whereHas('booking', function ($q) use ($authorized): void {
+            $q->where('service_type', 'taxi');
+            if ($authorized !== null) $q->whereIn('store_id', $authorized);
+        })->orderByDesc('id')->limit(100)->get(['id', 'service_booking_id', 'event_type', 'status', 'recorded_at'])
+            ->map(fn (CabNotificationEvent $n): array => [
+                'id' => $n->id, 'service_booking_id' => $n->service_booking_id,
+                'event_type' => $n->event_type, 'status' => $n->status,
+                'recorded_at' => $n->recorded_at?->toIso8601String(),
+            ]);
+
         $bookings = $scope(ServiceBooking::query()->where('service_type', 'taxi'))
             ->where('status', 'confirmed')->orderBy('id')->limit(100)
             ->get(['id', 'booking_number', 'store_id', 'service_item_id', 'status', 'booking_channel']);
@@ -77,6 +88,7 @@ final class AdminCabOperationsController extends Controller
             'dispatches' => $dispatches, 'reschedules' => $proposals,
             'refundReviews' => $reviews, 'disputes' => $disputes, 'bookings' => $bookings,
             'vehicles' => $vehicles, 'drivers' => $drivers,
+            'notificationEvents' => $notifications,
         ]);
     }
 }
