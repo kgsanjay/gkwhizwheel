@@ -112,7 +112,9 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
     const advancePaid = parseFloat(currentBooking.advance_paid || 0);
     const isFullyPaid = currentBooking.payment_status === 'paid';
     const isConfirmed = ['confirmed', 'in_progress', 'completed'].includes(currentBooking.status);
+    const isInactive = ['cancelled', 'expired'].includes(currentBooking.status);
     const isPayable = ['confirmed', 'in_progress'].includes(currentBooking.status) && balanceDue > 0 && !isFullyPaid;
+    const isVoucherAvailable = isConfirmed && !isInactive;
 
     const handlePayOnline = async (payAmount = null) => {
         const amountToPay = payAmount || balanceDue;
@@ -213,8 +215,8 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                             width: 72,
                             height: 72,
                             borderRadius: '50%',
-                            bgcolor: 'rgba(16, 185, 129, 0.12)',
-                            color: '#10B981',
+                            bgcolor: isInactive ? 'rgba(220, 38, 38, 0.10)' : isConfirmed ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                            color: isInactive ? '#DC2626' : isConfirmed ? '#10B981' : '#B45309',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -222,7 +224,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                             mb: 2,
                         }}
                     >
-                        <CheckCircleIcon sx={{ fontSize: 44 }} />
+                        {isInactive ? <LockIcon sx={{ fontSize: 44 }} /> : <CheckCircleIcon sx={{ fontSize: 44 }} />}
                     </Box>
 
                     <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', mb: 1 }}>
@@ -252,7 +254,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 variant="contained"
                                 component="a"
                                 href={`/services/bookings/${currentBooking.booking_number}/voucher`}
-                                disabled={!isConfirmed}
+                                disabled={!isVoucherAvailable}
                                 download
                                 startIcon={<DownloadIcon />}
                                 size="small"
@@ -264,7 +266,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 variant="outlined"
                                 component="a"
                                 href={`/services/bookings/${currentBooking.booking_number}/print`}
-                                disabled={!isConfirmed}
+                                disabled={!isVoucherAvailable}
                                 target="_blank"
                                 startIcon={<PrintIcon />}
                                 size="small"
