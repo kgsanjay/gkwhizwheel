@@ -93,6 +93,28 @@ class ServiceAvailabilityService
                     ->first();
             }
 
+            // Recheck after acquiring the inventory lock: two simultaneous
+            // requests with the same key must never create duplicate holds.
+            if (! empty($idempotencyKey)) {
+                $existing = ServiceBooking::where('idempotency_key', $idempotencyKey)->first();
+                if ($existing !== null) {
+                    $matches = (int) $existing->user_id === (int) ($params['user_id'] ?? 0)
+                        && (int) ($existing->service_item_id ?? 0) === (int) ($params['service_item_id'] ?? 0)
+                        && $existing->service_type === $serviceType
+                        && (int) $existing->quantity === $quantity
+                        && $existing->start_datetime?->toDateTimeString() === Carbon::parse($startDateTime)->toDateTimeString()
+                        && (($existing->end_datetime === null && empty($endDateTime))
+                            || ($existing->end_datetime !== null && ! empty($endDateTime)
+                                && $existing->end_datetime->toDateTimeString() === Carbon::parse($endDateTime)->toDateTimeString()));
+                    if (! $matches) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'idempotency_key' => 'This request key was already used for a different service booking.',
+                        ]);
+                    }
+                    return $existing;
+                }
+            }
+
             if ($item !== null) {
                 // Check status
                 if (! $item->isAvailable()) {
