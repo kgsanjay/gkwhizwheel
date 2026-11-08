@@ -50,6 +50,14 @@
 - Refund action is labeled **review only/no payout**. No payment gateway or refund API is exposed in the interface.
 - Feature tests cover customer denial and branch-scoped Inertia content. CI + manual keyboard/mobile/staging verification and real staff acceptance still required.
 
+## Slice 6: internal dispute and incident register
+
+- New additive `cab_disputes` table tracks taxi booking ID, branch, actor, classified incident (`billing`, `refund`, `service_quality`, `schedule`, `safety`, `other`), narrative and an open status. No PII or private documents are required in text.
+- Authenticated `POST /admin/cab-bookings/{bookingId}/disputes` records incidents only for authorized taxi branch bookings. No booking, payment, cancellation or refund changes are performed.
+- Cab operations desk displays branch-scoped dispute metadata and allows staff to log incidents. Free-text narrative remains server-side and is deliberately not exposed through dashboard listing.
+- Tests verify role/branch boundary, unchanged booking/payment state, required narrative and fixed incident categories.
+- This is **not** a finalized dispute resolution system. Owner-approved review escalation, append-only actions, evidence retention, notification and customer access are outstanding. Staging and real staff acceptance remain necessary.
+
 ## Still required for Issue #56
 
 - Proposed new schedule request with approval, driver/vehicle re-availability and all-or-nothing reassignment; never edit a running trip's booking window silently.
