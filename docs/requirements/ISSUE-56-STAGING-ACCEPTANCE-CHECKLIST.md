@@ -57,3 +57,9 @@
 - The first paired dispatch race **failed**: both workers reported success despite overlapping bookings. This is a real overbooking blocker; SQLite-only CI had passed.
 - Root-cause hypothesis: a plain aggregate overlap read inside `ServiceResourceAllocator` can reuse a REPEATABLE READ snapshot established before waiting for the resource row lock. The allocator now uses `lockForUpdate()->get(['quantity'])->sum('quantity')` after resource locking to obtain a current read. The cab reschedule conflict query similarly uses `lockForUpdate()->first(['id'])` instead of a snapshot `exists()`.
 - Neither fix should be accepted merely on code review. **Block merge until green independent-process MySQL race runs on the corrected head.** Retest full cab+driver dispatch, allocation counts, and then add reschedule-vs-assignment concurrency on actual MySQL.
+
+## MySQL reschedule-versus-dispatch race
+
+- Added a third disposable MySQL integration scenario: an existing assigned taxi trip requests an unpaid offline move into tomorrow's slot while a competing confirmed booking attempts to assign the **same** documented cab and driver to that slot simultaneously.
+- Children use separate MySQL connections and a start barrier. Exactly one operation must succeed, no overlapping confirmed allocations for the target slot, both resource allocations must follow the same booking, and a rescheduling notification intent can exist only if the reschedule was approved.
+- This is a **blocking CI assertion**; do not infer safety from SQLite or the earlier paired assignment check. It is not an external payment settlement test, customer-notification delivery test, or staging acceptance.
