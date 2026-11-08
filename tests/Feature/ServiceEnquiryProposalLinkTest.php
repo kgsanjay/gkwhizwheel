@@ -259,8 +259,13 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
             'status' => 'closed',
         ])->assertRedirect();
         $this->assertSame('closed', $enquiry->fresh()->status);
-        $this->assertSame('held', $proposal->fresh()->status);
+        $this->assertSame('expired', $proposal->fresh()->status);
         $this->assertTrue($proposal->fresh()->held_until->isPast());
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'service_booking.hold_expired',
+            'subject_type' => ServiceBooking::class,
+            'subject_id' => (string) $proposal->id,
+        ]);
     }
 
     public function test_enquiry_link_is_nullable_for_historical_bookings(): void
