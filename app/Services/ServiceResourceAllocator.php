@@ -79,6 +79,12 @@ final class ServiceResourceAllocator
                                 });
                         });
                 })
+                // Under MySQL REPEATABLE READ, a plain SUM can use an older
+                // consistent snapshot created by earlier eligibility queries.
+                // This current locking read must see allocations committed
+                // by a competing worker after our resource row lock releases.
+                ->lockForUpdate()
+                ->get(['quantity'])
                 ->sum('quantity');
 
             if ($reserved + $quantity > $locked->capacity_units) {
