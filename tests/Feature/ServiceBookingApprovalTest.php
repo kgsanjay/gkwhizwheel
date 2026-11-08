@@ -321,9 +321,9 @@ test('cancelled notification has email-only delivery channel', function (): void
 });
 
 test('non-cancellation transition sends no cancellation notice', function (): void {
-    app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'cancelled');
+    app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'expired');
     Notification::assertNothingSent();
-    expect($this->proposal->fresh()->status)->toBe('cancelled');
+    expect($this->proposal->fresh()->status)->toBe('expired');
 });
 
 test('unauthorized cancellation does not send a customer notice', function (): void {
@@ -333,4 +333,25 @@ test('unauthorized cancellation does not send a customer notice', function (): v
     expect(fn () => app(ServiceBookingApproval::class)->transition($this->proposal->id, $outsider, 'cancelled'))
         ->toThrow(\Symfony\Component\HttpKernel\Exception\HttpException::class);
     Notification::assertNothingSent();
+});
+
+test('cancellation remains committed when customer email delivery throws', function (): void {
+    $this->proposal->update(['customer_email' => 'guest@example.com']);
+    Notification::shouldReceive('route')->once()->with('mail', 'guest@example.com')
+        ->andThrow(new \RuntimeException('Mail transport unavailable'));
+    $result = app(ServiceBookingApproval::class)->transition($this->proposal->id, $this->worker, 'cancelled');
+    expect($result->status)->toBe('cancelled')
+        ->and($this->proposal->fresh()->status)->toBe('cancelled');
+    expect(ActivityLog::where('action', 'service_booking.status_updated')
+        ->where('subject_id', (string) $this->proposal->id)->count())->toBe(1);
+});
+
+test('cancellation retry does not send a duplicate email', function (): void {
+    $this->proposal->update(['customer_email' => 'guest@example.com']);
+    $service = app(ServiceBookingApproval::class);
+    $service->transition($this->proposal->id, $this->worker, 'cancelled');
+    Notification::assertSentOnDemand(ServiceBookingCancelledNotification::class, 1);
+    expect(fn () => $service->transition($this->proposal->id, $this->worker, 'cancelled'))
+        ->toThrow(ValidationException::class);
+    Notification::assertSentOnDemand(ServiceBookingCancelledNotification::class, 1);
 });
