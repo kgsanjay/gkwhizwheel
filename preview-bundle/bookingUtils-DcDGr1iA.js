@@ -1,0 +1,1 @@
+function t(n){return(n||"").replace(/\D/g,"")}function s(n){const e=t(n);return e.length!==10?!1:/^[6-9]/.test(e)}function c(n,e){const o=t(n),a=encodeURIComponent(e);return`https://wa.me/${o}?text=${a}`}const r="918660989586";export{r as S,c as f,t as s,s as v};
