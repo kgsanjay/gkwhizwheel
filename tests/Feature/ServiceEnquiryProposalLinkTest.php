@@ -203,6 +203,44 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
         $this->assertSame(1, ServiceBooking::where('idempotency_key', $params['idempotency_key'])->count());
     }
 
+
+    public function test_enquiry_status_change_is_audited_and_noop_is_not_duplicated(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $url = "/admin/service-enquiries/{$enquiry->id}/status";
+
+        $this->actingAs($admin)->patch($url, ['status' => 'reviewing'])->assertRedirect();
+        $this->assertSame('reviewing', $enquiry->fresh()->status);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'service_enquiry.status_changed',
+            'subject_type' => ServiceEnquiry::class,
+            'subject_id' => (string) $enquiry->id,
+        ]);
+        $this->actingAs($admin)->patch($url, ['status' => 'reviewing'])->assertRedirect();
+        $this->assertSame(1, \App\Models\ActivityLog::where('action', 'service_enquiry.status_changed')
+            ->where('subject_id', (string) $enquiry->id)->count());
+    }
+
+    public function test_active_proposal_blocks_closing_or_cancelling_enquiry(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::SUPER_ADMIN]);
+        $enquiry = $this->makeEnquiry(User::factory()->create());
+        $item = $this->makeItem();
+        $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/proposal", [
+            'service_item_id' => $item->id,
+            'reviewed_total_paise' => 125050,
+            'review_notes' => 'Reviewed manually before approval',
+        ])->assertRedirect();
+
+        foreach (['closed', 'cancelled'] as $status) {
+            $this->actingAs($admin)->patch("/admin/service-enquiries/{$enquiry->id}/status", [
+                'status' => $status,
+            ])->assertSessionHasErrors('status');
+            $this->assertSame('reviewing', $enquiry->fresh()->status);
+        }
+    }
+
     public function test_enquiry_link_is_nullable_for_historical_bookings(): void
     {
         $this->assertTrue(Schema::hasColumn('service_bookings', 'service_enquiry_id'));
