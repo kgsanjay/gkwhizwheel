@@ -256,6 +256,12 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/cab-inventory/drivers', [\App\Http\Controllers\Web\Admin\AdminCabInventoryController::class, 'drivers'])->name('admin.cab-inventory.drivers.index');
     Route::post('/cab-inventory/drivers', [\App\Http\Controllers\Web\Admin\AdminCabInventoryController::class, 'storeDriver'])->name('admin.cab-inventory.drivers.store');
 
+    // Cab rates are authored as drafts; only independently approved rates
+    // can be simulated. No customer-facing payment/booking route is created.
+    Route::get('/cab-fares', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'index'])->name('admin.cab-fares.index');
+    Route::post('/cab-fares', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'store'])->name('admin.cab-fares.store');
+    Route::post('/cab-fares/simulate', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'simulate'])->name('admin.cab-fares.simulate');
+
     // Dynamic Pricing Rules
     Route::get('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'index'])->name('admin.pricing.index');
     Route::post('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'store'])->name('admin.pricing.store');
