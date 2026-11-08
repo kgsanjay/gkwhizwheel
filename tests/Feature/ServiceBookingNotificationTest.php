@@ -132,6 +132,20 @@ test('ServiceBookingConfirmedNotification formats Mail message with coordinator 
     expect($mail->actionUrl)->toBe(url('/services/booking/confirmation/GKW-BT-260909-TEST'));
 });
 
+test('coordinator details come from booking branch and never from placeholder numbers', function (): void {
+    $notification = new ServiceBookingConfirmedNotification($this->serviceBooking);
+    $coord = $notification->getCoordinatorDetails();
+    expect($coord['phone'])->toBe('9998887772')
+        ->and($coord['name'])->toContain('Honnavar Boating')
+        ->and($coord['spot'])->toBe($this->serviceBooking->pickup_location);
+
+    $this->branch->update(['phone' => null]);
+    $this->serviceBooking->unsetRelation('store');
+    $missing = (new ServiceBookingConfirmedNotification($this->serviceBooking->fresh()))->getCoordinatorDetails();
+    expect($missing['phone'])->toBe('')
+        ->and($missing['spot'])->toBe($this->serviceBooking->pickup_location);
+});
+
 test('ServiceBookingConfirmedNotification via channels fallback correctly', function (): void {
     $notification = new ServiceBookingConfirmedNotification($this->serviceBooking);
     $channels = $notification->via($this->customer);
