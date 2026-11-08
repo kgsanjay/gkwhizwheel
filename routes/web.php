@@ -269,6 +269,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'assign'])->name('admin.cab-dispatches.assign');
     Route::post('/cab-dispatches/{id}/start', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'start'])->name('admin.cab-dispatches.start');
     Route::post('/cab-dispatches/{id}/complete', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'complete'])->name('admin.cab-dispatches.complete');
+    Route::post('/cab-reschedule-requests/{id}/resolve', [\App\Http\Controllers\Web\Admin\AdminCabRescheduleController::class, 'resolve'])->name('admin.cab-reschedule-requests.resolve');
     Route::post('/cab-dispatches/{id}/reschedule-requests', [\App\Http\Controllers\Web\Admin\AdminCabRescheduleController::class, 'store'])->name('admin.cab-dispatches.reschedule-requests.store');
     Route::post('/cab-dispatches/{id}/cancel', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'cancel'])->name('admin.cab-dispatches.cancel');
 
