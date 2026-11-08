@@ -12,6 +12,8 @@ use App\Models\ServicePaymentReceipt;
 use App\Models\ServiceQuoteSnapshot;
 use App\Models\ServiceResourceAllocation;
 use App\Models\User;
+use App\Notifications\ServiceBookingCancelledNotification;
+use Illuminate\Support\Facades\Notification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -166,7 +168,8 @@ final class ServiceBookingApproval
 
     public function transition(int $id, User $actor, string $status, ?string $notes = null): ServiceBooking
     {
-        return DB::transaction(function () use ($id, $actor, $status, $notes): ServiceBooking {
+        $changedToCancelled = false;
+        $result = DB::transaction(function () use ($id, $actor, $status, $notes, &$changedToCancelled): ServiceBooking {
             $booking = ServiceBooking::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->authorize($actor, $booking);
             if ($status === 'confirmed') {
@@ -184,6 +187,7 @@ final class ServiceBookingApproval
                 throw ValidationException::withMessages(['resources' => $message]);
             }
             $old = $booking->status;
+            $changedToCancelled = $status === 'cancelled';
             $booking->update(['status' => $status, 'admin_notes' => $notes ?? $booking->admin_notes]);
             $releasedAllocations = 0;
             if (in_array($status, ['completed', 'cancelled'], true)) {
@@ -198,5 +202,14 @@ final class ServiceBookingApproval
             ]);
             return $booking->fresh();
         });
+        if ($changedToCancelled) {
+            $notice = new ServiceBookingCancelledNotification($result);
+            if ($result->user && filter_var($result->user->email, FILTER_VALIDATE_EMAIL)) {
+                $result->user->notify($notice);
+            } elseif ($result->customer_email && filter_var($result->customer_email, FILTER_VALIDATE_EMAIL)) {
+                Notification::route('mail', $result->customer_email)->notify($notice);
+            }
+        }
+        return $result;
     }
 }
