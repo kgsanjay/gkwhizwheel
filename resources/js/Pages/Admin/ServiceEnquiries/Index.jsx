@@ -81,7 +81,7 @@ export default function ServiceEnquiriesIndex({ enquiries = { data: [], links: [
                                     <MenuItem key={status} value={status}
                                         disabled={(['closed', 'cancelled'].includes(e.status) && e.status !== status) ||
                                             (['closed', 'cancelled'].includes(status) && e.proposal &&
-                                                (['confirmed', 'in_progress'].includes(e.proposal.status) ||
+                                                (['pending_payment', 'confirmed', 'in_progress'].includes(e.proposal.status) ||
                                                     (e.proposal.status === 'held' && !e.proposal.hold_expired)))}>
                                         {status.replace('_', ' ')}
                                     </MenuItem>)}
