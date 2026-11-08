@@ -12,7 +12,7 @@ final class CabRescheduleRequest extends Model
     protected $fillable = [
         'cab_dispatch_id', 'requested_by', 'original_starts_at',
         'original_ends_at', 'proposed_starts_at', 'proposed_ends_at',
-        'status', 'reason',
+        'status', 'reason', 'reviewed_by', 'reviewed_at', 'review_notes',
     ];
 
     protected function casts(): array
@@ -22,6 +22,7 @@ final class CabRescheduleRequest extends Model
             'original_ends_at' => 'datetime',
             'proposed_starts_at' => 'datetime',
             'proposed_ends_at' => 'datetime',
+            'reviewed_at' => 'datetime',
         ];
     }
 
