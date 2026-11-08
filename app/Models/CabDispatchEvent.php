@@ -11,7 +11,7 @@ final class CabDispatchEvent extends Model
 {
     protected $fillable = [
         'cab_dispatch_id', 'actor_user_id', 'from_status',
-        'to_status', 'occurred_at',
+        'to_status', 'reason', 'occurred_at',
     ];
 
     protected function casts(): array
