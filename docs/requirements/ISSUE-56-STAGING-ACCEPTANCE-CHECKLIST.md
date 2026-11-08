@@ -19,7 +19,8 @@
 - Reject duplicated pending proposals, expired windows, stale original slots and cross-branch operations.
 - For an **unpaid offline** booking, attest customer consent and unchanged fare; successful approval moves both resource allocations, booking and dispatch together.
 - Simultaneously attempt conflicting new allocation and reschedule approval in separate real MySQL connections. Assert no double booking or half-updated resources.
-- Reject paid/online bookings without a separately approved quote/repricing. Rejecting a proposal must preserve original itinerary.
+- Reject paid/online bookings without a separately approved quote/repricing. **Also reject a nominally unpaid offline booking if service payment receipts exist despite zero cached advance, or an accepted quote snapshot exists.** Rejecting a proposal must preserve original itinerary.
+- Force a driver-only conflict after the cab vehicle has passed availability checks; assert rollback of **both** allocations and absence of a reschedule notification event. Local SQLite rollback tests complement, but do not replace, real concurrent MySQL connection tests.
 
 ## Finance and disputes
 - Cancel a test booking, request internal refund review twice; verify one review only and no gateway call or payout record.
