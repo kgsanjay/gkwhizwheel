@@ -79,6 +79,17 @@ class ServiceBookingConfirmedNotification extends Notification
     {
         $serviceType = $this->serviceBooking->service_type;
 
+        // Cab dispatch contacts and meeting points must originate from the
+        // actual booking branch. Never present placeholder coordinators.
+        if ($serviceType === 'taxi') {
+            $branch = $this->serviceBooking->store;
+            return [
+                'name' => $branch?->name ? $branch->name.' Cab Desk' : 'GK WhizWheel Cab Desk',
+                'phone' => $branch?->phone ?: '',
+                'spot' => $this->serviceBooking->pickup_location ?: 'Pickup point to be confirmed by staff',
+            ];
+        }
+
         return self::SERVICE_COORDINATORS[$serviceType] ?? [
             'name' => 'GK WhizWheel Operations',
             'phone' => '+91 94815 12340',
@@ -94,8 +105,10 @@ class ServiceBookingConfirmedNotification extends Notification
         $coord = $this->getCoordinatorDetails();
         $itemName = $this->serviceBooking->serviceItem?->name ?? ucfirst(str_replace('_', ' ', $this->serviceBooking->service_type));
         $meetingSpot = $this->serviceBooking->pickup_location ?: $coord['spot'];
-        $coordinatorInfo = "{$coord['name']} ({$coord['phone']})";
-        $voucherUrl = url("/services/booking/confirmation/{$this->serviceBooking->booking_number}");
+        $coordinatorInfo = $coord['phone'] !== ''
+            ? "{$coord['name']} ({$coord['phone']})"
+            : "{$coord['name']} — contact details pending verification";
+        $voucherUrl = url("/services/bookings/{$this->serviceBooking->booking_number}/confirmation");
         $customerName = $notifiable->name ?? $this->serviceBooking->customer_name ?? 'Valued Customer';
 
         return WhatsAppMessage::create('service_booking_confirmed')
