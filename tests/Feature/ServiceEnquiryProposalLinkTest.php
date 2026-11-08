@@ -210,14 +210,14 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
         $enquiry = $this->makeEnquiry(User::factory()->create());
         $url = "/admin/service-enquiries/{$enquiry->id}/status";
 
-        $this->actingAs($admin)->patch($url, ['status' => 'reviewing'])->assertRedirect();
+        $this->actingAs($admin)->post($url, ['status' => 'reviewing'])->assertRedirect();
         $this->assertSame('reviewing', $enquiry->fresh()->status);
         $this->assertDatabaseHas('activity_logs', [
             'action' => 'service_enquiry.status_changed',
             'subject_type' => ServiceEnquiry::class,
             'subject_id' => (string) $enquiry->id,
         ]);
-        $this->actingAs($admin)->patch($url, ['status' => 'reviewing'])->assertRedirect();
+        $this->actingAs($admin)->post($url, ['status' => 'reviewing'])->assertRedirect();
         $this->assertSame(1, \App\Models\ActivityLog::where('action', 'service_enquiry.status_changed')
             ->where('subject_id', (string) $enquiry->id)->count());
     }
@@ -234,7 +234,7 @@ final class ServiceEnquiryProposalLinkTest extends TestCase
         ])->assertRedirect();
 
         foreach (['closed', 'cancelled'] as $status) {
-            $this->actingAs($admin)->patch("/admin/service-enquiries/{$enquiry->id}/status", [
+            $this->actingAs($admin)->post("/admin/service-enquiries/{$enquiry->id}/status", [
                 'status' => $status,
             ])->assertSessionHasErrors('status');
             $this->assertSame('reviewing', $enquiry->fresh()->status);
