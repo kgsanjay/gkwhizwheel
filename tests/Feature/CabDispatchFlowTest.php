@@ -216,3 +216,26 @@ test('missing future return time and enquiry-only request cannot be dispatched',
         ->toThrow(ValidationException::class);
     expect(CabDispatch::count())->toBe(0);
 });
+
+
+test('HTTP cab cancellation requires a reason and stores immutable audit context', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-001');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+
+    $this->actingAs($this->staff)->postJson("/admin/cab-dispatches/{$dispatch->id}/cancel", [])
+        ->assertUnprocessable()->assertJsonValidationErrors(['reason']);
+    expect($dispatch->fresh()->status)->toBe('assigned');
+
+    $this->actingAs($this->staff)->postJson("/admin/cab-dispatches/{$dispatch->id}/cancel", [
+        'reason' => 'Customer requested cancellation before departure',
+    ])->assertOk()->assertJsonPath('data.status', 'cancelled');
+
+    expect(CabDispatchEvent::where('cab_dispatch_id', $dispatch->id)->latest('id')->first()->reason)
+        ->toBe('Customer requested cancellation before departure')
+        ->and(ServiceResourceAllocation::where('service_booking_id', $booking->id)->where('status', 'released')->count())->toBe(2);
+
+    $this->actingAs($this->staff)->postJson("/admin/cab-dispatches/{$dispatch->id}/cancel", [
+        'reason' => 'Attempt to cancel again',
+    ])->assertUnprocessable();
+    expect(CabDispatchEvent::where('cab_dispatch_id', $dispatch->id)->count())->toBe(2);
+});
