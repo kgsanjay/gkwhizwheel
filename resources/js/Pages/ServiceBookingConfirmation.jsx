@@ -112,7 +112,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
     const advancePaid = parseFloat(currentBooking.advance_paid || 0);
     const isFullyPaid = currentBooking.payment_status === 'paid';
     const isConfirmed = ['confirmed', 'in_progress', 'completed'].includes(currentBooking.status);
-    const isPayable = ['confirmed', 'in_progress'].includes(currentBooking.status) && balanceDue > 0;
+    const isPayable = ['confirmed', 'in_progress'].includes(currentBooking.status) && balanceDue > 0 && !isFullyPaid;
 
     const handlePayOnline = async (payAmount = null) => {
         const amountToPay = payAmount || balanceDue;
@@ -175,19 +175,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                 const rzp = new window.Razorpay(options);
                 rzp.open();
             } else {
-                // In local dev/test or unconfigured keys, simulate seamless confirmation
-                const simPaymentId = 'pay_sim_' + Math.random().toString(36).substring(2, 10);
-                const verifyRes = await window.axios.post(`/services/bookings/${currentBooking.booking_number}/verify-payment`, {
-                    razorpay_order_id: order?.id || 'order_sim',
-                    razorpay_payment_id: simPaymentId,
-                    razorpay_signature: 'sim_sig',
-                    amount: amountToPay,
-                });
-                if (verifyRes.data.success) {
-                    setCurrentBooking(verifyRes.data.booking);
-                    setPaySuccessMsg(`Test payment of ₹${amountToPay.toLocaleString('en-IN')} confirmed! Booking receipt updated.`);
-                }
-                setPaying(false);
+                throw new Error('Secure payment checkout is not configured. Please contact the service team; no payment was taken.');
             }
         } catch (err) {
             setPayErrorMsg(err.response?.data?.message || err.message || 'Payment initiation failed.');
