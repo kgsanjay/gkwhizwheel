@@ -19,6 +19,7 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function (): void {
+    $this->withoutVite(); // Backend response/authorization tests; assets are built in standard CI.
     Notification::fake();
     Http::preventStrayRequests();
     $this->branch = Store::create([
