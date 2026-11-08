@@ -17,6 +17,10 @@ on:
     branches: [ui-preview]
   workflow_dispatch:
 
+concurrency:
+  group: pages-preview-build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
