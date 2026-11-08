@@ -1,0 +1,63 @@
+name: Build GitHub Pages UI Preview
+
+on:
+  push:
+    branches:
+      - ui-preview
+      - 'feat/pages-preview-*'
+    paths:
+      - 'preview-src/**'
+      - 'preview-vite.config.js'
+      - 'resources/js/**'
+      - 'resources/css/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-ui-preview.yml'
+  pull_request:
+    branches: [ui-preview]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-preview:
+    name: Build static React site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Compile all preview routes
+        run: npx vite build --config preview-vite.config.js
+      - name: Verify Pages entry point and built assets
+        shell: bash
+        run: |
+          test -f preview-dist/preview-src/template.html
+          test -d preview-dist/preview-bundle
+          grep -q 'gkwhizwheel/preview-bundle' preview-dist/preview-src/template.html
+      # GitHub Pages is configured to publish ui-preview / (root). Keep
+      # index.html and generated chunks under that root. On PRs only test;
+      # on push to the publishing branch commit deterministic build outputs.
+      - name: Update publishing-branch static assets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/ui-preview'
+        shell: bash
+        run: |
+          cp preview-dist/preview-src/template.html index.html
+          mkdir -p preview-bundle
+          cp -R preview-dist/preview-bundle/. preview-bundle/
+          git add -f index.html preview-bundle
+          if git diff --cached --quiet; then
+            echo 'Compiled preview already current'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build(pages): publish latest compiled React UI preview [skip ci]'
+          git push origin HEAD:ui-preview
