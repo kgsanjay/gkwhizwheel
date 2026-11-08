@@ -162,10 +162,10 @@ final class CabDispatchService
         });
     }
 
-    public function cancel(CabDispatch|int $dispatch, User $actor): CabDispatch
+    public function cancel(CabDispatch|int $dispatch, User $actor, ?string $reason = null): CabDispatch
     {
         $id = $dispatch instanceof CabDispatch ? $dispatch->id : $dispatch;
-        return DB::transaction(function () use ($id, $actor): CabDispatch {
+        return DB::transaction(function () use ($id, $actor, $reason): CabDispatch {
             $current = CabDispatch::whereKey($id)->lockForUpdate()->firstOrFail();
             $booking = ServiceBooking::whereKey($current->service_booking_id)->lockForUpdate()->firstOrFail();
             $this->authorize($actor, $booking);
@@ -178,7 +178,7 @@ final class CabDispatchService
             $booking->update(['status' => 'cancelled']);
             $current->update(['status' => 'cancelled', 'closed_by' => $actor->id]);
             $this->releaseAllocations($current);
-            $this->event($current, $actor, 'assigned', 'cancelled');
+            $this->event($current, $actor, 'assigned', 'cancelled', $reason);
             return $current->fresh();
         });
     }
@@ -204,13 +204,14 @@ final class CabDispatchService
             || in_array((int) $booking->store_id, $ids, true)), 403);
     }
 
-    private function event(CabDispatch $dispatch, User $actor, ?string $from, string $to): void
+    private function event(CabDispatch $dispatch, User $actor, ?string $from, string $to, ?string $reason = null): void
     {
         CabDispatchEvent::create([
             'cab_dispatch_id' => $dispatch->id,
             'actor_user_id' => $actor->id,
             'from_status' => $from,
             'to_status' => $to,
+            'reason' => $reason,
             'occurred_at' => now(),
         ]);
     }
