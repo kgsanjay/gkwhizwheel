@@ -13,7 +13,7 @@ const format = value => value ? new Date(value).toLocaleString('en-IN', {
 
 export default function CabOperations({
     dispatches = [], reschedules = [], refundReviews = [],
-    bookings = [], vehicles = [], drivers = [],
+    bookings = [], vehicles = [], drivers = [], disputes = [],
 }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
@@ -23,6 +23,7 @@ export default function CabOperations({
     const [dates, setDates] = useState({});
     const [confirmations, setConfirmations] = useState({});
     const [odometer, setOdometer] = useState({});
+    const [dispute, setDispute] = useState({ bookingId: '', category: 'service_quality', description: '' });
 
     const submit = async (url, data, confirmation) => {
         if (busy || (confirmation && !window.confirm(confirmation))) return;
@@ -32,7 +33,7 @@ export default function CabOperations({
         try {
             await axios.post(url, data);
             setNotice('Request recorded. Reloading current operations data.');
-            router.reload({ only: ['dispatches', 'reschedules', 'refundReviews', 'bookings'] });
+            router.reload({ only: ['dispatches', 'reschedules', 'refundReviews', 'disputes', 'bookings'] });
         } catch (e) {
             const errors = e.response?.data?.errors;
             setError(errors ? Object.values(errors).flat().join(' ') :
@@ -198,6 +199,48 @@ export default function CabOperations({
                         </Stack>
                     </CardContent></Card></Grid>)}
                 </Grid>
+
+                <Card variant="outlined"><CardContent>
+                    <Typography variant="h6" gutterBottom>Log an operational incident or financial dispute</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        This is an internal record only. Do not enter customer payment credentials, identity-document numbers or other sensitive details.
+                        Submitting does not create a charge or authorize a refund.
+                    </Typography>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={4}>
+                            <TextField fullWidth label="Booking ID" type="number" inputProps={{ min: 1 }}
+                                value={dispute.bookingId}
+                                onChange={e => setDispute({ ...dispute, bookingId: e.target.value })}/>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <TextField select fullWidth label="Incident category" value={dispute.category}
+                                onChange={e => setDispute({ ...dispute, category: e.target.value })}>
+                                {['billing', 'refund', 'service_quality', 'schedule', 'safety', 'other']
+                                    .map(v => <MenuItem key={v} value={v}>{v.replaceAll('_', ' ')}</MenuItem>)}
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField fullWidth multiline minRows={2} label="Incident description (no sensitive data)"
+                                value={dispute.description} inputProps={{ maxLength: 2000 }}
+                                onChange={e => setDispute({ ...dispute, description: e.target.value })}/>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Button variant="outlined" disabled={busy || Number(dispute.bookingId) < 1 || dispute.description.trim().length < 10}
+                                onClick={() => submit(`/admin/cab-bookings/${dispute.bookingId}/disputes`, {
+                                    category: dispute.category, description: dispute.description.trim(),
+                                })}>Record incident (no financial action)</Button>
+                        </Grid>
+                    </Grid>
+                    <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 3 }}>Recent disputes ({disputes.length})</Typography>
+                    {disputes.length === 0 && <Typography color="text.secondary">No incident records in your authorized branches.</Typography>}
+                    <Stack spacing={1} sx={{ mt: 1 }}>
+                        {disputes.map(d => <Stack key={d.id} direction={{ xs: 'column', sm: 'row' }}
+                            justifyContent="space-between" spacing={1} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                            <Typography variant="body2">#{d.id} · Booking #{d.service_booking_id} · {d.category.replaceAll('_', ' ')}</Typography>
+                            <Chip size="small" label={d.status}/>
+                        </Stack>)}
+                    </Stack>
+                </CardContent></Card>
 
                 <Typography variant="h6" fontWeight={700}>Refund review queue ({refundReviews.length})</Typography>
                 {refundReviews.length === 0 && <Typography color="text.secondary">No cab refund reviews recorded.</Typography>}
