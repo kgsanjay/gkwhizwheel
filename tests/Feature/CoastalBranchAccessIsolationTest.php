@@ -107,7 +107,7 @@ test('super admin cannot create new service bookings in inactive branch while hi
         'start_datetime' => now()->addDays(2)->toDateTimeString(),
         'quantity' => 1, 'base_amount' => 800, 'advance_paid' => 0,
         'booking_channel' => 'offline_walkin', 'payment_method' => 'cash',
-        'status' => 'confirmed',
+        'status' => 'held',
     ])->assertStatus(422);
     expect(ServiceBooking::count())->toBe(1);
 });

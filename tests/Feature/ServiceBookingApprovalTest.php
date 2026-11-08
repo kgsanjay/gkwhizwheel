@@ -22,7 +22,7 @@ beforeEach(function (): void {
     Notification::fake();
     Http::preventStrayRequests();
     $this->branch = Store::create([
-        'name' => 'Approval test branch', 'address_line' => 'Test road', 'city' => 'Honnavar',
+        'latitude' => 14.28, 'longitude' => 74.45, 'name' => 'Approval test branch', 'address_line' => 'Test road', 'city' => 'Honnavar',
         'state' => 'Karnataka', 'pincode' => '581334', 'phone' => '9876543210', 'status' => StoreStatus::ACTIVE,
     ]);
     $this->manager = User::factory()->create(['role' => UserRole::STORE_MANAGER, 'status' => UserStatus::ACTIVE]);
@@ -149,3 +149,27 @@ test('staff lifecycle cannot confirm or skip approval and completion releases al
         ->and(ServiceResourceAllocation::where('status', 'released')->count())->toBe(1)
         ->and(ActivityLog::where('action', 'service_booking.status_updated')->count())->toBe(2);
 });
+
+test('approval supports each non-cab typed reservation without changing its financial proposal', function (string $service, string $type): void {
+    $this->manager->syncAssignedServices([$service]);
+    $this->item->update(['service_type' => $service]);
+    $this->proposal->update(['service_type' => $service]);
+    $this->resource->update(['resource_type' => $type]);
+    $result = app(ServiceBookingApproval::class)->approve($this->proposal->id, $this->manager, $this->approval);
+    expect($result->status)->toBe('confirmed')->and((float) $result->total_amount)->toBe(2000.0)
+        ->and((float) $result->advance_paid)->toBe(0.0)->and(ServiceResourceAllocation::where('status', 'confirmed')->count())->toBe(1);
+})->with([
+    ['boating', 'boat'], ['scuba', 'scuba_slot'], ['homestay', 'stay_room'],
+    ['guide', 'tour_guide'], ['tours', 'tour_departure'],
+]);
+
+test('staff cannot inject an advance or online channel when creating an unpaid proposal', function (array $injection): void {
+    Sanctum::actingAs($this->worker);
+    $this->postJson('/api/v1/staff/service-bookings', array_replace([
+        'service_type' => 'boating', 'service_item_id' => $this->item->id,
+        'customer_name' => 'Injection test', 'customer_phone' => '9876543210',
+        'start_datetime' => now()->addDays(4)->toDateTimeString(), 'total_amount' => 2000,
+        'advance_paid' => 0, 'booking_channel' => 'offline_walkin', 'store_id' => $this->branch->id,
+    ], $injection))->assertUnprocessable();
+    expect(ServiceBooking::count())->toBe(1)->and(ServiceResourceAllocation::count())->toBe(0);
+})->with([[['advance_paid' => 100]], [['booking_channel' => 'online']]]);

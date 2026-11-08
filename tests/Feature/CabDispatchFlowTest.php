@@ -808,3 +808,27 @@ test('failed cab approval restores hold and creates no partial dispatch or resou
     expect($booking->fresh()->status)->toBe('held')->and($booking->fresh()->held_until)->not->toBeNull()
         ->and(CabDispatch::count())->toBe(0)->and(ServiceResourceAllocation::count())->toBe(0);
 });
+
+test('cab approval audit failure rolls back both allocations dispatch event and booking confirmation', function (): void {
+    $booking = cab55Booking($this, 'CAB-APPROVAL-AUDIT-FAIL');
+    $booking->update(['status' => 'held', 'held_until' => now()->addMinutes(10), 'payment_status' => 'pending']);
+    $dispatcher = \App\Models\ActivityLog::getEventDispatcher();
+    \App\Models\ActivityLog::setEventDispatcher(clone $dispatcher);
+    \App\Models\ActivityLog::creating(function ($log): void {
+        if ($log->action === 'service_booking.approved') {
+            throw new RuntimeException('Synthetic cab approval audit failure');
+        }
+    });
+    try {
+        expect(fn () => app(\App\Services\ServiceBookingApproval::class)->approve($booking->id, $this->admin, [
+            'expected_total_paise' => 200000, 'expected_starts_at' => $booking->start_datetime->toDateTimeString(),
+            'expected_ends_at' => $booking->end_datetime->toDateTimeString(), 'approval_notes' => 'Manager reviewed cab proposal',
+            'cab_vehicle_id' => $this->cab->id, 'cab_driver_id' => $this->driver->id,
+        ]))->toThrow(RuntimeException::class, 'Synthetic cab approval audit failure');
+    } finally {
+        \App\Models\ActivityLog::setEventDispatcher($dispatcher);
+    }
+    expect($booking->fresh()->status)->toBe('held')->and($booking->fresh()->held_until)->not->toBeNull()
+        ->and(CabDispatch::count())->toBe(0)->and(CabDispatchEvent::count())->toBe(0)
+        ->and(ServiceResourceAllocation::count())->toBe(0);
+});

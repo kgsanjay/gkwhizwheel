@@ -64,7 +64,8 @@ final class ServiceBookingApproval
             if ($booking->status === 'confirmed') {
                 $audit = ActivityLog::where('action', 'service_booking.approved')
                     ->where('subject_type', ServiceBooking::class)->where('subject_id', (string) $id)->first();
-                if ($audit !== null && $audit->new_values === $context
+                // MySQL JSON may reorder object keys; compare associative values.
+                if ($audit !== null && $audit->new_values == $context
                     && app(ServiceReservationReadiness::class)->issue($booking) === null) {
                     return $booking; // Identical authorized replay; no new audit or allocation.
                 }
