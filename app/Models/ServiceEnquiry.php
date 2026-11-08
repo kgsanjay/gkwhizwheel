@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ServiceEnquiry extends Model
 {
@@ -23,6 +24,11 @@ class ServiceEnquiry extends Model
             'end_datetime' => 'datetime',
             'quantity' => 'integer',
         ];
+    }
+
+    public function proposal(): HasOne
+    {
+        return $this->hasOne(ServiceBooking::class, 'service_enquiry_id');
     }
 
     public function user(): BelongsTo
