@@ -920,3 +920,81 @@ test('cab notification intent does not create a record for unrelated booking', f
         ->toThrow(ValidationException::class);
     expect(\App\Models\CabNotificationEvent::count())->toBe(0);
 });
+
+
+test('reschedule notification intent rejects unapproved or inconsistent trip state', function (string $mutation): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-RS');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $proposal = CabRescheduleRequest::create([
+        'cab_dispatch_id' => $dispatch->id,
+        'requested_by' => $this->staff->id,
+        'original_starts_at' => $dispatch->starts_at,
+        'original_ends_at' => $dispatch->ends_at,
+        'proposed_starts_at' => $dispatch->starts_at->copy()->addDay(),
+        'proposed_ends_at' => $dispatch->ends_at->copy()->addDay(),
+        'reason' => 'Customer requested a later departure',
+        'status' => 'approved',
+        'reviewed_by' => $this->admin->id,
+        'reviewed_at' => now(),
+    ]);
+    $booking->update([
+        'start_datetime' => $proposal->proposed_starts_at,
+        'end_datetime' => $proposal->proposed_ends_at,
+    ]);
+    $dispatch->update([
+        'starts_at' => $proposal->proposed_starts_at,
+        'ends_at' => $proposal->proposed_ends_at,
+    ]);
+    match ($mutation) {
+        'pending' => $proposal->update(['status' => 'pending']),
+        'rejected' => $proposal->update(['status' => 'rejected']),
+        'unreviewed' => $proposal->update(['reviewed_at' => null]),
+        'cancelled_booking' => $booking->update(['status' => 'cancelled']),
+        'in_progress_booking' => $booking->update(['status' => 'in_progress']),
+        'completed_booking' => $booking->update(['status' => 'completed']),
+        'cancelled_dispatch' => $dispatch->update(['status' => 'cancelled']),
+        'started_dispatch' => $dispatch->update(['status' => 'in_progress']),
+        'stale_start' => $booking->update(['start_datetime' => $booking->start_datetime->copy()->addDay()]),
+        'stale_end' => $booking->update(['end_datetime' => $booking->end_datetime->copy()->addDay()]),
+    };
+    expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)
+        ->record($booking->fresh(), 'reschedule_approved', $proposal->id))
+        ->toThrow(ValidationException::class);
+    expect(\App\Models\CabNotificationEvent::count())->toBe(0);
+})->with([
+    'pending approval' => ['pending'],
+    'rejected request' => ['rejected'],
+    'missing review timestamp' => ['unreviewed'],
+    'cancelled booking' => ['cancelled_booking'],
+    'active trip booking' => ['in_progress_booking'],
+    'completed trip booking' => ['completed_booking'],
+    'cancelled dispatch' => ['cancelled_dispatch'],
+    'started dispatch' => ['started_dispatch'],
+    'stale departure' => ['stale_start'],
+    'stale return' => ['stale_end'],
+]);
+
+test('valid approved reschedule notification intent records once without sending', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-INT-RS-OK');
+    $dispatch = app(CabDispatchService::class)->assign($booking, $this->cab, $this->driver, $this->admin);
+    $start = $booking->start_datetime->copy()->addDay();
+    $end = $booking->end_datetime->copy()->addDay();
+    $this->actingAs($this->staff)->postJson("/admin/cab-dispatches/{$dispatch->id}/reschedule-requests", [
+        'proposed_starts_at' => $start->toDateTimeString(),
+        'proposed_ends_at' => $end->toDateTimeString(),
+        'reason' => 'Customer requested a later departure',
+    ])->assertCreated();
+    $proposal = CabRescheduleRequest::firstOrFail();
+    $this->actingAs($this->staff)->postJson("/admin/cab-reschedule-requests/{$proposal->id}/resolve", [
+        'decision' => 'approved', 'customer_consent_confirmed' => true,
+        'unchanged_fare_approved' => true,
+    ])->assertOk();
+    $event = \App\Models\CabNotificationEvent::firstOrFail();
+    expect($event->event_type)->toBe('reschedule_approved')
+        ->and($event->status)->toBe('pending_approval')
+        ->and($event->service_booking_id)->toBe($booking->id);
+    $again = app(\App\Services\CabNotificationEventRecorder::class)
+        ->record($booking->fresh(), 'reschedule_approved', $proposal->id);
+    expect($again->id)->toBe($event->id)
+        ->and(\App\Models\CabNotificationEvent::count())->toBe(1);
+});
