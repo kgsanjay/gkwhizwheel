@@ -956,6 +956,9 @@ test('reschedule notification intent rejects unapproved or inconsistent trip sta
         'started_dispatch' => $dispatch->update(['status' => 'in_progress']),
         'stale_start' => $booking->update(['start_datetime' => $booking->start_datetime->copy()->addDay()]),
         'stale_end' => $booking->update(['end_datetime' => $booking->end_datetime->copy()->addDay()]),
+        'stale_dispatch_start' => $dispatch->update(['starts_at' => $dispatch->starts_at->copy()->addDay()]),
+        'stale_dispatch_end' => $dispatch->update(['ends_at' => $dispatch->ends_at->copy()->addDay()]),
+        'missing_reviewer' => $proposal->update(['reviewed_by' => null]),
     };
     expect(fn () => app(\App\Services\CabNotificationEventRecorder::class)
         ->record($booking->fresh(), 'reschedule_approved', $proposal->id))
@@ -972,6 +975,9 @@ test('reschedule notification intent rejects unapproved or inconsistent trip sta
     'started dispatch' => ['started_dispatch'],
     'stale departure' => ['stale_start'],
     'stale return' => ['stale_end'],
+    'stale dispatch departure' => ['stale_dispatch_start'],
+    'stale dispatch return' => ['stale_dispatch_end'],
+    'missing reviewer' => ['missing_reviewer'],
 ]);
 
 test('valid approved reschedule notification intent records once without sending', function (): void {
