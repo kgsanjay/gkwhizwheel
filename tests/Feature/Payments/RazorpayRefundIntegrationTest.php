@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Http;
 uses(RefreshDatabase::class);
 
 test('cancellation refund successfully processes via razorpay api', function (): void {
+    config()->set('services.razorpay.key_id', 'rzp_test_refundfixture');
+    config()->set('services.razorpay.key_secret', 'test_refund_secret');
     Http::fake([
         'api.razorpay.com/v1/payments/*/refund' => Http::response([
             'id' => 'rfnd_1234567890',
