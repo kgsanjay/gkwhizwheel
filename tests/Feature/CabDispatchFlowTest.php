@@ -606,3 +606,56 @@ test('cab notification intent recorder rejects non-taxi bookings and unsupported
         ->toThrow(\Illuminate\Validation\ValidationException::class);
     expect(\App\Models\CabNotificationEvent::count())->toBe(0);
 });
+
+
+test('cab finance preview is read only, arithmetic based, and never assumes refund entitlement', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-100');
+    $booking->update(['advance_paid' => 500, 'balance_due' => 1500, 'payment_status' => 'partial']);
+    ServicePaymentReceipt::create([
+        'service_booking_id' => $booking->id, 'provider' => 'razorpay',
+        'payment_id' => 'pay_56_preview_1', 'amount_paise' => 50000,
+    ]);
+    $url = "/admin/cab-bookings/{$booking->id}/settlement-preview";
+    $this->actingAs($this->staff)->getJson($url)->assertOk()
+        ->assertJsonPath('data.booking_total_paise', 200000)
+        ->assertJsonPath('data.recorded_advance_paise', 50000)
+        ->assertJsonPath('data.recorded_balance_paise', 150000)
+        ->assertJsonPath('data.gateway_receipts_recorded_paise', 50000)
+        ->assertJsonPath('data.gateway_receipt_count', 1)
+        ->assertJsonPath('data.refund_eligible', null)
+        ->assertJsonPath('data.refund_amount_paise', null)
+        ->assertJsonPath('data.payout_status', 'not_supported')
+        ->assertJsonPath('data.requires_manual_reconciliation', false);
+    expect($booking->fresh()->status)->toBe('confirmed')
+        ->and($booking->fresh()->payment_status)->toBe('partial')
+        ->and(CabRefundReview::count())->toBe(0);
+});
+
+test('cab finance preview flags missing receipts and cancellation review without claiming payout', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-101');
+    $booking->update(['status' => 'cancelled', 'advance_paid' => 500, 'balance_due' => 1500]);
+    $url = "/admin/cab-bookings/{$booking->id}/settlement-preview";
+    $result = $this->actingAs($this->admin)->getJson($url)->assertOk();
+    $issues = $result->json('data.issues');
+    expect($issues)->toContain('receipt_advance_mismatch')
+        ->toContain('recorded_advance_without_gateway_receipt');
+    $result->assertJsonPath('data.refund_eligible', null);
+    ServicePaymentReceipt::create([
+        'service_booking_id' => $booking->id, 'provider' => 'razorpay',
+        'payment_id' => 'pay_56_preview_2', 'amount_paise' => 50000,
+    ]);
+    $result = $this->actingAs($this->admin)->getJson($url)->assertOk();
+    expect($result->json('data.issues'))->toContain('cancelled_paid_booking_requires_refund_review');
+    $result->assertJsonPath('data.payout_status', 'not_supported');
+});
+
+test('cab finance preview does not disclose another branch or non taxi booking', function (): void {
+    $booking = cab55Booking($this, 'GKW-CAB56-102');
+    $url = "/admin/cab-bookings/{$booking->id}/settlement-preview";
+    $this->actingAs($this->outsider)->getJson($url)->assertForbidden();
+    $this->staff->stores()->detach($this->honn->id);
+    $this->staff->stores()->attach($this->muru->id);
+    $this->actingAs($this->staff)->getJson($url)->assertForbidden();
+    $booking->update(['service_type' => 'boating']);
+    $this->actingAs($this->admin)->getJson($url)->assertForbidden();
+});
