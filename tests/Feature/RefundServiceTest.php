@@ -282,3 +282,59 @@ test('razorpay webhook transitions pending refund to completed', function (): vo
 
     expect($refund->fresh()->status)->toBe(RefundStatus::COMPLETED);
 });
+
+
+test('cancellation rejects a negative full-refund threshold', function (): void {
+    expect(fn () => $this->refundService->calculateRefundAmount($this->booking, '2026-10-08', -1))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('cancellation rejects a negative partial refund percentage', function (): void {
+    expect(fn () => $this->refundService->calculateRefundAmount($this->booking, '2026-10-09', 24, -1))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('cancellation rejects a partial refund percentage above one hundred', function (): void {
+    expect(fn () => $this->refundService->calculateRefundAmount($this->booking, '2026-10-09', 24, 101))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('cancellation rejects a non-finite partial refund percentage', function (): void {
+    expect(fn () => $this->refundService->calculateRefundAmount($this->booking, '2026-10-09', 24, INF))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('cancellation cannot issue a second refund against fully reserved captured funds', function (): void {
+    $this->refundService->processCancellationRefund($this->booking, 'First refund', cancellationTime: '2026-10-08');
+    expect(fn () => $this->refundService->processCancellationRefund($this->booking, 'Second refund', cancellationTime: '2026-10-08'))
+        ->toThrow(\InvalidArgumentException::class);
+    expect(Refund::where('booking_id', $this->booking->id)->count())->toBe(1);
+});
+
+test('deposit refund rejects negative damage deductions', function (): void {
+    expect(fn () => $this->refundService->createDepositRefund($this->booking, -1))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('deposit refund rejects negative late-fee deductions', function (): void {
+    expect(fn () => $this->refundService->createDepositRefund($this->booking, 0, -1))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('deposit refund rejects non-finite deductions', function (): void {
+    expect(fn () => $this->refundService->createDepositRefund($this->booking, INF))
+        ->toThrow(\InvalidArgumentException::class);
+});
+
+test('deposit refund cannot be repeated when remaining funds are insufficient', function (): void {
+    $this->refundService->createDepositRefund($this->booking);
+    $this->refundService->createDepositRefund($this->booking, 1000);
+    expect(fn () => $this->refundService->createDepositRefund($this->booking))
+        ->toThrow(\InvalidArgumentException::class);
+    expect(Refund::where('booking_id', $this->booking->id)->count())->toBe(2);
+});
+
+test('manual refund rejects non-finite amount', function (): void {
+    expect(fn () => $this->refundService->processManualRefund($this->booking, INF, 'Invalid amount'))
+        ->toThrow(\InvalidArgumentException::class);
+});
