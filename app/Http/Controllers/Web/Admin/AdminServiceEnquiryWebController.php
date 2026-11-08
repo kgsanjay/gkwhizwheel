@@ -136,10 +136,12 @@ class AdminServiceEnquiryWebController extends Controller
             if (in_array($validated['status'], ['closed', 'cancelled'], true)
                 && ServiceBooking::where('service_enquiry_id', $enquiry->id)
                     ->where(function ($query): void {
-                        $query->whereIn('status', ['confirmed', 'in_progress'])
+                        $query->whereIn('status', ['pending_payment', 'confirmed', 'in_progress'])
                             ->orWhere(function ($holds): void {
                                 $holds->where('status', 'held')
-                                    ->where('held_until', '>', now());
+                                    ->where(function ($expiry): void {
+                                    $expiry->whereNull('held_until')->orWhere('held_until', '>', now());
+                                });
                             });
                     })->exists()) {
                 throw ValidationException::withMessages([
