@@ -968,7 +968,7 @@ class AdminServiceWebController extends Controller
             return $balance;
         });
 
-        return back()->with('success', "Payment of ₹{$amount} recorded successfully. Balance: ₹{$newBalance}.");
+        return back()->with('success', "Payment of ₹{$validated['amount']} recorded successfully. Balance: ₹{$newBalance}.");
     }
 
     /**
