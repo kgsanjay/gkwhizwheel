@@ -68,3 +68,27 @@ test('branch ownership audit is successful on fully consistent records', functio
     ]);
     $this->artisan('services:audit-branches', ['--strict' => true])->assertSuccessful();
 });
+
+
+test('strict branch audit rejects a booking assigned to an item with no branch', function (): void {
+    $store = Store::create([
+        'name' => 'Murudeshwar', 'address_line' => 'Bus Stand Road', 'city' => 'Murudeshwar',
+        'state' => 'Karnataka', 'pincode' => '581350', 'latitude' => 14.09,
+        'longitude' => 74.49, 'phone' => '9888890007', 'status' => StoreStatus::ACTIVE,
+    ]);
+    $item = ServiceItem::create([
+        'service_type' => 'taxi', 'name' => 'Legacy Unassigned Cab',
+        'price_base' => 1500,
+    ]);
+    $booking = ServiceBooking::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'booking_number' => 'GKW-AUDIT-04', 'service_type' => 'taxi',
+        'customer_name' => 'Guest', 'customer_phone' => '9888890008',
+        'start_datetime' => now(),
+    ]);
+
+    $this->artisan('services:audit-branches', ['--strict' => true, '--sample' => 0])->assertFailed();
+
+    expect($item->fresh()->store_id)->toBeNull()
+        ->and($booking->fresh()->store_id)->toBe($store->id);
+});
