@@ -21,6 +21,16 @@ final class ServicePaymentReceivedNotification extends Notification
     ) {
     }
 
+    public function template(): string
+    {
+        return 'service_payment_received';
+    }
+
+    public function serviceBookingId(): ?int
+    {
+        return (int) $this->booking->id;
+    }
+
     public function via(object $notifiable): array
     {
         return ['mail'];
