@@ -924,45 +924,49 @@ class AdminServiceWebController extends Controller
     {
         $this->getServiceConfig($serviceType);
 
-        $booking = ServiceBooking::where('service_type', $serviceType)->findOrFail($id);
-        $this->assertServiceRecordAccess($booking->store_id);
-
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
             'payment_method' => ['required', 'string', 'in:cash,upi,card'],
             'notes' => ['nullable', 'string'],
         ]);
 
-        $amount = (float) $validated['amount'];
-        $outstanding = round(max(0, (float) $booking->total_amount - (float) $booking->advance_paid), 2);
-        if ($amount > $outstanding) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'amount' => 'Payment cannot exceed the outstanding booking balance.',
+        // Lock the booking while validating the outstanding balance so two
+        // simultaneous cashier requests cannot both spend the same balance.
+        $newBalance = DB::transaction(function () use ($request, $serviceType, $id, $validated): float {
+            $booking = ServiceBooking::where('service_type', $serviceType)
+                ->whereKey($id)->lockForUpdate()->firstOrFail();
+            $this->assertServiceRecordAccess($booking->store_id);
+
+            $amount = (float) $validated['amount'];
+            $outstanding = round(max(0, (float) $booking->total_amount - (float) $booking->advance_paid), 2);
+            if ($amount > $outstanding) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'amount' => 'Payment cannot exceed the outstanding booking balance.',
+                ]);
+            }
+
+            $newAdvance = round((float) $booking->advance_paid + $amount, 2);
+            $balance = round(max(0, (float) $booking->total_amount - $newAdvance), 2);
+            $bookingNotes = $booking->admin_notes ? $booking->admin_notes . "\n" : '';
+            $bookingNotes .= "[" . Carbon::now()->format('d M H:i') . "] Collected ₹{$amount} via {$validated['payment_method']}. " . ($validated['notes'] ?? '');
+
+            $booking->update([
+                'advance_paid' => $newAdvance,
+                'balance_due' => $balance,
+                'payment_status' => $balance <= 0 ? 'paid' : 'partial',
+                'admin_notes' => $bookingNotes,
             ]);
-        }
 
-        $newAdvance = (float) $booking->advance_paid + $amount;
-        $newBalance = max(0, (float) $booking->total_amount - $newAdvance);
+            ActivityLog::create([
+                'user_id' => $request->user()?->id,
+                'action' => 'service_booking.payment_collected',
+                'description' => "Collected ₹{$amount} for {$booking->booking_number} via {$validated['payment_method']}",
+                'subject_type' => ServiceBooking::class,
+                'subject_id' => (string) $booking->id,
+            ]);
 
-        $paymentStatus = $newBalance <= 0 ? 'paid' : 'partial';
-
-        $bookingNotes = $booking->admin_notes ? $booking->admin_notes . "\n" : '';
-        $bookingNotes .= "[" . Carbon::now()->format('d M H:i') . "] Collected ₹{$amount} via {$validated['payment_method']}. " . ($validated['notes'] ?? '');
-
-        $booking->update([
-            'advance_paid' => $newAdvance,
-            'balance_due' => $newBalance,
-            'payment_status' => $paymentStatus,
-            'admin_notes' => $bookingNotes,
-        ]);
-
-        ActivityLog::create([
-            'user_id' => $request->user()?->id,
-            'action' => 'service_booking.payment_collected',
-            'description' => "Collected ₹{$amount} for {$booking->booking_number} via {$validated['payment_method']}",
-            'subject_type' => ServiceBooking::class,
-            'subject_id' => (string) $booking->id,
-        ]);
+            return $balance;
+        });
 
         return back()->with('success', "Payment of ₹{$amount} recorded successfully. Balance: ₹{$newBalance}.");
     }
