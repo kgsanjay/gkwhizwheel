@@ -239,6 +239,8 @@ test('admin offline counter booking creates an unpaid hold without customer conf
 });
 
 test('customer payment verification sends updated notification to customer', function (): void {
+    // Surface the underlying SQL failure in CI instead of an opaque HTTP 500.
+    $this->withoutExceptionHandling();
     Http::fake([
         'https://graph.facebook.com/*' => Http::response([
             'messaging_product' => 'whatsapp',
