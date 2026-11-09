@@ -318,8 +318,8 @@ test('customer can cancel booking and refund is processed if paid', function ():
         'return_store_id' => $this->storeA->id,
         'channel' => BookingChannel::ONLINE,
         'status' => BookingStatus::CONFIRMED,
-        'start_date' => '2026-11-10', // well in advance >24h
-        'end_date' => '2026-11-12',
+        'start_date' => now()->addDays(7)->toDateString(), // stable full-refund window
+        'end_date' => now()->addDays(9)->toDateString(),
         'base_amount' => 1200.00,
         'deposit_amount' => 2000.00,
         'total_amount' => 3200.00,
