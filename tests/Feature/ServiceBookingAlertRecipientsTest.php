@@ -26,9 +26,10 @@ test('new booking alerts reach only active managers assigned to the exact branch
     ]);
 
     $createManager = function (string $email, Store $store, array $services, UserStatus $status = UserStatus::ACTIVE): User {
+        static $sequence = 0;
         $user = User::create([
             'name' => 'Service Manager', 'email' => $email,
-            'phone' => '9888802010', 'password' => 'Password123!',
+            'phone' => '98888020'.str_pad((string) (++$sequence), 2, '0', STR_PAD_LEFT), 'password' => 'Password123!',
             'role' => UserRole::STORE_MANAGER, 'status' => $status,
         ]);
         $user->stores()->attach($store->id);
