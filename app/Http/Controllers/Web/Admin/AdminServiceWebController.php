@@ -934,6 +934,13 @@ class AdminServiceWebController extends Controller
         ]);
 
         $amount = (float) $validated['amount'];
+        $outstanding = round(max(0, (float) $booking->total_amount - (float) $booking->advance_paid), 2);
+        if ($amount > $outstanding) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'amount' => 'Payment cannot exceed the outstanding booking balance.',
+            ]);
+        }
+
         $newAdvance = (float) $booking->advance_paid + $amount;
         $newBalance = max(0, (float) $booking->total_amount - $newAdvance);
 
