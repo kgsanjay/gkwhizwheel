@@ -39,7 +39,7 @@ test('new booking alerts reach only active managers assigned to the exact branch
     $eligible = $createManager('eligible.alert@example.test', $honnavar, ['boating']);
     $foreign = $createManager('foreign.alert@example.test', $murudeshwar, ['boating']);
     $wrongService = $createManager('taxi.alert@example.test', $honnavar, ['taxi']);
-    $inactive = $createManager('inactive.alert@example.test', $honnavar, ['boating'], UserStatus::INACTIVE);
+    $inactive = $createManager('inactive.alert@example.test', $honnavar, ['boating'], UserStatus::BLACKLISTED);
     $headquarters = User::create([
         'name' => 'HQ', 'email' => 'hq.alert@example.test',
         'phone' => '9888802011', 'password' => 'Password123!',
