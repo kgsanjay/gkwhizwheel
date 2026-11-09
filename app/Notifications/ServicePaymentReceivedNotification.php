@@ -26,6 +26,12 @@ final class ServicePaymentReceivedNotification extends Notification
         return 'service_payment_received';
     }
 
+    // The receipt belongs to a service booking, never a bike rental booking.
+    public function bookingId(): ?int
+    {
+        return null;
+    }
+
     public function serviceBookingId(): ?int
     {
         return (int) $this->booking->id;
