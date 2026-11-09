@@ -300,3 +300,24 @@ test('rejected service payments never write collection audit entries', function 
         ->where('subject_id', (string) $this->ownBooking->id)
         ->count())->toBe(1);
 });
+
+
+test('admin cannot collect payment for a pending or cancelled service request', function (): void {
+    $url = "/admin/services/taxi/bookings/{$this->ownBooking->id}/payment";
+    foreach (['held', 'pending_payment', 'cancelled'] as $status) {
+        $this->ownBooking->update(['status' => $status]);
+        $this->actingAs($this->manager)->post($url, [
+            'amount' => 100, 'payment_method' => 'cash',
+        ])->assertSessionHasErrors('amount');
+        expect((float) $this->ownBooking->fresh()->advance_paid)->toBe(0.0);
+    }
+});
+
+test('admin cannot collect fractional-paisa service payments', function (): void {
+    $this->actingAs($this->manager)
+        ->post("/admin/services/taxi/bookings/{$this->ownBooking->id}/payment", [
+            'amount' => '100.001', 'payment_method' => 'upi',
+        ])->assertSessionHasErrors('amount');
+
+    expect((float) $this->ownBooking->fresh()->advance_paid)->toBe(0.0);
+});
