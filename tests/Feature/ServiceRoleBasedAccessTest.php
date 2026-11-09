@@ -304,6 +304,8 @@ test('manager can record offline counter booking as an unpaid hold', function ()
 });
 
 test('customer can initiate and verify online payment for service booking', function (): void {
+    // Surface the underlying SQL failure in CI instead of an opaque HTTP 500.
+    $this->withoutExceptionHandling();
     $customer = User::create([
         'name' => 'Priya Traveler',
         'email' => 'priya.traveler@example.com',
