@@ -267,3 +267,30 @@ test('customer payment verification sends a payment receipt without repeating bo
         'template' => 'service_booking_confirmed',
     ]);
 });
+
+
+test('replayed service payment reference does not create another receipt or credit', function (): void {
+    $endpoint = route('services.booking.verify-payment', $this->serviceBooking->booking_number);
+    $payload = [
+        'razorpay_payment_id' => 'pay_test_service_replay_receipt',
+        'amount' => 1050.00,
+    ];
+
+    $this->actingAs($this->customer)->postJson($endpoint, $payload)->assertOk();
+    $this->serviceBooking->refresh();
+    $paid = (float) $this->serviceBooking->advance_paid;
+    $receiptCount = NotificationLog::query()
+        ->where('service_booking_id', $this->serviceBooking->id)
+        ->where('template', 'service_payment_received')->count();
+
+    expect($receiptCount)->toBeGreaterThan(0);
+
+    $this->actingAs($this->customer)->postJson($endpoint, $payload)->assertStatus(422);
+    $this->serviceBooking->refresh();
+
+    expect((float) $this->serviceBooking->advance_paid)->toBe($paid);
+    expect(NotificationLog::query()
+        ->where('service_booking_id', $this->serviceBooking->id)
+        ->where('template', 'service_payment_received')->count())->toBe($receiptCount);
+    $this->assertDatabaseCount('service_payment_receipts', 1);
+});
