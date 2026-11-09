@@ -133,3 +133,16 @@ test('manager search cannot discover foreign branch customer or booking referenc
     $this->getJson('/api/v1/staff/service-bookings?service_type=taxi&search=GKW-AUTH-HON-01')
         ->assertOk()->assertJsonPath('meta.total', 1);
 });
+
+
+test('manager cannot collect payment on foreign branch service booking', function (): void {
+    Sanctum::actingAs($this->manager);
+
+    $this->postJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/payment", [
+        'amount' => 100,
+        'payment_method' => 'cash',
+        'store_id' => $this->honnavar->id,
+    ])->assertForbidden();
+
+    expect((float) $this->foreignBooking->fresh()->advance_paid)->toBe(0.0);
+});
