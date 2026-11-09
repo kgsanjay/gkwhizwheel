@@ -238,17 +238,7 @@ test('admin offline counter booking creates an unpaid hold without customer conf
     ]);
 });
 
-test('customer payment verification sends updated notification to customer', function (): void {
-    // Surface the underlying SQL failure in CI instead of an opaque HTTP 500.
-    $this->withoutExceptionHandling();
-    Http::fake([
-        'https://graph.facebook.com/*' => Http::response([
-            'messaging_product' => 'whatsapp',
-            'contacts' => [['input' => '919876543299', 'wa_id' => '919876543299']],
-            'messages' => [['id' => 'wamid.HBgMOTExMjM0NTY3OAA=']],
-        ], 200),
-    ]);
-
+test('customer payment verification sends a payment receipt without repeating booking confirmation', function (): void {
     $response = $this->actingAs($this->customer)->postJson(
         route('services.booking.verify-payment', $this->serviceBooking->booking_number),
         [
@@ -265,9 +255,15 @@ test('customer payment verification sends updated notification to customer', fun
 
     $this->assertDatabaseHas('notification_logs', [
         'user_id' => $this->customer->id,
+        'booking_id' => null,
         'service_booking_id' => $this->serviceBooking->id,
-        'channel' => NotificationChannel::WHATSAPP->value,
-        'template' => 'service_booking_confirmed',
+        'channel' => NotificationChannel::EMAIL->value,
+        'template' => 'service_payment_received',
         'status' => NotificationStatus::SENT->value,
+    ]);
+    $this->assertDatabaseMissing('notification_logs', [
+        'user_id' => $this->customer->id,
+        'service_booking_id' => $this->serviceBooking->id,
+        'template' => 'service_booking_confirmed',
     ]);
 });
