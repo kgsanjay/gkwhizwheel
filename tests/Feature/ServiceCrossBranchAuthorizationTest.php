@@ -136,13 +136,12 @@ test('manager search cannot discover foreign branch customer or booking referenc
 
 
 test('manager cannot collect payment on foreign branch service booking', function (): void {
-    Sanctum::actingAs($this->manager);
-
-    $this->postJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/payment", [
-        'amount' => 100,
-        'payment_method' => 'cash',
-        'store_id' => $this->honnavar->id,
-    ])->assertForbidden();
+    $this->actingAs($this->manager)
+        ->post("/admin/services/taxi/bookings/{$this->foreignBooking->id}/payment", [
+            'amount' => 100,
+            'payment_method' => 'cash',
+            'store_id' => $this->honnavar->id,
+        ])->assertForbidden();
 
     expect((float) $this->foreignBooking->fresh()->advance_paid)->toBe(0.0);
 });
