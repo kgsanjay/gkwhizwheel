@@ -107,3 +107,15 @@ test('branch manager cannot create a walk-in booking against another branch item
 
     expect(ServiceBooking::where('customer_name', 'Wrong Branch Guest')->exists())->toBeFalse();
 });
+
+
+test('manager cannot use a foreign branch filter to disclose service bookings', function (): void {
+    Sanctum::actingAs($this->manager);
+
+    $this->getJson('/api/v1/staff/service-bookings?service_type=taxi&store_id='.$this->murudeshwar->id)
+        ->assertForbidden();
+
+    $this->getJson('/api/v1/staff/service-bookings?service_type=taxi&store_id='.$this->honnavar->id)
+        ->assertOk()
+        ->assertJsonPath('meta.total', 1);
+});
