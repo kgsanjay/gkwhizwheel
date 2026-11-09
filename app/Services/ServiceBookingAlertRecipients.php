@@ -25,9 +25,8 @@ final class ServiceBookingAlertRecipients
             ->whereHas('stores', function ($query) use ($booking): void {
                 $query->where('stores.id', $booking->store_id);
             })
-            ->whereHas('assignedServices', function ($query) use ($booking): void {
-                $query->where('service_type', $booking->service_type);
-            })
+            ->whereIn('id', \Illuminate\Support\Facades\DB::table('service_user')
+                ->where('service_type', $booking->service_type)->select('user_id'))
             ->get();
 
         if ($managers->isNotEmpty()) {
