@@ -925,7 +925,7 @@ class AdminServiceWebController extends Controller
         $this->getServiceConfig($serviceType);
 
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:1'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
             'payment_method' => ['required', 'string', 'in:cash,upi,card'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -936,6 +936,12 @@ class AdminServiceWebController extends Controller
             $booking = ServiceBooking::where('service_type', $serviceType)
                 ->whereKey($id)->lockForUpdate()->firstOrFail();
             $this->assertServiceRecordAccess($booking->store_id);
+
+            if (! in_array($booking->status, ['confirmed', 'in_progress'], true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'amount' => 'Payment collection requires a confirmed or in-progress service booking.',
+                ]);
+            }
 
             $amount = (float) $validated['amount'];
             $outstanding = round(max(0, (float) $booking->total_amount - (float) $booking->advance_paid), 2);
