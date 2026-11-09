@@ -207,3 +207,51 @@ test('admin service payment rejects amounts above balance even when only a small
 
     expect((float) $this->ownBooking->fresh()->advance_paid)->toBe(1799.0);
 });
+
+
+test('manager cannot start or approve a foreign branch service booking', function (): void {
+    Sanctum::actingAs($this->manager);
+
+    $this->postJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/mark-in-progress")
+        ->assertForbidden();
+
+    $this->postJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/approve")
+        ->assertForbidden();
+
+    expect($this->foreignBooking->fresh()->status)->toBe('confirmed');
+});
+
+test('manager cannot access a legacy service booking without branch ownership', function (): void {
+    $legacy = ServiceBooking::create([
+        'service_type' => 'taxi',
+        'booking_number' => 'GKW-AUTH-LEGACY-01',
+        'customer_name' => 'Legacy Guest',
+        'customer_phone' => '9888810017',
+        'start_datetime' => now()->addDays(3),
+        'status' => 'confirmed',
+        'total_amount' => 1800,
+    ]);
+
+    Sanctum::actingAs($this->manager);
+
+    $this->getJson("/api/v1/staff/service-bookings/{$legacy->id}")
+        ->assertForbidden();
+    $this->putJson("/api/v1/staff/service-bookings/{$legacy->id}/status", [
+        'status' => 'completed',
+    ])->assertForbidden();
+    $this->getJson('/api/v1/staff/service-bookings?service_type=taxi&search=GKW-AUTH-LEGACY-01')
+        ->assertOk()->assertJsonPath('meta.total', 0);
+
+    expect($legacy->fresh()->status)->toBe('confirmed');
+});
+
+test('manager cannot spoof an assigned branch on a foreign booking status update', function (): void {
+    Sanctum::actingAs($this->manager);
+
+    $this->patchJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/status", [
+        'status' => 'cancelled',
+        'store_id' => $this->honnavar->id,
+    ])->assertForbidden();
+
+    expect($this->foreignBooking->fresh()->status)->toBe('confirmed');
+});
