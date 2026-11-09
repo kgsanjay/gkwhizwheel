@@ -215,8 +215,12 @@ test('manager cannot start or approve a foreign branch service booking', functio
     $this->postJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/mark-in-progress")
         ->assertForbidden();
 
-    $this->postJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/approve")
-        ->assertForbidden();
+    $this->postJson("/api/v1/staff/service-bookings/{$this->foreignBooking->id}/approve", [
+        'expected_total_paise' => 180000,
+        'expected_starts_at' => now()->addDays(2)->toDateTimeString(),
+        'expected_ends_at' => now()->addDays(3)->toDateTimeString(),
+        'approval_notes' => 'Reviewed foreign booking authorization',
+    ])->assertForbidden();
 
     expect($this->foreignBooking->fresh()->status)->toBe('confirmed');
 });
