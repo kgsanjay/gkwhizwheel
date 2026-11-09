@@ -259,3 +259,44 @@ test('manager cannot spoof an assigned branch on a foreign booking status update
 
     expect($this->foreignBooking->fresh()->status)->toBe('confirmed');
 });
+
+
+test('rejected service payments never write collection audit entries', function (): void {
+    $this->ownBooking->update([
+        'total_amount' => 1800,
+        'advance_paid' => 1700,
+        'balance_due' => 100,
+        'payment_status' => 'partial',
+    ]);
+
+    $url = "/admin/services/taxi/bookings/{$this->ownBooking->id}/payment";
+    $this->actingAs($this->manager)
+        ->post($url, ['amount' => 101, 'payment_method' => 'card'])
+        ->assertSessionHasErrors('amount');
+
+    expect(\App\Models\ActivityLog::query()
+        ->where('action', 'service_booking.payment_collected')
+        ->where('subject_type', ServiceBooking::class)
+        ->where('subject_id', (string) $this->ownBooking->id)
+        ->count())->toBe(0);
+
+    $this->actingAs($this->manager)
+        ->post($url, ['amount' => 100, 'payment_method' => 'card'])
+        ->assertSessionHas('success');
+
+    expect(\App\Models\ActivityLog::query()
+        ->where('action', 'service_booking.payment_collected')
+        ->where('subject_type', ServiceBooking::class)
+        ->where('subject_id', (string) $this->ownBooking->id)
+        ->count())->toBe(1);
+
+    $this->actingAs($this->manager)
+        ->post($url, ['amount' => 100, 'payment_method' => 'card'])
+        ->assertSessionHasErrors('amount');
+
+    expect(\App\Models\ActivityLog::query()
+        ->where('action', 'service_booking.payment_collected')
+        ->where('subject_type', ServiceBooking::class)
+        ->where('subject_id', (string) $this->ownBooking->id)
+        ->count())->toBe(1);
+});
