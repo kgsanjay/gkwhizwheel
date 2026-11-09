@@ -172,15 +172,9 @@ class CustomerServiceBookingController extends Controller
                 ->notify(new ServiceBookingConfirmedNotification($booking));
         }
 
-        // Dispatch operational alert to assigned service managers
-        $managerIds = DB::table('service_user')
-            ->where('service_type', $validated['service_type'])
-            ->pluck('user_id');
-
-        $managers = User::whereIn('id', $managerIds)->get();
-        if ($managers->isEmpty()) {
-            $managers = User::where('role', UserRole::SUPER_ADMIN)->get();
-        }
+        // Notify only active managers assigned to this specific service and branch.
+        // Headquarters receives a fallback when no local manager is eligible.
+        $managers = app(\App\Services\ServiceBookingAlertRecipients::class)->forBooking($booking);
 
         foreach ($managers as $manager) {
             $manager->notify(new ServiceManagerBookingAlertNotification($booking));
