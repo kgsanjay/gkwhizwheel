@@ -28,6 +28,15 @@ test('branch preflight fails without a valid sample size', function (): void {
     $this->artisan('app:branch-preflight', ['--sample' => 101])->assertFailed();
 });
 
+test('branch preflight rejects negative and nonnumeric sample sizes', function (): void {
+    $this->artisan('app:branch-preflight', ['--sample' => -1])->assertFailed();
+    $this->artisan('app:branch-preflight', ['--sample' => 'invalid'])->assertFailed();
+});
+
+test('branch preflight accepts zero sample records without mutating inventory', function (): void {
+    $this->artisan('app:branch-preflight', ['--sample' => 0])->assertSuccessful();
+});
+
 test('branch preflight refuses unassigned service inventory without reassigning it', function (): void {
     $item = ServiceItem::create([
         'name' => 'Legacy Taxi', 'service_type' => 'taxi',
