@@ -145,3 +145,65 @@ test('manager cannot collect payment on foreign branch service booking', functio
 
     expect((float) $this->foreignBooking->fresh()->advance_paid)->toBe(0.0);
 });
+
+
+test('admin service payment rejects amounts above outstanding balance without changing records', function (): void {
+    $this->ownBooking->update([
+        'total_amount' => 1800,
+        'advance_paid' => 500,
+        'balance_due' => 1300,
+        'payment_status' => 'partial',
+    ]);
+
+    $this->actingAs($this->manager)
+        ->from("/admin/services/taxi/bookings/{$this->ownBooking->id}")
+        ->post("/admin/services/taxi/bookings/{$this->ownBooking->id}/payment", [
+            'amount' => 1301, 'payment_method' => 'cash',
+        ])->assertSessionHasErrors('amount');
+
+    $booking = $this->ownBooking->fresh();
+    expect((float) $booking->advance_paid)->toBe(500.0)
+        ->and((float) $booking->balance_due)->toBe(1300.0)
+        ->and($booking->payment_status)->toBe('partial');
+});
+
+test('admin service payment accepts exact outstanding balance and rejects a repeat', function (): void {
+    $this->ownBooking->update([
+        'total_amount' => 1800,
+        'advance_paid' => 500,
+        'balance_due' => 1300,
+        'payment_status' => 'partial',
+    ]);
+
+    $url = "/admin/services/taxi/bookings/{$this->ownBooking->id}/payment";
+    $this->actingAs($this->manager)
+        ->post($url, ['amount' => 1300, 'payment_method' => 'cash'])
+        ->assertSessionHas('success');
+
+    $booking = $this->ownBooking->fresh();
+    expect((float) $booking->advance_paid)->toBe(1800.0)
+        ->and((float) $booking->balance_due)->toBe(0.0)
+        ->and($booking->payment_status)->toBe('paid');
+
+    $this->actingAs($this->manager)
+        ->post($url, ['amount' => 1300, 'payment_method' => 'cash'])
+        ->assertSessionHasErrors('amount');
+
+    expect((float) $this->ownBooking->fresh()->advance_paid)->toBe(1800.0);
+});
+
+test('admin service payment rejects amounts above balance even when only a small amount remains', function (): void {
+    $this->ownBooking->update([
+        'total_amount' => 1800,
+        'advance_paid' => 1799,
+        'balance_due' => 1,
+        'payment_status' => 'partial',
+    ]);
+
+    $this->actingAs($this->manager)
+        ->post("/admin/services/taxi/bookings/{$this->ownBooking->id}/payment", [
+            'amount' => 2, 'payment_method' => 'upi',
+        ])->assertSessionHasErrors('amount');
+
+    expect((float) $this->ownBooking->fresh()->advance_paid)->toBe(1799.0);
+});
