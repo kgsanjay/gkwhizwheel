@@ -119,3 +119,17 @@ test('manager cannot use a foreign branch filter to disclose service bookings', 
         ->assertOk()
         ->assertJsonPath('meta.total', 1);
 });
+
+
+test('manager search cannot discover foreign branch customer or booking reference', function (): void {
+    Sanctum::actingAs($this->manager);
+
+    $this->getJson('/api/v1/staff/service-bookings?service_type=taxi&search=GKW-AUTH-MUR-01')
+        ->assertOk()->assertJsonPath('meta.total', 0);
+
+    $this->getJson('/api/v1/staff/service-bookings?service_type=taxi&search=Other%20Guest')
+        ->assertOk()->assertJsonPath('meta.total', 0);
+
+    $this->getJson('/api/v1/staff/service-bookings?service_type=taxi&search=GKW-AUTH-HON-01')
+        ->assertOk()->assertJsonPath('meta.total', 1);
+});
