@@ -60,3 +60,38 @@ test('new booking alerts reach only active managers assigned to the exact branch
     expect(app(ServiceBookingAlertRecipients::class)->forBooking($booking)->modelKeys())
         ->toBe([$headquarters->id]);
 });
+
+
+test('branch alert fallback excludes blacklisted headquarters and managers assigned to another service', function (): void {
+    $branch = Store::create([
+        'name' => 'Honnavar', 'address_line' => 'Main Road', 'city' => 'Honnavar',
+        'state' => 'Karnataka', 'pincode' => '581334', 'latitude' => 14.28,
+        'longitude' => 74.45, 'phone' => '9888802121', 'status' => StoreStatus::ACTIVE,
+    ]);
+
+    $taxiManager = User::create([
+        'name' => 'Taxi Manager', 'email' => 'taxi.fallback@example.test',
+        'phone' => '9888802122', 'password' => 'Password123!',
+        'role' => UserRole::STORE_MANAGER, 'status' => UserStatus::ACTIVE,
+    ]);
+    $taxiManager->stores()->attach($branch->id);
+    $taxiManager->syncAssignedServices(['taxi']);
+
+    $activeHeadquarters = User::create([
+        'name' => 'Active HQ', 'email' => 'hq.active.fallback@example.test',
+        'phone' => '9888802123', 'password' => 'Password123!',
+        'role' => UserRole::SUPER_ADMIN, 'status' => UserStatus::ACTIVE,
+    ]);
+    $blacklistedHeadquarters = User::create([
+        'name' => 'Blacklisted HQ', 'email' => 'hq.blacklisted.fallback@example.test',
+        'phone' => '9888802124', 'password' => 'Password123!',
+        'role' => UserRole::SUPER_ADMIN, 'status' => UserStatus::BLACKLISTED,
+    ]);
+
+    $booking = new ServiceBooking(['service_type' => 'boating', 'store_id' => $branch->id]);
+    expect(app(ServiceBookingAlertRecipients::class)->forBooking($booking)->modelKeys())
+        ->toBe([$activeHeadquarters->id]);
+
+    $activeHeadquarters->update(['status' => UserStatus::BLACKLISTED]);
+    expect(app(ServiceBookingAlertRecipients::class)->forBooking($booking))->toBeEmpty();
+});
