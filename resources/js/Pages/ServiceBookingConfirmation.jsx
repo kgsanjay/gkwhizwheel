@@ -31,66 +31,8 @@ import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 
-const SERVICE_COORDINATORS = {
-    two_wheelers: {
-        title: 'Two-Wheeler Fleet Operations',
-        name: 'WhizWheel Fleet Desk',
-        phone: '9481512340',
-        displayPhone: '+91 94815 12340',
-        spot: 'Palya Main Rd Hub, Honnavar (14.2810° N, 74.4442° E)',
-        mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=14.2810,74.4442',
-    },
-    taxi: {
-        title: 'Taxi & Cab Fleet Operations',
-        name: 'WhizWheel Taxi Dispatch',
-        phone: '9481512341',
-        displayPhone: '+91 94815 12341',
-        spot: 'Honnavar Railway Station / Dedicated Pickup Spot',
-        mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Honnavar+Railway+Station',
-    },
-    boating: {
-        title: 'Sharavathi Boating Jetty Operations',
-        name: 'Captain Boating Desk',
-        phone: '9481512342',
-        displayPhone: '+91 94815 12342',
-        spot: 'Sharavathi Boating Jetty, Mavinkurve, Honnavar (14.2755° N, 74.4312° E)',
-        mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=14.2755,74.4312',
-    },
-    scuba: {
-        title: 'Netrani Scuba Diving Team',
-        name: 'Netrani Dive Master Desk',
-        phone: '9481512343',
-        displayPhone: '+91 94815 12343',
-        spot: 'Murudeshwar Main Beach / Netrani Boarding Point (14.0940° N, 74.4849° E)',
-        mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=14.0940,74.4849',
-    },
-    homestay: {
-        title: 'Coastal Homestay Hospitality',
-        name: 'Coastal Homestay Reception',
-        phone: '9481512344',
-        displayPhone: '+91 94815 12344',
-        spot: 'Coastal Homestay Reception, Apsarakonda Rd, Honnavar',
-        mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Apsarakonda+Honnavar',
-    },
-    guide: {
-        title: 'Certified Local Travel Guide',
-        name: 'Lead Explorer / Guide Desk',
-        phone: '9481512345',
-        displayPhone: '+91 94815 12345',
-        spot: 'Honnavar Tourist Information Centre / Pickup Point',
-        mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Honnavar+Karnataka',
-    },
-    tours: {
-        title: 'Karnataka Tour Operations',
-        name: 'Tour Operations Desk',
-        phone: '9481512346',
-        displayPhone: '+91 94815 12346',
-        spot: 'GK WhizWheel Tour Operations Desk, Honnavar',
-        mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Honnavar+Karnataka',
-    },
-};
 
-export default function ServiceBookingConfirmation({ booking = {}, razorpayKey = '' }) {
+export default function ServiceBookingConfirmation({ booking = {}, coordinator = {}, razorpayKey = '' }) {
     const [currentBooking, setCurrentBooking] = React.useState(booking);
     const [paying, setPaying] = React.useState(false);
     const [paySuccessMsg, setPaySuccessMsg] = React.useState('');
@@ -112,7 +54,9 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
     const advancePaid = parseFloat(currentBooking.advance_paid || 0);
     const isFullyPaid = currentBooking.payment_status === 'paid';
     const isConfirmed = ['confirmed', 'in_progress', 'completed'].includes(currentBooking.status);
-    const isPayable = ['confirmed', 'in_progress'].includes(currentBooking.status) && balanceDue > 0;
+    const isInactive = ['cancelled', 'expired'].includes(currentBooking.status);
+    const isPayable = ['confirmed', 'in_progress'].includes(currentBooking.status) && balanceDue > 0 && !isFullyPaid;
+    const isVoucherAvailable = isConfirmed && !isInactive;
 
     const handlePayOnline = async (payAmount = null) => {
         const amountToPay = payAmount || balanceDue;
@@ -175,19 +119,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                 const rzp = new window.Razorpay(options);
                 rzp.open();
             } else {
-                // In local dev/test or unconfigured keys, simulate seamless confirmation
-                const simPaymentId = 'pay_sim_' + Math.random().toString(36).substring(2, 10);
-                const verifyRes = await window.axios.post(`/services/bookings/${currentBooking.booking_number}/verify-payment`, {
-                    razorpay_order_id: order?.id || 'order_sim',
-                    razorpay_payment_id: simPaymentId,
-                    razorpay_signature: 'sim_sig',
-                    amount: amountToPay,
-                });
-                if (verifyRes.data.success) {
-                    setCurrentBooking(verifyRes.data.booking);
-                    setPaySuccessMsg(`Test payment of ₹${amountToPay.toLocaleString('en-IN')} confirmed! Booking receipt updated.`);
-                }
-                setPaying(false);
+                throw new Error('Secure payment checkout is not configured. Please contact the service team; no payment was taken.');
             }
         } catch (err) {
             setPayErrorMsg(err.response?.data?.message || err.message || 'Payment initiation failed.');
@@ -225,8 +157,8 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                             width: 72,
                             height: 72,
                             borderRadius: '50%',
-                            bgcolor: 'rgba(16, 185, 129, 0.12)',
-                            color: '#10B981',
+                            bgcolor: isInactive ? 'rgba(220, 38, 38, 0.10)' : isConfirmed ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                            color: isInactive ? '#DC2626' : isConfirmed ? '#10B981' : '#B45309',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -234,7 +166,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                             mb: 2,
                         }}
                     >
-                        <CheckCircleIcon sx={{ fontSize: 44 }} />
+                        {isInactive ? <LockIcon sx={{ fontSize: 44 }} /> : <CheckCircleIcon sx={{ fontSize: 44 }} />}
                     </Box>
 
                     <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', mb: 1 }}>
@@ -264,7 +196,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 variant="contained"
                                 component="a"
                                 href={`/services/bookings/${currentBooking.booking_number}/voucher`}
-                                disabled={!isConfirmed}
+                                disabled={!isVoucherAvailable}
                                 download
                                 startIcon={<DownloadIcon />}
                                 size="small"
@@ -276,7 +208,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                 variant="outlined"
                                 component="a"
                                 href={`/services/bookings/${currentBooking.booking_number}/print`}
-                                disabled={!isConfirmed}
+                                disabled={!isVoucherAvailable}
                                 target="_blank"
                                 startIcon={<PrintIcon />}
                                 size="small"
@@ -564,15 +496,14 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
 
                         {/* Assigned Service Coordinator Card */}
                         {(() => {
-                            const coord = SERVICE_COORDINATORS[currentBooking.service_type] || {
-                                title: 'Travel Experience Operations',
-                                name: 'GK WhizWheel Operations',
-                                phone: '9481512340',
-                                displayPhone: '+91 94815 12340',
-                                spot: currentBooking.pickup_location || 'Honnavar Operations Hub',
-                                mapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar',
+                            const coord = {
+                                name: coordinator.name || 'GK WhizWheel Operations',
+                                phone: (coordinator.phone || '').replace(/\D/g, ''),
+                                displayPhone: coordinator.phone || '',
+                                spot: currentBooking.pickup_location || coordinator.spot || 'Pickup point to be confirmed',
+                                mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentBooking.pickup_location || coordinator.spot || '')}`,
                             };
-                            return (
+                                                        return (
                                 <Paper sx={{ mt: 3, p: 2.5, borderRadius: 3, border: '1px solid #BAE6FD', bgcolor: '#F0F9FF' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 1.5 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -584,13 +515,13 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                                     Assigned Coordinator: {coord.name}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                                    {coord.title} • Direct Contact & Spot Navigation
+                                                    Booking support • Contact and pickup information
                                                 </Typography>
                                             </Box>
                                         </Box>
                                         <Chip
                                             icon={<CheckCircleIcon sx={{ fontSize: '13px !important' }} />}
-                                            label={`WhatsApp Dispatch Sent to +91 ${currentBooking.customer_phone}`}
+                                            label="Contact details for your booking"
                                             size="small"
                                             sx={{ fontWeight: 700, bgcolor: 'rgba(16, 185, 129, 0.12)', color: '#059669' }}
                                         />
@@ -628,6 +559,7 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                                     href={`https://wa.me/${coord.phone}?text=Hi%20${encodeURIComponent(coord.name)},%20I%20have%20confirmed%20booking%20#${currentBooking.booking_number}%20for%20${encodeURIComponent(currentBooking.service_item?.name || serviceTitle)}.`}
                                                     target="_blank"
                                                     rel="noreferrer"
+                                                    disabled={!coord.phone}
                                                     startIcon={<WhatsAppIcon />}
                                                     sx={{ fontWeight: 700, textTransform: 'none', fontSize: '0.75rem' }}
                                                 >
@@ -638,10 +570,11 @@ export default function ServiceBookingConfirmation({ booking = {}, razorpayKey =
                                                     size="small"
                                                     component="a"
                                                     href={`tel:${coord.phone}`}
+                                                    disabled={!coord.phone}
                                                     startIcon={<PhoneIcon />}
                                                     sx={{ fontWeight: 700, textTransform: 'none', fontSize: '0.75rem' }}
                                                 >
-                                                    Call: {coord.displayPhone}
+                                                    {coord.displayPhone ? `Call: ${coord.displayPhone}` : 'Phone unavailable'}
                                                 </Button>
                                             </Stack>
                                         </Grid>

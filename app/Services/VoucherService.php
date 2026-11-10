@@ -25,11 +25,7 @@ class VoucherService
         $verificationUrl = route('services.booking.confirmation', $booking->booking_number);
         $qrDataUri = $this->qrCodeService->generateDataUri($verificationUrl);
 
-        $coordinator = ServiceBookingConfirmedNotification::SERVICE_COORDINATORS[$booking->service_type] ?? [
-            'name' => 'WhizWheel Operations Desk',
-            'phone' => '+91 86609 89586',
-            'spot' => $booking->pickup_location,
-        ];
+        $coordinator = (new ServiceBookingConfirmedNotification($booking))->getCoordinatorDetails();
 
         $pdf = Pdf::loadView('vouchers.service_voucher', [
             'booking' => $booking,
@@ -51,11 +47,7 @@ class VoucherService
         $verificationUrl = route('services.booking.confirmation', $booking->booking_number);
         $qrDataUri = $this->qrCodeService->generateDataUri($verificationUrl);
 
-        $coordinator = ServiceBookingConfirmedNotification::SERVICE_COORDINATORS[$booking->service_type] ?? [
-            'name' => 'WhizWheel Operations Desk',
-            'phone' => '+91 86609 89586',
-            'spot' => $booking->pickup_location,
-        ];
+        $coordinator = (new ServiceBookingConfirmedNotification($booking))->getCoordinatorDetails();
 
         return view('vouchers.service_voucher', [
             'booking' => $booking,

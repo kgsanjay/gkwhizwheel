@@ -214,9 +214,20 @@ class RazorpayService
      */
     public function createRefund(string $paymentId, float $amount, array $notes = []): array
     {
-        $keyId = (string) config('services.razorpay.key_id', 'rzp_test_placeholder');
-        $keySecret = (string) config('services.razorpay.key_secret', 'test_secret_placeholder');
+        $keyId = (string) config('services.razorpay.key_id', '');
+        $keySecret = (string) config('services.razorpay.key_secret', '');
         $amountPaise = (int) round($amount * 100);
+
+        // Reject invalid amounts before making any external request.
+        if (! is_finite($amount) || $amountPaise < 1 || $amountPaise > 1000000000) {
+            return ['success' => false, 'refund_id' => null, 'status' => 'failed', 'error' => 'Invalid refund amount.'];
+        }
+        if ($paymentId === '' || ! preg_match('/^pay_[A-Za-z0-9_]+$/', $paymentId)) {
+            return ['success' => false, 'refund_id' => null, 'status' => 'failed', 'error' => 'Invalid payment reference.'];
+        }
+        if ($keyId === '' || $keySecret === '' || str_contains($keyId, 'placeholder') || str_contains($keySecret, 'placeholder')) {
+            return ['success' => false, 'refund_id' => null, 'status' => 'failed', 'error' => 'Payment gateway is not configured.'];
+        }
 
         $payload = [
             'amount' => $amountPaise,
@@ -231,7 +242,15 @@ class RazorpayService
             if ($response->successful()) {
                 /** @var array<string, mixed> $data */
                 $data = $response->json();
-                $isProcessed = ($data['status'] ?? '') === 'processed';
+                if (! is_array($data)
+                    || ! is_string($data['id'] ?? null)
+                    || ! str_starts_with($data['id'], 'rfnd_')
+                    || (int) ($data['amount'] ?? 0) !== $amountPaise
+                    || ($data['payment_id'] ?? null) !== $paymentId
+                    || ! in_array($data['status'] ?? null, ['processed', 'pending', 'created'], true)) {
+                    return ['success' => false, 'refund_id' => null, 'status' => 'failed', 'error' => 'Invalid refund gateway response.'];
+                }
+                $isProcessed = $data['status'] === 'processed';
 
                 return [
                     'success' => true,
@@ -254,25 +273,6 @@ class RazorpayService
             ]);
         }
 
-        if (app()->environment('local', 'testing')) {
-            // ponytail: synthetic simulated refund in local dev & testing when offline/placeholder keys are used
-            $simulatedId = 'rfnd_sim_'.strtolower(Str::random(14));
-
-            return [
-                'success' => true,
-                'refund_id' => $simulatedId,
-                'status' => 'pending',
-                'error' => null,
-                'data' => [
-                    'id' => $simulatedId,
-                    'entity' => 'refund',
-                    'amount' => $amountPaise,
-                    'currency' => 'INR',
-                    'payment_id' => $paymentId,
-                    'status' => 'pending',
-                ],
-            ];
-        }
 
         return [
             'success' => false,

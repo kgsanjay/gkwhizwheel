@@ -159,7 +159,7 @@ test('active held booking blocks live availability during hold window', function
     })->toThrow(ServiceItemNotAvailableException::class);
 });
 
-test('confirmServiceBooking confirms reservation and clears held_until', function (): void {
+test('confirmServiceBooking rejects a hold without approved typed allocations', function (): void {
     $item = ServiceItem::create([
         'service_type' => 'boating',
         'name' => 'Sharavathi Estuary Luxury Yacht',
@@ -183,10 +183,10 @@ test('confirmServiceBooking confirms reservation and clears held_until', functio
 
     expect($held->status)->toBe('held');
 
-    $confirmed = $this->service->confirmServiceBooking($held);
-
-    expect($confirmed->status)->toBe('confirmed')
-        ->and($confirmed->held_until)->toBeNull();
+    expect(fn () => $this->service->confirmServiceBooking($held))
+        ->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect($held->fresh()->status)->toBe('held')
+        ->and($held->fresh()->held_until)->not->toBeNull();
 });
 
 test('releaseExpiredServiceHolds flips expired holds back to available', function (): void {

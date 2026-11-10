@@ -49,7 +49,7 @@ class CustomerAccountWebController extends Controller
             ->get();
 
         $serviceBookings->transform(function ($sb) {
-            $coord = \App\Notifications\ServiceBookingConfirmedNotification::SERVICE_COORDINATORS[$sb->service_type] ?? null;
+            $coord = (new \App\Notifications\ServiceBookingConfirmedNotification($sb))->getCoordinatorDetails();
             $sb->coordinator = $coord;
             return $sb;
         });

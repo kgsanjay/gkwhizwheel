@@ -68,3 +68,51 @@ test('branch ownership audit is successful on fully consistent records', functio
     ]);
     $this->artisan('services:audit-branches', ['--strict' => true])->assertSuccessful();
 });
+
+
+test('strict branch audit rejects a booking assigned to an item with no branch', function (): void {
+    $store = Store::create([
+        'name' => 'Murudeshwar', 'address_line' => 'Bus Stand Road', 'city' => 'Murudeshwar',
+        'state' => 'Karnataka', 'pincode' => '581350', 'latitude' => 14.09,
+        'longitude' => 74.49, 'phone' => '9888890007', 'status' => StoreStatus::ACTIVE,
+    ]);
+    $item = ServiceItem::create([
+        'service_type' => 'taxi', 'name' => 'Legacy Unassigned Cab',
+        'price_base' => 1500,
+    ]);
+    $booking = ServiceBooking::create([
+        'store_id' => $store->id, 'service_item_id' => $item->id,
+        'booking_number' => 'GKW-AUDIT-04', 'service_type' => 'taxi',
+        'customer_name' => 'Guest', 'customer_phone' => '9888890008',
+        'start_datetime' => now(),
+    ]);
+
+    $this->artisan('services:audit-branches', ['--strict' => true, '--sample' => 0])->assertFailed();
+
+    expect($item->fresh()->store_id)->toBeNull()
+        ->and($booking->fresh()->store_id)->toBe($store->id);
+});
+
+
+test('branch audit sample limits do not hide strict failures or mutate historical ownership', function (): void {
+    $items = collect(range(1, 4))->map(fn (int $i) => ServiceItem::create([
+        'service_type' => 'taxi',
+        'name' => "Legacy Taxi {$i}",
+        'price_base' => 1500,
+    ]));
+
+    $this->artisan('services:audit-branches', ['--strict' => true, '--sample' => 0])
+        ->expectsOutput('WARN  Unassigned service items: 4')
+        ->assertFailed();
+
+    $this->artisan('services:audit-branches', ['--strict' => true, '--sample' => 2])
+        ->expectsOutput('WARN  Unassigned service items: 4')
+        ->assertFailed();
+
+    $this->artisan('services:audit-branches', ['--sample' => 100])
+        ->assertSuccessful();
+
+    foreach ($items as $item) {
+        expect($item->fresh()->store_id)->toBeNull();
+    }
+});

@@ -264,11 +264,20 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/cab-fares', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'store'])->name('admin.cab-fares.store');
     Route::post('/cab-fares/simulate', [\App\Http\Controllers\Web\Admin\AdminCabFareController::class, 'simulate'])->name('admin.cab-fares.simulate');
 
+    // Branch-scoped cab operations UI (no gateway refunds or customer confirmations).
+    Route::post('/cab-disputes/{id}/transition', [\App\Http\Controllers\Web\Admin\AdminCabDisputeController::class, 'transition'])->name('admin.cab-disputes.transition');
+    Route::post('/cab-bookings/{bookingId}/disputes', [\App\Http\Controllers\Web\Admin\AdminCabDisputeController::class, 'store'])->name('admin.cab-bookings.disputes.store');
+    Route::get('/cab-operations', [\App\Http\Controllers\Web\Admin\AdminCabOperationsController::class, 'index'])->name('admin.cab-operations.index');
+
     // Verified cab dispatch (no customer instant booking or payment).
     Route::get('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'index'])->name('admin.cab-dispatches.index');
     Route::post('/cab-dispatches', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'assign'])->name('admin.cab-dispatches.assign');
     Route::post('/cab-dispatches/{id}/start', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'start'])->name('admin.cab-dispatches.start');
     Route::post('/cab-dispatches/{id}/complete', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'complete'])->name('admin.cab-dispatches.complete');
+    Route::get('/cab-bookings/{bookingId}/settlement-preview', [\App\Http\Controllers\Web\Admin\AdminCabSettlementPreviewController::class, 'show'])->name('admin.cab-bookings.settlement-preview.show');
+    Route::post('/cab-bookings/{bookingId}/refund-reviews', [\App\Http\Controllers\Web\Admin\AdminCabRefundReviewController::class, 'store'])->name('admin.cab-bookings.refund-reviews.store');
+    Route::post('/cab-reschedule-requests/{id}/resolve', [\App\Http\Controllers\Web\Admin\AdminCabRescheduleController::class, 'resolve'])->name('admin.cab-reschedule-requests.resolve');
+    Route::post('/cab-dispatches/{id}/reschedule-requests', [\App\Http\Controllers\Web\Admin\AdminCabRescheduleController::class, 'store'])->name('admin.cab-dispatches.reschedule-requests.store');
     Route::post('/cab-dispatches/{id}/cancel', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'cancel'])->name('admin.cab-dispatches.cancel');
 
     // Dynamic Pricing Rules
@@ -313,6 +322,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/service-enquiries', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'index'])
         ->middleware('role:super_admin')->name('admin.service-enquiries.index');
 
+    Route::post('/service-enquiries/{id}/proposal', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'createProposal'])
+        ->middleware('role:super_admin')->name('admin.service-enquiries.proposal');
     Route::post('/service-enquiries/{id}/status', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'updateStatus'])
         ->middleware('role:super_admin')->name('admin.service-enquiries.status');
 
@@ -346,12 +357,14 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
         Route::get('/items/{id}/edit', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'editItem'])->name('admin.services.items.edit');
         Route::match(['post', 'put'], '/items/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'updateItem'])->name('admin.services.items.update');
         Route::delete('/items/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'destroyItem'])->name('admin.services.items.destroy');
+        Route::get('/items/{itemId}/documents/{documentId}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'downloadDocument'])->name('admin.services.items.documents.download');
         Route::delete('/items/{itemId}/documents/{documentId}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'destroyDocument'])->name('admin.services.items.documents.destroy');
 
         Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'bookings'])->name('admin.services.bookings.index');
         Route::get('/bookings/create', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'createBooking'])->name('admin.services.bookings.create');
         Route::post('/bookings', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'storeBooking'])->name('admin.services.bookings.store');
         Route::get('/bookings/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'showBooking'])->name('admin.services.bookings.show');
+        Route::post('/bookings/{id}/approve', [\App\Http\Controllers\Web\Admin\AdminServiceApprovalController::class, 'approveForService'])->name('admin.services.bookings.approve');
         Route::post('/bookings/{id}/status', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'updateBookingStatus'])->name('admin.services.bookings.update-status');
         Route::post('/bookings/{id}/payment', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'recordPayment'])->name('admin.services.bookings.record-payment');
         Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'downloadVoucher'])->name('admin.services.bookings.voucher');

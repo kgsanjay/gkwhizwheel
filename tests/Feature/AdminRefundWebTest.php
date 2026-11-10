@@ -21,6 +21,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -146,6 +147,12 @@ test('super admin can load refund screen with policy calculation', function (): 
 });
 
 test('super admin can execute refund and optionally mark booking as cancelled', function (): void {
+    config()->set('services.razorpay.key_id', 'rzp_test_web_refund');
+    config()->set('services.razorpay.key_secret', 'test_web_refund_secret');
+    Http::fake(['api.razorpay.com/v1/payments/*/refund' => Http::response([
+        'id' => 'rfnd_web_01', 'amount' => 300000,
+        'payment_id' => 'pay_refund_test_01', 'status' => 'created',
+    ], 200)]);
     $payload = [
         'amount' => 3000.00,
         'reason' => 'Customer requested cancellation more than 48 hours prior',

@@ -95,6 +95,7 @@ beforeEach(function (): void {
         'status' => 'confirmed',
     ]);
 
+    gkwAllocatePaymentFixture($this->serviceBooking);
     \App\Models\ServiceQuoteSnapshot::create([
         'public_id' => (string) \Illuminate\Support\Str::uuid(),
         'user_id' => $this->customer->id,
@@ -105,7 +106,8 @@ beforeEach(function (): void {
         'base_amount' => 1500,
         'discount_amount' => 0,
         'total_amount' => 1500,
-        'breakdown_json' => ['base_amount' => 1500, 'total_amount' => 1500],
+        'breakdown_json' => ['base_amount' => 1500, 'total_amount' => 1500,
+            'reservation_context' => gkwPaymentQuoteContext($this->serviceBooking)],
         'expires_at' => now()->addMinutes(15),
         'service_booking_id' => $this->serviceBooking->id,
     ]);
@@ -128,6 +130,20 @@ test('ServiceBookingConfirmedNotification formats Mail message with coordinator 
 
     expect($mail->subject)->toBe('Service Booking Confirmed - GKW-BT-260909-TEST');
     expect($mail->actionUrl)->toBe(url('/services/booking/confirmation/GKW-BT-260909-TEST'));
+});
+
+test('coordinator details come from booking branch and never from placeholder numbers', function (): void {
+    $notification = new ServiceBookingConfirmedNotification($this->serviceBooking);
+    $coord = $notification->getCoordinatorDetails();
+    expect($coord['phone'])->toBe('9998887772')
+        ->and($coord['name'])->toContain('Honnavar Boating')
+        ->and($coord['spot'])->toBe($this->serviceBooking->pickup_location);
+
+    $this->branch->update(['phone' => null]);
+    $this->serviceBooking->unsetRelation('store');
+    $missing = (new ServiceBookingConfirmedNotification($this->serviceBooking->fresh()))->getCoordinatorDetails();
+    expect($missing['phone'])->toBe('')
+        ->and($missing['spot'])->toBe($this->serviceBooking->pickup_location);
 });
 
 test('ServiceBookingConfirmedNotification via channels fallback correctly', function (): void {
@@ -165,66 +181,25 @@ test('ServiceManagerBookingAlertNotification formats WhatsApp and Mail payloads 
     expect($mail->actionUrl)->toBe(url("/admin/services/boating/bookings/{$this->serviceBooking->id}"));
 });
 
-test('online service booking creation dispatches customer confirmation and manager alert with notification_logs', function (): void {
-    Http::fake([
-        'https://graph.facebook.com/*' => Http::response([
-            'messaging_product' => 'whatsapp',
-            'contacts' => [['input' => '919876543299', 'wa_id' => '919876543299']],
-            'messages' => [['id' => 'wamid.HBgMOTExMjM0NTY3OAA=']],
-        ], 200),
-    ]);
-
-    $quoteDate = Carbon::tomorrow()->setTime(10, 0)->toDateTimeString();
+test('unallocated customer service checkout creates no confirmed booking or notification', function (): void {
+    Notification::fake();
+    $date = Carbon::tomorrow()->setTime(10, 0)->toDateTimeString();
     $quoteId = $this->actingAs($this->customer)->postJson('/services/quote', [
-        'service_type' => 'boating',
-        'service_item_id' => $this->serviceItem->id,
-        'start_datetime' => $quoteDate,
-        'quantity' => 1,
+        'service_type' => 'boating', 'service_item_id' => $this->serviceItem->id,
+        'start_datetime' => $date, 'quantity' => 1,
     ])->assertOk()->json('quote_id');
-
-    $response = $this->post(route('services.book'), [
-        'quote_id' => $quoteId,
-        'service_type' => 'boating',
-        'service_item_id' => $this->serviceItem->id,
-        'customer_name' => 'Aditi Sharma',
-        'customer_phone' => '9876543299',
-        'customer_email' => 'aditi.traveler@example.com',
-        'start_datetime' => $quoteDate,
-        'pickup_location' => 'Sharavathi Jetty, Honnavar',
-        'quantity' => 1,
-        'payment_method' => 'online',
-        'pay_option' => 'advance',
-    ]);
-
-    $response->assertRedirect();
-
-    $newBooking = ServiceBooking::where('customer_email', 'aditi.traveler@example.com')
-        ->where('id', '!=', $this->serviceBooking->id)
-        ->latest('id')
-        ->first();
-
-    expect($newBooking)->not->toBeNull();
-
-    // Verify customer notification log with service_booking_id
-    $this->assertDatabaseHas('notification_logs', [
-        'user_id' => $this->customer->id,
-        'service_booking_id' => $newBooking->id,
-        'channel' => NotificationChannel::WHATSAPP->value,
-        'template' => 'service_booking_confirmed',
-        'status' => NotificationStatus::SENT->value,
-    ]);
-
-    // Verify manager alert notification log with service_booking_id
-    $this->assertDatabaseHas('notification_logs', [
-        'user_id' => $this->boatingManager->id,
-        'service_booking_id' => $newBooking->id,
-        'channel' => NotificationChannel::WHATSAPP->value,
-        'template' => 'service_manager_booking_alert',
-        'status' => NotificationStatus::SENT->value,
-    ]);
+    $this->post(route('services.book'), [
+        'quote_id' => $quoteId, 'service_type' => 'boating', 'service_item_id' => $this->serviceItem->id,
+        'customer_name' => 'Test Customer', 'customer_phone' => '9876543299',
+        'start_datetime' => $date, 'pickup_location' => 'Test Jetty',
+        'quantity' => 1, 'payment_method' => 'online',
+    ])->assertSessionHasErrors('resources');
+    expect(ServiceBooking::count())->toBe(1); // Only the separately allocated historical fixture.
+    expect(\App\Models\ServiceQuoteSnapshot::where('public_id', $quoteId)->first()->service_booking_id)->toBeNull();
+    Notification::assertNothingSent();
 });
 
-test('admin offline counter booking dispatches customer confirmation notification', function (): void {
+test('admin offline counter booking creates an unpaid hold without customer confirmation', function (): void {
     Http::fake([
         'https://graph.facebook.com/*' => Http::response([
             'messaging_product' => 'whatsapp',
@@ -242,10 +217,10 @@ test('admin offline counter booking dispatches customer confirmation notificatio
         'pickup_location' => 'Sharavathi Jetty, Mavinkurve',
         'quantity' => 2,
         'base_amount' => 3000.00,
-        'advance_paid' => 1000.00,
+        'advance_paid' => 0.00,
         'booking_channel' => 'offline_walkin',
         'payment_method' => 'cash',
-        'status' => 'confirmed',
+        'status' => 'held',
     ]);
 
     $response->assertRedirect(route('admin.services.bookings.index', 'boating'));
@@ -253,8 +228,9 @@ test('admin offline counter booking dispatches customer confirmation notificatio
     $offlineBooking = ServiceBooking::where('customer_name', 'Walkin Guest')->first();
     expect($offlineBooking)->not->toBeNull();
 
-    // Verify notification log created with service_booking_id
-    $this->assertDatabaseHas('notification_logs', [
+    expect($offlineBooking->status)->toBe('held');
+    Http::assertNothingSent();
+    $this->assertDatabaseMissing('notification_logs', [
         'service_booking_id' => $offlineBooking->id,
         'channel' => NotificationChannel::WHATSAPP->value,
         'template' => 'service_booking_confirmed',
@@ -262,15 +238,7 @@ test('admin offline counter booking dispatches customer confirmation notificatio
     ]);
 });
 
-test('customer payment verification sends updated notification to customer', function (): void {
-    Http::fake([
-        'https://graph.facebook.com/*' => Http::response([
-            'messaging_product' => 'whatsapp',
-            'contacts' => [['input' => '919876543299', 'wa_id' => '919876543299']],
-            'messages' => [['id' => 'wamid.HBgMOTExMjM0NTY3OAA=']],
-        ], 200),
-    ]);
-
+test('customer payment verification sends a payment receipt without repeating booking confirmation', function (): void {
     $response = $this->actingAs($this->customer)->postJson(
         route('services.booking.verify-payment', $this->serviceBooking->booking_number),
         [
@@ -287,9 +255,42 @@ test('customer payment verification sends updated notification to customer', fun
 
     $this->assertDatabaseHas('notification_logs', [
         'user_id' => $this->customer->id,
+        'booking_id' => null,
         'service_booking_id' => $this->serviceBooking->id,
-        'channel' => NotificationChannel::WHATSAPP->value,
-        'template' => 'service_booking_confirmed',
+        'channel' => NotificationChannel::EMAIL->value,
+        'template' => 'service_payment_received',
         'status' => NotificationStatus::SENT->value,
     ]);
+    $this->assertDatabaseMissing('notification_logs', [
+        'user_id' => $this->customer->id,
+        'service_booking_id' => $this->serviceBooking->id,
+        'template' => 'service_booking_confirmed',
+    ]);
+});
+
+
+test('replayed service payment reference does not create another receipt or credit', function (): void {
+    $endpoint = route('services.booking.verify-payment', $this->serviceBooking->booking_number);
+    $payload = [
+        'razorpay_payment_id' => 'pay_test_service_replay_receipt',
+        'amount' => 1050.00,
+    ];
+
+    $this->actingAs($this->customer)->postJson($endpoint, $payload)->assertOk();
+    $this->serviceBooking->refresh();
+    $paid = (float) $this->serviceBooking->advance_paid;
+    $receiptCount = NotificationLog::query()
+        ->where('service_booking_id', $this->serviceBooking->id)
+        ->where('template', 'service_payment_received')->count();
+
+    expect($receiptCount)->toBeGreaterThan(0);
+
+    $this->actingAs($this->customer)->postJson($endpoint, $payload)->assertStatus(422);
+    $this->serviceBooking->refresh();
+
+    expect((float) $this->serviceBooking->advance_paid)->toBe($paid);
+    expect(NotificationLog::query()
+        ->where('service_booking_id', $this->serviceBooking->id)
+        ->where('template', 'service_payment_received')->count())->toBe($receiptCount);
+    $this->assertDatabaseCount('service_payment_receipts', 1);
 });

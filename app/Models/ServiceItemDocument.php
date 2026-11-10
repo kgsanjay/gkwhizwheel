@@ -34,6 +34,8 @@ class ServiceItemDocument extends Model
         'uploaded_by',
     ];
 
+    protected $hidden = ['file_path'];
+
     /**
      * The accessors to append to the model's array form.
      *
@@ -72,15 +74,37 @@ class ServiceItemDocument extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    /**
-     * Get the publicly accessible URL for the document.
-     */
-    public function getFileUrlAttribute(): string
+    /** Only files uploaded into the private namespace can be downloaded. */
+    public function usesPrivateStorage(): bool
     {
-        if (str_starts_with($this->file_path, 'http://') || str_starts_with($this->file_path, 'https://')) {
-            return $this->file_path;
-        }
+        return str_starts_with((string) $this->file_path, 'services/private-documents/')
+            && ! str_contains($this->file_path, '..')
+            && ! str_contains($this->file_path, '\\');
+    }
 
-        return Storage::disk('public')->url($this->file_path);
+    public function getFileUrlAttribute(): ?string
+    {
+        if (! $this->usesPrivateStorage() || $this->serviceItem === null) {
+            return null; // Legacy public/external assets need operator migration.
+        }
+        return route('admin.services.items.documents.download', [
+            'serviceType' => $this->serviceItem->service_type,
+            'itemId' => $this->service_item_id,
+            'documentId' => $this->id,
+        ]);
+    }
+
+    /** Called only after the owning service record has been authorized. */
+    public function deleteStoredFile(): void
+    {
+        if (str_contains((string) $this->file_path, '..') || str_contains((string) $this->file_path, '\\')) {
+            return;
+        }
+        if ($this->usesPrivateStorage()) {
+            Storage::disk('local')->delete($this->file_path);
+        } elseif (str_starts_with((string) $this->file_path, 'services/documents/')) {
+            // Retain authorized cleanup for legacy uploads without serving them.
+            Storage::disk('public')->delete($this->file_path);
+        }
     }
 }

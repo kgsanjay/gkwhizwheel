@@ -19,6 +19,7 @@ use App\Models\Payment;
 use App\Models\Store;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function (): void {
     $this->storeA = Store::create([
@@ -301,6 +302,12 @@ test('customer cannot view or cancel another customer booking', function (): voi
 });
 
 test('customer can cancel booking and refund is processed if paid', function (): void {
+    config()->set('services.razorpay.key_id', 'rzp_test_cancel_refund');
+    config()->set('services.razorpay.key_secret', 'test_cancel_refund_secret');
+    Http::fake(['api.razorpay.com/v1/payments/*/refund' => Http::response([
+        'id' => 'rfnd_cancel_01', 'amount' => 320000,
+        'payment_id' => 'pay_orig_cancel_01', 'status' => 'created',
+    ], 200)]);
     Sanctum::actingAs($this->customer, ['*']);
 
     $booking = Booking::create([
@@ -311,8 +318,8 @@ test('customer can cancel booking and refund is processed if paid', function ():
         'return_store_id' => $this->storeA->id,
         'channel' => BookingChannel::ONLINE,
         'status' => BookingStatus::CONFIRMED,
-        'start_date' => '2026-11-10', // well in advance >24h
-        'end_date' => '2026-11-12',
+        'start_date' => now()->addDays(7)->toDateString(), // stable full-refund window
+        'end_date' => now()->addDays(9)->toDateString(),
         'base_amount' => 1200.00,
         'deposit_amount' => 2000.00,
         'total_amount' => 3200.00,

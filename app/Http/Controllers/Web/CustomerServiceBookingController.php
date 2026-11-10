@@ -11,6 +11,7 @@ use App\Models\ServiceBooking;
 use App\Models\ServiceItem;
 use App\Models\User;
 use App\Notifications\ServiceBookingConfirmedNotification;
+use App\Notifications\ServicePaymentReceivedNotification;
 use App\Notifications\ServiceManagerBookingAlertNotification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -72,7 +73,7 @@ class CustomerServiceBookingController extends Controller
         $quoteSnapshot = \App\Models\ServiceQuoteSnapshot::where('public_id', $validated['quote_id'])->firstOrFail();
         app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
             $quoteSnapshot, $request->user()->id, $item,
-            $validated['start_datetime'], $quantity
+            $validated['start_datetime'], $quantity, $validated['end_datetime'] ?? null
         );
         $quote = $quoteSnapshot->breakdown_json;
         $baseAmount = (float) $quoteSnapshot->base_amount;
@@ -107,7 +108,7 @@ class CustomerServiceBookingController extends Controller
                     ->lockForUpdate()->firstOrFail();
                 app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
                     $lockedQuote, $request->user()->id, $item,
-                    $validated['start_datetime'], $quantity
+                    $validated['start_datetime'], $quantity, $validated['end_datetime'] ?? null
                 );
                 $booking = $availabilityService->createServiceBooking([
                 'booking_number' => $bookingNumber,
@@ -135,6 +136,9 @@ class CustomerServiceBookingController extends Controller
                 'status' => 'confirmed',
                 'customer_notes' => $customerNotes ?: null,
             ]);
+                if ($message = app(\App\Services\ServiceReservationReadiness::class)->issue($booking)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['resources' => $message]);
+                }
                 $lockedQuote->update(['service_booking_id' => $booking->id]);
                 return $booking;
             });
@@ -159,27 +163,43 @@ class CustomerServiceBookingController extends Controller
             ],
         ]);
 
-        // Dispatch booking confirmation to customer (WhatsApp & Email)
-        if ($request->user()) {
-            $request->user()->notify(new ServiceBookingConfirmedNotification($booking));
-        } else {
-            Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
-                ->route(\App\Channels\WhatsAppChannel::class, $booking->customer_phone)
-                ->notify(new ServiceBookingConfirmedNotification($booking));
+        // The booking has already committed. A transient notification provider failure
+        // must not turn a successful reservation into a 500 and prompt a retry.
+        try {
+            if ($request->user()) {
+                $request->user()->notify(new ServiceBookingConfirmedNotification($booking));
+            } else {
+                Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
+                    ->route(\App\Channels\WhatsAppChannel::class, $booking->customer_phone)
+                    ->notify(new ServiceBookingConfirmedNotification($booking));
+            }
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::warning('Service booking confirmation notification failed', [
+                'service_booking_id' => $booking->id,
+                'exception_class' => get_class($exception),
+            ]);
         }
 
-        // Dispatch operational alert to assigned service managers
-        $managerIds = DB::table('service_user')
-            ->where('service_type', $validated['service_type'])
-            ->pluck('user_id');
-
-        $managers = User::whereIn('id', $managerIds)->get();
-        if ($managers->isEmpty()) {
-            $managers = User::where('role', UserRole::SUPER_ADMIN)->get();
-        }
-
-        foreach ($managers as $manager) {
-            $manager->notify(new ServiceManagerBookingAlertNotification($booking));
+        // Only active managers assigned to this service and branch receive alerts.
+        // Notification delivery failures must not invalidate the committed booking.
+        try {
+            $managers = app(\App\Services\ServiceBookingAlertRecipients::class)->forBooking($booking);
+            foreach ($managers as $manager) {
+                try {
+                    $manager->notify(new ServiceManagerBookingAlertNotification($booking));
+                } catch (\Throwable $exception) {
+                    \Illuminate\Support\Facades\Log::warning('Service booking manager alert failed', [
+                        'service_booking_id' => $booking->id,
+                        'recipient_id' => $manager->id,
+                        'exception_class' => get_class($exception),
+                    ]);
+                }
+            }
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::warning('Service booking alert recipient lookup failed', [
+                'service_booking_id' => $booking->id,
+                'exception_class' => get_class($exception),
+            ]);
         }
 
         return redirect()->route('services.booking.confirmation', $bookingNumber);
@@ -217,11 +237,7 @@ class CustomerServiceBookingController extends Controller
 
         $this->authorizeBookingAccess($request->user(), $booking);
 
-        $coordinator = \App\Notifications\ServiceBookingConfirmedNotification::SERVICE_COORDINATORS[$booking->service_type] ?? [
-            'name' => 'WhizWheel Operations Desk',
-            'phone' => '+91 94815 12340',
-            'spot' => 'Palya Main Rd Hub, Honnavar',
-        ];
+        $coordinator = (new ServiceBookingConfirmedNotification($booking))->getCoordinatorDetails();
 
         return Inertia::render('ServiceBookingConfirmation', [
             'booking' => $booking,
@@ -303,8 +319,9 @@ class CustomerServiceBookingController extends Controller
 
         $paidAmount = (float) $validated['amount'];
 
-        if (! app()->environment('local', 'testing')) {
-            // Payment proof is mandatory in production, not optional.
+        if (! app()->environment('testing')) {
+            // Payment proof is mandatory in every running application environment.
+            // Only the isolated automated test environment uses fixture payments.
             $orderId = (string) ($validated['razorpay_order_id'] ?? '');
             $signature = (string) ($validated['razorpay_signature'] ?? '');
             if ($orderId === '' || $signature === ''
@@ -401,14 +418,20 @@ class CustomerServiceBookingController extends Controller
         }
         $booking->refresh();
 
-        // Send updated confirmation to customer
-        if ($booking->user) {
-            $booking->user->notify(new ServiceBookingConfirmedNotification($booking));
-        } elseif (! empty($booking->customer_phone)) {
-            Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
-                ->route(\App\Channels\WhatsAppChannel::class, $booking->customer_phone)
-                ->notify(new ServiceBookingConfirmedNotification($booking));
+        // Notify only after the payment transaction commits. This is a receipt,
+        // not another reservation confirmation. Never use a placeholder address.
+        $receiptNotification = new ServicePaymentReceivedNotification(
+            $booking, $validated['razorpay_payment_id'], $paidPaise
+        );
+        if ($booking->user && filter_var($booking->user->email, FILTER_VALIDATE_EMAIL)) {
+            $booking->user->notify($receiptNotification);
+        } elseif ($booking->customer_email && filter_var($booking->customer_email, FILTER_VALIDATE_EMAIL)) {
+            Notification::route('mail', $booking->customer_email)->notify($receiptNotification);
         }
+
+        // A successful payment is not a booking-status transition. Do not send
+        // another "booking confirmed" message for an already confirmed booking.
+        // Payment receipts require their own notification template and delivery flow.
 
         return response()->json([
             'success' => true,
@@ -428,6 +451,7 @@ class CustomerServiceBookingController extends Controller
             'service_type' => ['required', 'in:taxi,boating,scuba,homestay,guide,tours'],
             'service_item_id' => ['required', 'integer', 'exists:service_items,id'],
             'start_datetime' => ['required', 'date', 'after:now'],
+            'end_datetime' => ['nullable', 'date', 'after:start_datetime'],
             'quantity' => ['required', 'integer', 'between:1,50'],
         ]);
 
@@ -437,12 +461,13 @@ class CustomerServiceBookingController extends Controller
 
         $snapshot = app(\App\Services\ServiceQuoteSnapshots::class)->issue(
             $request->user()->id, $item, $validated['start_datetime'],
-            (int) $validated['quantity']
+            (int) $validated['quantity'], $validated['end_datetime'] ?? null
         );
         $quote = $snapshot->breakdown_json;
 
         return response()->json([
             'success' => true,
+            'confirmation_available' => false,
             'quote' => $quote,
             'quote_id' => $snapshot->public_id,
             'expires_at' => $snapshot->expires_at->toIso8601String(),

@@ -255,7 +255,7 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
         );
 });
 
-test('manager can record offline counter booking with balance calculation', function (): void {
+test('manager can record offline counter booking as an unpaid hold', function (): void {
     $item = \App\Models\ServiceItem::create([
         'store_id' => $this->store->id,
         'service_type' => 'taxi',
@@ -278,10 +278,10 @@ test('manager can record offline counter booking with balance calculation', func
         'quantity' => 1,
         'base_amount' => 2800.00,
         'discount_amount' => 0.00,
-        'advance_paid' => 800.00,
+        'advance_paid' => 0.00,
         'payment_method' => 'cash',
         'booking_channel' => 'offline_walkin',
-        'status' => 'confirmed',
+        'status' => 'held',
         'customer_notes' => 'Airport pickup request',
     ];
 
@@ -295,13 +295,17 @@ test('manager can record offline counter booking with balance calculation', func
     expect($booking)->not->toBeNull();
     expect($booking->service_type)->toBe('taxi');
     expect((float) $booking->total_amount)->toBe(2800.00);
-    expect((float) $booking->advance_paid)->toBe(800.00);
-    expect((float) $booking->balance_due)->toBe(2000.00);
-    expect($booking->payment_status)->toBe('partial');
+    expect((float) $booking->advance_paid)->toBe(0.00);
+    expect((float) $booking->balance_due)->toBe(2800.00);
+    expect($booking->payment_status)->toBe('pending');
+    expect($booking->status)->toBe('held');
+    expect($booking->held_until)->not->toBeNull();
     expect($booking->booking_channel)->toBe('offline_walkin');
 });
 
 test('customer can initiate and verify online payment for service booking', function (): void {
+    // Surface the underlying SQL failure in CI instead of an opaque HTTP 500.
+    $this->withoutExceptionHandling();
     $customer = User::create([
         'name' => 'Priya Traveler',
         'email' => 'priya.traveler@example.com',
@@ -341,6 +345,7 @@ test('customer can initiate and verify online payment for service booking', func
         'pickup_location' => 'Sharavathi Jetty',
     ]);
 
+    gkwAllocatePaymentFixture($booking);
     \App\Models\ServiceQuoteSnapshot::create([
         'public_id' => (string) \Illuminate\Support\Str::uuid(),
         'user_id' => $customer->id,
@@ -351,7 +356,8 @@ test('customer can initiate and verify online payment for service booking', func
         'base_amount' => 1500,
         'discount_amount' => 0,
         'total_amount' => 1500,
-        'breakdown_json' => ['base_amount' => 1500, 'total_amount' => 1500],
+        'breakdown_json' => ['base_amount' => 1500, 'total_amount' => 1500,
+            'reservation_context' => gkwPaymentQuoteContext($booking)],
         'expires_at' => now()->addMinutes(15),
         'service_booking_id' => $booking->id,
     ]);

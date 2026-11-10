@@ -9,6 +9,8 @@ use App\Enums\BikeStatus;
 use App\Enums\BookingChannel;
 use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentType;
 use App\Enums\RefundStatus;
 use App\Enums\StoreStatus;
 use App\Enums\UserRole;
@@ -17,6 +19,7 @@ use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\BikeConditionLog;
 use App\Models\Booking;
+use App\Models\Payment;
 use App\Models\Refund;
 use App\Models\Store;
 use App\Models\User;
@@ -225,6 +228,15 @@ test('staff can process return with multi-store relocation and automatic deposit
         'deposit_amount' => 2000.00,
         'status' => BookingStatus::HANDED_OVER,
         'channel' => BookingChannel::ONLINE,
+    ]);
+
+    // The refundable security deposit must actually have been collected.
+    Payment::create([
+        'booking_id' => $booking->id,
+        'type' => PaymentType::DEPOSIT,
+        'amount' => 2000.00,
+        'method' => PaymentMethod::CASH,
+        'status' => PaymentStatus::SUCCESS,
     ]);
 
     // Initial handover log

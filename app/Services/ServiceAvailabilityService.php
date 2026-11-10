@@ -45,10 +45,23 @@ class ServiceAvailabilityService
     {
         $idempotencyKey = $params['idempotency_key'] ?? null;
 
-        // 1. Return existing booking if idempotency key matches
+        // An idempotency key must not disclose or reuse another customer's booking.
         if (! empty($idempotencyKey)) {
             $existing = ServiceBooking::where('idempotency_key', $idempotencyKey)->first();
             if ($existing !== null) {
+                $matches = (int) $existing->user_id === (int) ($params['user_id'] ?? 0)
+                    && (int) ($existing->service_item_id ?? 0) === (int) ($params['service_item_id'] ?? 0)
+                    && $existing->service_type === (string) ($params['service_type'] ?? '')
+                    && (int) $existing->quantity === (int) ($params['quantity'] ?? 1)
+                    && $existing->start_datetime?->toDateTimeString() === Carbon::parse($params['start_datetime'])->toDateTimeString()
+                    && (($existing->end_datetime === null && empty($params['end_datetime']))
+                        || ($existing->end_datetime !== null && ! empty($params['end_datetime'])
+                            && $existing->end_datetime->toDateTimeString() === Carbon::parse($params['end_datetime'])->toDateTimeString()));
+                if (! $matches) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'idempotency_key' => 'This request key was already used for a different service booking.',
+                    ]);
+                }
                 return $existing;
             }
         }
@@ -78,6 +91,28 @@ class ServiceAvailabilityService
                     ->where('status', 'available')
                     ->lockForUpdate()
                     ->first();
+            }
+
+            // Recheck after acquiring the inventory lock: two simultaneous
+            // requests with the same key must never create duplicate holds.
+            if (! empty($idempotencyKey)) {
+                $existing = ServiceBooking::where('idempotency_key', $idempotencyKey)->first();
+                if ($existing !== null) {
+                    $matches = (int) $existing->user_id === (int) ($params['user_id'] ?? 0)
+                        && (int) ($existing->service_item_id ?? 0) === (int) ($params['service_item_id'] ?? 0)
+                        && $existing->service_type === $serviceType
+                        && (int) $existing->quantity === $quantity
+                        && $existing->start_datetime?->toDateTimeString() === Carbon::parse($startDateTime)->toDateTimeString()
+                        && (($existing->end_datetime === null && empty($endDateTime))
+                            || ($existing->end_datetime !== null && ! empty($endDateTime)
+                                && $existing->end_datetime->toDateTimeString() === Carbon::parse($endDateTime)->toDateTimeString()));
+                    if (! $matches) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'idempotency_key' => 'This request key was already used for a different service booking.',
+                        ]);
+                    }
+                    return $existing;
+                }
             }
 
             if ($item !== null) {
@@ -215,6 +250,9 @@ class ServiceAvailabilityService
 
         return DB::transaction(function () use ($bookingModel): ServiceBooking {
             $bookingModel = ServiceBooking::whereKey($bookingModel->id)->lockForUpdate()->firstOrFail();
+            if ($message = app(ServiceReservationReadiness::class)->issue($bookingModel)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['resources' => $message]);
+            }
             if ($bookingModel->status === 'confirmed') {
                 return $bookingModel;
             }
@@ -264,9 +302,33 @@ class ServiceAvailabilityService
      */
     public function releaseExpiredServiceHolds(): int
     {
-        return ServiceBooking::where('status', 'held')
-            ->where('held_until', '<', now())
-            ->update(['status' => 'expired']);
+        $released = 0;
+        ServiceBooking::query()->where('status', 'held')
+            ->whereNotNull('held_until')->where('held_until', '<=', now())
+            ->orderBy('id')->chunkById(100, function ($holds) use (&$released): void {
+                foreach ($holds as $hold) {
+                    DB::transaction(function () use ($hold, &$released): void {
+                        $locked = ServiceBooking::whereKey($hold->id)->lockForUpdate()->first();
+                        if ($locked === null || $locked->status !== 'held'
+                            || $locked->held_until === null || $locked->held_until->isFuture()) {
+                            return;
+                        }
+                        app(ServiceBookingLifecycle::class)->assertTransition($locked, 'expired');
+                        $locked->update(['status' => 'expired']);
+                        \App\Models\ActivityLog::create([
+                            'user_id' => null,
+                            'store_id' => $locked->store_id,
+                            'action' => 'service_booking.hold_expired',
+                            'subject_type' => ServiceBooking::class,
+                            'subject_id' => (string) $locked->id,
+                            'old_values' => ['status' => 'held'],
+                            'new_values' => ['status' => 'expired'],
+                        ]);
+                        $released++;
+                    });
+                }
+            });
+        return $released;
     }
 
     /**

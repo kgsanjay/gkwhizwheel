@@ -6,10 +6,13 @@ use App\Enums\StoreStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\ServiceBooking;
+use App\Notifications\ServicePaymentReceivedNotification;
+use App\Notifications\ServiceBookingConfirmedNotification;
 use App\Models\ServiceItem;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
@@ -66,11 +69,9 @@ test('customer booking does not honor custom amount', function (): void {
         'pickup_location' => 'Murudeshwar',
         'payment_method' => 'pay_on_arrival',
         'custom_amount' => 1,
-    ])->assertRedirect();
-
-    $booking = ServiceBooking::where('user_id', $this->customer->id)->latest('id')->firstOrFail();
-    expect((float) $booking->total_amount)->toBeGreaterThanOrEqual(3000);
-    expect($booking->store_id)->toBe($this->branch->id);
+    ])->assertSessionHasErrors('resources');
+    expect(ServiceBooking::count())->toBe(0);
+    expect((float) \App\Models\ServiceQuoteSnapshot::first()->total_amount)->toBe(3000.0);
 });
 
 test('another customer cannot view an unrelated booking confirmation', function (): void {
@@ -91,15 +92,16 @@ test('another customer cannot view an unrelated booking confirmation', function 
 
 
 test('same gateway payment reference cannot be credited twice', function (): void {
+    $this->item->update(['service_type' => 'boating']);
     $booking = ServiceBooking::create([
         'booking_number' => 'GKW-TX-REPLAY-01',
-        'service_type' => 'taxi',
+        'service_type' => 'boating',
         'service_item_id' => $this->item->id,
         'store_id' => $this->branch->id,
         'user_id' => $this->customer->id,
         'customer_name' => 'Booking Customer',
         'customer_phone' => '9888801001',
-        'start_datetime' => now()->addDays(3),
+        'start_datetime' => now()->addDays(3), 'quantity' => 1,
         'total_amount' => 3000,
         'advance_paid' => 0,
         'balance_due' => 3000,
@@ -108,11 +110,13 @@ test('same gateway payment reference cannot be credited twice', function (): voi
         'status' => 'confirmed',
     ]);
 
+    gkwAllocatePaymentFixture($booking);
     $payload = [
         'razorpay_payment_id' => 'pay_replay_fixture_123',
         'amount' => 3000,
     ];
 
+    Notification::fake();
     $url = '/services/bookings/'.$booking->booking_number.'/verify-payment';
     $this->actingAs($this->customer)->postJson($url, $payload)
         ->assertOk()
@@ -125,4 +129,11 @@ test('same gateway payment reference cannot be credited twice', function (): voi
     expect((float) $booking->advance_paid)->toBe(3000.0);
     expect((float) $booking->balance_due)->toBe(0.0);
     $this->assertDatabaseCount('service_payment_receipts', 1);
+    Notification::assertSentTo($this->customer, ServicePaymentReceivedNotification::class, function ($notification) use ($booking): bool {
+        return $notification->booking->id === $booking->id
+            && $notification->amountPaise === 300000
+            && $notification->paymentId === 'pay_replay_fixture_123';
+    });
+    Notification::assertNotSentTo($this->customer, ServiceBookingConfirmedNotification::class);
+    expect(Notification::sent($this->customer, ServicePaymentReceivedNotification::class))->toHaveCount(1);
 });

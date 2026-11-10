@@ -246,3 +246,56 @@ test('bike document download allows booked customer, super admin, and assigned s
     $responseManagerB = $this->get($signedUrl);
     $responseManagerB->assertStatus(403);
 });
+
+test('a valid bike document signature does not authorize a guest', function (): void {
+    $url = URL::temporarySignedRoute('bike-documents.download', now()->addMinutes(15), ['id' => $this->bikeDocA->id]);
+    $this->get($url)->assertForbidden();
+});
+
+test('bike document staff access follows active current branch and assigned service', function (): void {
+    $url = URL::temporarySignedRoute('bike-documents.download', now()->addMinutes(15), ['id' => $this->bikeDocA->id]);
+    Sanctum::actingAs($this->staffStoreA);
+    $this->get($url)->assertOk();
+
+    // The home branch must not retain access after the bike moves elsewhere.
+    $this->bikeA->update(['current_store_id' => $this->storeB->id]);
+    $this->get($url)->assertForbidden();
+    $this->bikeA->update(['current_store_id' => $this->storeA->id]);
+    $this->storeA->update(['status' => StoreStatus::INACTIVE]);
+    $this->get($url)->assertForbidden();
+    $this->storeA->update(['status' => StoreStatus::ACTIVE]);
+    $this->staffStoreA->syncAssignedServices(['taxi']);
+    $this->get($url)->assertForbidden();
+});
+
+test('bike document link is revoked when the owning booking is no longer active', function (BookingStatus $status): void {
+    $booking = Booking::create([
+        'booking_reference' => 'BK-DOC-REVOKE', 'bike_id' => $this->bikeA->id,
+        'user_id' => $this->customerA->id, 'pickup_store_id' => $this->storeA->id,
+        'return_store_id' => $this->storeA->id, 'channel' => BookingChannel::ONLINE,
+        'status' => BookingStatus::CONFIRMED, 'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(2)->toDateString(), 'base_amount' => 1000,
+        'deposit_amount' => 0, 'total_amount' => 1000, 'price_breakdown_json' => [],
+        'idempotency_key' => 'doc-revoke-key',
+    ]);
+    $url = URL::temporarySignedRoute('bike-documents.download', now()->addMinutes(15), ['id' => $this->bikeDocA->id]);
+    Sanctum::actingAs($this->customerA);
+    $this->get($url)->assertOk();
+    $booking->update(['status' => $status]);
+    $this->get($url)->assertForbidden();
+})->with([BookingStatus::CANCELLED, BookingStatus::EXPIRED, BookingStatus::RETURNED, BookingStatus::COMPLETED]);
+
+test('bike document download rejects blacklisted users expired links and public disk fallback', function (): void {
+    $url = URL::temporarySignedRoute('bike-documents.download', now()->addMinutes(15), ['id' => $this->bikeDocA->id]);
+    Sanctum::actingAs($this->superAdmin);
+    $this->superAdmin->update(['status' => UserStatus::BLACKLISTED]);
+    $this->get($url)->assertForbidden();
+    $this->superAdmin->update(['status' => UserStatus::ACTIVE]);
+    $expired = URL::temporarySignedRoute('bike-documents.download', now()->subMinute(), ['id' => $this->bikeDocA->id]);
+    $this->get($expired)->assertForbidden();
+    Storage::fake('public');
+    Storage::disk('local')->delete($this->bikeDocA->file_path);
+    Storage::disk('public')->put($this->bikeDocA->file_path, 'must not be served');
+    config(['filesystems.default' => 'public']);
+    $this->get($url)->assertNotFound();
+});

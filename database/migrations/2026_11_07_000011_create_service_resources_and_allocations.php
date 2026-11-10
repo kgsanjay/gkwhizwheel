@@ -34,9 +34,9 @@ return new class extends Migration {
             $table->string('status', 24)->default('held');
             $table->dateTime('held_until')->nullable();
             $table->timestamps();
-            $table->unique(['service_resource_id', 'service_booking_id']);
+            $table->unique(['service_resource_id', 'service_booking_id'], 'resource_booking_unique');
             $table->index(['service_resource_id', 'starts_at', 'ends_at', 'status'], 'resource_allocation_window_idx');
-            $table->index(['service_booking_id', 'status']);
+            $table->index(['service_booking_id', 'status'], 'allocation_booking_status_idx');
         });
     }
 

@@ -19,6 +19,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Storage::fake('public');
+    Storage::fake('local');
 
     $this->superAdmin = User::create([
         'name' => 'Super Admin',
@@ -107,13 +108,15 @@ test('admin can create scuba service item with instructor certification and insu
     expect($certDoc->verified)->toBeTrue();
     expect($certDoc->expiry_date?->format('Y-m-d'))->toBe('2028-12-31');
     expect($certDoc->uploaded_by)->toBe($this->scubaManager->id);
-    expect($certDoc->file_url)->toContain('/storage/' . $certDoc->file_path);
+    expect($certDoc->file_url)->toContain('/admin/services/scuba/items/'.$item->id.'/documents/'.$certDoc->id)
+        ->and($certDoc->toArray())->not->toHaveKey('file_path');
+    Storage::disk('public')->assertMissing($certDoc->file_path);
 
-    Storage::disk('public')->assertExists($certDoc->file_path);
+    Storage::disk('local')->assertExists($certDoc->file_path);
 
     $insuranceDoc = $item->documents()->where('document_type', 'insurance_docs')->first();
     expect($insuranceDoc)->not->toBeNull();
-    Storage::disk('public')->assertExists($insuranceDoc->file_path);
+    Storage::disk('local')->assertExists($insuranceDoc->file_path);
 });
 
 test('admin can update document expiry date and verified status on existing service item', function (): void {
@@ -202,7 +205,8 @@ test('uploading replacement document removes old file from disk and updates reco
     expect($doc->verified)->toBeTrue();
 
     Storage::disk('public')->assertMissing($oldFilePath);
-    Storage::disk('public')->assertExists($doc->file_path);
+    Storage::disk('local')->assertExists($doc->file_path);
+    Storage::disk('public')->assertMissing($doc->file_path);
 });
 
 test('admin can delete a document via destroyDocument route', function (): void {
@@ -285,4 +289,77 @@ test('unauthorized manager cannot upload or manage documents for unassigned serv
     ]);
 
     $response->assertForbidden();
+});
+
+test('service compliance downloads enforce service branch identity and item ownership', function (): void {
+    $item = ServiceItem::create([
+        'store_id' => $this->branch->id, 'service_type' => 'scuba', 'name' => 'Private Certification',
+        'price_base' => 2000, 'price_unit' => 'per_dive', 'status' => 'available',
+    ]);
+    $path = 'services/private-documents/cert.pdf';
+    Storage::disk('local')->put($path, 'private document');
+    $doc = ServiceItemDocument::create([
+        'service_item_id' => $item->id, 'document_type' => 'instructor_certification',
+        'file_path' => $path, 'verified' => false,
+    ]);
+    $url = $doc->file_url;
+    expect($url)->not->toContain('/storage/')
+        ->and($doc->toArray())->not->toHaveKey('file_path');
+    $this->get($url)->assertRedirect();
+    $this->actingAs($this->scubaManager)->get($url)->assertOk()->assertDownload('cert.pdf');
+    $this->actingAs($this->superAdmin)->get($url)->assertOk();
+    $this->actingAs($this->taxiManager)->get($url)->assertForbidden();
+
+    $customer = User::factory()->create(['role' => UserRole::CUSTOMER, 'status' => UserStatus::ACTIVE]);
+    $this->actingAs($customer)->get($url)->assertForbidden();
+    $this->scubaManager->stores()->detach();
+    $this->actingAs($this->scubaManager)->get($url)->assertForbidden();
+    $this->scubaManager->stores()->attach($this->branch->id);
+    $this->branch->update(['status' => StoreStatus::INACTIVE]);
+    $this->get($url)->assertForbidden();
+    $this->branch->update(['status' => StoreStatus::ACTIVE]);
+    $this->scubaManager->update(['status' => UserStatus::BLACKLISTED]);
+    $this->get($url)->assertForbidden();
+
+    $other = ServiceItem::create([
+        'store_id' => $this->branch->id, 'service_type' => 'scuba', 'name' => 'Other Item',
+        'price_base' => 1000, 'price_unit' => 'per_dive', 'status' => 'available',
+    ]);
+    $this->actingAs($this->superAdmin)->get(route('admin.services.items.documents.download', [
+        'serviceType' => 'scuba', 'itemId' => $other->id, 'documentId' => $doc->id,
+    ]))->assertNotFound();
+    $this->get(route('admin.services.items.documents.download', [
+        'serviceType' => 'homestay', 'itemId' => $item->id, 'documentId' => $doc->id,
+    ]))->assertNotFound();
+});
+
+test('legacy public and external service documents are not exposed by the private endpoint', function (string $path): void {
+    $item = ServiceItem::create([
+        'store_id' => $this->branch->id, 'service_type' => 'scuba', 'name' => 'Legacy Certification',
+        'price_base' => 2000, 'price_unit' => 'per_dive', 'status' => 'available',
+    ]);
+    $doc = ServiceItemDocument::create([
+        'service_item_id' => $item->id, 'document_type' => 'insurance_docs', 'file_path' => $path,
+    ]);
+    if (str_starts_with($path, 'services/documents/')) {
+        Storage::disk('public')->put($path, 'legacy content');
+    }
+    expect($doc->file_url)->toBeNull();
+    $this->actingAs($this->superAdmin)->get(route('admin.services.items.documents.download', [
+        'serviceType' => 'scuba', 'itemId' => $item->id, 'documentId' => $doc->id,
+    ]))->assertNotFound();
+})->with(['services/documents/legacy.pdf', 'https://example.test/private.pdf', 'services/private-documents/../outside.pdf']);
+
+test('private service documents are removed on authorized item deletion', function (): void {
+    $item = ServiceItem::create([
+        'store_id' => $this->branch->id, 'service_type' => 'scuba', 'name' => 'Private Cleanup',
+        'price_base' => 2000, 'price_unit' => 'per_dive', 'status' => 'available',
+    ]);
+    $path = 'services/private-documents/cleanup.pdf';
+    Storage::disk('local')->put($path, 'private content');
+    ServiceItemDocument::create([
+        'service_item_id' => $item->id, 'document_type' => 'insurance_docs', 'file_path' => $path,
+    ]);
+    $this->actingAs($this->superAdmin)->delete("/admin/services/scuba/items/{$item->id}")->assertRedirect();
+    Storage::disk('local')->assertMissing($path);
 });

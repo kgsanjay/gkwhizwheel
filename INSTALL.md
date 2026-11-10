@@ -39,12 +39,7 @@ Since these APKs are not currently distributed through the Google Play Store, yo
 - **Account**: You can register a new test account directly from the login/signup screen within the app using an email or phone number.
 
 ### Operations App
-You can use the seeded database users to log into the Ops application. 
 
-**Store Manager (Can process refunds & manage store)**
-- **Email**: `ops@whizwheel.com`
-- **Password**: `Admin@12345`
+No shared or default staff login credentials are distributed with the application. Ask an authorized administrator to create named test-only accounts in the staging database and deliver the credentials through a secure channel. Use distinct passwords, enable MFA where available, and limit permissions to the test roles.
 
-**Store Staff (Daily operations, dispatch/return)**
-- **Email**: `rajesh@whizwheel.com`
-- **Password**: `Staff@12345`
+**Security notice:** Earlier versions of this document contained example staff and manager credentials. Treat those passwords as exposed. Rotate the credentials of any account using them, revoke existing sessions and API tokens as appropriate, and verify that no production account uses published test credentials. Removing the text from the latest commit does not erase Git history.

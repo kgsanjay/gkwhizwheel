@@ -24,6 +24,7 @@ use App\Models\Refund;
 use App\Models\Store;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function (): void {
     $this->admin = User::create([
@@ -208,6 +209,12 @@ test('admin can manually override booking fields and an activity log is created'
 });
 
 test('admin can process manual refund and an activity log is created', function (): void {
+    config()->set('services.razorpay.key_id', 'rzp_test_manual_refund');
+    config()->set('services.razorpay.key_secret', 'test_manual_refund_secret');
+    Http::fake(['api.razorpay.com/v1/payments/*/refund' => Http::response([
+        'id' => 'rfnd_manual_01', 'amount' => 100000,
+        'payment_id' => 'pay_test_initial_01', 'status' => 'created',
+    ], 200)]);
     Sanctum::actingAs($this->admin);
 
     // Partial refund

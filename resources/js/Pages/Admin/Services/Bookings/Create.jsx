@@ -44,7 +44,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
         discount_amount: 0,
         advance_paid: 0,
         payment_method: 'cash',
-        status: 'confirmed',
+        status: 'held',
         customer_notes: '',
         admin_notes: '',
     });
@@ -310,6 +310,8 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                         required
                                         type="number"
                                         fullWidth
+                                        disabled
+                                        helperText="Payment is recorded after resource approval."
                                         value={data.advance_paid}
                                         onChange={(e) => setData('advance_paid', parseFloat(e.target.value) || 0)}
                                         error={Boolean(errors.advance_paid)}
@@ -377,9 +379,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                         value={data.status}
                                         onChange={(e) => setData('status', e.target.value)}
                                     >
-                                        <MenuItem value="confirmed">Confirmed (Scheduled)</MenuItem>
-                                        <MenuItem value="in_progress">In Progress (Active Now)</MenuItem>
-                                        <MenuItem value="completed">Completed</MenuItem>
+                                        <MenuItem value="held">Unpaid Hold — Awaiting Approval</MenuItem>
                                     </TextField>
                                 </Grid>
 

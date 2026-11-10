@@ -15,6 +15,10 @@ use App\Models\BikeCategory;
 use App\Models\BikeConditionLog;
 use App\Models\Booking;
 use App\Models\Refund;
+use App\Models\Payment;
+use App\Enums\PaymentStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentType;
 use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
@@ -207,6 +211,14 @@ test('staff can return bike supporting one-way rentals, late fee override, and d
         'total_amount' => 2500.00,
         'price_breakdown_json' => [],
     ]);
+    // A deposit refund is valid only when the booking has captured funds.
+    Payment::create([
+        'booking_id' => $booking->id, 'type' => PaymentType::ADVANCE,
+        'amount' => 2500.00, 'method' => PaymentMethod::CASH,
+        'status' => PaymentStatus::SUCCESS,
+    ]);
+
+
 
     $photo1 = UploadedFile::fake()->image('return_front.jpg');
     $photo2 = UploadedFile::fake()->image('return_back.jpg');
@@ -288,6 +300,14 @@ test('automatic late fee calculation applies when bike is returned past schedule
         'total_amount' => 3000.00,
         'price_breakdown_json' => [],
     ]);
+    // A deposit refund is valid only when the booking has captured funds.
+    Payment::create([
+        'booking_id' => $booking->id, 'type' => PaymentType::ADVANCE,
+        'amount' => 3000.00, 'method' => PaymentMethod::CASH,
+        'status' => PaymentStatus::SUCCESS,
+    ]);
+
+
 
     $photo = UploadedFile::fake()->image('return_late.jpg');
 
