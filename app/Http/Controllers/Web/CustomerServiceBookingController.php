@@ -170,11 +170,11 @@ class CustomerServiceBookingController extends Controller
                 $request->user()->notify(new ServiceBookingConfirmedNotification($booking));
             } else {
                 Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
-                    ->route(\\App\\Channels\\WhatsAppChannel::class, $booking->customer_phone)
+                    ->route(\App\Channels\WhatsAppChannel::class, $booking->customer_phone)
                     ->notify(new ServiceBookingConfirmedNotification($booking));
             }
-        } catch (\\Throwable $exception) {
-            \\Illuminate\\Support\\Facades\\Log::warning('Service booking confirmation notification failed', [
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::warning('Service booking confirmation notification failed', [
                 'service_booking_id' => $booking->id,
                 'exception_class' => get_class($exception),
             ]);
@@ -183,20 +183,20 @@ class CustomerServiceBookingController extends Controller
         // Only active managers assigned to this service and branch receive alerts.
         // Notification delivery failures must not invalidate the committed booking.
         try {
-            $managers = app(\\App\\Services\\ServiceBookingAlertRecipients::class)->forBooking($booking);
+            $managers = app(\App\Services\ServiceBookingAlertRecipients::class)->forBooking($booking);
             foreach ($managers as $manager) {
                 try {
                     $manager->notify(new ServiceManagerBookingAlertNotification($booking));
-                } catch (\\Throwable $exception) {
-                    \\Illuminate\\Support\\Facades\\Log::warning('Service booking manager alert failed', [
+                } catch (\Throwable $exception) {
+                    \Illuminate\Support\Facades\Log::warning('Service booking manager alert failed', [
                         'service_booking_id' => $booking->id,
                         'recipient_id' => $manager->id,
                         'exception_class' => get_class($exception),
                     ]);
                 }
             }
-        } catch (\\Throwable $exception) {
-            \\Illuminate\\Support\\Facades\\Log::warning('Service booking alert recipient lookup failed', [
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::warning('Service booking alert recipient lookup failed', [
                 'service_booking_id' => $booking->id,
                 'exception_class' => get_class($exception),
             ]);
