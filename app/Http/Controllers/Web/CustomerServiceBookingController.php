@@ -163,21 +163,43 @@ class CustomerServiceBookingController extends Controller
             ],
         ]);
 
-        // Dispatch booking confirmation to customer (WhatsApp & Email)
-        if ($request->user()) {
-            $request->user()->notify(new ServiceBookingConfirmedNotification($booking));
-        } else {
-            Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
-                ->route(\App\Channels\WhatsAppChannel::class, $booking->customer_phone)
-                ->notify(new ServiceBookingConfirmedNotification($booking));
+        // The booking has already committed. A transient notification provider failure
+        // must not turn a successful reservation into a 500 and prompt a retry.
+        try {
+            if ($request->user()) {
+                $request->user()->notify(new ServiceBookingConfirmedNotification($booking));
+            } else {
+                Notification::route('mail', $booking->customer_email ?: 'guest@whizwheel.com')
+                    ->route(\\App\\Channels\\WhatsAppChannel::class, $booking->customer_phone)
+                    ->notify(new ServiceBookingConfirmedNotification($booking));
+            }
+        } catch (\\Throwable $exception) {
+            \\Illuminate\\Support\\Facades\\Log::warning('Service booking confirmation notification failed', [
+                'service_booking_id' => $booking->id,
+                'exception_class' => get_class($exception),
+            ]);
         }
 
-        // Notify only active managers assigned to this specific service and branch.
-        // Headquarters receives a fallback when no local manager is eligible.
-        $managers = app(\App\Services\ServiceBookingAlertRecipients::class)->forBooking($booking);
-
-        foreach ($managers as $manager) {
-            $manager->notify(new ServiceManagerBookingAlertNotification($booking));
+        // Only active managers assigned to this service and branch receive alerts.
+        // Notification delivery failures must not invalidate the committed booking.
+        try {
+            $managers = app(\\App\\Services\\ServiceBookingAlertRecipients::class)->forBooking($booking);
+            foreach ($managers as $manager) {
+                try {
+                    $manager->notify(new ServiceManagerBookingAlertNotification($booking));
+                } catch (\\Throwable $exception) {
+                    \\Illuminate\\Support\\Facades\\Log::warning('Service booking manager alert failed', [
+                        'service_booking_id' => $booking->id,
+                        'recipient_id' => $manager->id,
+                        'exception_class' => get_class($exception),
+                    ]);
+                }
+            }
+        } catch (\\Throwable $exception) {
+            \\Illuminate\\Support\\Facades\\Log::warning('Service booking alert recipient lookup failed', [
+                'service_booking_id' => $booking->id,
+                'exception_class' => get_class($exception),
+            ]);
         }
 
         return redirect()->route('services.booking.confirmation', $bookingNumber);
