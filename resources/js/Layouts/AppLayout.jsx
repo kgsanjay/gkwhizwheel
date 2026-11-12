@@ -2114,6 +2114,45 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         </Grid>
                     </Grid>
 
+                    {/* Payment Partners & Security Reassurance Strip */}
+                    <Box
+                        sx={{
+                            pt: 2.5,
+                            pb: 2.5,
+                            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                            display: 'flex',
+                            flexDirection: { xs: 'column', md: 'row' },
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: 1.5,
+                        }}
+                    >
+                        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                            <VerifiedUserIcon sx={{ fontSize: 16, color: '#10B981' }} />
+                            <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.78rem' }}>
+                                Safe &amp; Encrypted Checkout via <strong>PhonePe</strong> &amp; <strong>Razorpay</strong> • All UPI (PhonePe, GPay, Paytm), Cards &amp; NetBanking
+                            </Typography>
+                        </Stack>
+                        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                            <Box sx={{ px: 1, py: 0.35, borderRadius: 1.5, bgcolor: 'rgba(103, 58, 183, 0.15)', border: '1px solid rgba(103, 58, 183, 0.35)' }}>
+                                <Typography variant="caption" sx={{ color: '#A78BFA', fontWeight: 800, fontSize: '0.72rem' }}>
+                                    PhonePe UPI
+                                </Typography>
+                            </Box>
+                            <Box sx={{ px: 1, py: 0.35, borderRadius: 1.5, bgcolor: 'rgba(2, 132, 199, 0.15)', border: '1px solid rgba(2, 132, 199, 0.35)' }}>
+                                <Typography variant="caption" sx={{ color: '#38BDF8', fontWeight: 800, fontSize: '0.72rem' }}>
+                                    Razorpay
+                                </Typography>
+                            </Box>
+                            <Box sx={{ px: 1, py: 0.35, borderRadius: 1.5, bgcolor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
+                                <Typography variant="caption" sx={{ color: '#34D399', fontWeight: 800, fontSize: '0.72rem' }}>
+                                    Instant WhatsApp Voucher
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
                     {/* Grounded Bottom Legal & Email Bar */}
                     <Box
                         sx={{

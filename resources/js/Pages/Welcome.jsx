@@ -57,6 +57,7 @@ import LuggageIcon from '@mui/icons-material/Luggage';
 import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
 
@@ -438,6 +439,24 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             icon: CurrencyRupeeIcon,
             question: 'Is a security deposit required for online bike bookings?',
             answer: 'No refundable security deposit is charged on online bike rental bookings. Confirm your slot with a ₹100 advance or pay online in full, with any remaining rental balance settled at vehicle handover.',
+        },
+        {
+            id: 'faq-payment',
+            category: 'rentals',
+            categoryLabel: 'PhonePe & UPI',
+            accent: '#8B5CF6',
+            icon: AccountBalanceWalletIcon,
+            question: 'Which payment methods are accepted for bookings?',
+            answer: 'We accept PhonePe, Google Pay, Paytm, all UPI apps, Visa, MasterCard, RuPay cards, and Net Banking. You can lock any bike with just ₹100 advance or pay in full online. For travel services (cabs, scuba, boating, stays), pay via PhonePe/UPI or pay on arrival per service policy.',
+        },
+        {
+            id: 'faq-account',
+            category: 'services',
+            categoryLabel: 'Zero Friction',
+            accent: '#10B981',
+            icon: VerifiedUserIcon,
+            question: 'Do I need to create an account or remember a password to book?',
+            answer: 'No password required! Book instantly using Google 1-Tap login or by entering your WhatsApp phone number. Our system auto-provisions your verified account in the background and sends your confirmed voucher with QR code straight to your WhatsApp.',
         },
         {
             id: 'faq-cancel',
@@ -2217,9 +2236,9 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             {
                                 num: '2',
                                 accent: '#0284C7',
-                                title: 'Lock With ₹100 or Full Pay',
-                                desc: 'Instant booking hold with transparent 24-hour billing and zero refundable security deposit.',
-                                tag: 'Zero Security Deposit',
+                                title: 'Lock via PhonePe, UPI or ₹100 Advance',
+                                desc: 'Google 1-tap or instant auto-account with zero password friction. Pay ₹100 hold or full rental via PhonePe & UPI.',
+                                tag: 'PhonePe & Zero Deposit',
                             },
                             {
                                 num: '3',
@@ -2247,16 +2266,16 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             {
                                 num: '2',
                                 accent: '#0284C7',
-                                title: 'Share Date & Group Size',
-                                desc: 'Send your travel date, guest count, and pickup point across Coastal Karnataka in under a minute.',
-                                tag: 'Instant Availability',
+                                title: 'Instant 1-Tap & Guest Details',
+                                desc: '1-tap Google login or enter phone number — account auto-provisions instantly with zero password friction.',
+                                tag: 'Instant Auto-Account',
                             },
                             {
                                 num: '3',
                                 accent: '#10B981',
-                                title: 'Direct Local Confirmation',
-                                desc: 'Our local coordinator confirms boat slots, chauffeur details or homestay check-in right away.',
-                                tag: 'Verified Local Crew',
+                                title: 'Instant WhatsApp Voucher & PhonePe',
+                                desc: 'Get booking voucher on WhatsApp instantly. Pay securely via PhonePe, UPI or on arrival as per service policy.',
+                                tag: 'PhonePe & WhatsApp',
                             },
                             {
                                 num: '4',

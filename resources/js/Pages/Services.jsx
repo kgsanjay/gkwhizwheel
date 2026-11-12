@@ -62,6 +62,10 @@ const SERVICES_FAQS = [
         q: 'What documents are required for two-wheelers versus cabs and activities?',
         a: 'Self-drive two-wheeler rentals require an original valid Indian Driving License and government ID proof (Aadhaar or Passport). For chauffeured cabs, Sharavathi boat cruises, Netrani scuba diving, and homestay bookings, no driving license is needed—only basic government photo ID verification for each guest.',
     },
+    {
+        q: 'Which payment methods do you accept, and do I need to register an account first?',
+        a: 'We accept PhonePe, Google Pay, Paytm, all UPI apps, Cards, Net Banking, and cash/UPI on arrival depending on service. No password or pre-registration is needed: Google 1-Tap or entering your phone number auto-creates your account and delivers your confirmed booking voucher straight to WhatsApp.',
+    },
 ];
 
 const servicesFaqSchema = {

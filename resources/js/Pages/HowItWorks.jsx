@@ -50,11 +50,11 @@ export default function HowItWorks() {
         },
         {
             num: '02',
-            title: 'Complete 2-Minute Digital KYC',
-            desc: 'Upload a clear photo of your valid driving license and government photo ID (Aadhaar or Passport). Our automated verification validates documents in under 5 minutes.',
+            title: 'Instant 1-Tap & PhonePe Checkout',
+            desc: 'Zero password friction: login with Google 1-tap or enter your mobile number. Your account is auto-created instantly. Lock your booking with ₹100 or full pay via PhonePe, UPI or Cards.',
             icon: <BadgeIcon sx={{ fontSize: 30, color: '#10B981' }} />,
-            tag: 'Step 2 • Digital Verification',
-            time: 'Instant approval',
+            tag: 'Step 2 • 1-Tap & PhonePe',
+            time: 'Under 30 seconds',
             tip: 'Tip: Verified riders qualify for zero security deposit checkout on standard commuter bikes.',
         },
         {
@@ -89,14 +89,22 @@ export default function HowItWorks() {
     const checklist = [
         { title: 'Original Driving License', desc: 'Valid Indian DL or International Driving Permit (Learner licenses not accepted).' },
         { title: 'Government Photo ID', desc: 'Aadhaar Card, Passport, or Voter ID for proof of identity.' },
-        { title: 'Smartphone', desc: 'To access your digital RC, booking receipt, and insurance documents on the go.' },
-        { title: 'Payment Method', desc: 'UPI, Credit/Debit Card, or Net Banking for instant automated checkout.' },
+        { title: 'Smartphone & WhatsApp', desc: 'To access your digital RC, instant booking voucher with QR code, and 24/7 helpline.' },
+        { title: 'PhonePe / UPI / Card', desc: 'Pay via PhonePe, Google Pay, Paytm, UPI, Cards or NetBanking. Lock slot with ₹100 advance.' },
     ];
 
     const faqs = [
         {
             q: 'Can I pick up in Honnavar and return at Murudeshwar (or vice versa)?',
             a: 'Yes! One-way store rentals are fully supported between our two Honnavar hubs with zero friction. Select your desired pickup and return locations during checkout.',
+        },
+        {
+            q: 'Do I need to register or remember a password before booking?',
+            a: 'No! You can book in seconds with Google 1-Tap or by entering your WhatsApp mobile number. Our system instantly creates and verifies your customer account in the background with zero password friction.',
+        },
+        {
+            q: 'Which payment methods are accepted?',
+            a: 'We accept PhonePe, Google Pay, Paytm, all UPI apps, Visa, MasterCard, RuPay cards, and Net Banking. You can reserve any bike with a ₹100 advance or pay online in full with zero security deposit.',
         },
         {
             q: 'What is the fuel and kilometer policy?',

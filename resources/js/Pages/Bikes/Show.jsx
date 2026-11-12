@@ -574,7 +574,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             </Button>
 
                             <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#64748B', mt: 1.5 }}>
-                                Instant confirmation with Razorpay & PhonePe. Concurrency-safe reservation.
+                                Instant confirmation with PhonePe, UPI & Cards. Google 1-Tap & Auto-Account enabled.
                             </Typography>
                         </CardContent>
                     </Card>

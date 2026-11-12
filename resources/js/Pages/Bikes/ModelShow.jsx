@@ -150,7 +150,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                         disabled={!datesValid || isLoading || !availability?.is_available || isError}
                                         onClick={beginBooking}>Reserve this model</Button>
                                     <Typography variant="caption" color="text.secondary">
-                                        Reservation holds are time-limited. Availability is revalidated when a physical bike is allocated.
+                                        Instant hold via PhonePe, UPI & Cards. Zero password friction — Google 1-Tap & Auto-Account.
                                     </Typography>
                                 </Stack>
                             </CardContent>
