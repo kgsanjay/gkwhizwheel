@@ -151,6 +151,36 @@ class BookingWebController extends Controller
     }
 
     /**
+     * Download a customer billing summary. This is not a GST tax invoice.
+     */
+    public function downloadBillingStatement(
+        int $id,
+        \App\Services\BikeBillingStatementService $billingService,
+        Request $request
+    ): \Illuminate\Http\Response {
+        $currentUser = $request->user();
+        if ($currentUser === null) {
+            abort(401, 'Sign in to download the billing statement.');
+        }
+
+        $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'user', 'payments'])
+            ->findOrFail($id);
+
+        $isOwner = $currentUser->id === $booking->user_id;
+        $isStaffOrAdmin = in_array($currentUser->role, [
+            UserRole::SUPER_ADMIN,
+            UserRole::STORE_MANAGER,
+            UserRole::STAFF,
+        ], true);
+
+        if (! $isOwner && ! $isStaffOrAdmin) {
+            abort(403, 'You are not authorized to download this billing statement.');
+        }
+
+        return $billingService->download($booking);
+    }
+
+    /**
      * Handle browser redirect callback from PhonePe payment gateway.
      */
     public function handlePhonePeCallback(Request $request): \Illuminate\Http\RedirectResponse
