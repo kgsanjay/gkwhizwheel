@@ -21,6 +21,16 @@ final class BikeBookingPayments
         $quote['price_breakdown_json']['total_amount'] = $quote['total_amount'];
         $quote['price_breakdown_json']['deposit_waived'] = true;
 
+        // Tax is calculated only after the refundable deposit has been removed
+        // and after any location charges have been added to the final quote.
+        // A missing business GST rate is not treated as a zero-rated supply.
+        if (! isset($quote['price_breakdown_json']['bike_gst'])) {
+            $gst = app(BikeGstQuote::class)->calculate((float) $quote['total_amount']);
+            $quote['price_breakdown_json']['bike_gst'] = $gst;
+            $quote['total_amount'] = $gst['total_after_gst'];
+            $quote['price_breakdown_json']['total_amount'] = $quote['total_amount'];
+        }
+
         return $quote;
     }
 

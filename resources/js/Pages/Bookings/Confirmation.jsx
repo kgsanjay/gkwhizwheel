@@ -42,7 +42,9 @@ export default function BookingConfirmation({ booking }) {
     const returnStore = booking.return_store || {};
     const addons = booking.addons || [];
     const payments = booking.payments || [];
-    const latestPayment = payments[0] || null;
+    const latestPayment = payments.find((payment) => payment.status === 'success') || null;
+    const isConfirmed = ['confirmed', 'handed_over', 'returned', 'completed'].includes(booking.status);
+    const isAwaitingPayment = ['held', 'pending_payment'].includes(booking.status);
 
     const isOneWay = pickupStore.id !== returnStore.id;
     const isElectric = bike.fuel_type === 'electric';
@@ -53,7 +55,7 @@ export default function BookingConfirmation({ booking }) {
 
     return (
         <AppLayout>
-            <Head title={`Booking Confirmed - ${booking.booking_reference} - GK WhizWheel`} />
+            <Head title={`Bike Booking ${booking.booking_reference} - GK WhizWheel`} />
             <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 } }}>
 
             {/* Back to fleet bar */}
@@ -92,8 +94,8 @@ export default function BookingConfirmation({ booking }) {
                         width: 72,
                         height: 72,
                         borderRadius: '50%',
-                        bgcolor: 'rgba(16, 185, 129, 0.12)',
-                        color: '#10B981',
+                        bgcolor: isConfirmed ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                        color: isConfirmed ? '#10B981' : '#D97706',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -101,14 +103,18 @@ export default function BookingConfirmation({ booking }) {
                         mb: 2,
                     }}
                 >
-                    <CheckCircleIcon sx={{ fontSize: 44 }} />
+                    {isConfirmed ? <CheckCircleIcon sx={{ fontSize: 44 }} /> : <ReceiptLongIcon sx={{ fontSize: 44 }} />}
                 </Box>
 
                 <Typography variant="h3" component="h1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1 }}>
-                    Booking Confirmed!
+                    {isConfirmed ? 'Booking Confirmed!' : isAwaitingPayment ? 'Payment verification pending' : 'Booking status update'}
                 </Typography>
                 <Typography variant="subtitle1" sx={{ color: isDark ? '#94A3B8' : '#64748B', maxWidth: 600, mx: 'auto', mb: 2 }}>
-                    Your vehicle is locked and reserved. A confirmation email and WhatsApp message have been sent to your registered contacts.
+                    {isConfirmed
+                        ? 'Your rental has been confirmed. Review the trip details and download your rental documents.'
+                        : isAwaitingPayment
+                            ? 'Your rental is not confirmed yet. Payment and reservation status must be verified before pickup. If you have paid, please check again shortly.'
+                            : 'This reservation is not currently confirmed. Review its status or contact support before travelling.'}
                 </Typography>
 
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
@@ -126,13 +132,13 @@ export default function BookingConfirmation({ booking }) {
                         }}
                     />
                     <Chip
-                        label={`Status: ${booking.status?.toUpperCase() || 'CONFIRMED'}`}
-                        color="success"
+                        label={`Status: ${booking.status?.toUpperCase() || 'UNKNOWN'}`}
+                        color={isConfirmed ? 'success' : 'warning'}
                         sx={{ fontWeight: 700 }}
                     />
                     {latestPayment && (
                         <Chip
-                            label={`Paid via ${latestPayment.payment_method?.toUpperCase() || 'GATEWAY'}`}
+                            label={`Paid via ${latestPayment.method?.toUpperCase() || 'GATEWAY'}`}
                             sx={{
                                 bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F1F5F9',
                                 color: isDark ? '#CBD5E1' : '#334155',
@@ -143,7 +149,29 @@ export default function BookingConfirmation({ booking }) {
                     )}
                 </Box>
 
+                {booking.billing && (
+                    <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', textAlign: 'left' }}>
+                        <Typography variant="subtitle2" fontWeight={800}>Billing details on this booking</Typography>
+                        <Typography variant="body2">{booking.billing.name}</Typography>
+                        <Typography variant="body2">{booking.billing.address}</Typography>
+                        {booking.billing.gstin && (
+                            <Typography variant="body2">GSTIN: {booking.billing.gstin}</Typography>
+                        )}
+                        {booking.bike_gst?.status === 'configured' ? (
+                            <Typography variant="body2">
+                                GST ({booking.bike_gst.gst_rate_percent}%): ₹{Number(booking.bike_gst.gst_amount).toFixed(2)}
+                                {' '}— included in the booking total.
+                            </Typography>
+                        ) : (
+                            <Typography variant="caption" color="text.secondary">
+                                GST not configured. Rental voucher is not a GST tax invoice.
+                            </Typography>
+                        )}
+                    </Box>
+                )}
+
                 <Box sx={{ mt: 2.5, display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {isConfirmed && (
                     <Button
                         variant="contained"
                         component="a"
@@ -161,6 +189,24 @@ export default function BookingConfirmation({ booking }) {
                         }}
                     >
                         Download Rental Voucher (PDF)
+                    </Button>
+                    )}
+                    <Button
+                        variant="outlined"
+                        component="a"
+                        href={`/bookings/${booking.id}/billing-statement`}
+                        startIcon={<ReceiptLongIcon />}
+                        sx={{
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                            color: isDark ? '#F1F5F9' : '#334155',
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            px: 2.5,
+                            py: 1,
+                            borderRadius: 2,
+                        }}
+                    >
+                        Download Billing Statement (PDF)
                     </Button>
                     <Button
                         variant="outlined"

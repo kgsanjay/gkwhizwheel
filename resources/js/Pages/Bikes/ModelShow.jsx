@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Alert, Box, Button, Card, CardContent, CircularProgress, Grid,
@@ -9,8 +9,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
-import AuthModal from '../../Components/Auth/AuthModal';
-import CheckoutModal from '../../Components/Booking/CheckoutModal';
 import apiClient from '../../api/client';
 
 export default function ModelShow({ model, stores = [], initialFilters = {} }) {
@@ -18,9 +16,6 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
     const [returnId, setReturnId] = useState(String(initialFilters.return_store_id || initialFilters.pickup_store_id || ''));
     const [startDate, setStartDate] = useState(initialFilters.start_date || '');
     const [endDate, setEndDate] = useState(initialFilters.end_date || '');
-    const [authOpen, setAuthOpen] = useState(false);
-    const [checkoutOpen, setCheckoutOpen] = useState(false);
-    const [user, setUser] = useState(null);
 
     const datesValid = Boolean(pickupId && returnId && startDate && endDate && startDate <= endDate);
     const params = {
@@ -44,7 +39,14 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
     const title = `${model.brand} ${model.name} Bike Rental | GK WhizWheel`;
     const description = model.description || `Rent a ${model.brand} ${model.name} with GK WhizWheel. Compare availability at our branches, choose your rental dates and see the exact fare before payment.`;
     const beginBooking = () => {
-        setCheckoutOpen(true);
+        if (!datesValid || !availability?.is_available) return;
+        router.get('/services/bikes/checkout', {
+            bike_model_id: model.id,
+            pickup_store_id: pickupId,
+            return_store_id: returnId,
+            start_date: startDate,
+            end_date: endDate,
+        });
     };
     const availabilityText = !datesValid
         ? 'Select branches and dates to check availability.'
@@ -57,7 +59,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
             <PageHead title={title} description={description.slice(0, 160)}
                 canonicalUrl={canonical}
                 ogType="product"
-                ogImage={model.primary_image_url || '/images/services/two_wheelers.jpg'}
+                ogImage={model.primary_image_url || undefined}
                 structuredData={[
                     {
                         '@context': 'https://schema.org',
@@ -148,7 +150,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                     {isLoading && <CircularProgress size={22} aria-label="Checking bike availability" />}
                                     <Button variant="contained" color="secondary" size="large"
                                         disabled={!datesValid || isLoading || !availability?.is_available || isError}
-                                        onClick={beginBooking}>Reserve this model</Button>
+                                        onClick={beginBooking}>Continue to Secure Checkout</Button>
                                     <Typography variant="caption" color="text.secondary">
                                         Instant hold via PhonePe, UPI & Cards. Zero password friction — Google 1-Tap & Auto-Account.
                                     </Typography>
@@ -158,17 +160,6 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                     </Grid>
                 </Grid>
             </Box>
-            <AuthModal open={authOpen} onClose={() => setAuthOpen(false)}
-                onSuccess={(nextUser) => { setUser(nextUser); setAuthOpen(false); setCheckoutOpen(true); }} />
-            {pickup && returning && <CheckoutModal
-                key={`${model.id}-${pickupId}-${returnId}-${startDate}-${endDate}`}
-                open={checkoutOpen} onClose={() => setCheckoutOpen(false)}
-                bike={{ brand: model.brand, model_name: model.name }}
-                bikeModelId={model.id}
-                startDate={startDate} endDate={endDate}
-                pickupStore={pickup} returnStore={returning}
-                selectedAddons={[]} couponCode="" quote={null} currentUser={user}
-            />}
         </AppLayout>
     );
 }

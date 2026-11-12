@@ -22,6 +22,8 @@ import {
     Chip,
     TextField,
     MenuItem,
+    Checkbox,
+    Link as MuiLink,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -58,6 +60,7 @@ export default function CheckoutModal({
     couponCode = '',
     quote,
     currentUser,
+    presentation = 'dialog',
 }) {
     const { auth } = usePage().props;
     const [resolvedUser, setResolvedUser] = useState(currentUser || auth?.user || null);
@@ -69,6 +72,13 @@ export default function CheckoutModal({
     const [riderEmail, setRiderEmail] = useState(activeUser?.email || '');
     const [otpChallenge, setOtpChallenge] = useState(null);
     const [otpCode, setOtpCode] = useState('');
+    const [billingType, setBillingType] = useState('personal');
+    const [billingName, setBillingName] = useState('');
+    const [billingAddress, setBillingAddress] = useState('');
+    const [billingStateCode, setBillingStateCode] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [billingGstin, setBillingGstin] = useState('');
+
 
     const [gateway, setGateway] = useState('phonepe');
     const [paymentOption, setPaymentOption] = useState('advance');
@@ -136,6 +146,18 @@ export default function CheckoutModal({
     const handleBookAndPay = async () => {
         if (!heldBooking && !pointSelectionValid) {
             setErrorMessage('Choose pickup and return points with configured charges. Hotel/custom requests also need an address.');
+            return;
+        }
+        if (heldBooking && !acceptedTerms) {
+            setErrorMessage('Please review and accept the rental terms before payment.');
+            return;
+        }
+        if (billingName.trim().length < 2 || billingAddress.trim().length < 8 || !/^\\d{2}$/.test(billingStateCode)) {
+            setErrorMessage('Enter the billing name, full address and two-digit state code before continuing.');
+            return;
+        }
+        if (billingType === 'business' && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(billingGstin.trim().toUpperCase())) {
+            setErrorMessage('Enter a valid-format GSTIN for the business invoice.');
             return;
         }
         setIsSubmitting(true);
@@ -237,14 +259,13 @@ export default function CheckoutModal({
                 );
                 booking = holdRes.data;
                 setHeldBooking(booking);
+                setAcceptedTerms(false);
 
-                if (bikeModelId) {
-                    // A model's exact rate may vary between physical vehicles.
-                    // Require an explicit second click to accept the actual total.
-                    setStatusMessage('Bike reserved. Review the exact amount below before continuing to payment.');
-                    setIsSubmitting(false);
-                    return;
-                }
+                // Require review for individual bikes AND model bookings.
+                // Pickup fees, final allocation and tax may change the initial estimate.
+                setStatusMessage('Bike reserved. Review the confirmed total, GST and billing details before payment.');
+                setIsSubmitting(false);
+                return;
             }
             setStatusMessage(`Reservation ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
 
@@ -255,6 +276,14 @@ export default function CheckoutModal({
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
                 gateway: gateway,
                 payment_option: paymentOption,
+                accept_rental_terms: acceptedTerms,
+                billing: {
+                    type: billingType,
+                    name: billingName.trim(),
+                    address: billingAddress.trim(),
+                    state_code: billingStateCode.trim(),
+                    ...(billingType === 'business' ? { gstin: billingGstin.trim().toUpperCase() } : {}),
+                },
             });
 
             const paymentData = checkoutRes.data;
@@ -375,15 +404,36 @@ export default function CheckoutModal({
         }
     };
 
+    const isPage = presentation === 'page';
+    const Shell = isPage ? Box : Dialog;
+
     return (
-        <Dialog
-            open={open}
-            onClose={isSubmitting ? undefined : onClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-                sx: { borderRadius: 3 },
-            }}
+        <Shell
+            {...(isPage
+                ? {
+                    sx: {
+                        width: '100%',
+                        bgcolor: '#FFFFFF',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: { xs: 2, md: 3 },
+                        overflow: 'hidden',
+                        boxShadow: '0 14px 35px rgba(15, 23, 42, 0.06)',
+                    },
+                }
+                : {
+                    open,
+                    onClose: isSubmitting ? undefined : onClose,
+                    maxWidth: 'md',
+                    fullWidth: true,
+                    PaperProps: {
+                        sx: {
+                            borderRadius: { xs: 0, sm: 3 },
+                            m: { xs: 0, sm: 2 },
+                            width: { xs: '100%', sm: 'calc(100% - 32px)' },
+                            maxHeight: { xs: '100dvh', sm: '90vh' },
+                        },
+                    },
+                })}
         >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
                 <Box>
@@ -394,14 +444,28 @@ export default function CheckoutModal({
                         {bike.brand} {bike.model_name} • {startDate} to {endDate}
                     </Typography>
                 </Box>
-                {!isSubmitting && (
+                {!isPage && !isSubmitting && (
                     <IconButton onClick={onClose} size="small">
                         <CloseIcon />
                     </IconButton>
                 )}
             </DialogTitle>
 
-            <DialogContent dividers sx={{ p: 3 }}>
+            <Box sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderTop: '1px solid #E2E8F0' }}>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Chip size="small" label="1. Rider and pickup" color={!heldBooking ? 'primary' : 'default'}
+                        variant={!heldBooking ? 'filled' : 'outlined'} />
+                    <Chip size="small" label="2. Pricing and GST" color={heldBooking ? 'primary' : 'default'}
+                        variant={heldBooking ? 'filled' : 'outlined'} />
+                    <Chip size="small" label="3. Secure payment" color={heldBooking ? 'primary' : 'default'} variant="outlined" />
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                    {heldBooking
+                        ? 'Bike held. Review the final total and payment details before paying.'
+                        : 'Add rider, pickup and billing details to receive a confirmed rental quote.'}
+                </Typography>
+            </Box>
+            <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
                 {/* Hold Timer Alert if already held */}
                 {heldBooking && (
                     <Alert
@@ -589,15 +653,49 @@ export default function CheckoutModal({
                         </Alert>
                     </Stack>
                 </Card>
-                {finalQuote && <Alert severity="info" sx={{ mb: 2 }}>
+                {heldBooking && finalQuote && <Alert severity="info" sx={{ mb: 2 }}>
                     Pickup-point fee: ₹{Number(finalQuote.pickup_fee_amount || 0).toLocaleString('en-IN')} ·
                     Return-point fee: ₹{Number(finalQuote.return_fee_amount || 0).toLocaleString('en-IN')} ·
                     Total location fees: ₹{Number(finalQuote.location_fee_amount || 0).toLocaleString('en-IN')}.
-                    These are included in the total above, alongside any applicable inter-branch fee.
+                    These are included in the confirmed booking total alongside any inter-branch fee.
                 </Alert>}
+                {/* Capture billing details before gateway initiation; server locks these on first checkout. */}
+                <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
+                        Billing details
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        These details will be saved with your booking and locked when payment starts.
+                        A GST tax invoice is available only after the supplier's GST settings and invoice issuance are configured.
+                    </Typography>
+                    <RadioGroup row value={billingType} onChange={(e) => setBillingType(e.target.value)}>
+                        <FormControlLabel value="personal" control={<Radio />} label="Personal" />
+                        <FormControlLabel value="business" control={<Radio />} label="Business (GSTIN)" />
+                    </RadioGroup>
+                    <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+                        <TextField size="small" required fullWidth label={billingType === 'business' ? 'Registered business name' : 'Billing name'}
+                            value={billingName} onChange={(e) => setBillingName(e.target.value)} inputProps={{ maxLength: 150 }} />
+                        <TextField size="small" required fullWidth multiline minRows={2} label="Full billing address"
+                            value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} inputProps={{ maxLength: 500 }} />
+                        <TextField size="small" required fullWidth label="GST state code (2 digits)" helperText="For example, Karnataka = 29. Used to verify GSTIN state; does not determine place of supply."
+                            value={billingStateCode} onChange={(e) => setBillingStateCode(e.target.value.replace(/\D/g, '').slice(0, 2))} inputProps={{ inputMode: 'numeric', maxLength: 2 }} />
+                        {billingType === 'business' && (
+                            <TextField size="small" required fullWidth label="Business GSTIN" helperText="Format is checked here; registration validity is not verified."
+                                value={billingGstin} onChange={(e) => setBillingGstin(e.target.value.toUpperCase().slice(0, 15))} inputProps={{ maxLength: 15 }} />
+                        )}
+                    </Stack>
+                </Card>
+
+                {!heldBooking && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Continue to hold your bike and confirm the final rental quote. No payment will start until you review it.
+                    </Alert>
+                )}
+                {heldBooking && (
+                    <>
                 {/* No refundable security deposit is required for new online bike bookings. */}
                 <Alert severity="success" sx={{ mb: 2 }}>
-                    No security deposit required. Pay ₹100 now to reserve, or pay the full rental amount.
+                    No refundable deposit for this online reservation. Choose an advance or full rental payment.
                 </Alert>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#0F172A' }}>
                     Choose payment option
@@ -713,6 +811,65 @@ export default function CheckoutModal({
                     </Card>
                 </RadioGroup>
 
+                {/* Tax display is entirely server derived; never calculate GST in the browser. */}
+                {finalQuote && (
+                    <Box sx={{ mt: 3, mb: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, color: '#0F172A' }}>
+                            Rental price breakdown
+                        </Typography>
+                        {finalQuote.price_breakdown_json?.bike_gst?.status === 'configured' ? (
+                            <>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                                    <Typography variant="body2">Taxable rental and fees</Typography>
+                                    <Typography variant="body2" fontWeight={700}>
+                                        ₹{Number(finalQuote.price_breakdown_json.bike_gst.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 1 }}>
+                                    <Typography variant="body2">GST ({finalQuote.price_breakdown_json.bike_gst.gst_rate_percent}%)</Typography>
+                                    <Typography variant="body2" fontWeight={700}>
+                                        ₹{Number(finalQuote.price_breakdown_json.bike_gst.gst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    </Typography>
+                                </Box>
+                                <Typography variant="caption" color="text.secondary">
+                                    {finalQuote.price_breakdown_json.bike_gst.price_mode === 'inclusive'
+                                        ? 'GST is included in the quoted total.'
+                                        : 'GST has been added to the quoted rental total.'}
+                                </Typography>
+                            </>
+                        ) : (
+                            <Alert severity="warning">
+                                GST details are not configured for bike bookings. The displayed quote does not claim a GST tax amount or constitute a tax invoice.
+                            </Alert>
+                        )}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 1.5, pt: 1, borderTop: '1px solid #E2E8F0' }}>
+                            <Typography variant="body1" fontWeight={800}>Final rental total</Typography>
+                            <Typography variant="body1" fontWeight={800}>
+                                ₹{Number(total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </Typography>
+                        </Box>
+                    </Box>
+                )}
+
+                <FormControlLabel
+                    sx={{ mt: 2, alignItems: 'flex-start' }}
+                    control={
+                        <Checkbox
+                            checked={acceptedTerms}
+                            onChange={(event) => setAcceptedTerms(event.target.checked)}
+                            inputProps={{ 'aria-label': 'Agree to bike rental terms' }}
+                        />
+                    }
+                    label={
+                        <Typography variant="body2">
+                            I have reviewed the rental price, pickup and return conditions, and agree to the{' '}
+                            <MuiLink href="/rental-terms" target="_blank" rel="noopener noreferrer">
+                                bike rental terms
+                            </MuiLink>. I understand the amount due at pickup.
+                        </Typography>
+                    }
+                />
+
                 {/* Amount Due Summary */}
                 <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #E2E8F0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -729,6 +886,8 @@ export default function CheckoutModal({
                         </Typography>
                     </Box>
                 </Box>
+                    </>
+                )}
             </DialogContent>
 
             <DialogActions sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -737,7 +896,7 @@ export default function CheckoutModal({
                     color="secondary"
                     fullWidth
                     size="large"
-                    disabled={isSubmitting || (!heldBooking && !pointSelectionValid) || (Boolean(heldBooking) && timeLeftSeconds <= 0)}
+                    disabled={isSubmitting || (!heldBooking && !pointSelectionValid) || (Boolean(heldBooking) && (timeLeftSeconds <= 0 || !acceptedTerms))}
                     onClick={handleBookAndPay}
                     sx={{
                         py: 1.5,
@@ -749,9 +908,9 @@ export default function CheckoutModal({
                     {isSubmitting ? (
                         <CircularProgress size={26} color="inherit" />
                     ) : (
-                        bikeModelId && !heldBooking
-                            ? 'Reserve vehicle & check final price'
-                            : `Pay ₹${Number(payNow || 0).toLocaleString('en-IN')} now`
+                        !heldBooking
+                            ? 'Reserve bike & review final price'
+                            : `Pay ₹${Number(payNow || 0).toLocaleString('en-IN')} securely`
                     )}
                 </Button>
 
@@ -777,6 +936,6 @@ export default function CheckoutModal({
                     </Typography>
                 </Box>
             </DialogActions>
-        </Dialog>
+        </Shell>
     );
 }

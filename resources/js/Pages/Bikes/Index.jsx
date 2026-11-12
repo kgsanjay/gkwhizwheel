@@ -61,7 +61,7 @@ const BIKE_FAQS = [
     },
     {
         q: 'Can I get rental bikes delivered to Honnavar Railway Station?',
-        a: 'Yes! We have an active Honnavar Railway Station Desk located right on Station Road at the Platform 1 exit. When your Konkan Railway train arrives, our representative meets you with your selected vehicle and helmets for an express 5-minute handover.',
+        a: 'Select an available pickup branch in the bike search. Available pickup services and charges are confirmed in your rental quote before payment.',
     },
     {
         q: 'What documents are required for honnavar bike rent?',
@@ -69,11 +69,11 @@ const BIKE_FAQS = [
     },
     {
         q: 'Are helmets and vehicle documents provided?',
-        a: 'Yes! Every booking includes one sanitized, ISI-certified rider helmet free of charge. A pillion helmet is available for an extra ₹50/day. All vehicles are registered with valid commercial permits, insurance, and PUC certificates.',
+        a: 'Helmet availability, any additional charges, and document requirements are confirmed during booking or at pickup. Refer to the published rental terms and your booking quote.',
     },
     {
         q: 'Can I ride to Gokarna, Murudeshwar, or Jog Falls?',
-        a: 'Yes! All GK WhizWheels bikes have valid Karnataka road tax and permit to travel anywhere along the coastal belt, including Murudeshwar (27 km), Gokarna (48 km), Yana Caves, and Jog Falls (60 km).',
+        a: 'Travel restrictions depend on the selected bike and rental agreement. Check the applicable terms and confirm your planned route with the pickup branch.',
     },
     {
         q: 'Is a security deposit required for online bike rentals?',
@@ -94,7 +94,19 @@ const bikeFaqSchema = {
     })),
 };
 
-export default function BikesIndex({ categories = [], stores = [], initialFilters = {} }) {
+export default function BikesIndex({ categories: initialCategories = [], stores: initialStores = [], initialFilters = {} }) {
+    const { data: storeResponse } = useQuery({
+        queryKey: ['public-bike-stores'],
+        queryFn: () => apiClient.get('/stores'),
+        retry: false,
+    });
+    const { data: categoryResponse } = useQuery({
+        queryKey: ['public-bike-categories'],
+        queryFn: () => apiClient.get('/bike-categories'),
+        retry: false,
+    });
+    const stores = storeResponse?.data ?? initialStores;
+    const categories = categoryResponse?.data ?? initialCategories;
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
 
@@ -158,6 +170,12 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     });
 
     const bikes = bikesResponse?.data || [];
+    const listedRates = bikes
+        .map((bike) => Number(bike.weekday_rate ?? bike.daily_rate))
+        .filter((rate) => Number.isFinite(rate) && rate > 0);
+    const minimumDailyRate = listedRates.length ? Math.min(...listedRates) : null;
+    const displayedFleetNames = [...new Set(bikes.map((bike) => [bike.brand, bike.model_name].filter(Boolean).join(' ')).filter(Boolean))];
+    const featuredBike = bikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url) || null;
     const legacyBikes = bikes.filter((bike) => !bike.bike_model_id);
     // Public comparison uses registered inventory and actual configured rates.
     // Never advertise non-existent models, made-up weekend surcharges or deposits.
@@ -185,7 +203,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                 title="Bike & Scooter Rentals by Branch | GK WhizWheel"
                 description="Browse self-drive bikes and scooters by branch and dates. Check current pricing and availability with no security deposit for new online bike bookings."
                 canonicalUrl="https://whizwheels.in/services/bikes"
-                ogImage="/images/services/two_wheelers.jpg"
+                ogImage={featuredBike?.primary_image_url || featuredBike?.images?.[0]?.image_url || undefined}
                 ogType="website"
                 structuredData={bikeFaqSchema}
             />
@@ -347,7 +365,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         {
                                             icon: <ShieldIcon sx={{ color: '#F59E0B', fontSize: 18 }} />,
                                             title: 'Zero Security Deposit',
-                                            desc: 'Available on Aadhaar & round-trip verification',
+                                            desc: 'Check ID and rental terms before pickup',
                                         },
                                         {
                                             icon: <LocationOnIcon sx={{ color: '#0284C7', fontSize: 18 }} />,
@@ -356,7 +374,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         },
                                         {
                                             icon: <SportsMotorsportsIcon sx={{ color: '#10B981', fontSize: 18 }} />,
-                                            title: '2 Free Sanitized Helmets',
+                                            title: 'Helmet availability confirmed at pickup',
                                             desc: 'ISI helmets + phone mount & charger included',
                                         },
                                         {
@@ -417,7 +435,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             '&:hover': { bgcolor: '#D97706' },
                                         }}
                                     >
-                                        Explore Available Fleet ({bikes.length > 0 ? bikes.length : '9'} Bikes) ↓
+                                        Explore Available Fleet ({isLoading ? 'Loading…' : bikes.length} Bikes) ↓
                                     </Button>
                                     <Button
                                         component="a"
@@ -514,17 +532,17 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                                     {/* Cinematic Bike Image Showcase */}
                                     <Box sx={{ position: 'relative', height: { xs: 240, sm: 280 } }}>
-                                        <Box
-                                            component="img"
-                                            src="/images/services/two_wheelers.jpg"
-                                            alt="Rental Bikes and Scooters Fleet in Honnavar - GK WhizWheel Two Wheeler Rentals"
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                display: 'block',
-                                            }}
-                                        />
+                                        {featuredBike ? (
+                                            <Box component="img"
+                                                src={featuredBike.primary_image_url || featuredBike.images?.[0]?.image_url}
+                                                alt={`${featuredBike.brand} ${featuredBike.model_name} currently listed for rent`}
+                                                sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                            />
+                                        ) : (
+                                            <Box sx={{ display: 'grid', placeItems: 'center', height: '100%', bgcolor: '#1E293B' }}>
+                                                <TwoWheelerIcon sx={{ fontSize: 92, color: '#94A3B8' }} aria-hidden="true" />
+                                            </Box>
+                                        )}
                                         <Box
                                             sx={{
                                                 position: 'absolute',
@@ -552,7 +570,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                 />
                                                 <Chip
                                                     icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 13 }} />}
-                                                    label="5.0 ★ Verified"
+                                                    label={`${bikes.length} bikes in live catalog` }
                                                     size="small"
                                                     sx={{
                                                         bgcolor: 'rgba(15, 23, 42, 0.85)',
@@ -579,8 +597,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     {/* 3 Metric Pillars Under Image */}
                                     <Grid container sx={{ p: 1.2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0' }}>
                                         {[
-                                            { label: 'DAILY RATE', val: 'See Live Quote' },
-                                            { label: 'PICKUP', val: 'Select Branch' },
+                                            { label: 'DAILY RATE', val: minimumDailyRate === null ? 'See Live Quote' : `From ₹${minimumDailyRate.toLocaleString('en-IN')}` },
+                                            { label: 'PICKUP', val: stores.length ? `${stores.length} Branch${stores.length === 1 ? '' : 'es'}` : 'Select Branch' },
                                             { label: 'SECURITY DEPOSIT', val: 'Zero Deposit' },
                                         ].map((stat, idx) => (
                                             <Grid key={idx} size={{ xs: 4 }} sx={{ textAlign: 'center', borderRight: idx < 2 ? (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0') : 'none', py: 0.5 }}>
@@ -599,13 +617,13 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981', flexShrink: 0 }} />
                                             <Typography variant="caption" sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800, fontSize: '0.78rem' }}>
-                                                Fleet Ready for Handover at Railway Station Counter
+                                                {bikes.length ? `${bikes.length} bike(s) listed in available fleet` : 'Check the live catalog for available bikes'}
                                             </Typography>
                                         </Box>
 
                                         {/* Quick Fleet Model Badges */}
                                         <Stack direction="row" spacing={0.8} flexWrap="wrap" sx={{ gap: 0.6, mb: 2 }}>
-                                            {['Honda Activa 6G', 'Classic 350', 'CB350', 'Electric EV'].map((modelName, mIdx) => (
+                                            {displayedFleetNames.slice(0, 4).map((modelName, mIdx) => (
                                                 <Chip
                                                     key={mIdx}
                                                     label={modelName}
@@ -744,7 +762,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         },
                                     }}
                                 >
-                                    <MenuItem value="">All Hubs (Honnavar)</MenuItem>
+                                    <MenuItem value="">All available hubs</MenuItem>
                                     {stores.map((store) => (
                                         <MenuItem key={store.id} value={store.id}>
                                             {store.name} ({store.city})
@@ -839,14 +857,14 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
                                 <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 700, fontSize: '0.84rem' }}>
                                     {!isLoading ? (
-                                        <>Showing <Box component="span" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 900 }}>{bikes.length}</Box> verified vehicle(s) ready for delivery</>
+                                        <>Showing <Box component="span" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 900 }}>{bikes.length}</Box> listed vehicle(s) from the bike API</>
                                     ) : (
                                         'Updating live fleet inventory...'
                                     )}
                                 </Typography>
                             </Box>
                             <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 600 }}>
-                                Dual Hubs: Honnavar Railway Station (Platform 1) • Palya Main Road Head Office
+                                {stores.length} active rental location(s)
                             </Typography>
                         </Box>
                     </Paper>
@@ -911,8 +929,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                             <Grid container spacing={3}>
                                 {legacyBikes.map((bike) => {
-                                    const weekdayRate = bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || bike.category?.base_daily_rate || '350.00';
-                                    const weekendRate = bike.weekend_rate || (Number(weekdayRate) + (Number(weekdayRate) >= 1000 ? (Number(weekdayRate) >= 1200 ? 300 : 200) : (Number(weekdayRate) === 450 ? 50 : 100)));
+                                    const weekdayRate = bike.weekday_rate ?? bike.daily_rate ?? bike.category?.base_daily_rate ?? null;
+                                    const weekendRate = bike.weekend_rate ?? bike.daily_rate ?? bike.category?.base_daily_rate ?? null;
                                     const isElectric = bike.fuel_type === 'electric';
 
                                     // Build forward query params to retain user dates
@@ -922,7 +940,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     if (filters.store_id) queryParams.set('pickup_store_id', filters.store_id);
                                     const detailUrl = `/bikes/${bike.id}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
-                                    const imageSrc = bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || '/storage/bikes/honda-activa.jpg';
+                                    const imageSrc = bike.primary_image_url || bike.images?.[0]?.image_url || null;
 
                                     return (
                                         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={bike.id}>
@@ -961,22 +979,19 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         justifyContent: 'center',
                                                     }}
                                                 >
-                                                    <Box
-                                                        component="img"
-                                                        src={imageSrc}
-                                                        alt={`${bike.brand || ''} ${bike.model_name || 'Bike'} rental scooter/motorcycle in Honnavar - GK WhizWheel`}
-                                                        loading="lazy"
-                                                        sx={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'cover',
-                                                            objectPosition: 'center 75%',
-                                                            transition: 'transform 0.4s ease',
-                                                            '&:hover': {
-                                                                transform: 'scale(1.04)',
-                                                            },
-                                                        }}
-                                                    />
+                                                    {imageSrc ? (
+                                                        <Box component="img"
+                                                            src={imageSrc}
+                                                            alt={`${bike.brand || ''} ${bike.model_name || 'Bike'}`}
+                                                            loading="lazy"
+                                                            sx={{
+                                                                width: '100%', height: '100%', objectFit: 'cover',
+                                                                objectPosition: 'center 75%',
+                                                                transition: 'transform 0.4s ease',
+                                                                '&:hover': { transform: 'scale(1.04)' },
+                                                            }}
+                                                        />
+                                                    ) : <TwoWheelerIcon sx={{ fontSize: 82, color: 'text.disabled' }} aria-hidden="true" />}
 
                                                     {/* Fuel / EV Badge */}
                                                     <Chip
@@ -1049,7 +1064,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 fontSize: '0.72rem',
                                                             }}
                                                         >
-                                                            {bike.category?.name || 'Two-Wheeler'} • {bike.transmission || 'Automatic'}
+                                                            {bike.category?.name || 'Two-Wheeler'} • {bike.transmission || 'Transmission not listed'}
                                                         </Typography>
                                                         <Typography variant="caption" sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 750 }}>
                                                             ✓ Verified
@@ -1074,7 +1089,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 2 }}>
                                                         <LocationOnIcon aria-hidden="true" sx={{ fontSize: 16, color: isDark ? '#F59E0B' : '#D97706' }} />
                                                         <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                            {bike.current_store?.name || 'Honnavar Main Hub (Palya & Railway Stn)'}
+                                                            {bike.current_store?.name || 'Location not available'}
                                                         </Typography>
                                                     </Box>
 
@@ -1093,7 +1108,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 Mon – Thu <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekday)</Box>
                                                             </Typography>
                                                             <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekdayPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekdayRate).toLocaleString('en-IN')}{' '}
+                                                                {weekdayRate == null ? 'Rate on request' : `₹${Number(weekdayRate).toLocaleString('en-IN')}`}{' '}
                                                                 <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
                                                                     /day
                                                                 </Typography>
@@ -1105,7 +1120,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 Fri – Sun <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekend)</Box>
                                                             </Typography>
                                                             <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekendPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekendRate).toLocaleString('en-IN')}{' '}
+                                                                {weekendRate == null ? 'Rate on request' : `₹${Number(weekendRate).toLocaleString('en-IN')}`}{' '}
                                                                 <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
                                                                     /day
                                                                 </Typography>
@@ -1119,7 +1134,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 ✓ Zero Deposit Option
                                                             </Typography>
                                                             <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                Instant 5-Min Pickup
+                                                                Select pickup time and location
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -1132,7 +1147,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         color="secondary"
                                                         fullWidth
                                                         endIcon={<ArrowForwardIcon aria-hidden="true" />}
-                                                        aria-label={`Book ${bike.brand} ${bike.model_name} starting at ₹${weekdayRate} per day`}
+                                                        aria-label={`View ${bike.brand} ${bike.model_name} and check available rental rates`}
                                                         sx={{
                                                             mt: 'auto',
                                                             fontWeight: 900,
@@ -1240,10 +1255,10 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         {[bike.category?.name, bike.fuel_type, bike.transmission].filter(Boolean).join(' · ')}
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekdayPriceColor }}>
-                                                        ₹{Number(bike.weekday_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
+                                                        {bike.weekday_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekday_rate ?? bike.daily_rate).toLocaleString('en-IN')}`} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekendPriceColor }}>
-                                                        ₹{Number(bike.weekend_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
+                                                        {bike.weekend_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekend_rate ?? bike.daily_rate).toLocaleString('en-IN')}`} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
                                                     <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800 }}>
                                                         ₹0 for new online bookings
@@ -1281,7 +1296,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     mb: 2.5,
                                 }}
                             >
-                                Multi-Day Rental Volume Discounts
+                                Rental Durations & Live Pricing
                             </Typography>
 
                             <Grid container spacing={3}>
@@ -1311,7 +1326,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Standard Tariff (From ₹350)</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>{minimumDailyRate !== null ? `Daily rates from ₹${minimumDailyRate.toLocaleString('en-IN')}` : 'Select a bike to check rates'}</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
@@ -1356,7 +1371,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         }}
                                     >
                                         <Chip
-                                            label="POPULAR"
+                                            label="3–6 DAYS"
                                             size="small"
                                             color="secondary"
                                             sx={{
@@ -1381,7 +1396,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#F59E0B', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>10% Tiered Discount</Typography>
+                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Exact quote calculated for your dates</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
@@ -1389,7 +1404,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Station Pickup Priority</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Choose from available pickup branches</Typography>
                                             </Box>
                                         </Stack>
                                         <Button
@@ -1437,15 +1452,15 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>15% Volume Discount</Typography>
+                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Check multi-day prices online</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Unlimited Kilometers</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Review mileage policy at checkout</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Free 24/7 Roadside Cover</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Review rental terms before payment</Typography>
                                             </Box>
                                         </Stack>
                                         <Button
@@ -1492,15 +1507,15 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Up to 25% Max Savings</Typography>
+                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Request an extended rental quote</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Free Routine Maintenance</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Confirm long-term conditions with the branch</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Doorstep Hub Swaps</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Select pickup and return locations</Typography>
                                             </Box>
                                         </Stack>
                                         <Button
@@ -1585,7 +1600,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         step: '01',
                                         badge: '⚡ Real-Time Fleet',
                                         title: 'Choose Bike & Hub',
-                                        desc: 'Pick your preferred Honda Activa, Dio, or Royal Enfield with live real-time stock at Honnavar (Palya Main Rd) or Murudeshwar (Temple Main Rd).',
+                                        desc: 'Browse the available bike models returned by our fleet API, choose a pickup branch and check the rental dates before booking.',
                                         color: '#F59E0B',
                                         bgBadge: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
                                     },
@@ -1719,42 +1734,42 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     route: 'Sharavathi River & Mangrove Loop',
                                     distance: '12 km circuit',
                                     time: '25 mins ride',
-                                    bike: 'Any Scooter (Activa/Dio)',
+                                    bike: null,
                                     highlight: 'Mangrove boardwalks, boat points & suspension bridge views',
                                 },
                                 {
                                     route: 'Honnavar Eco Beach Sunset Trail',
                                     distance: '5.8 km one-way',
                                     time: '12 mins ride',
-                                    bike: 'Scooter or Electric EV',
+                                    bike: null,
                                     highlight: 'Blue Flag eco beach, palm groves & sunset seaside walkway',
                                 },
                                 {
                                     route: 'Apsarakonda Waterfalls & Ocean Cliff',
                                     distance: '7.2 km one-way',
                                     time: '18 mins ride',
-                                    bike: 'Any Scooter / Bike',
+                                    bike: null,
                                     highlight: 'Natural freshwater pool, Pandava caves & panoramic cliff viewpoint',
                                 },
                                 {
                                     route: 'Murudeshwar Coastal Highway (NH-66)',
                                     distance: '27 km one-way',
                                     time: '35 mins ride',
-                                    bike: 'Royal Enfield / Cruiser / 125cc',
+                                    bike: null,
                                     highlight: 'Gigantic Shiva statue, 18-storey Raja Gopura & beach water sports',
                                 },
                                 {
                                     route: 'Mirjan Historic Fort Trail',
                                     distance: '11.5 km one-way',
                                     time: '18 mins ride',
-                                    bike: 'Any Two-Wheeler',
+                                    bike: null,
                                     highlight: '16th-century laterite stone architecture & lush green moat lawns',
                                 },
                                 {
                                     route: 'Gokarna Om Beach & Cliff Circuit',
                                     distance: '44 km one-way',
                                     time: '55 mins ride',
-                                    bike: 'Classic 350 / Ntorq 125 / Commuter',
+                                    bike: null,
                                     highlight: 'Kudle Beach, Om Beach cliff cafes & Mahabaleshwar temple trail',
                                 },
                             ].map((item, idx) => (
@@ -1805,7 +1820,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                             <Typography variant="caption" sx={{ color: isDark ? '#38BDF8' : '#0369A1', fontWeight: 750 }}>
-                                                Best Bike: {item.bike}
+                                                Listed bike: {displayedFleetNames.length ? displayedFleetNames[idx % displayedFleetNames.length] : 'Check the bike catalog'}
                                             </Typography>
                                         </Box>
                                     </Paper>

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../api/client';
 import { useTheme } from '@mui/material/styles';
 import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
@@ -56,7 +58,7 @@ const SERVICES_FAQS = [
     },
     {
         q: 'Can I bundle multiple services into an all-in-one vacation package?',
-        a: 'Yes! Through our custom Karavali packages, you can combine bike or cab rentals with riverfront homestays, Sharavathi backwater boat cruises, and Netrani scuba diving into a single coordinated itinerary. All multi-service combo bookings receive an automatic 10% discount and a dedicated trip coordinator.',
+        a: 'Yes! Through our custom Karavali packages, you can combine bike or cab rentals with riverfront homestays, Sharavathi backwater boat cruises, and Netrani scuba diving into a single coordinated itinerary. Multi-service packages and their prices are shown when published in the service catalog.',
     },
     {
         q: 'What documents are required for two-wheelers versus cabs and activities?',
@@ -82,6 +84,26 @@ const servicesFaqSchema = {
 };
 
 export default function Services({ availableItems = [] }) {
+    const { data: rentalBikeResponse } = useQuery({
+        queryKey: ['public-bikes-services'],
+        queryFn: () => apiClient.get('/bikes'),
+        retry: false,
+    });
+    const { data: publishedServicesResponse } = useQuery({
+        queryKey: ['public-service-catalog'],
+        queryFn: () => apiClient.get('/services'),
+        retry: false,
+    });
+    const publishedServices = publishedServicesResponse?.data ?? availableItems;
+    const { data: publicReviewResponse } = useQuery({
+        queryKey: ['approved-public-bike-reviews'],
+        queryFn: () => apiClient.get('/reviews'),
+        retry: false,
+    });
+    const reviewMeta = publicReviewResponse?.meta || { total: 0, average_rating: null };
+    const rentalBikes = rentalBikeResponse?.data || [];
+    const liveBikeImage = rentalBikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url);
+    const liveBikeImageUrl = liveBikeImage?.primary_image_url || liveBikeImage?.images?.[0]?.image_url || null;
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -102,11 +124,11 @@ export default function Services({ availableItems = [] }) {
             id: 'two_wheelers',
             title: 'Bike & Scooter Rentals',
             rate: 'Check Live Rates',
-            image: '/images/services/two_wheelers.jpg',
+            image: liveBikeImageUrl,
             badge: 'Instant Handover',
             color: '#F59E0B',
             href: '/services/bikes',
-            perks: ['Activa 6G, Classic 350 & CB350', '2 ISI Helmets & Phone Mount Free', 'Honnavar Rly Stn Delivery'],
+            perks: ['Browse live bike inventory and prices', '2 ISI Helmets & Phone Mount Free', 'Honnavar Rly Stn Delivery'],
         },
         cabs: {
             id: 'taxi',
@@ -182,9 +204,9 @@ export default function Services({ availableItems = [] }) {
             order: '01',
             title: 'Bike & Scooter Rentals',
             tag: 'Self-Drive Fleet',
-            tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with zero deposit options and instant station delivery.',
+            tagline: 'Discover available bikes from the live fleet API, check dates, and review your rental quote before payment.',
             rate: 'Check Live Rates',
-            image: '/images/services/two_wheelers.jpg',
+            image: liveBikeImageUrl,
             color: '#F59E0B',
             gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
             href: '/services/bikes',
@@ -314,81 +336,89 @@ export default function Services({ availableItems = [] }) {
 
     const getItemForService = (serviceKey) => {
         const targetType = serviceTypeMap[serviceKey] || serviceKey;
-        return availableItems.find((item) => item.service_type === targetType);
+        return publishedServices.find((item) => item.service_type === targetType);
     };
 
     const heroPreviewsWithMedia = React.useMemo(() => {
         const enhanced = {};
         Object.entries(heroServicePreviews).forEach(([key, preview]) => {
             const item = getItemForService(key);
-            const media = getServiceItemMedia(item, preview.image);
+            const media = key === 'bikes'
+                ? { primary: liveBikeImageUrl, gallery: liveBikeImageUrl ? [liveBikeImageUrl] : [], count: Number(Boolean(liveBikeImageUrl)), hasMultiple: false }
+                : getServiceItemMedia(item, preview.image);
             enhanced[key] = {
                 ...preview,
+                tagline: item?.description || (key === 'bikes' ? `${rentalBikes.length} listed rental bikes available to browse` : 'View the published service details.'),
+                rate: key === 'bikes'
+                    ? 'Check Live Rates'
+                    : item?.price_base != null && Number(item.price_base) > 0
+                        ? `From ₹${Number(item.price_base).toLocaleString('en-IN')}`
+                        : 'Check Live Rates',
+                perks: key === 'bikes'
+                    ? [`${rentalBikes.length} listed bikes`, 'Check your dates', 'Review confirmed price']
+                    : Array.isArray(item?.features) && item.features.length
+                        ? item.features.slice(0, 3)
+                        : ['View published service details'],
                 item,
                 media,
             };
         });
         return enhanced;
-    }, [availableItems]);
+    }, [publishedServices, liveBikeImageUrl, rentalBikes.length]);
 
     const servicesWithMedia = React.useMemo(() => {
         return services.map((srv) => {
             const item = getItemForService(srv.id);
-            const media = getServiceItemMedia(item, srv.image);
+            const media = srv.id === 'bikes'
+                ? { primary: liveBikeImageUrl, gallery: liveBikeImageUrl ? [liveBikeImageUrl] : [], count: Number(Boolean(liveBikeImageUrl)), hasMultiple: false }
+                : getServiceItemMedia(item, srv.image);
             return {
                 ...srv,
+                // Category headings and visual styles stay the same. Published
+                // item details replace promotional claims when inventory exists.
+                tagline: item?.description || (srv.id === 'bikes'
+                    ? srv.tagline
+                    : 'Browse currently published experiences and confirm details before booking.'),
+                rate: srv.id === 'bikes'
+                    ? srv.rate
+                    : item?.price_base != null && Number(item.price_base) > 0
+                        ? `From ₹${Number(item.price_base).toLocaleString('en-IN')}${item.price_unit ? ` / ${item.price_unit}` : ''}`
+                        : 'Check live rates',
+                highlights: srv.id === 'bikes'
+                    ? [`${rentalBikes.length} bike(s) in the live catalog`, 'Choose your pickup branch', 'Review the exact rental quote']
+                    : Array.isArray(item?.features) && item.features.length
+                        ? item.features.slice(0, 3)
+                        : ['View the published service details', 'Confirm availability before booking'],
+                badgeText: item?.badge || (srv.id === 'bikes' ? 'Live Bike Fleet' : 'View Details'),
                 item,
                 media,
             };
         });
-    }, [availableItems]);
+    }, [publishedServices, liveBikeImageUrl, rentalBikes.length]);
 
     const tourItem = getItemForService('tours');
     const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
 
-    // Popular Combos
-    const combos = [
-        {
-            title: 'Honnavar Estuary & Mangrove Explorer',
-            badge: 'Most Popular Day Trip',
-            price: '₹750 / person',
-            duration: 'Half Day (4-5 Hours)',
-            color: '#059669',
-            items: ['Activa 6G Scooter Rental', '1-Hour Sharavathi Mangrove Cruise', 'Eco Beach Boardwalk Sunset'],
-            description: 'Ride to the river jetty, cruise emerald mangrove channels, and catch sunset at Eco Beach.',
-            serviceId: 'boating',
-        },
-        {
-            title: 'Netrani Scuba & Murudeshwar Temple Expedition',
-            badge: 'Adventure Special',
-            price: '₹3,800 / person',
-            duration: 'Full Day (06:00 AM - 04:00 PM)',
-            color: '#6366F1',
-            items: ['Chilled AC Taxi from Honnavar', 'PADI Netrani Scuba Dive with 4K Video', 'Murudeshwar Shiva Statue Visit'],
-            description: 'Dive India’s premier coral reef with 1:1 certified dive masters, plus private cab transfer to Murudeshwar.',
-            serviceId: 'scuba',
-        },
-        {
-            title: 'Gokarna Beach Trail & Fort Heritage Ride',
-            badge: 'Biker & Explorer Favorite',
-            price: '₹1,200 / day',
-            duration: 'Full Day (8-10 Hours)',
-            color: '#F59E0B',
-            items: ['Royal Enfield Classic 350 / Activa', 'Historic Mirjan Fort Walkthrough', 'Om Beach & Kudle Cliff Trail'],
-            description: 'Cruise scenic NH66 coastal highway, explore 16th-century Mirjan Fort, and trek Om Beach cliffs.',
-            serviceId: 'two_wheelers',
-        },
-        {
-            title: 'Karavali 3D/2N Complete Coastal Retreat',
-            badge: 'All-Inclusive Vacation',
-            price: '₹3,499 / person',
-            duration: '3 Days / 2 Nights',
-            color: '#8B5CF6',
-            items: ['Sharavathi Riverfront Homestay', '2-Day Unlimited Two-Wheeler', 'Backwater Cruise & Station Transfer'],
-            description: 'All-in-one coastal getaway with riverfront stay, unlimited bike rental, backwater cruise, and station transfers.',
-            serviceId: 'tours',
-        },
-    ];
+    // Reuse the existing four-column presentation for actual published packages.
+    const combos = publishedServices
+        .filter((item) => {
+            const category = String(item.category || '').toLowerCase();
+            return category.includes('package') || category.includes('combo')
+                || item.service_type === 'tours';
+        })
+        .slice(0, 4)
+        .map((item, index) => ({
+            title: item.name,
+            badge: item.badge || 'Published experience',
+            price: item.price_base != null && Number(item.price_base) > 0
+                ? `₹${Number(item.price_base).toLocaleString('en-IN')} ${item.price_unit ? `/ ${item.price_unit}` : ''}`
+                : 'Quote on request',
+            duration: item.price_unit || 'Contact for schedule',
+            color: ['#059669', '#6366F1', '#F59E0B', '#8B5CF6'][index],
+            items: Array.isArray(item.features) ? item.features : [],
+            description: item.description || 'View the published service details before booking.',
+            serviceId: item.service_type,
+        }));
 
     return (
         <AppLayout>
@@ -802,12 +832,13 @@ export default function Services({ availableItems = [] }) {
                                                         border: `1.5px solid ${active.color}40`,
                                                     }}
                                                 >
-                                                    <Box
-                                                        component="img"
-                                                        src={active.media?.primary || active.image}
-                                                        alt={`${active.title} - ${active.tagline || 'Coastal tourism & rentals in Honnavar by GK WhizWheel'}`}
-                                                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    />
+                                                    {active.media?.primary ? (
+                                                        <Box component="img" src={active.media.primary}
+                                                            alt={`${active.title} — current service image`}
+                                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : <Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: '#1E293B' }}>
+                                                        <TwoWheelerIcon sx={{ fontSize: 64, color: '#94A3B8' }} aria-hidden="true" />
+                                                    </Box>}
                                                     {active.media?.hasMultiple && (
                                                         <Chip
                                                             icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#FFFFFF !important' }} />}
@@ -1125,19 +1156,13 @@ export default function Services({ availableItems = [] }) {
                                 >
                                     {/* Media Header with 2026 Glassmorphic Overlays */}
                                     <Box sx={{ position: 'relative', height: 220, bgcolor: '#0F172A', overflow: 'hidden' }}>
-                                        <Box
-                                            component="img"
-                                            className="card-img"
-                                            src={srv.media?.primary || srv.image}
-                                            alt={`${srv.title} - ${srv.tagline || 'Travel and rental services in Honnavar by GK WhizWheel'}`}
-                                            loading="lazy"
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
-                                            }}
-                                        />
+                                        {srv.media?.primary ? (
+                                            <Box component="img" className="card-img" src={srv.media.primary}
+                                                alt={`${srv.title} — current service image`} loading="lazy"
+                                                sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                                        ) : <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                            <TwoWheelerIcon sx={{ fontSize: 70, color: '#94A3B8' }} aria-hidden="true" />
+                                        </Box>}
                                         {/* Multi-layered cinematic vignette */}
                                         <Box
                                             sx={{
@@ -1267,7 +1292,7 @@ export default function Services({ availableItems = [] }) {
                                                 }}
                                             >
                                                 <StarIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                                5.0 Verified
+                                                {srv.id === 'bikes' && reviewMeta.total > 0 ? `${reviewMeta.average_rating} / 5 (${reviewMeta.total})` : 'View service details'}
                                             </Box>
                                         </Box>
                                     </Box>
@@ -1530,7 +1555,7 @@ export default function Services({ availableItems = [] }) {
                                                         boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
                                                     }}
                                                 >
-                                                    Custom Combos • Save 10%
+                                                    Explore Published Packages
                                                 </Box>
                                                 <Box
                                                     sx={{
@@ -1549,7 +1574,7 @@ export default function Services({ availableItems = [] }) {
                                                     }}
                                                 >
                                                     <StarIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
-                                                    5.0 Rated
+                                                    Explore Packages
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -1569,7 +1594,7 @@ export default function Services({ availableItems = [] }) {
                                             <Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                                     <Chip
-                                                        label="SAVE 10% ON COMBO BOOKINGS"
+                                                        label="CHECK AVAILABLE PACKAGE RATES"
                                                         size="small"
                                                         sx={{
                                                             bgcolor: isDark ? 'rgba(139, 92, 246, 0.2)' : '#EDE9FE',
@@ -1739,14 +1764,23 @@ export default function Services({ availableItems = [] }) {
                             component="h2"
                             sx={{ fontWeight: 950, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.025em', mb: 1.5 }}
                         >
-                            Popular Day Trips & Combo Packages
+                            Available Day Trips & Packages
                         </Typography>
                         <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155', maxWidth: 680, mx: 'auto' }}>
-                            Bundle vehicle rental with boating, scuba, or stays and enjoy an automatic 10% discount on combined bookings.
+                            Browse published packages and experiences. Prices and inclusions come from the current service catalog.
                         </Typography>
                     </Box>
 
                     <Grid container spacing={3.5}>
+                        {combos.length === 0 && (
+                            <Grid size={{ xs: 12 }}>
+                                <Paper variant="outlined" sx={{ p: 4, borderRadius: 4, textAlign: 'center' }}>
+                                    <Typography color="text.secondary">
+                                        No package listings are currently published. Explore the individual services above.
+                                    </Typography>
+                                </Paper>
+                            </Grid>
+                        )}
                         {combos.map((combo, cIdx) => (
                             <Grid key={cIdx} size={{ xs: 12, md: 6 }}>
                                 <Paper
@@ -1811,7 +1845,7 @@ export default function Services({ availableItems = [] }) {
                                         </Typography>
 
                                         <Typography variant="caption" sx={{ color: combo.color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', mb: 1 }}>
-                                            Package Inclusions:
+                                            Published Features:
                                         </Typography>
                                         <Stack spacing={0.8} sx={{ mb: 3 }}>
                                             {combo.items.map((inc, iIdx) => (
@@ -1828,7 +1862,7 @@ export default function Services({ availableItems = [] }) {
                                     <Box sx={{ pt: 2, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                                         <Box>
                                             <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', display: 'block', fontWeight: 600 }}>
-                                                Combo Rate (Save 10%)
+                                                Published Price
                                             </Typography>
                                             <Typography variant="h6" component="span" sx={{ fontWeight: 900, color: combo.color, lineHeight: 1.1 }}>
                                                 {combo.price}
@@ -1855,7 +1889,7 @@ export default function Services({ availableItems = [] }) {
                                                 },
                                             }}
                                         >
-                                            Book This Combo
+                                            View Experience
                                         </Button>
                                     </Box>
                                 </Paper>
@@ -2143,7 +2177,7 @@ export default function Services({ availableItems = [] }) {
                                         '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
                                     }}
                                 >
-                                    5.0★ Google Reviews
+                                    {reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} published bike reviews` : 'Customer reviews'}
                                 </Typography>
                             </Box>
                         </Box>

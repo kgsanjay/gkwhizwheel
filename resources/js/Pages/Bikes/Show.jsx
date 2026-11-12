@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Link, router } from '@inertiajs/react';
 import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
@@ -35,47 +35,30 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import SecurityIcon from '@mui/icons-material/Security';
 import AddonsSelector from '../../Components/Booking/AddonsSelector';
-import AuthModal from '../../Components/Auth/AuthModal';
-import CheckoutModal from '../../Components/Booking/CheckoutModal';
 
 export default function BikeShow({ bike, stores = [] }) {
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
-    const { auth } = usePage().props;
-    const [currentUser, setCurrentUser] = useState(auth?.user || null);
 
     // Read query params from URL if passed from index page
     const searchParams = new URLSearchParams(window.location.search);
     const initialStart = searchParams.get('start_date') || '';
     const initialEnd = searchParams.get('end_date') || '';
     const initialPickup = searchParams.get('pickup_store_id') || String(bike.current_store_id || (stores[0]?.id || ''));
+    const initialReturn = searchParams.get('return_store_id') || initialPickup;
 
     const [startDate, setStartDate] = useState(initialStart);
     const [endDate, setEndDate] = useState(initialEnd);
     const [pickupStoreId, setPickupStoreId] = useState(initialPickup);
-    const [returnStoreId, setReturnStoreId] = useState(initialPickup);
+    const [returnStoreId, setReturnStoreId] = useState(initialReturn);
     const [couponCode, setCouponCode] = useState('');
     const [selectedAddons, setSelectedAddons] = useState([]);
-
-    // Modal states
-    const [authModalOpen, setAuthModalOpen] = useState(false);
-    const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
 
     const isElectric = bike.fuel_type === 'electric';
     const isOneWay = pickupStoreId !== '' && returnStoreId !== '' && pickupStoreId !== returnStoreId;
 
     const pickupStore = stores.find((s) => String(s.id) === String(pickupStoreId)) || { id: pickupStoreId, name: 'Store Hub' };
     const returnStore = stores.find((s) => String(s.id) === String(returnStoreId)) || { id: returnStoreId, name: 'Store Hub' };
-
-    // Check token on mount
-    useEffect(() => {
-        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        if (token && !currentUser) {
-            apiClient.get('/user').then((res) => {
-                if (res.data) setCurrentUser(res.data);
-            }).catch(() => {});
-        }
-    }, []);
 
     // React Query: Fetch live price quote when dates and stores are present
     const canFetchQuote = Boolean(startDate && endDate && pickupStoreId && returnStoreId && startDate <= endDate);
@@ -104,36 +87,42 @@ export default function BikeShow({ bike, stores = [] }) {
     const quote = quoteResponse?.data;
 
     const handleBookNowClick = () => {
-        setCheckoutModalOpen(true);
+        if (!canFetchQuote || !quote) return;
+        router.get('/services/bikes/checkout', {
+            bike_id: bike.id,
+            pickup_store_id: pickupStoreId,
+            return_store_id: returnStoreId,
+            start_date: startDate,
+            end_date: endDate,
+            coupon_code: couponCode.trim() || undefined,
+            addons: JSON.stringify(selectedAddons),
+        });
     };
 
-    const handleAuthSuccess = (user) => {
-        setCurrentUser(user);
-        setCheckoutModalOpen(true);
-    };
-
-    const bikePrice = bike.daily_rate ?? bike.price_per_day ?? bike.weekday_rate ?? 350;
-    const bikeImageUrl = bike.primary_image_url || bike.image_url || (bike.images && bike.images[0]?.image_url) || '/images/services/two_wheelers.jpg';
-    const absoluteImageUrl = bikeImageUrl.startsWith('http') ? bikeImageUrl : `https://whizwheels.in${bikeImageUrl.startsWith('/') ? '' : '/'}${bikeImageUrl}`;
+    const bikePrice = bike.daily_rate ?? bike.weekday_rate ?? bike.category?.base_daily_rate ?? null;
+    const bikeImageUrl = bike.primary_image_url || bike.images?.[0]?.image_url || null;
+    const absoluteImageUrl = bikeImageUrl
+        ? (bikeImageUrl.startsWith('http') ? bikeImageUrl : `https://whizwheels.in${bikeImageUrl.startsWith('/') ? '' : '/'}${bikeImageUrl}`)
+        : null;
     const isAvailable = bike.status === 'available';
 
     const bikeStructuredData = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: `${bike.brand} ${bike.model_name}`,
-        image: absoluteImageUrl,
-        description: `Rent verified ${bike.brand} ${bike.model_name} in Honnavar starting ₹${bikePrice}/day. Zero deposit option, 2 sanitized helmets & station pickup.`,
+        ...(absoluteImageUrl ? { image: absoluteImageUrl } : {}),
+        description: `View ${bike.brand} ${bike.model_name} bike rental availability and check the live quote for your selected dates.`,
         brand: {
             '@type': 'Brand',
             name: bike.brand,
         },
-        offers: {
+        ...(bikePrice != null ? { offers: {
             '@type': 'Offer',
             price: String(bikePrice),
             priceCurrency: 'INR',
             availability: isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             url: `https://whizwheels.in/services/bikes/${bike.id}`,
-        },
+        } } : {}),
         ...(bike.rating || bike.average_rating || (bike.reviews && bike.reviews.length > 0) ? {
             aggregateRating: {
                 '@type': 'AggregateRating',
@@ -147,9 +136,9 @@ export default function BikeShow({ bike, stores = [] }) {
         <AppLayout>
             <PageHead
                 title={`${bike.brand} ${bike.model_name} Rental in Honnavar | GK WhizWheel`}
-                description={`Rent the ${bike.brand} ${bike.model_name} in Honnavar starting ₹${bikePrice}/day. Zero deposit option, 2 sanitized helmets & station pickup.`}
+                description={`Explore ${bike.brand} ${bike.model_name} rental details, current bike availability and server-calculated prices.`}
                 canonicalUrl={`https://whizwheels.in/services/bikes/${bike.id}`}
-                ogImage={absoluteImageUrl}
+                ogImage={absoluteImageUrl || undefined}
                 ogType="product"
                 structuredData={bikeStructuredData}
             />
@@ -185,17 +174,15 @@ export default function BikeShow({ bike, stores = [] }) {
                                 justifyContent: 'center',
                             }}
                         >
-                            <Box
-                                component="img"
-                                src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
-                                alt={`${bike.brand || ''} ${bike.model_name || 'Bike'} rental in Honnavar - GK WhizWheel`}
-                                sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    objectPosition: 'center 75%',
-                                }}
-                            />
+                            {bikeImageUrl ? (
+                                <Box component="img"
+                                    src={bikeImageUrl}
+                                    alt={`${bike.brand || ''} ${bike.model_name || 'Bike'}`}
+                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 75%' }}
+                                />
+                            ) : (
+                                <TwoWheelerIcon sx={{ fontSize: 100, color: 'text.disabled' }} aria-hidden="true" />
+                            )}
 
                             {/* Electric/Petrol chip */}
                             <Chip
@@ -279,13 +266,13 @@ export default function BikeShow({ bike, stores = [] }) {
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Mon – Thu (Weekday Rate)</TableCell>
                                         <TableCell sx={{ fontWeight: 800, color: '#F59E0B' }}>
-                                             ₹{Number(bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || 350).toLocaleString('en-IN')} / day
+                                             {bike.weekday_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekday_rate ?? bike.daily_rate).toLocaleString('en-IN')} / day`}
                                         </TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Fri – Sun (Weekend Rate)</TableCell>
                                         <TableCell sx={{ fontWeight: 800, color: isDark ? '#38BDF8' : '#0284C7' }}>
-                                             ₹{Number(bike.weekend_rate || (Number(bike.daily_rate || 350) + 100)).toLocaleString('en-IN')} / day
+                                             {bike.weekend_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekend_rate ?? bike.daily_rate).toLocaleString('en-IN')} / day`}
                                         </TableCell>
                                     </TableRow>
                                     <TableRow>
@@ -570,7 +557,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                     boxShadow: '0 10px 15px -3px rgba(245, 158, 11, 0.3)',
                                 }}
                             >
-                                Book This Bike (15m Hold)
+                                Continue to Secure Checkout
                             </Button>
 
                             <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#64748B', mt: 1.5 }}>
@@ -582,29 +569,6 @@ export default function BikeShow({ bike, stores = [] }) {
             </Grid>
             </Box>
 
-            {/* Authentication Dialog (if unauthenticated when Book Now clicked) */}
-            <AuthModal
-                open={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
-            />
-
-            {/* Reservation Checkout Dialog */}
-            {quote && (
-                <CheckoutModal
-                    open={checkoutModalOpen}
-                    onClose={() => setCheckoutModalOpen(false)}
-                    bike={bike}
-                    startDate={startDate}
-                    endDate={endDate}
-                    pickupStore={pickupStore}
-                    returnStore={returnStore}
-                    selectedAddons={selectedAddons}
-                    couponCode={couponCode}
-                    quote={quote}
-                    currentUser={currentUser}
-                />
-            )}
         </AppLayout>
     );
 }

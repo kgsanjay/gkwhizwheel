@@ -24,6 +24,7 @@ use App\Services\RazorpayService;
 use App\Services\RefundService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
@@ -101,6 +102,32 @@ class BookingController extends Controller
         BookingService $bookingService,
         ?PhonePeService $phonePeService = null
     ): JsonResponse {
+        // Serialize checkout initiation at the database row, across PHP workers
+        // and web nodes sharing the same database. Keep the lock through the
+        // gateway request so no second request can issue a parallel order.
+        return DB::transaction(function () use (
+            $id, $request, $razorpayService, $bookingService, $phonePeService
+        ): JsonResponse {
+            Booking::where('user_id', $request->user()->id)
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            return $this->checkoutWithLockedBooking(
+                $id, $request, $razorpayService, $bookingService, $phonePeService
+            );
+        }, 3);
+    }
+
+    /**
+     * Only call inside the checkout transaction while holding the booking row lock.
+     */
+    private function checkoutWithLockedBooking(
+        int $id,
+        Request $request,
+        RazorpayService $razorpayService,
+        BookingService $bookingService,
+        ?PhonePeService $phonePeService = null
+    ): JsonResponse {
         $phonePeService ??= app(PhonePeService::class);
         $booking = Booking::where('user_id', $request->user()->id)
             ->findOrFail($id);
@@ -137,11 +164,44 @@ class BookingController extends Controller
             'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
             'payment_option' => ['nullable', 'string', 'in:advance,full'],
             'redirect_url' => ['nullable', 'string', 'max:500'],
+            'accept_rental_terms' => ['exclude_without:billing', 'accepted'],
+            'billing' => ['nullable', 'array'],
+            'billing.type' => ['required_with:billing', 'in:personal,business'],
+            'billing.name' => ['required_with:billing', 'string', 'min:2', 'max:150'],
+            'billing.address' => ['required_with:billing', 'string', 'min:8', 'max:500'],
+            'billing.state_code' => ['required_with:billing', 'digits:2'],
+            'billing.gstin' => ['nullable', 'string', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],
         ]);
 
         $gateway = strtolower((string) ($validated['gateway'] ?? $request->query('gateway', 'razorpay')));
         $option = (string) ($validated['payment_option'] ?? 'full');
         $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
+
+        // Billing details are snapshotted before creating a gateway order.
+        // Never allow a payment retry to silently modify the invoice recipient.
+        $billing = $validated['billing'] ?? null;
+        if ($billing !== null) {
+            if ($billing['type'] === 'business' && empty($billing['gstin'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'billing.gstin' => 'Business GST invoices require a GSTIN.',
+                ]);
+            }
+            if (isset($billing['gstin']) && substr($billing['gstin'], 0, 2) !== $billing['state_code']) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'billing.gstin' => 'GSTIN state code must match the billing state.',
+                ]);
+            }
+            if (isset($breakdown['checkout_billing']) && $breakdown['checkout_billing'] !== $billing) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'billing' => 'Billing details are locked after payment has been initiated.',
+                ]);
+            }
+        } elseif (isset($breakdown['checkout_payment_option']) && ! isset($breakdown['checkout_billing'])) {
+            // Preserve backwards compatibility for already-started payments.
+            $billing = null;
+        } elseif (isset($breakdown['checkout_billing'])) {
+            $billing = $breakdown['checkout_billing'];
+        }
 
         // Persist a server-calculated, immutable choice before creating an
         // external gateway order. Retries cannot switch amount or gateway.
@@ -158,6 +218,18 @@ class BookingController extends Controller
                 'payment_option' => 'Online checkout requires a positive amount.',
             ]);
         }
+        if ($billing !== null) {
+            if (isset($breakdown['checkout_payment_option']) && ! isset($breakdown['checkout_billing'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'billing' => 'Billing details cannot be added to a payment already in progress.',
+                ]);
+            }
+            $breakdown['checkout_billing'] = $billing;
+            // Record acceptance for the same checkout identity and quote.
+            // Do not reset it on retries or permit a new consent timestamp.
+            $breakdown['checkout_terms_accepted_at'] ??= now()->toIso8601String();
+            $breakdown['checkout_terms_path'] ??= '/rental-terms';
+        }
         $breakdown['checkout_payment_option'] = $option;
         $breakdown['checkout_gateway'] = $gateway;
         $breakdown['checkout_amount'] = $amount;
@@ -168,10 +240,40 @@ class BookingController extends Controller
         $booking->update(['price_breakdown_json' => $breakdown]);
 
         if ($gateway === 'phonepe') {
+            // Reuse an already-created payment page for sequential retries.
+            // A fresh gateway attempt should not be issued just because the
+            // customer double-clicked or refreshed the checkout screen.
+            if (! empty($breakdown['phonepe_transaction_id'])) {
+                if (empty($breakdown['phonepe_redirect_url'])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'payment_option' => 'A PhonePe payment is already in progress. Check its result before attempting another payment.',
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'booking_id' => $booking->id,
+                        'booking_reference' => $booking->booking_reference,
+                        'gateway' => 'phonepe',
+                        'merchant_transaction_id' => $breakdown['phonepe_transaction_id'],
+                        'redirect_url' => $breakdown['phonepe_redirect_url'],
+                        'amount' => $amount,
+                        'payment_option' => $option,
+                        'balance_due_on_pickup' => $breakdown['balance_due_on_pickup'],
+                        'amount_paise' => (int) round($amount * 100),
+                        'currency' => 'INR',
+                        'status' => $booking->status->value,
+                    ],
+                    'message' => 'Existing PhonePe payment resumed.',
+                ]);
+            }
+
             $paymentData = $phonePeService->createPayment($booking, $validated['redirect_url'] ?? null);
 
             $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
             $breakdown['phonepe_transaction_id'] = $paymentData['merchant_transaction_id'];
+            $breakdown['phonepe_redirect_url'] = $paymentData['redirect_url'];
             $booking->update(['price_breakdown_json' => $breakdown]);
 
             return response()->json([
@@ -193,7 +295,19 @@ class BookingController extends Controller
             ]);
         }
 
-        $order = $razorpayService->createOrder($booking);
+        $order = ! empty($breakdown['razorpay_order_id'])
+            ? [
+                'id' => $breakdown['razorpay_order_id'],
+                'amount' => (int) round($amount * 100),
+                'currency' => 'INR',
+                'key_id' => (string) config('services.razorpay.key_id'),
+                'notes' => [
+                    'booking_id' => (string) $booking->id,
+                    'booking_reference' => (string) $booking->booking_reference,
+                    'user_id' => (string) $booking->user_id,
+                ],
+            ]
+            : $razorpayService->createOrder($booking);
 
         $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
         $breakdown['razorpay_order_id'] = $order['id'];

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Enums\BikeDocumentType;
 use App\Enums\PricingRuleType;
 use App\Enums\UserRole;
 use App\Models\Bike;
@@ -40,16 +39,10 @@ test('database seeder populates realistic dataset idempotently', function (): vo
         ->and($staffPriya->stores->pluck('id'))->toContain($stationHub->id)
         ->and($staffSuresh->stores->count())->toBe(2);
 
-    // Bikes check
-    expect(Bike::count())->toBe(9)
-        ->and(Bike::where('current_store_id', $mainOffice->id)->count())->toBe(5)
-        ->and(Bike::where('current_store_id', $stationHub->id)->count())->toBe(4);
-
-    // Bike Documents check: 3 per bike = 27 total
-    expect(BikeDocument::count())->toBe(27)
-        ->and(BikeDocument::where('document_type', BikeDocumentType::RC)->count())->toBe(9)
-        ->and(BikeDocument::where('document_type', BikeDocumentType::INSURANCE)->count())->toBe(9)
-        ->and(BikeDocument::where('document_type', BikeDocumentType::EMISSION_CERTIFICATE)->count())->toBe(9);
+    // No vehicles or unverified placeholder documents are invented at install.
+    // Authorized staff must register actual bikes through the management API.
+    expect(Bike::count())->toBe(0)
+        ->and(BikeDocument::count())->toBe(0);
 
     // Pricing Rules check: weekend, holiday, one-way
     expect(PricingRule::where('rule_type', PricingRuleType::WEEKEND)->count())->toBeGreaterThanOrEqual(1)
@@ -62,6 +55,6 @@ test('database seeder populates realistic dataset idempotently', function (): vo
     expect(Store::count())->toBe(2)
         ->and(BikeCategory::count())->toBe(4)
         ->and(User::count())->toBe(5)
-        ->and(Bike::count())->toBe(9)
-        ->and(BikeDocument::count())->toBe(27);
+        ->and(Bike::count())->toBe(0)
+        ->and(BikeDocument::count())->toBe(0);
 });

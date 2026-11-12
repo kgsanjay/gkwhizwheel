@@ -49,6 +49,8 @@ class BookingResource extends JsonResource
             'return_fee_amount' => (float) (($this->price_breakdown_json ?? [])['return_fee_amount'] ?? 0),
             'location_fee_amount' => (float) (($this->price_breakdown_json ?? [])['location_fee_amount'] ?? 0),
             'payment_option' => ($this->price_breakdown_json ?? [])['checkout_payment_option'] ?? null,
+            'billing' => ($this->price_breakdown_json ?? [])['checkout_billing'] ?? null,
+            'bike_gst' => ($this->price_breakdown_json ?? [])['bike_gst'] ?? null,
             'checkout_amount' => ($this->price_breakdown_json ?? [])['checkout_amount'] ?? null,
             'paid_amount' => (float) $this->payments()->where('status', \App\Enums\PaymentStatus::SUCCESS)->sum('amount'),
             'balance_due' => \App\Services\BikeBookingPayments::remainder($this->resource),

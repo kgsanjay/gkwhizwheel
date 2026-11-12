@@ -10,11 +10,6 @@ Route::get('/blog', [\App\Http\Controllers\Web\BlogController::class, 'index'])-
 Route::get('/blog/{slug}', [\App\Http\Controllers\Web\BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/', function () {
-    $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
-        ->where('status', \App\Enums\BikeStatus::AVAILABLE)
-        ->orderBy('id')
-        ->get();
-
     $categories = \App\Models\BikeCategory::withCount(['bikes' => function ($query) {
         $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
     }])->get();
@@ -37,7 +32,6 @@ Route::get('/', function () {
     }
 
     return Inertia::render('Welcome', [
-        'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
         'categories' => $categories,
         'stores' => $stores,
         'availableItems' => \App\Models\ServiceItem::query()
@@ -52,6 +46,8 @@ Route::get('/bike-rentals/branches/{id}/{slug?}', [\App\Http\Controllers\Web\Bra
 Route::get('/services/bikes', [\App\Http\Controllers\Web\BikeWebController::class, 'index'])->name('bikes.index');
 Route::get('/services/bikes/models/{id}/{slug?}', [\App\Http\Controllers\Web\BikeModelWebController::class, 'show'])
     ->whereNumber('id')->name('services.bikes.models.show');
+Route::get('/services/bikes/checkout', [\App\Http\Controllers\Web\BikeCheckoutWebController::class, 'show'])
+    ->name('services.bikes.checkout');
 Route::get('/services/bikes/{id}', [\App\Http\Controllers\Web\BikeWebController::class, 'show'])->name('services.bikes.show');
 Route::redirect('/bikes', '/services/bikes', 301);
 Route::redirect('/services/two-wheelers', '/services/bikes', 301);
@@ -204,6 +200,8 @@ Route::get('/privacy-policy', fn () => Inertia::render('Privacy'));
 Route::get('/bookings/{id}/confirmation', [\App\Http\Controllers\Web\BookingWebController::class, 'confirmation'])->name('bookings.confirmation');
 Route::get('/bookings/{id}', fn (int $id) => redirect()->route('bookings.confirmation', $id))->whereNumber('id');
 Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\BookingWebController::class, 'downloadVoucher'])->name('bookings.voucher');
+Route::get('/bookings/{id}/billing-statement', [\App\Http\Controllers\Web\BookingWebController::class, 'downloadBillingStatement'])
+    ->middleware('auth')->whereNumber('id')->name('bookings.billing-statement');
 Route::get('/bookings/{id}/print', [\App\Http\Controllers\Web\BookingWebController::class, 'printVoucher'])->name('bookings.print');
 Route::post('/dev/bookings/{id}/simulate-payment', [\App\Http\Controllers\Web\BookingWebController::class, 'simulateTestPayment'])->name('dev.bookings.simulate-payment');
 Route::match(['get', 'post'], '/payment/phonepe/callback', [\App\Http\Controllers\Web\BookingWebController::class, 'handlePhonePeCallback'])

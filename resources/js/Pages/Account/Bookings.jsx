@@ -775,6 +775,16 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                     >
                                                         View Trip & Docs
                                                     </Button>
+                                                    <Button
+                                                        component="a"
+                                                        href={`/bookings/${b.id}/billing-statement`}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        startIcon={<ReceiptLongIcon sx={{ fontSize: 15 }} />}
+                                                        sx={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'none', borderRadius: 1.5 }}
+                                                    >
+                                                        Billing Statement
+                                                    </Button>
                                                     <Stack direction="row" spacing={0.8}>
                                                         <Button
                                                             component="a"

@@ -47,7 +47,7 @@ class ImageLazyLoadingTest extends TestCase
     {
         $heroImageChecks = [
             'resources/js/Pages/Welcome.jsx' => 'src={activeSlide.image}',
-            'resources/js/Pages/Services.jsx' => 'src={active.media?.primary || active.image}',
+            'resources/js/Pages/Services.jsx' => 'src={active.media.primary}',
             'resources/js/Pages/ServiceDetail.jsx' => 'src={service.image}',
             'resources/js/Pages/BoatingPage.jsx' => 'src="/images/services/honnavar-backwater-boating.jpg"',
             'resources/js/Pages/GuidePage.jsx' => 'src={primaryGuideMedia.primary}',
@@ -55,8 +55,8 @@ class ImageLazyLoadingTest extends TestCase
             'resources/js/Pages/HomestaysPage.jsx' => 'src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop&q=80"',
             'resources/js/Pages/CabsPage.jsx' => 'src="/images/services/taxi.jpg"',
             'resources/js/Pages/ScubaPage.jsx' => 'src={primaryScubaMedia.primary}',
-            'resources/js/Pages/Bikes/Index.jsx' => 'src="/images/services/two_wheelers.jpg"',
-            'resources/js/Pages/Bikes/Show.jsx' => 'src={bike.primary_image_url',
+            'resources/js/Pages/Bikes/Index.jsx' => 'src={featuredBike.primary_image_url || featuredBike.images?.[0]?.image_url}',
+            'resources/js/Pages/Bikes/Show.jsx' => 'src={bikeImageUrl}',
         ];
 
         foreach ($heroImageChecks as $relativePath => $heroIndicator) {

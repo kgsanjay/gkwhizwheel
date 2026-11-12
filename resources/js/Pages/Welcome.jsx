@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../api/client';
 import { useTheme } from '@mui/material/styles';
 import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
@@ -67,8 +69,8 @@ const HERO_SLIDES = [
         badge: '01 • Two-Wheelers',
         shortLabel: 'Bikes & Scooters',
         title: 'Bikes & Scooters on Rent',
-        subtitle: 'Honda Activa 6G, Access 125 & Fascino • Zero security deposit online',
-        image: '/images/services/two_wheelers.webp',
+        subtitle: 'Browse available bikes from live inventory • No online security deposit',
+        image: null,
         href: '/services/bikes',
         cta: 'Browse Live Fleet',
         accent: '#F59E0B',
@@ -203,7 +205,59 @@ const QUICK_BOOK_SERVICES = [
     },
 ];
 
-export default function Welcome({ featuredBikes = [], categories = [], stores = [] , availableItems = [] }) {
+export default function Welcome({ categories = [], stores = [] , availableItems = [] }) {
+    const { data: bikeCatalogResponse } = useQuery({
+        queryKey: ['public-bikes-home'],
+        queryFn: () => apiClient.get('/bikes'),
+        retry: false,
+    });
+    const { data: publicServicesResponse } = useQuery({
+        queryKey: ['public-services-home'],
+        queryFn: () => apiClient.get('/services'),
+        retry: false,
+    });
+    const publishedServices = publicServicesResponse?.data ?? availableItems;
+    const featuredTour = publishedServices.find((item) => item.service_type === 'tours') || null;
+    const featuredTourImage = featuredTour?.primary_image_url || featuredTour?.image_url || null;
+    const enhanceHomeService = (source) => {
+        const isBike = source.id === 'bikes';
+        const serviceType = ({ bikes: 'two_wheelers', cabs: 'taxi', homestays: 'homestay' })[source.id] || source.id;
+        const item = publishedServices.find((record) => record.service_type === serviceType);
+        const dailyRates = apiBikes.map((bike) => Number(bike.weekday_rate ?? bike.daily_rate))
+            .filter((rate) => Number.isFinite(rate) && rate > 0);
+        return {
+            ...source,
+            image: isBike
+                ? featuredBikeImage
+                : item?.primary_image_url || item?.image_url || null,
+            tagline: isBike
+                ? `Browse ${apiBikes.length} listed bikes and check live rental dates and rates.`
+                : item?.description || 'View published service details and confirm availability before booking.',
+            rate: isBike
+                ? (dailyRates.length
+                    ? `From ₹${Math.min(...dailyRates).toLocaleString('en-IN')} / day`
+                    : 'Check Live Rates')
+                : item?.price_base != null && Number(item.price_base) > 0
+                    ? `From ₹${Number(item.price_base).toLocaleString('en-IN')}${item.price_unit ? ` / ${item.price_unit}` : ''}`
+                    : 'Check Published Rates',
+            highlights: isBike
+                ? [`${apiBikes.length} listed bikes`, 'Select pickup and return branches', 'Review the server-calculated price']
+                : Array.isArray(item?.features) && item.features.length
+                    ? item.features.slice(0, 3)
+                    : ['View published service details', 'Confirm availability before booking'],
+            tag: item?.badge || (isBike ? 'Live Bike Inventory' : 'Service Information'),
+        };
+    };
+    const { data: publicReviewResponse } = useQuery({
+        queryKey: ['approved-public-bike-reviews'],
+        queryFn: () => apiClient.get('/reviews'),
+        retry: false,
+    });
+    const publicReviews = publicReviewResponse?.data || [];
+    const reviewMeta = publicReviewResponse?.meta || { total: 0, average_rating: null };
+    const apiBikes = bikeCatalogResponse?.data || [];
+    const featuredBike = apiBikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url) || null;
+    const featuredBikeImage = featuredBike?.primary_image_url || featuredBike?.images?.[0]?.image_url || null;
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -245,7 +299,23 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
     };
 
-    const activeSlide = HERO_SLIDES[currentSlide % HERO_SLIDES.length];
+    const currentHeroSlide = HERO_SLIDES[currentSlide % HERO_SLIDES.length];
+    const heroServiceType = ({
+        boating: 'boating', cabs: 'taxi', scuba: 'scuba',
+        homestays: 'homestay', tours: 'tours',
+    })[currentHeroSlide.id];
+    const heroService = publishedServices.find((item) => item.service_type === heroServiceType);
+    const activeSlide = {
+        ...currentHeroSlide,
+        image: currentHeroSlide.id === 'bikes'
+            ? featuredBikeImage
+            : heroService?.primary_image_url || heroService?.image_url || null,
+        subtitle: currentHeroSlide.id === 'bikes'
+            ? (apiBikes.length
+                ? `Browse ${apiBikes.length} listed bike(s) from live inventory. Choose dates for exact rates.`
+                : 'Check the live bike catalog for current availability and pricing.')
+            : heroService?.description || 'Explore published service options and confirm pricing before booking.',
+    };
     const publishedBranches = stores.filter((s) => s.publication_status === 'published');
     const branchList = (publishedBranches.length > 0 ? publishedBranches : stores)
         .slice()
@@ -316,13 +386,6 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             "@type": "GeoCoordinates",
             "latitude": 14.2802,
             "longitude": 74.4437
-        },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "5.0",
-            "reviewCount": "324",
-            "bestRating": "5",
-            "worstRating": "1"
         },
         "openingHoursSpecification": [
             {
@@ -605,7 +668,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             }}
                                         >
                                             <StarIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
-                                            5.0 Google Rated (324+)
+                                            {reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} published bike reviews` : 'Explore customer experiences'}
                                         </Box>
                                     </Stack>
 
@@ -807,19 +870,18 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 bgcolor: '#0F172A',
                                             }}
                                         >
-                                            <Box
-                                                component="img"
-                                                key={activeSlide.image}
-                                                src={activeSlide.image}
-                                                alt={`${activeSlide.title} — GK WhizWheel Coastal Karnataka`}
-                                                sx={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'cover',
-                                                    display: 'block',
-                                                    transition: 'transform 0.6s ease',
-                                                }}
-                                            />
+                                            {activeSlide.image ? (
+                                                <Box component="img" key={activeSlide.image} src={activeSlide.image}
+                                                    alt={`${activeSlide.title} — GK WhizWheel`}
+                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.6s ease' }}
+                                                />
+                                            ) : (
+                                                <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                                    {activeSlide.id === 'bikes'
+                                                        ? <TwoWheelerIcon sx={{ fontSize: 110, color: '#94A3B8' }} aria-hidden="true" />
+                                                        : <ExploreIcon sx={{ fontSize: 110, color: '#94A3B8' }} aria-hidden="true" />}
+                                                </Box>
+                                            )}
                                             <Box
                                                 sx={{
                                                     position: 'absolute',
@@ -1013,7 +1075,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             {(() => {
                 const activeServiceTab = QUICK_BOOK_SERVICES.find((s) => s.id === activeBookingTab) || QUICK_BOOK_SERVICES[0];
                 const isBikeTab = activeServiceTab.id === 'two_wheelers';
-                const tabItems = availableItems.filter((item) => item.service_type === activeServiceTab.id);
+                const tabItems = publishedServices.filter((item) => item.service_type === activeServiceTab.id);
 
                 const handleUnifiedSubmit = (e) => {
                     e.preventDefault();
@@ -1140,7 +1202,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                                 <Chip
                                     icon={<StarIcon sx={{ fontSize: '15px !important', color: '#F59E0B !important' }} />}
-                                    label="5.0 ★ (324+)"
+                                    label={reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} bike reviews` : 'Customer experiences'}
                                     size="small"
                                     component="a"
                                     href="https://share.google/GoM4iOgiuUIa7ZfwV"
@@ -1467,9 +1529,9 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             order: '01',
                             title: 'Bike & Scooter Rentals',
                             tag: 'Self-Drive Fleet',
-                            tagline: 'Self-drive Honda Activa 6G, Royal Enfield Classic 350 & CB350 with zero deposit options and instant station delivery.',
+                            tagline: 'Browse bikes and scooters available in our live fleet. Confirm dates and rental prices before payment.',
                             rate: 'Check Live Rates',
-                            image: '/images/services/two_wheelers.jpg',
+                            image: featuredBikeImage,
                             color: '#F59E0B',
                             gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                             href: '/services/bikes',
@@ -1582,7 +1644,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 'Curated Sunset Clifftops & Photography Spots',
                             ],
                         },
-                    ].map((srv) => (
+                    ].map(enhanceHomeService).map((srv) => (
                         <Grid key={srv.id} size={{ xs: 12, sm: 6, lg: 4 }}>
                             <Card
                                 sx={{
@@ -1616,19 +1678,20 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             >
                                 {/* Media Header with 2026 Glassmorphic Overlays */}
                                 <Box sx={{ position: 'relative', height: 220, bgcolor: '#0F172A', overflow: 'hidden' }}>
-                                    <Box
-                                        component="img"
-                                        className="card-img"
-                                        src={srv.image}
-                                        alt={`${srv.title} in Honnavar - GK WhizWheel`}
-                                        loading="lazy"
-                                        sx={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                            transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
-                                        }}
-                                    />
+                                    {srv.image ? (
+                                        <Box component="img" className="card-img" src={srv.image}
+                                            alt={`${srv.title} in Honnavar - GK WhizWheel`}
+                                            loading="lazy"
+                                            sx={{
+                                                width: '100%', height: '100%', objectFit: 'cover',
+                                                transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                            {srv.icon}
+                                        </Box>
+                                    )}
                                     {/* Multi-layered cinematic vignette */}
                                     <Box
                                         sx={{
@@ -1738,7 +1801,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             }}
                                         >
                                             <StarIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                            5.0 Verified
+                                            {srv.id === 'bikes' && reviewMeta.total > 0 ? `${reviewMeta.average_rating} / 5 (${reviewMeta.total})` : 'View service details'}
                                         </Box>
                                     </Box>
                                 </Box>
@@ -1908,19 +1971,21 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             overflow: 'hidden',
                                         }}
                                     >
-                                        <Box
-                                            component="img"
-                                            className="tour-img"
-                                            src="/images/services/tour.jpg"
-                                            alt="Custom Karavali and Honnavar sightseeing tour packages by GK WhizWheel"
-                                            loading="lazy"
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-                                            }}
-                                        />
+                                        {featuredTourImage ? (
+                                            <Box component="img" className="tour-img"
+                                                src={featuredTourImage}
+                                                alt={featuredTour?.name || 'Published tour package'}
+                                                loading="lazy"
+                                                sx={{
+                                                    width: '100%', height: '100%', objectFit: 'cover',
+                                                    transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                }}
+                                            />
+                                        ) : (
+                                            <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                                <AutoAwesomeIcon sx={{ fontSize: 90, color: '#A78BFA' }} aria-hidden="true" />
+                                            </Box>
+                                        )}
                                         <Box
                                             sx={{
                                                 position: 'absolute',
@@ -1999,7 +2064,9 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                     boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
                                                 }}
                                             >
-                                                Custom Combos • Save 10%
+                                                {featuredTour?.price_base != null && Number(featuredTour.price_base) > 0
+                                                    ? `From ₹${Number(featuredTour.price_base).toLocaleString('en-IN')}`
+                                                    : 'Explore Published Packages'}
                                             </Box>
                                             <Box
                                                 sx={{
@@ -2018,7 +2085,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 }}
                                             >
                                                 <StarIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
-                                                5.0 Rated
+                                                Explore Packages
                                             </Box>
                                         </Box>
                                     </Box>
@@ -2038,7 +2105,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                                 <Chip
-                                                    label="SAVE 10% ON COMBO BOOKINGS"
+                                                    label="CHECK AVAILABLE PACKAGE RATES"
                                                     size="small"
                                                     sx={{
                                                         bgcolor: isDark ? 'rgba(139, 92, 246, 0.2)' : '#EDE9FE',
@@ -2049,7 +2116,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                     }}
                                                 />
                                                 <Typography variant="caption" sx={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: 700 }}>
-                                                    • 100% Customized
+                                                    • {featuredTour ? 'Published Package' : 'Packages on Request'}
                                                 </Typography>
                                             </Box>
 
@@ -2065,7 +2132,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                     fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2.1rem' },
                                                 }}
                                             >
-                                                Custom Tour Packages & Karavali Combos
+                                                {featuredTour?.name || 'Custom Tour Packages & Karavali Combos'}
                                             </Typography>
 
                                             <Typography
@@ -2077,10 +2144,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                     mb: 3,
                                                 }}
                                             >
-                                                Why coordinate with 5 different operators? We curate your end-to-end trip under one verified roof.
-                                                Bundle <strong>two-wheelers or private AC cabs</strong>, <strong>Sharavathi riverfront cottages</strong>,
-                                                <strong>mangrove sunset boating</strong>, and <strong>Netrani scuba diving</strong> into a personalized itinerary
-                                                backed by a dedicated local coastal coordinator.
+                                                {featuredTour?.description || 'Browse published tour packages and confirm their prices and inclusions before booking.'}
                                             </Typography>
 
                                             {/* Multi-service bundled inclusions tag cloud */}
@@ -2110,11 +2174,10 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                                             {/* Key Pillars */}
                                             <Stack spacing={1.2} sx={{ mb: 4 }}>
-                                                {[
-                                                    'Tailored for Couples, Family Getaways, Group Treks & Weekend Roadtrips',
-                                                    '10% Instant Package Discount vs Booking Each Service Individually',
-                                                    'Dedicated Local Coastal Trip Manager On 24/7 Call From Arrival to Departure',
-                                                ].map((text, i) => (
+                                                {(Array.isArray(featuredTour?.features) && featuredTour.features.length
+                                                    ? featuredTour.features.slice(0, 3)
+                                                    : ['View published tour packages', 'Confirm inclusions and prices before booking']
+                                                ).map((text, i) => (
                                                     <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                                                         <CheckCircleIcon sx={{ fontSize: 17, color: '#8B5CF6', flexShrink: 0 }} />
                                                         <Typography
@@ -2528,86 +2591,22 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                     7. CUSTOMER REVIEWS & EXPERIENCES (3x2 Verified Google Reviews Wall)
                 ========================================================================== */}
                 {(() => {
-                    const allReviews = [
-                        {
-                            id: 'ankit-bike',
-                            category: 'bikes',
-                            serviceLabel: 'Bike Rental • Honnavar',
-                            accent: '#F59E0B',
-                            headline: 'Zero deposit & 3-min station pickup',
-                            name: 'Ankit Sharma',
-                            location: 'Bengaluru',
-                            trip: 'Honda Activa 6G • Sharavathi & Eco Beach',
-                            timeAgo: 'Verified Booking',
-                            review:
-                                'Requested Honnavar Railway Station pickup and the executive arrived before our train pulled in. Spotless scooters, clean ISI helmets, and transparent 24-hour billing.',
-                        },
-                        {
-                            id: 'meera-scuba',
-                            category: 'water',
-                            serviceLabel: 'Scuba & Boating • Murudeshwar',
-                            accent: '#0EA5E9',
-                            headline: 'Unforgettable Netrani dive & mangrove cruise',
-                            name: 'Meera & Vivek Nair',
-                            location: 'Kochi',
-                            trip: 'Netrani Scuba + Sharavathi Boating',
-                            timeAgo: 'Google Review',
-                            review:
-                                'Coordinated both our Netrani Island scuba morning slot from Murudeshwar and evening boating in Honnavar on one WhatsApp chat. Calm PADI crew and zero wait time at the jetty.',
-                        },
-                        {
-                            id: 'karthik-cab',
-                            category: 'stays_cabs',
-                            serviceLabel: 'AC Cab & Tour • Honnavar',
-                            accent: '#10B981',
-                            headline: 'Punctual AC Innova for our family circuit',
-                            name: 'Karthik Venugopal',
-                            location: 'Mysuru',
-                            trip: 'Apsarakonda Falls, Mirjan Fort & Murudeshwar',
-                            timeAgo: 'Google Review',
-                            review:
-                                'Sanitized AC Innova with a friendly local driver who knew every coastal lookout and food stop. Covered Hanging Bridge, Apsarakonda, and Murudeshwar Temple at an upfront fixed tariff.',
-                        },
-                        {
-                            id: 'sneha-ride',
-                            category: 'bikes',
-                            serviceLabel: 'Bike Rental • Murudeshwar',
-                            accent: '#F59E0B',
-                            headline: 'Mint-condition Classic 350 for NH66',
-                            name: 'Dr. Sneha & Rohan K.',
-                            location: 'Mumbai',
-                            trip: 'Royal Enfield Classic 350 • 4-Day Ride',
-                            timeAgo: 'Verified Booking',
-                            review:
-                                'Great tyres, crisp brakes, and super responsive 24/7 WhatsApp helpline across our Honnavar–Murudeshwar–Gokarna ride. Zero hidden charges at drop-off.',
-                        },
-                        {
-                            id: 'prashanth-boating',
-                            category: 'water',
-                            serviceLabel: 'Backwater Boating • Honnavar',
-                            accent: '#2563EB',
-                            headline: 'Peaceful mangrove trail without crowd rush',
-                            name: 'Prashanth Hegde',
-                            location: 'Pune',
-                            trip: 'Sharavathi Estuary Mangrove Safari',
-                            timeAgo: 'Google Review',
-                            review:
-                                'Booked an early-morning private Shikara cruise through GK WhizWheel. Clean lifejackets, serene island stops, and honest recommendations from local boat captains.',
-                        },
-                        {
-                            id: 'divya-homestay',
-                            category: 'stays_cabs',
-                            serviceLabel: 'Homestay • Honnavar',
-                            accent: '#059669',
-                            headline: 'Riverfront stay bundled with scooters',
-                            name: 'Divya Deshpande',
-                            location: 'Hubballi',
-                            trip: 'Sharavathi Cottage + 2 Scooters',
-                            timeAgo: 'Verified Booking',
-                            review:
-                                'Reserved our cottage stay and two scooters together in one booking. Authentic Karavali breakfast, spotless rooms, and bikes fueled and ready right at check-in.',
-                        },
-                    ];
+                    // Display only approved reviews from the public Reviews API.
+                    const allReviews = publicReviews.map((review) => ({
+                        id: review.id,
+                        category: 'bikes',
+                        serviceLabel: 'Bike Rental',
+                        accent: '#F59E0B',
+                        headline: review.bike_name || 'Customer bike rental experience',
+                        name: review.customer_name || 'Verified customer',
+                        location: 'Customer',
+                        trip: review.bike_name || 'Bike rental',
+                        timeAgo: review.created_at
+                            ? new Date(review.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })
+                            : 'Review',
+                        review: review.comment,
+                        rating: Number(review.rating) || 0,
+                    }));
 
                     const displayedReviews = reviewFilter === 'all'
                         ? allReviews
@@ -2654,15 +2653,18 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z" />
                                             </Box>
                                             <Typography variant="caption" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                                5.0
+                                                {reviewMeta.average_rating ?? '—'}
                                             </Typography>
                                             <Stack direction="row" spacing={0.1}>
                                                 {[...Array(5)].map((_, i) => (
-                                                    <StarIcon key={i} sx={{ fontSize: 13, color: '#F59E0B' }} />
+                                                    <StarIcon key={i} sx={{
+                                                        fontSize: 13,
+                                                        color: i < Math.round(Number(reviewMeta.average_rating || 0)) ? '#F59E0B' : '#CBD5E1',
+                                                    }} />
                                                 ))}
                                             </Stack>
                                             <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600 }}>
-                                                (324+ reviews)
+                                                ({reviewMeta.total} published bike reviews)
                                             </Typography>
                                         </Box>
                                     </Stack>
@@ -2728,8 +2730,17 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                 </Stack>
                             </Box>
 
-                            {/* 3x2 Authentic Review Grid */}
+                            {/* Approved customer reviews from database */}
                             <Grid container spacing={2.5}>
+                                {displayedReviews.length === 0 && (
+                                    <Grid size={{ xs: 12 }}>
+                                        <Paper variant="outlined" sx={{ p: 4, borderRadius: 3.5, textAlign: 'center' }}>
+                                            <Typography color="text.secondary">
+                                                No published customer reviews in this category yet.
+                                            </Typography>
+                                        </Paper>
+                                    </Grid>
+                                )}
                                 {displayedReviews.map((rev) => (
                                     <Grid size={{ xs: 12, sm: 6, lg: displayedReviews.length <= 2 ? 6 : 4 }} key={rev.id}>
                                         <Box
@@ -2783,7 +2794,10 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
                                                     <Stack direction="row" spacing={0.15} sx={{ flexShrink: 0 }}>
                                                         {[...Array(5)].map((_, i) => (
-                                                            <StarIcon key={i} sx={{ fontSize: 15, color: '#F59E0B' }} />
+                                                            <StarIcon key={i} sx={{
+                                                                fontSize: 15,
+                                                                color: i < rev.rating ? '#F59E0B' : '#CBD5E1',
+                                                            }} />
                                                         ))}
                                                     </Stack>
                                                 </Box>
@@ -3970,8 +3984,8 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                     <Stack direction="row" flexWrap="wrap" alignItems="center" gap={{ xs: 1.5, sm: 2.5 }}>
                                         {[
                                             'Zero deposit online',
-                                            'Free 12h cancellation',
-                                            '5.0★ Google Rated (324+)',
+                                            'Review cancellation terms before booking',
+                                            reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} bike reviews` : 'Read customer experiences',
                                         ].map((perk) => (
                                             <Stack key={perk} direction="row" alignItems="center" spacing={0.65}>
                                                 <CheckCircleIcon sx={{ fontSize: 16, color: '#10B981' }} />
@@ -4130,7 +4144,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                 open={serviceModalOpen}
                 onClose={() => setServiceModalOpen(false)}
                 initialServiceId={serviceModalId}
-                availableItems={availableItems}
+                availableItems={publishedServices}
             />
         </AppLayout>
     );

@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
             StoreSeeder::class,
             BikeCategorySeeder::class,
             UserSeeder::class,
-            BikeSeeder::class,
             PricingRuleSeeder::class,
             ServiceItemSeeder::class,
         ]);

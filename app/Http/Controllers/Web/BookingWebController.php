@@ -42,7 +42,10 @@ class BookingWebController extends Controller
         $currentUser = $request->user();
 
         // Enforce authorization if user is logged into web session
-        if ($currentUser !== null) {
+        if ($currentUser === null) {
+            abort(401, 'Sign in to access your booking documents.');
+        }
+        {
             $isOwner = $currentUser->id === $booking->user_id;
             $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
@@ -132,7 +135,10 @@ class BookingWebController extends Controller
             ->firstOrFail();
 
         $currentUser = $request->user();
-        if ($currentUser !== null) {
+        if ($currentUser === null) {
+            abort(401, 'Sign in to access your booking documents.');
+        }
+        {
             $isOwner = $currentUser->id === $booking->user_id;
             $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
@@ -141,7 +147,46 @@ class BookingWebController extends Controller
             }
         }
 
+        if (! in_array($booking->status, [
+            BookingStatus::CONFIRMED,
+            BookingStatus::HANDED_OVER,
+            BookingStatus::RETURNED,
+            BookingStatus::COMPLETED,
+        ], true)) {
+            abort(409, 'Rental documents are available only after booking confirmation.');
+        }
+
         return $voucherService->generateBikeVoucherPdf($booking, $request->boolean('stream'));
+    }
+
+    /**
+     * Download a customer billing summary. This is not a GST tax invoice.
+     */
+    public function downloadBillingStatement(
+        int $id,
+        \App\Services\BikeBillingStatementService $billingService,
+        Request $request
+    ): \Illuminate\Http\Response {
+        $currentUser = $request->user();
+        if ($currentUser === null) {
+            abort(401, 'Sign in to download the billing statement.');
+        }
+
+        $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'user', 'payments'])
+            ->findOrFail($id);
+
+        $isOwner = $currentUser->id === $booking->user_id;
+        $isStaffOrAdmin = in_array($currentUser->role, [
+            UserRole::SUPER_ADMIN,
+            UserRole::STORE_MANAGER,
+            UserRole::STAFF,
+        ], true);
+
+        if (! $isOwner && ! $isStaffOrAdmin) {
+            abort(403, 'You are not authorized to download this billing statement.');
+        }
+
+        return $billingService->download($booking);
     }
 
     /**
@@ -157,7 +202,7 @@ class BookingWebController extends Controller
 
         if (preg_match('/^TXN_BK_(\d+)_/', $txnId, $m)) {
             return redirect()->route('bookings.confirmation', (int) $m[1])
-                ->with('success', 'PhonePe payment processed. Review your booking details below.');
+                ->with('status', 'Returned from PhonePe. Your booking will be confirmed after server-side payment verification.');
         }
 
         if (preg_match('/^TXN_SRV_(\d+)_/', $txnId, $m)) {
@@ -182,13 +227,25 @@ class BookingWebController extends Controller
             ->firstOrFail();
 
         $currentUser = $request->user();
-        if ($currentUser !== null) {
+        if ($currentUser === null) {
+            abort(401, 'Sign in to access your booking documents.');
+        }
+        {
             $isOwner = $currentUser->id === $booking->user_id;
             $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
             if (! $isOwner && ! $isStaffOrAdmin) {
                 abort(403, 'You are not authorized to view this booking voucher.');
             }
+        }
+
+        if (! in_array($booking->status, [
+            BookingStatus::CONFIRMED,
+            BookingStatus::HANDED_OVER,
+            BookingStatus::RETURNED,
+            BookingStatus::COMPLETED,
+        ], true)) {
+            abort(409, 'Rental documents are available only after booking confirmation.');
         }
 
         return $voucherService->renderBikeVoucherHtml($booking);

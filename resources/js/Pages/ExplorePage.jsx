@@ -94,7 +94,7 @@ export default function ExplorePage() {
             alt: 'Aerial view of Om Beach with crescent-shaped golden sands and turquoise sea in Gokarna',
             color: '#2563EB',
             tags: ['Om Beach', 'Kudle Coastline', 'Temple Town'],
-            desc: 'The quintessential Karnataka coastal highway road trip. Cruise on a Royal Enfield or hire an AC taxi from Honnavar to Om Beach, cafe hopping, and sacred temples.',
+            desc: 'The quintessential Karnataka coastal highway road trip. Book an available bike from the live rental fleet or hire an AC taxi from Honnavar to Om Beach, cafe hopping, and sacred temples.',
             linkHref: '/services/cabs',
             linkText: 'Book Gokarna Day Trip Cab →',
         },
@@ -103,7 +103,7 @@ export default function ExplorePage() {
     const tourismFaqs = [
         {
             q: 'What travel and rental services does GK WhizWheel offer in Honnavar?',
-            a: 'We are Honnavar’s complete coastal travel partner offering: (1) Two-Wheeler & Bike Rentals (Activa, Classic 350, CB350, electric scooters starting ₹350/day), (2) Private AC Cabs & Taxis (Swift Dzire, Innova Crysta, Tempo Travellers for station pickups and sightseeing), (3) Sharavathi River Backwater Boating & mangrove island cruises, (4) Netrani Island Scuba Diving with certified PADI dive masters, (5) Coastal Homestays & Riverfront Cottages, and (6) All-in-One Vacation Packages bundling stay, ride, and cruise.',
+            a: 'We are Honnavar’s complete coastal travel partner offering: (1) Two-Wheeler & Bike Rentals (models, availability and prices shown from live fleet inventory), (2) Private AC Cabs & Taxis (Swift Dzire, Innova Crysta, Tempo Travellers for station pickups and sightseeing), (3) Sharavathi River Backwater Boating & mangrove island cruises, (4) Netrani Island Scuba Diving with certified PADI dive masters, (5) Coastal Homestays & Riverfront Cottages, and (6) All-in-One Vacation Packages bundling stay, ride, and cruise.',
         },
         {
             q: 'Can we travel with your rental vehicles to Gokarna, Murudeshwar, or Jog Falls?',

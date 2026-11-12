@@ -181,6 +181,16 @@ export default function AccountBookingDetail({ booking }) {
                         >
                             Rental Agreement (PDF)
                         </Button>
+                        <Button
+                            component="a"
+                            href={`/bookings/${booking.id}/billing-statement`}
+                            variant="outlined"
+                            size="small"
+                            startIcon={<ReceiptLongIcon />}
+                            sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
+                        >
+                            Billing Statement (PDF)
+                        </Button>
                         {canExtend && (
                             <Button
                                 variant="outlined"
