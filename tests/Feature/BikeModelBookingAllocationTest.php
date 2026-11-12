@@ -376,3 +376,64 @@ test('advance booking cannot be handed over before the pickup balance is collect
     );
     expect($handedOver->status)->toBe(BookingStatus::HANDED_OVER);
 });
+
+
+test('expired model booking holds reject checkout without creating a gateway order', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-EXP-01');
+    Sanctum::actingAs($this->customer);
+    $id = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'expired-checkout-01'))->assertCreated()->json('data.id');
+
+    $booking = Booking::findOrFail($id);
+    $booking->update(['held_until' => now()->subMinute()]);
+
+    foreach (['razorpay', 'phonepe'] as $gateway) {
+        $this->postJson("/api/v1/bookings/{$id}/checkout", [
+            'gateway' => $gateway,
+            'payment_option' => 'advance',
+        ])->assertUnprocessable()->assertJsonPath('errors.booking.0', 'Reservation hold expired.');
+    }
+
+    $fresh = $booking->fresh();
+    expect($fresh->status)->toBe(BookingStatus::HELD)
+        ->and($fresh->price_breakdown_json['checkout_gateway'] ?? null)->toBeNull();
+});
+
+test('payment retries cannot switch checkout gateway or amount', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-RETRY-01');
+    Sanctum::actingAs($this->customer);
+    $id = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'gateway-lock-01'))->assertCreated()->json('data.id');
+
+    $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'razorpay', 'payment_option' => 'advance',
+    ])->assertOk()->assertJsonPath('data.amount', 100);
+
+    $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'phonepe', 'payment_option' => 'advance',
+    ])->assertUnprocessable()->assertJsonValidationErrors(['payment_option']);
+
+    $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'razorpay', 'payment_option' => 'full',
+    ])->assertUnprocessable()->assertJsonValidationErrors(['payment_option']);
+
+    $fresh = Booking::findOrFail($id);
+    expect($fresh->status)->toBe(BookingStatus::PENDING_PAYMENT)
+        ->and($fresh->price_breakdown_json['checkout_gateway'])->toBe('razorpay')
+        ->and($fresh->price_breakdown_json['checkout_payment_option'])->toBe('advance')
+        ->and((float) $fresh->price_breakdown_json['checkout_amount'])->toBe(100.0);
+});
+
+test('other customers cannot start payment for an owned model hold', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-OWNER-01');
+    Sanctum::actingAs($this->customer);
+    $id = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'foreign-checkout-01'))->assertCreated()->json('data.id');
+
+    Sanctum::actingAs($this->otherCustomer);
+    $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'phonepe', 'payment_option' => 'full',
+    ])->assertNotFound();
+
+    expect(Booking::findOrFail($id)->status)->toBe(BookingStatus::HELD);
+});
