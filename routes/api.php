@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/bike-models/catalog', [\App\Http\Controllers\Api\V1\Public\BikeModelAvailabilityController::class, 'catalog']);
 
     // Public Bikes & Meta
+    Route::get('/reviews', [\App\Http\Controllers\Api\V1\Public\ReviewController::class, 'index']);
     Route::get('/bikes', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'index']);
     Route::get('/bikes/{id}', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'show']);
     Route::get('/bikes/{id}/availability', [\App\Http\Controllers\Api\V1\Public\BikeController::class, 'availability']);
