@@ -211,6 +211,41 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
         queryFn: () => apiClient.get('/bikes'),
         retry: false,
     });
+    const { data: publicServicesResponse } = useQuery({
+        queryKey: ['public-services-home'],
+        queryFn: () => apiClient.get('/services'),
+        retry: false,
+    });
+    const publishedServices = publicServicesResponse?.data ?? availableItems;
+    const enhanceHomeService = (source) => {
+        const isBike = source.id === 'bikes';
+        const serviceType = ({ bikes: 'two_wheelers', cabs: 'taxi', homestays: 'homestay' })[source.id] || source.id;
+        const item = publishedServices.find((record) => record.service_type === serviceType);
+        const dailyRates = apiBikes.map((bike) => Number(bike.weekday_rate ?? bike.daily_rate))
+            .filter((rate) => Number.isFinite(rate) && rate > 0);
+        return {
+            ...source,
+            image: isBike
+                ? featuredBikeImage
+                : item?.primary_image_url || item?.image_url || null,
+            tagline: isBike
+                ? `Browse ${apiBikes.length} listed bikes and check live rental dates and rates.`
+                : item?.description || 'View published service details and confirm availability before booking.',
+            rate: isBike
+                ? (dailyRates.length
+                    ? `From ₹${Math.min(...dailyRates).toLocaleString('en-IN')} / day`
+                    : 'Check Live Rates')
+                : item?.price_base != null && Number(item.price_base) > 0
+                    ? `From ₹${Number(item.price_base).toLocaleString('en-IN')}${item.price_unit ? ` / ${item.price_unit}` : ''}`
+                    : 'Check Published Rates',
+            highlights: isBike
+                ? [`${apiBikes.length} listed bikes`, 'Select pickup and return branches', 'Review the server-calculated price']
+                : Array.isArray(item?.features) && item.features.length
+                    ? item.features.slice(0, 3)
+                    : ['View published service details', 'Confirm availability before booking'],
+            tag: item?.badge || (isBike ? 'Live Bike Inventory' : 'Service Information'),
+        };
+    };
     const { data: publicReviewResponse } = useQuery({
         queryKey: ['approved-public-bike-reviews'],
         queryFn: () => apiClient.get('/reviews'),
@@ -1605,7 +1640,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                 'Curated Sunset Clifftops & Photography Spots',
                             ],
                         },
-                    ].map((srv) => (
+                    ].map(enhanceHomeService).map((srv) => (
                         <Grid key={srv.id} size={{ xs: 12, sm: 6, lg: 4 }}>
                             <Card
                                 sx={{
@@ -1639,19 +1674,20 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                             >
                                 {/* Media Header with 2026 Glassmorphic Overlays */}
                                 <Box sx={{ position: 'relative', height: 220, bgcolor: '#0F172A', overflow: 'hidden' }}>
-                                    <Box
-                                        component="img"
-                                        className="card-img"
-                                        src={srv.image}
-                                        alt={`${srv.title} in Honnavar - GK WhizWheel`}
-                                        loading="lazy"
-                                        sx={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                            transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
-                                        }}
-                                    />
+                                    {srv.image ? (
+                                        <Box component="img" className="card-img" src={srv.image}
+                                            alt={`${srv.title} in Honnavar - GK WhizWheel`}
+                                            loading="lazy"
+                                            sx={{
+                                                width: '100%', height: '100%', objectFit: 'cover',
+                                                transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+                                            }}
+                                        />
+                                    ) : (
+                                        <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                            {srv.icon}
+                                        </Box>
+                                    )}
                                     {/* Multi-layered cinematic vignette */}
                                     <Box
                                         sx={{
