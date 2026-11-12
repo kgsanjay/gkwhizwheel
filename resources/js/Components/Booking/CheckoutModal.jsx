@@ -60,6 +60,7 @@ export default function CheckoutModal({
     couponCode = '',
     quote,
     currentUser,
+    presentation = 'dialog',
 }) {
     const { auth } = usePage().props;
     const [resolvedUser, setResolvedUser] = useState(currentUser || auth?.user || null);
@@ -403,20 +404,36 @@ export default function CheckoutModal({
         }
     };
 
+    const isPage = presentation === 'page';
+    const Shell = isPage ? Box : Dialog;
+
     return (
-        <Dialog
-            open={open}
-            onClose={isSubmitting ? undefined : onClose}
-            maxWidth="md"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: { xs: 0, sm: 3 },
-                    m: { xs: 0, sm: 2 },
-                    width: { xs: '100%', sm: 'calc(100% - 32px)' },
-                    maxHeight: { xs: '100dvh', sm: '90vh' },
-                },
-            }}
+        <Shell
+            {...(isPage
+                ? {
+                    sx: {
+                        width: '100%',
+                        bgcolor: '#FFFFFF',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: { xs: 2, md: 3 },
+                        overflow: 'hidden',
+                        boxShadow: '0 14px 35px rgba(15, 23, 42, 0.06)',
+                    },
+                }
+                : {
+                    open,
+                    onClose: isSubmitting ? undefined : onClose,
+                    maxWidth: 'md',
+                    fullWidth: true,
+                    PaperProps: {
+                        sx: {
+                            borderRadius: { xs: 0, sm: 3 },
+                            m: { xs: 0, sm: 2 },
+                            width: { xs: '100%', sm: 'calc(100% - 32px)' },
+                            maxHeight: { xs: '100dvh', sm: '90vh' },
+                        },
+                    },
+                })}
         >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
                 <Box>
@@ -427,7 +444,7 @@ export default function CheckoutModal({
                         {bike.brand} {bike.model_name} • {startDate} to {endDate}
                     </Typography>
                 </Box>
-                {!isSubmitting && (
+                {!isPage && !isSubmitting && (
                     <IconButton onClick={onClose} size="small">
                         <CloseIcon />
                     </IconButton>
@@ -919,6 +936,6 @@ export default function CheckoutModal({
                     </Typography>
                 </Box>
             </DialogActions>
-        </Dialog>
+        </Shell>
     );
 }
