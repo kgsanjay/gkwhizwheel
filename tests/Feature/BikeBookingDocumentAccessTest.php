@@ -95,6 +95,12 @@ test('bike confirmation, voucher and printable agreement require booking ownersh
     $this->get("/bookings/{$booking->id}/billing-statement")
         ->assertOk()
         ->assertHeader('content-type', 'application/pdf');
+
+    // An authenticated customer must not receive pickup credentials while
+    // the payment webhook has not yet confirmed the rental.
+    $booking->update(['status' => BookingStatus::PENDING_PAYMENT]);
+    $this->get("/bookings/{$booking->id}/voucher")->assertStatus(409);
+    $this->get("/bookings/{$booking->id}/print")->assertStatus(409);
 });
 
 test('billing details cannot be replaced after bike payment initiation', function (): void {
