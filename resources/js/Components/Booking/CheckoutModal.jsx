@@ -275,6 +275,7 @@ export default function CheckoutModal({
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
                 gateway: gateway,
                 payment_option: paymentOption,
+                accept_rental_terms: acceptedTerms,
                 billing: {
                     type: billingType,
                     name: billingName.trim(),
