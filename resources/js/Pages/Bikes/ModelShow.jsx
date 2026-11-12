@@ -59,7 +59,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
             <PageHead title={title} description={description.slice(0, 160)}
                 canonicalUrl={canonical}
                 ogType="product"
-                ogImage={model.primary_image_url || '/images/services/two_wheelers.jpg'}
+                ogImage={model.primary_image_url || undefined}
                 structuredData={[
                     {
                         '@context': 'https://schema.org',
