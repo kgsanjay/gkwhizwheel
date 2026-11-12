@@ -89,6 +89,12 @@ export default function Services({ availableItems = [] }) {
         queryFn: () => apiClient.get('/bikes'),
         retry: false,
     });
+    const { data: publishedServicesResponse } = useQuery({
+        queryKey: ['public-service-catalog'],
+        queryFn: () => apiClient.get('/services'),
+        retry: false,
+    });
+    const publishedServices = publishedServicesResponse?.data ?? availableItems;
     const rentalBikes = rentalBikeResponse?.data || [];
     const liveBikeImage = rentalBikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url);
     const liveBikeImageUrl = liveBikeImage?.primary_image_url || liveBikeImage?.images?.[0]?.image_url || null;
@@ -324,7 +330,7 @@ export default function Services({ availableItems = [] }) {
 
     const getItemForService = (serviceKey) => {
         const targetType = serviceTypeMap[serviceKey] || serviceKey;
-        return availableItems.find((item) => item.service_type === targetType);
+        return publishedServices.find((item) => item.service_type === targetType);
     };
 
     const heroPreviewsWithMedia = React.useMemo(() => {
@@ -341,7 +347,7 @@ export default function Services({ availableItems = [] }) {
             };
         });
         return enhanced;
-    }, [availableItems, liveBikeImageUrl]);
+    }, [publishedServices, liveBikeImageUrl]);
 
     const servicesWithMedia = React.useMemo(() => {
         return services.map((srv) => {
@@ -355,54 +361,31 @@ export default function Services({ availableItems = [] }) {
                 media,
             };
         });
-    }, [availableItems, liveBikeImageUrl]);
+    }, [publishedServices, liveBikeImageUrl]);
 
     const tourItem = getItemForService('tours');
     const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
 
-    // Popular Combos
-    const combos = [
-        {
-            title: 'Honnavar Estuary & Mangrove Explorer',
-            badge: 'Most Popular Day Trip',
-            price: '₹750 / person',
-            duration: 'Half Day (4-5 Hours)',
-            color: '#059669',
-            items: ['Bike rental — subject to live availability', '1-Hour Sharavathi Mangrove Cruise', 'Eco Beach Boardwalk Sunset'],
-            description: 'Ride to the river jetty, cruise emerald mangrove channels, and catch sunset at Eco Beach.',
-            serviceId: 'boating',
-        },
-        {
-            title: 'Netrani Scuba & Murudeshwar Temple Expedition',
-            badge: 'Adventure Special',
-            price: '₹3,800 / person',
-            duration: 'Full Day (06:00 AM - 04:00 PM)',
-            color: '#6366F1',
-            items: ['Chilled AC Taxi from Honnavar', 'PADI Netrani Scuba Dive with 4K Video', 'Murudeshwar Shiva Statue Visit'],
-            description: 'Dive India’s premier coral reef with 1:1 certified dive masters, plus private cab transfer to Murudeshwar.',
-            serviceId: 'scuba',
-        },
-        {
-            title: 'Gokarna Beach Trail & Fort Heritage Ride',
-            badge: 'Biker & Explorer Favorite',
-            price: '₹1,200 / day',
-            duration: 'Full Day (8-10 Hours)',
-            color: '#F59E0B',
-            items: ['Bike rental — select from live fleet', 'Historic Mirjan Fort Walkthrough', 'Om Beach & Kudle Cliff Trail'],
-            description: 'Cruise scenic NH66 coastal highway, explore 16th-century Mirjan Fort, and trek Om Beach cliffs.',
-            serviceId: 'two_wheelers',
-        },
-        {
-            title: 'Karavali 3D/2N Complete Coastal Retreat',
-            badge: 'All-Inclusive Vacation',
-            price: '₹3,499 / person',
-            duration: '3 Days / 2 Nights',
-            color: '#8B5CF6',
-            items: ['Sharavathi Riverfront Homestay', '2-Day Unlimited Two-Wheeler', 'Backwater Cruise & Station Transfer'],
-            description: 'All-in-one coastal getaway with riverfront stay, unlimited bike rental, backwater cruise, and station transfers.',
-            serviceId: 'tours',
-        },
-    ];
+    // Reuse the existing four-column presentation for actual published packages.
+    const combos = publishedServices
+        .filter((item) => {
+            const category = String(item.category || '').toLowerCase();
+            return category.includes('package') || category.includes('combo')
+                || item.service_type === 'tours';
+        })
+        .slice(0, 4)
+        .map((item, index) => ({
+            title: item.name,
+            badge: item.badge || 'Published experience',
+            price: item.price_base != null && Number(item.price_base) > 0
+                ? `₹${Number(item.price_base).toLocaleString('en-IN')} ${item.price_unit ? `/ ${item.price_unit}` : ''}`
+                : 'Quote on request',
+            duration: item.price_unit || 'Contact for schedule',
+            color: ['#059669', '#6366F1', '#F59E0B', '#8B5CF6'][index],
+            items: Array.isArray(item.features) ? item.features : [],
+            description: item.description || 'View the published service details before booking.',
+            serviceId: item.service_type,
+        }));
 
     return (
         <AppLayout>
@@ -1748,14 +1731,23 @@ export default function Services({ availableItems = [] }) {
                             component="h2"
                             sx={{ fontWeight: 950, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.025em', mb: 1.5 }}
                         >
-                            Popular Day Trips & Combo Packages
+                            Available Day Trips & Packages
                         </Typography>
                         <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155', maxWidth: 680, mx: 'auto' }}>
-                            Bundle vehicle rental with boating, scuba, or stays and enjoy an automatic 10% discount on combined bookings.
+                            Browse published packages and experiences. Prices and inclusions come from the current service catalog.
                         </Typography>
                     </Box>
 
                     <Grid container spacing={3.5}>
+                        {combos.length === 0 && (
+                            <Grid size={{ xs: 12 }}>
+                                <Paper variant="outlined" sx={{ p: 4, borderRadius: 4, textAlign: 'center' }}>
+                                    <Typography color="text.secondary">
+                                        No package listings are currently published. Explore the individual services above.
+                                    </Typography>
+                                </Paper>
+                            </Grid>
+                        )}
                         {combos.map((combo, cIdx) => (
                             <Grid key={cIdx} size={{ xs: 12, md: 6 }}>
                                 <Paper
@@ -1820,7 +1812,7 @@ export default function Services({ availableItems = [] }) {
                                         </Typography>
 
                                         <Typography variant="caption" sx={{ color: combo.color, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', mb: 1 }}>
-                                            Package Inclusions:
+                                            Published Features:
                                         </Typography>
                                         <Stack spacing={0.8} sx={{ mb: 3 }}>
                                             {combo.items.map((inc, iIdx) => (
@@ -1837,7 +1829,7 @@ export default function Services({ availableItems = [] }) {
                                     <Box sx={{ pt: 2, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                                         <Box>
                                             <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', display: 'block', fontWeight: 600 }}>
-                                                Combo Rate (Save 10%)
+                                                Published Price
                                             </Typography>
                                             <Typography variant="h6" component="span" sx={{ fontWeight: 900, color: combo.color, lineHeight: 1.1 }}>
                                                 {combo.price}
@@ -1864,7 +1856,7 @@ export default function Services({ availableItems = [] }) {
                                                 },
                                             }}
                                         >
-                                            Book This Combo
+                                            View Experience
                                         </Button>
                                     </Box>
                                 </Paper>
