@@ -94,7 +94,19 @@ const bikeFaqSchema = {
     })),
 };
 
-export default function BikesIndex({ categories = [], stores = [], initialFilters = {} }) {
+export default function BikesIndex({ categories: initialCategories = [], stores: initialStores = [], initialFilters = {} }) {
+    const { data: storeResponse } = useQuery({
+        queryKey: ['public-bike-stores'],
+        queryFn: () => apiClient.get('/stores'),
+        retry: false,
+    });
+    const { data: categoryResponse } = useQuery({
+        queryKey: ['public-bike-categories'],
+        queryFn: () => apiClient.get('/bike-categories'),
+        retry: false,
+    });
+    const stores = storeResponse?.data ?? initialStores;
+    const categories = categoryResponse?.data ?? initialCategories;
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
 
@@ -1359,7 +1371,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         }}
                                     >
                                         <Chip
-                                            label="POPULAR"
+                                            label="3–6 DAYS"
                                             size="small"
                                             color="secondary"
                                             sx={{
