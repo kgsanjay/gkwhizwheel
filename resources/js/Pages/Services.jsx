@@ -2177,7 +2177,7 @@ export default function Services({ availableItems = [] }) {
                                         '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
                                     }}
                                 >
-                                    5.0★ Google Reviews
+                                    {reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} published bike reviews` : 'Customer reviews'}
                                 </Typography>
                             </Box>
                         </Box>
