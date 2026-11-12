@@ -1244,7 +1244,7 @@ export default function BikesIndex({ categories: initialCategories = [], stores:
                                             const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
                                             const href = bike.bike_model_id
                                                 ? `/services/bikes/models/${bike.bike_model_id}/${slug}`
-                                                : `/bikes/${bike.id}`;
+                                                : `/services/bikes/${bike.id}`;
                                             return (
                                                 <TableRow key={bike.bike_model_id ? `model-${bike.bike_model_id}` : bike.id}
                                                     sx={{ '&:nth-of-type(even)': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC' } }}>

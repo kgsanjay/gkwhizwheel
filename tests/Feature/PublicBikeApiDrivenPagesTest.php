@@ -45,6 +45,14 @@ test('bike listing and marketing pages fetch real fleet and customer review APIs
         ->not->toContain('(324+ reviews)')
         ->not->toContain("id: 'ankit-bike'");
 
+    expect($catalog)->toContain('/services/bikes/${bike.id}')
+        ->not->toContain('`/bikes/${bike.id}`');
+
+    expect($services)->toContain('getServiceItemMedia(item, null)')
+        ->toContain('getServiceItemMedia(tourItem, null)')
+        ->not->toContain('getServiceItemMedia(item, preview.image)')
+        ->not->toContain('src={tourMedia.primary || "/images/services/tour.jpg"}');
+
     expect($services)->toContain("apiClient.get('/bikes')")
         ->toContain("apiClient.get('/services')")
         ->toContain("apiClient.get('/reviews')")

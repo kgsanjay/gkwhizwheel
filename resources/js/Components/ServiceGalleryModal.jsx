@@ -26,8 +26,8 @@ export function getServiceItemMedia(item, defaultFallback = '/images/services/de
     if (!item) {
         return {
             primary: defaultFallback,
-            gallery: [defaultFallback],
-            count: 1,
+            gallery: defaultFallback ? [defaultFallback] : [],
+            count: defaultFallback ? 1 : 0,
             hasMultiple: false,
         };
     }
@@ -48,8 +48,8 @@ export function getServiceItemMedia(item, defaultFallback = '/images/services/de
 
         return {
             primary,
-            gallery: gallery.length > 0 ? gallery : [primary],
-            count: gallery.length > 0 ? gallery.length : 1,
+            gallery: gallery.length > 0 ? gallery : (primary ? [primary] : []),
+            count: gallery.length > 0 ? gallery.length : Number(Boolean(primary)),
             hasMultiple: gallery.length > 1,
         };
     }
@@ -69,8 +69,8 @@ export function getServiceItemMedia(item, defaultFallback = '/images/services/de
     const single = item.primary_image_url || item.image_url || defaultFallback;
     return {
         primary: single,
-        gallery: [single],
-        count: 1,
+        gallery: single ? [single] : [],
+        count: Number(Boolean(single)),
         hasMultiple: false,
     };
 }
