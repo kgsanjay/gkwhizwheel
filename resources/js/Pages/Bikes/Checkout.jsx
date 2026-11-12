@@ -6,7 +6,7 @@ import {
     Container, Grid, Paper, Stack, Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SecurityIcon from '@mui/icons-material/Security';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import AppLayout from '../../Layouts/AppLayout';
@@ -103,11 +103,11 @@ export default function BikeCheckout({
                                 <Typography variant="body2" sx={{ mb: 2 }}><strong>Return:</strong> {returnStore.name} · {endDate}</Typography>
                                 <Stack spacing={2} sx={{ borderTop: '1px solid #E2E8F0', pt: 2 }}>
                                     <Stack direction="row" spacing={1} alignItems="center">
-                                        <CheckCircleOutlineIcon fontSize="small" color="success" />
+                                        <CheckCircleIcon fontSize="small" color="success" />
                                         <Typography variant="body2">No refundable deposit for online bike reservations</Typography>
                                     </Stack>
                                     <Stack direction="row" spacing={1} alignItems="center">
-                                        <CheckCircleOutlineIcon fontSize="small" color="success" />
+                                        <CheckCircleIcon fontSize="small" color="success" />
                                         <Typography variant="body2">Server-confirmed quote before payment</Typography>
                                     </Stack>
                                     <Stack direction="row" spacing={1} alignItems="center">
