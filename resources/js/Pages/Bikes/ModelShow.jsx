@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Alert, Box, Button, Card, CardContent, CircularProgress, Grid,
@@ -44,7 +44,14 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
     const title = `${model.brand} ${model.name} Bike Rental | GK WhizWheel`;
     const description = model.description || `Rent a ${model.brand} ${model.name} with GK WhizWheel. Compare availability at our branches, choose your rental dates and see the exact fare before payment.`;
     const beginBooking = () => {
-        setCheckoutOpen(true);
+        if (!datesValid || !availability?.is_available) return;
+        router.get('/services/bikes/checkout', {
+            bike_model_id: model.id,
+            pickup_store_id: pickupId,
+            return_store_id: returnId,
+            start_date: startDate,
+            end_date: endDate,
+        });
     };
     const availabilityText = !datesValid
         ? 'Select branches and dates to check availability.'
@@ -148,7 +155,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                     {isLoading && <CircularProgress size={22} aria-label="Checking bike availability" />}
                                     <Button variant="contained" color="secondary" size="large"
                                         disabled={!datesValid || isLoading || !availability?.is_available || isError}
-                                        onClick={beginBooking}>Reserve this model</Button>
+                                        onClick={beginBooking}>Continue to Secure Checkout</Button>
                                     <Typography variant="caption" color="text.secondary">
                                         Instant hold via PhonePe, UPI & Cards. Zero password friction — Google 1-Tap & Auto-Account.
                                     </Typography>
