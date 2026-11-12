@@ -9,8 +9,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
-import AuthModal from '../../Components/Auth/AuthModal';
-import CheckoutModal from '../../Components/Booking/CheckoutModal';
 import apiClient from '../../api/client';
 
 export default function ModelShow({ model, stores = [], initialFilters = {} }) {
@@ -18,9 +16,6 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
     const [returnId, setReturnId] = useState(String(initialFilters.return_store_id || initialFilters.pickup_store_id || ''));
     const [startDate, setStartDate] = useState(initialFilters.start_date || '');
     const [endDate, setEndDate] = useState(initialFilters.end_date || '');
-    const [authOpen, setAuthOpen] = useState(false);
-    const [checkoutOpen, setCheckoutOpen] = useState(false);
-    const [user, setUser] = useState(null);
 
     const datesValid = Boolean(pickupId && returnId && startDate && endDate && startDate <= endDate);
     const params = {
@@ -165,17 +160,6 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                     </Grid>
                 </Grid>
             </Box>
-            <AuthModal open={authOpen} onClose={() => setAuthOpen(false)}
-                onSuccess={(nextUser) => { setUser(nextUser); setAuthOpen(false); setCheckoutOpen(true); }} />
-            {pickup && returning && <CheckoutModal
-                key={`${model.id}-${pickupId}-${returnId}-${startDate}-${endDate}`}
-                open={checkoutOpen} onClose={() => setCheckoutOpen(false)}
-                bike={{ brand: model.brand, model_name: model.name }}
-                bikeModelId={model.id}
-                startDate={startDate} endDate={endDate}
-                pickupStore={pickup} returnStore={returning}
-                selectedAddons={[]} couponCode="" quote={null} currentUser={user}
-            />}
         </AppLayout>
     );
 }
