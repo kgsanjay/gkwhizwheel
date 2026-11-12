@@ -476,3 +476,26 @@ test('repeated PhonePe checkout resumes the original payment link', function ():
         ->and($retry['redirect_url'])->toBe($first['redirect_url'])
         ->and($retry['amount_paise'])->toBe($first['amount_paise']);
 });
+
+
+test('gateway initiation errors roll back pending status and checkout selections', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-ROLLBACK-01');
+    Sanctum::actingAs($this->customer);
+    $id = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'gateway-error-rollback-01'))->assertCreated()->json('data.id');
+
+    $gateway = \Mockery::mock(\App\Services\RazorpayService::class);
+    $gateway->shouldReceive('createOrder')->once()
+        ->andThrow(new \RuntimeException('Gateway unreachable'));
+    app()->instance(\App\Services\RazorpayService::class, $gateway);
+
+    $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'razorpay',
+        'payment_option' => 'advance',
+    ])->assertInternalServerError();
+
+    $booking = Booking::findOrFail($id);
+    expect($booking->status)->toBe(BookingStatus::HELD)
+        ->and($booking->price_breakdown_json['checkout_gateway'] ?? null)->toBeNull()
+        ->and($booking->price_breakdown_json['razorpay_order_id'] ?? null)->toBeNull();
+});
