@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Link, router } from '@inertiajs/react';
 import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
@@ -35,14 +35,10 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import SecurityIcon from '@mui/icons-material/Security';
 import AddonsSelector from '../../Components/Booking/AddonsSelector';
-import AuthModal from '../../Components/Auth/AuthModal';
-import CheckoutModal from '../../Components/Booking/CheckoutModal';
 
 export default function BikeShow({ bike, stores = [] }) {
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
-    const { auth } = usePage().props;
-    const [currentUser, setCurrentUser] = useState(auth?.user || null);
 
     // Read query params from URL if passed from index page
     const searchParams = new URLSearchParams(window.location.search);
@@ -57,25 +53,11 @@ export default function BikeShow({ bike, stores = [] }) {
     const [couponCode, setCouponCode] = useState('');
     const [selectedAddons, setSelectedAddons] = useState([]);
 
-    // Modal states
-    const [authModalOpen, setAuthModalOpen] = useState(false);
-    const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-
     const isElectric = bike.fuel_type === 'electric';
     const isOneWay = pickupStoreId !== '' && returnStoreId !== '' && pickupStoreId !== returnStoreId;
 
     const pickupStore = stores.find((s) => String(s.id) === String(pickupStoreId)) || { id: pickupStoreId, name: 'Store Hub' };
     const returnStore = stores.find((s) => String(s.id) === String(returnStoreId)) || { id: returnStoreId, name: 'Store Hub' };
-
-    // Check token on mount
-    useEffect(() => {
-        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        if (token && !currentUser) {
-            apiClient.get('/user').then((res) => {
-                if (res.data) setCurrentUser(res.data);
-            }).catch(() => {});
-        }
-    }, []);
 
     // React Query: Fetch live price quote when dates and stores are present
     const canFetchQuote = Boolean(startDate && endDate && pickupStoreId && returnStoreId && startDate <= endDate);
@@ -114,11 +96,6 @@ export default function BikeShow({ bike, stores = [] }) {
             coupon_code: couponCode.trim() || undefined,
             addons: JSON.stringify(selectedAddons),
         });
-    };
-
-    const handleAuthSuccess = (user) => {
-        setCurrentUser(user);
-        setCheckoutModalOpen(true);
     };
 
     const bikePrice = bike.daily_rate ?? bike.price_per_day ?? bike.weekday_rate ?? 350;
@@ -591,29 +568,6 @@ export default function BikeShow({ bike, stores = [] }) {
             </Grid>
             </Box>
 
-            {/* Authentication Dialog (if unauthenticated when Book Now clicked) */}
-            <AuthModal
-                open={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
-            />
-
-            {/* Reservation Checkout Dialog */}
-            {quote && (
-                <CheckoutModal
-                    open={checkoutModalOpen}
-                    onClose={() => setCheckoutModalOpen(false)}
-                    bike={bike}
-                    startDate={startDate}
-                    endDate={endDate}
-                    pickupStore={pickupStore}
-                    returnStore={returnStore}
-                    selectedAddons={selectedAddons}
-                    couponCode={couponCode}
-                    quote={quote}
-                    currentUser={currentUser}
-                />
-            )}
         </AppLayout>
     );
 }
