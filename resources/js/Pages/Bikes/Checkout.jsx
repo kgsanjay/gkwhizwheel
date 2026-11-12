@@ -19,18 +19,18 @@ import apiClient from '../../api/client';
  */
 export default function BikeCheckout({
     bike, bikeModelId = null, pickupStore, returnStore,
-    startDate, endDate, couponCode = '', backUrl = '/services/bikes',
+    startDate, endDate, couponCode = '', selectedAddons = [], backUrl = '/services/bikes',
 }) {
     const isModel = Boolean(bikeModelId);
     const { data, isLoading, isError, error } = useQuery({
-        queryKey: ['bike-full-page-quote', bike.id, startDate, endDate, pickupStore.id, returnStore.id, couponCode],
+        queryKey: ['bike-full-page-quote', bike.id, startDate, endDate, pickupStore.id, returnStore.id, couponCode, selectedAddons],
         queryFn: () => apiClient.post(`/bikes/${bike.id}/price-quote`, {
             start_date: startDate,
             end_date: endDate,
             pickup_store_id: Number(pickupStore.id),
             return_store_id: Number(returnStore.id),
             coupon_code: couponCode || undefined,
-            addons: [],
+            addons: selectedAddons,
         }),
         enabled: !isModel && Boolean(bike?.id),
         retry: false,
@@ -84,7 +84,7 @@ export default function BikeCheckout({
                                     endDate={endDate}
                                     pickupStore={pickupStore}
                                     returnStore={returnStore}
-                                    selectedAddons={[]}
+                                    selectedAddons={selectedAddons}
                                     couponCode={couponCode}
                                     quote={quote}
                                 />
