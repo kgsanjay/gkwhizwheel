@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../api/client';
 import { useTheme } from '@mui/material/styles';
 import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
@@ -82,6 +84,14 @@ const servicesFaqSchema = {
 };
 
 export default function Services({ availableItems = [] }) {
+    const { data: rentalBikeResponse } = useQuery({
+        queryKey: ['public-bikes-services'],
+        queryFn: () => apiClient.get('/bikes'),
+        retry: false,
+    });
+    const rentalBikes = rentalBikeResponse?.data || [];
+    const liveBikeImage = rentalBikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url);
+    const liveBikeImageUrl = liveBikeImage?.primary_image_url || liveBikeImage?.images?.[0]?.image_url || null;
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -102,7 +112,7 @@ export default function Services({ availableItems = [] }) {
             id: 'two_wheelers',
             title: 'Bike & Scooter Rentals',
             rate: 'Check Live Rates',
-            image: '/images/services/two_wheelers.jpg',
+            image: liveBikeImageUrl,
             badge: 'Instant Handover',
             color: '#F59E0B',
             href: '/services/bikes',
@@ -184,7 +194,7 @@ export default function Services({ availableItems = [] }) {
             tag: 'Self-Drive Fleet',
             tagline: 'Discover available bikes from the live fleet API, check dates, and review your rental quote before payment.',
             rate: 'Check Live Rates',
-            image: '/images/services/two_wheelers.jpg',
+            image: liveBikeImageUrl,
             color: '#F59E0B',
             gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
             href: '/services/bikes',
@@ -321,7 +331,9 @@ export default function Services({ availableItems = [] }) {
         const enhanced = {};
         Object.entries(heroServicePreviews).forEach(([key, preview]) => {
             const item = getItemForService(key);
-            const media = getServiceItemMedia(item, preview.image);
+            const media = key === 'bikes'
+                ? { primary: liveBikeImageUrl, gallery: liveBikeImageUrl ? [liveBikeImageUrl] : [], count: Number(Boolean(liveBikeImageUrl)), hasMultiple: false }
+                : getServiceItemMedia(item, preview.image);
             enhanced[key] = {
                 ...preview,
                 item,
@@ -329,19 +341,21 @@ export default function Services({ availableItems = [] }) {
             };
         });
         return enhanced;
-    }, [availableItems]);
+    }, [availableItems, liveBikeImageUrl]);
 
     const servicesWithMedia = React.useMemo(() => {
         return services.map((srv) => {
             const item = getItemForService(srv.id);
-            const media = getServiceItemMedia(item, srv.image);
+            const media = srv.id === 'bikes'
+                ? { primary: liveBikeImageUrl, gallery: liveBikeImageUrl ? [liveBikeImageUrl] : [], count: Number(Boolean(liveBikeImageUrl)), hasMultiple: false }
+                : getServiceItemMedia(item, srv.image);
             return {
                 ...srv,
                 item,
                 media,
             };
         });
-    }, [availableItems]);
+    }, [availableItems, liveBikeImageUrl]);
 
     const tourItem = getItemForService('tours');
     const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
@@ -802,12 +816,13 @@ export default function Services({ availableItems = [] }) {
                                                         border: `1.5px solid ${active.color}40`,
                                                     }}
                                                 >
-                                                    <Box
-                                                        component="img"
-                                                        src={active.media?.primary || active.image}
-                                                        alt={`${active.title} - ${active.tagline || 'Coastal tourism & rentals in Honnavar by GK WhizWheel'}`}
-                                                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    />
+                                                    {active.media?.primary ? (
+                                                        <Box component="img" src={active.media.primary}
+                                                            alt={`${active.title} — current service image`}
+                                                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : <Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: '#1E293B' }}>
+                                                        <TwoWheelerIcon sx={{ fontSize: 64, color: '#94A3B8' }} aria-hidden="true" />
+                                                    </Box>}
                                                     {active.media?.hasMultiple && (
                                                         <Chip
                                                             icon={<PhotoLibraryIcon sx={{ fontSize: '13px !important', color: '#FFFFFF !important' }} />}
@@ -1125,19 +1140,13 @@ export default function Services({ availableItems = [] }) {
                                 >
                                     {/* Media Header with 2026 Glassmorphic Overlays */}
                                     <Box sx={{ position: 'relative', height: 220, bgcolor: '#0F172A', overflow: 'hidden' }}>
-                                        <Box
-                                            component="img"
-                                            className="card-img"
-                                            src={srv.media?.primary || srv.image}
-                                            alt={`${srv.title} - ${srv.tagline || 'Travel and rental services in Honnavar by GK WhizWheel'}`}
-                                            loading="lazy"
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
-                                            }}
-                                        />
+                                        {srv.media?.primary ? (
+                                            <Box component="img" className="card-img" src={srv.media.primary}
+                                                alt={`${srv.title} — current service image`} loading="lazy"
+                                                sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                                        ) : <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                            <TwoWheelerIcon sx={{ fontSize: 70, color: '#94A3B8' }} aria-hidden="true" />
+                                        </Box>}
                                         {/* Multi-layered cinematic vignette */}
                                         <Box
                                             sx={{
