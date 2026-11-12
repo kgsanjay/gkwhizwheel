@@ -713,6 +713,46 @@ export default function CheckoutModal({
                     </Card>
                 </RadioGroup>
 
+                {/* Tax display is entirely server derived; never calculate GST in the browser. */}
+                {finalQuote && (
+                    <Box sx={{ mt: 3, mb: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, color: '#0F172A' }}>
+                            Rental price breakdown
+                        </Typography>
+                        {finalQuote.price_breakdown_json?.bike_gst?.status === 'configured' ? (
+                            <>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                                    <Typography variant="body2">Taxable rental and fees</Typography>
+                                    <Typography variant="body2" fontWeight={700}>
+                                        ₹{Number(finalQuote.price_breakdown_json.bike_gst.taxable_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 1 }}>
+                                    <Typography variant="body2">GST ({finalQuote.price_breakdown_json.bike_gst.gst_rate_percent}%)</Typography>
+                                    <Typography variant="body2" fontWeight={700}>
+                                        ₹{Number(finalQuote.price_breakdown_json.bike_gst.gst_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                    </Typography>
+                                </Box>
+                                <Typography variant="caption" color="text.secondary">
+                                    {finalQuote.price_breakdown_json.bike_gst.price_mode === 'inclusive'
+                                        ? 'GST is included in the quoted total.'
+                                        : 'GST has been added to the quoted rental total.'}
+                                </Typography>
+                            </>
+                        ) : (
+                            <Alert severity="warning">
+                                GST details are not configured for bike bookings. The displayed quote does not claim a GST tax amount or constitute a tax invoice.
+                            </Alert>
+                        )}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 1.5, pt: 1, borderTop: '1px solid #E2E8F0' }}>
+                            <Typography variant="body1" fontWeight={800}>Final rental total</Typography>
+                            <Typography variant="body1" fontWeight={800}>
+                                ₹{Number(total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </Typography>
+                        </Box>
+                    </Box>
+                )}
+
                 {/* Amount Due Summary */}
                 <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #E2E8F0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
