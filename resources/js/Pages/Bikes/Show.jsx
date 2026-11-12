@@ -45,11 +45,12 @@ export default function BikeShow({ bike, stores = [] }) {
     const initialStart = searchParams.get('start_date') || '';
     const initialEnd = searchParams.get('end_date') || '';
     const initialPickup = searchParams.get('pickup_store_id') || String(bike.current_store_id || (stores[0]?.id || ''));
+    const initialReturn = searchParams.get('return_store_id') || initialPickup;
 
     const [startDate, setStartDate] = useState(initialStart);
     const [endDate, setEndDate] = useState(initialEnd);
     const [pickupStoreId, setPickupStoreId] = useState(initialPickup);
-    const [returnStoreId, setReturnStoreId] = useState(initialPickup);
+    const [returnStoreId, setReturnStoreId] = useState(initialReturn);
     const [couponCode, setCouponCode] = useState('');
     const [selectedAddons, setSelectedAddons] = useState([]);
 
