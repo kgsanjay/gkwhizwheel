@@ -2617,7 +2617,10 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             </Typography>
                                             <Stack direction="row" spacing={0.1}>
                                                 {[...Array(5)].map((_, i) => (
-                                                    <StarIcon key={i} sx={{ fontSize: 13, color: '#F59E0B' }} />
+                                                    <StarIcon key={i} sx={{
+                                                        fontSize: 13,
+                                                        color: i < Math.round(Number(reviewMeta.average_rating || 0)) ? '#F59E0B' : '#CBD5E1',
+                                                    }} />
                                                 ))}
                                             </Stack>
                                             <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600 }}>
