@@ -826,19 +826,16 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                 bgcolor: '#0F172A',
                                             }}
                                         >
-                                            <Box
-                                                component="img"
-                                                key={activeSlide.image}
-                                                src={activeSlide.image}
-                                                alt={`${activeSlide.title} — GK WhizWheel Coastal Karnataka`}
-                                                sx={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'cover',
-                                                    display: 'block',
-                                                    transition: 'transform 0.6s ease',
-                                                }}
-                                            />
+                                            {activeSlide.image ? (
+                                                <Box component="img" key={activeSlide.image} src={activeSlide.image}
+                                                    alt={`${activeSlide.title} — GK WhizWheel`}
+                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.6s ease' }}
+                                                />
+                                            ) : (
+                                                <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                                    <TwoWheelerIcon sx={{ fontSize: 110, color: '#94A3B8' }} aria-hidden="true" />
+                                                </Box>
+                                            )}
                                             <Box
                                                 sx={{
                                                     position: 'absolute',
