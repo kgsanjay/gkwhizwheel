@@ -81,4 +81,10 @@ test('checkout rejects missing bike or invalid date ranges', function (): void {
         'bike_id' => $this->checkoutBike->id,
         'addons' => '[{"addon_type":"unsafe-item","quantity":1}]',
     ]))->assertUnprocessable()->assertJsonValidationErrors(['addons']);
+
+    $this->getJson('/services/bikes/checkout?'.http_build_query([
+        ...$base,
+        'bike_id' => $this->checkoutBike->id,
+        'bike_model_id' => 999999,
+    ]))->assertUnprocessable()->assertJsonValidationErrors(['bike_id', 'bike_model_id']);
 });
