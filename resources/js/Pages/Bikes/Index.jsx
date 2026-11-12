@@ -353,7 +353,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         {
                                             icon: <ShieldIcon sx={{ color: '#F59E0B', fontSize: 18 }} />,
                                             title: 'Zero Security Deposit',
-                                            desc: 'Available on Aadhaar & round-trip verification',
+                                            desc: 'Check ID and rental terms before pickup',
                                         },
                                         {
                                             icon: <LocationOnIcon sx={{ color: '#0284C7', fontSize: 18 }} />,
@@ -362,7 +362,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         },
                                         {
                                             icon: <SportsMotorsportsIcon sx={{ color: '#10B981', fontSize: 18 }} />,
-                                            title: '2 Free Sanitized Helmets',
+                                            title: 'Helmet availability confirmed at pickup',
                                             desc: 'ISI helmets + phone mount & charger included',
                                         },
                                         {
@@ -845,7 +845,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
                                 <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 700, fontSize: '0.84rem' }}>
                                     {!isLoading ? (
-                                        <>Showing <Box component="span" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 900 }}>{bikes.length}</Box> verified vehicle(s) ready for delivery</>
+                                        <>Showing <Box component="span" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 900 }}>{bikes.length}</Box> listed vehicle(s) from the bike API</>
                                     ) : (
                                         'Updating live fleet inventory...'
                                     )}
@@ -1122,7 +1122,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 ✓ Zero Deposit Option
                                                             </Typography>
                                                             <Typography variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                                Instant 5-Min Pickup
+                                                                Select pickup time and location
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -1392,7 +1392,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Station Pickup Priority</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Choose from available pickup branches</Typography>
                                             </Box>
                                         </Stack>
                                         <Button
@@ -1444,11 +1444,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Unlimited Kilometers</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Review mileage policy at checkout</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Free 24/7 Roadside Cover</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Review rental terms before payment</Typography>
                                             </Box>
                                         </Stack>
                                         <Button
@@ -1499,11 +1499,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Free Routine Maintenance</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Confirm long-term conditions with the branch</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Doorstep Hub Swaps</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Select pickup and return locations</Typography>
                                             </Box>
                                         </Stack>
                                         <Button
@@ -1808,7 +1808,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                             <Typography variant="caption" sx={{ color: isDark ? '#38BDF8' : '#0369A1', fontWeight: 750 }}>
-                                                Fleet availability: {displayedFleetNames.length ? displayedFleetNames[idx % displayedFleetNames.length] : 'Check the bike catalog'}
+                                                Listed bike: {displayedFleetNames.length ? displayedFleetNames[idx % displayedFleetNames.length] : 'Check the bike catalog'}
                                             </Typography>
                                         </Box>
                                     </Paper>
