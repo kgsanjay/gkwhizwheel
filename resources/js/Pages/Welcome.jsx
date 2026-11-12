@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../api/client';
 import { useTheme } from '@mui/material/styles';
 import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
@@ -68,7 +70,7 @@ const HERO_SLIDES = [
         shortLabel: 'Bikes & Scooters',
         title: 'Bikes & Scooters on Rent',
         subtitle: 'Browse available bikes from live inventory • No online security deposit',
-        image: '/images/services/two_wheelers.webp',
+        image: null,
         href: '/services/bikes',
         cta: 'Browse Live Fleet',
         accent: '#F59E0B',
@@ -203,7 +205,15 @@ const QUICK_BOOK_SERVICES = [
     },
 ];
 
-export default function Welcome({ featuredBikes = [], categories = [], stores = [] , availableItems = [] }) {
+export default function Welcome({ categories = [], stores = [] , availableItems = [] }) {
+    const { data: bikeCatalogResponse } = useQuery({
+        queryKey: ['public-bikes-home'],
+        queryFn: () => apiClient.get('/bikes'),
+        retry: false,
+    });
+    const apiBikes = bikeCatalogResponse?.data || [];
+    const featuredBike = apiBikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url) || null;
+    const featuredBikeImage = featuredBike?.primary_image_url || featuredBike?.images?.[0]?.image_url || null;
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -245,7 +255,16 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
     };
 
-    const activeSlide = HERO_SLIDES[currentSlide % HERO_SLIDES.length];
+    const currentHeroSlide = HERO_SLIDES[currentSlide % HERO_SLIDES.length];
+    const activeSlide = currentHeroSlide.id === 'bikes'
+        ? {
+            ...currentHeroSlide,
+            image: featuredBikeImage,
+            subtitle: apiBikes.length > 0
+                ? `Browse ${apiBikes.length} listed bike(s) from our live inventory. Choose dates for exact rates.`
+                : 'Check the live bike catalog for current availability and pricing.',
+        }
+        : currentHeroSlide;
     const publishedBranches = stores.filter((s) => s.publication_status === 'published');
     const branchList = (publishedBranches.length > 0 ? publishedBranches : stores)
         .slice()
@@ -1469,7 +1488,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             tag: 'Self-Drive Fleet',
                             tagline: 'Browse bikes and scooters available in our live fleet. Confirm dates and rental prices before payment.',
                             rate: 'Check Live Rates',
-                            image: '/images/services/two_wheelers.jpg',
+                            image: featuredBikeImage,
                             color: '#F59E0B',
                             gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                             href: '/services/bikes',
