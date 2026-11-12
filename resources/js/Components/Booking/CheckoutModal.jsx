@@ -400,10 +400,15 @@ export default function CheckoutModal({
         <Dialog
             open={open}
             onClose={isSubmitting ? undefined : onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
             PaperProps={{
-                sx: { borderRadius: 3 },
+                sx: {
+                    borderRadius: { xs: 0, sm: 3 },
+                    m: { xs: 0, sm: 2 },
+                    width: { xs: '100%', sm: 'calc(100% - 32px)' },
+                    maxHeight: { xs: '100dvh', sm: '90vh' },
+                },
             }}
         >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
@@ -422,7 +427,21 @@ export default function CheckoutModal({
                 )}
             </DialogTitle>
 
-            <DialogContent dividers sx={{ p: 3 }}>
+            <Box sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderTop: '1px solid #E2E8F0' }}>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Chip size="small" label="1. Rider and pickup" color={!heldBooking ? 'primary' : 'default'}
+                        variant={!heldBooking ? 'filled' : 'outlined'} />
+                    <Chip size="small" label="2. Pricing and GST" color={heldBooking ? 'primary' : 'default'}
+                        variant={heldBooking ? 'filled' : 'outlined'} />
+                    <Chip size="small" label="3. Secure payment" variant="outlined" />
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                    {heldBooking
+                        ? 'Bike held. Review the final total and payment details before paying.'
+                        : 'Add rider, pickup and billing details to receive a confirmed rental quote.'}
+                </Typography>
+            </Box>
+            <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
                 {/* Hold Timer Alert if already held */}
                 {heldBooking && (
                     <Alert
