@@ -69,6 +69,12 @@ export default function CheckoutModal({
     const [riderEmail, setRiderEmail] = useState(activeUser?.email || '');
     const [otpChallenge, setOtpChallenge] = useState(null);
     const [otpCode, setOtpCode] = useState('');
+    const [billingType, setBillingType] = useState('personal');
+    const [billingName, setBillingName] = useState('');
+    const [billingAddress, setBillingAddress] = useState('');
+    const [billingStateCode, setBillingStateCode] = useState('29');
+    const [billingGstin, setBillingGstin] = useState('');
+
 
     const [gateway, setGateway] = useState('phonepe');
     const [paymentOption, setPaymentOption] = useState('advance');
@@ -136,6 +142,14 @@ export default function CheckoutModal({
     const handleBookAndPay = async () => {
         if (!heldBooking && !pointSelectionValid) {
             setErrorMessage('Choose pickup and return points with configured charges. Hotel/custom requests also need an address.');
+            return;
+        }
+        if (billingName.trim().length < 2 || billingAddress.trim().length < 8 || !/^\\d{2}$/.test(billingStateCode)) {
+            setErrorMessage('Enter the billing name, full address and two-digit state code before continuing.');
+            return;
+        }
+        if (billingType === 'business' && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(billingGstin.trim().toUpperCase())) {
+            setErrorMessage('Enter a valid-format GSTIN for the business invoice.');
             return;
         }
         setIsSubmitting(true);
@@ -255,6 +269,13 @@ export default function CheckoutModal({
             const checkoutRes = await apiClient.post(`/bookings/${booking.id}/checkout`, {
                 gateway: gateway,
                 payment_option: paymentOption,
+                billing: {
+                    type: billingType,
+                    name: billingName.trim(),
+                    address: billingAddress.trim(),
+                    state_code: billingStateCode.trim(),
+                    ...(billingType === 'business' ? { gstin: billingGstin.trim().toUpperCase() } : {}),
+                },
             });
 
             const paymentData = checkoutRes.data;
@@ -640,6 +661,33 @@ export default function CheckoutModal({
                             : `Pay ₹${total.toLocaleString('en-IN')} online. Nothing due for the quoted rental at pickup.`}
                     </Alert>
                 )}
+
+                {/* Capture billing details before gateway initiation; server locks these on first checkout. */}
+                <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
+                        Billing details
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        These details will be saved with your booking and locked when payment starts.
+                        A GST tax invoice is available only after the supplier's GST settings and invoice issuance are configured.
+                    </Typography>
+                    <RadioGroup row value={billingType} onChange={(e) => setBillingType(e.target.value)}>
+                        <FormControlLabel value="personal" control={<Radio />} label="Personal" />
+                        <FormControlLabel value="business" control={<Radio />} label="Business (GSTIN)" />
+                    </RadioGroup>
+                    <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+                        <TextField size="small" required fullWidth label={billingType === 'business' ? 'Registered business name' : 'Billing name'}
+                            value={billingName} onChange={(e) => setBillingName(e.target.value)} inputProps={{ maxLength: 150 }} />
+                        <TextField size="small" required fullWidth multiline minRows={2} label="Full billing address"
+                            value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} inputProps={{ maxLength: 500 }} />
+                        <TextField size="small" required fullWidth label="GST state code (2 digits)" helperText="For example, Karnataka = 29. Used to verify GSTIN state; does not determine place of supply."
+                            value={billingStateCode} onChange={(e) => setBillingStateCode(e.target.value.replace(/\\D/g, '').slice(0, 2))} inputProps={{ inputMode: 'numeric', maxLength: 2 }} />
+                        {billingType === 'business' && (
+                            <TextField size="small" required fullWidth label="Business GSTIN" helperText="Format is checked here; registration validity is not verified."
+                                value={billingGstin} onChange={(e) => setBillingGstin(e.target.value.toUpperCase().slice(0, 15))} inputProps={{ maxLength: 15 }} />
+                        )}
+                    </Stack>
+                </Card>
 
                 {/* Payment Gateway Selection */}
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#0F172A' }}>
