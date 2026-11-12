@@ -1761,7 +1761,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             }}
                                         >
                                             <StarIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                            5.0 Verified
+                                            {srv.id === 'bikes' && reviewMeta.total > 0 ? `${reviewMeta.average_rating} / 5 (${reviewMeta.total})` : 'View service details'}
                                         </Box>
                                     </Box>
                                 </Box>
@@ -2022,7 +2022,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                     boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
                                                 }}
                                             >
-                                                Custom Combos • Save 10%
+                                                Explore Published Packages
                                             </Box>
                                             <Box
                                                 sx={{
@@ -2041,7 +2041,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                 }}
                                             >
                                                 <StarIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
-                                                5.0 Rated
+                                                Explore Packages
                                             </Box>
                                         </Box>
                                     </Box>
@@ -2061,7 +2061,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                         <Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                                 <Chip
-                                                    label="SAVE 10% ON COMBO BOOKINGS"
+                                                    label="CHECK AVAILABLE PACKAGE RATES"
                                                     size="small"
                                                     sx={{
                                                         bgcolor: isDark ? 'rgba(139, 92, 246, 0.2)' : '#EDE9FE',
@@ -2135,7 +2135,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             <Stack spacing={1.2} sx={{ mb: 4 }}>
                                                 {[
                                                     'Tailored for Couples, Family Getaways, Group Treks & Weekend Roadtrips',
-                                                    '10% Instant Package Discount vs Booking Each Service Individually',
+                                                    'Published package rates confirmed before booking',
                                                     'Dedicated Local Coastal Trip Manager On 24/7 Call From Arrival to Departure',
                                                 ].map((text, i) => (
                                                     <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
