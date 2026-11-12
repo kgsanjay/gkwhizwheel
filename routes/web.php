@@ -204,6 +204,8 @@ Route::get('/privacy-policy', fn () => Inertia::render('Privacy'));
 Route::get('/bookings/{id}/confirmation', [\App\Http\Controllers\Web\BookingWebController::class, 'confirmation'])->name('bookings.confirmation');
 Route::get('/bookings/{id}', fn (int $id) => redirect()->route('bookings.confirmation', $id))->whereNumber('id');
 Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\BookingWebController::class, 'downloadVoucher'])->name('bookings.voucher');
+Route::get('/bookings/{id}/billing-statement', [\App\Http\Controllers\Web\BookingWebController::class, 'downloadBillingStatement'])
+    ->middleware('auth')->whereNumber('id')->name('bookings.billing-statement');
 Route::get('/bookings/{id}/print', [\App\Http\Controllers\Web\BookingWebController::class, 'printVoucher'])->name('bookings.print');
 Route::post('/dev/bookings/{id}/simulate-payment', [\App\Http\Controllers\Web\BookingWebController::class, 'simulateTestPayment'])->name('dev.bookings.simulate-payment');
 Route::match(['get', 'post'], '/payment/phonepe/callback', [\App\Http\Controllers\Web\BookingWebController::class, 'handlePhonePeCallback'])
