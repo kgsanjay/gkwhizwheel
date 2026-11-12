@@ -137,7 +137,7 @@ class BookingController extends Controller
             'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
             'payment_option' => ['nullable', 'string', 'in:advance,full'],
             'redirect_url' => ['nullable', 'string', 'max:500'],
-            'accept_rental_terms' => ['required_with:billing', 'accepted'],
+            'accept_rental_terms' => ['exclude_without:billing', 'accepted'],
             'billing' => ['nullable', 'array'],
             'billing.type' => ['required_with:billing', 'in:personal,business'],
             'billing.name' => ['required_with:billing', 'string', 'min:2', 'max:150'],
