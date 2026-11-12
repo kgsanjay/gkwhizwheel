@@ -99,28 +99,30 @@ export default function BikeShow({ bike, stores = [] }) {
         });
     };
 
-    const bikePrice = bike.daily_rate ?? bike.price_per_day ?? bike.weekday_rate ?? 350;
-    const bikeImageUrl = bike.primary_image_url || bike.image_url || (bike.images && bike.images[0]?.image_url) || '/images/services/two_wheelers.jpg';
-    const absoluteImageUrl = bikeImageUrl.startsWith('http') ? bikeImageUrl : `https://whizwheels.in${bikeImageUrl.startsWith('/') ? '' : '/'}${bikeImageUrl}`;
+    const bikePrice = bike.daily_rate ?? bike.weekday_rate ?? bike.category?.base_daily_rate ?? null;
+    const bikeImageUrl = bike.primary_image_url || bike.images?.[0]?.image_url || null;
+    const absoluteImageUrl = bikeImageUrl
+        ? (bikeImageUrl.startsWith('http') ? bikeImageUrl : `https://whizwheels.in${bikeImageUrl.startsWith('/') ? '' : '/'}${bikeImageUrl}`)
+        : null;
     const isAvailable = bike.status === 'available';
 
     const bikeStructuredData = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: `${bike.brand} ${bike.model_name}`,
-        image: absoluteImageUrl,
-        description: `Rent verified ${bike.brand} ${bike.model_name} in Honnavar starting ₹${bikePrice}/day. Zero deposit option, 2 sanitized helmets & station pickup.`,
+        ...(absoluteImageUrl ? { image: absoluteImageUrl } : {}),
+        description: `View ${bike.brand} ${bike.model_name} bike rental availability and check the live quote for your selected dates.`,
         brand: {
             '@type': 'Brand',
             name: bike.brand,
         },
-        offers: {
+        ...(bikePrice != null ? { offers: {
             '@type': 'Offer',
             price: String(bikePrice),
             priceCurrency: 'INR',
             availability: isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             url: `https://whizwheels.in/services/bikes/${bike.id}`,
-        },
+        } } : {}),
         ...(bike.rating || bike.average_rating || (bike.reviews && bike.reviews.length > 0) ? {
             aggregateRating: {
                 '@type': 'AggregateRating',
@@ -134,9 +136,9 @@ export default function BikeShow({ bike, stores = [] }) {
         <AppLayout>
             <PageHead
                 title={`${bike.brand} ${bike.model_name} Rental in Honnavar | GK WhizWheel`}
-                description={`Rent the ${bike.brand} ${bike.model_name} in Honnavar starting ₹${bikePrice}/day. Zero deposit option, 2 sanitized helmets & station pickup.`}
+                description={`Explore ${bike.brand} ${bike.model_name} rental details, current bike availability and server-calculated prices.`}
                 canonicalUrl={`https://whizwheels.in/services/bikes/${bike.id}`}
-                ogImage={absoluteImageUrl}
+                ogImage={absoluteImageUrl || undefined}
                 ogType="product"
                 structuredData={bikeStructuredData}
             />
@@ -172,17 +174,15 @@ export default function BikeShow({ bike, stores = [] }) {
                                 justifyContent: 'center',
                             }}
                         >
-                            <Box
-                                component="img"
-                                src={bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=800&q=80'}
-                                alt={`${bike.brand || ''} ${bike.model_name || 'Bike'} rental in Honnavar - GK WhizWheel`}
-                                sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    objectPosition: 'center 75%',
-                                }}
-                            />
+                            {bikeImageUrl ? (
+                                <Box component="img"
+                                    src={bikeImageUrl}
+                                    alt={`${bike.brand || ''} ${bike.model_name || 'Bike'}`}
+                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 75%' }}
+                                />
+                            ) : (
+                                <TwoWheelerIcon sx={{ fontSize: 100, color: 'text.disabled' }} aria-hidden="true" />
+                            )}
 
                             {/* Electric/Petrol chip */}
                             <Chip
@@ -266,13 +266,13 @@ export default function BikeShow({ bike, stores = [] }) {
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Mon – Thu (Weekday Rate)</TableCell>
                                         <TableCell sx={{ fontWeight: 800, color: '#F59E0B' }}>
-                                             ₹{Number(bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || 350).toLocaleString('en-IN')} / day
+                                             {bike.weekday_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekday_rate ?? bike.daily_rate).toLocaleString('en-IN')} / day`}
                                         </TableCell>
                                     </TableRow>
                                     <TableRow>
                                         <TableCell sx={{ color: '#64748B', fontWeight: 500 }}>Fri – Sun (Weekend Rate)</TableCell>
                                         <TableCell sx={{ fontWeight: 800, color: isDark ? '#38BDF8' : '#0284C7' }}>
-                                             ₹{Number(bike.weekend_rate || (Number(bike.daily_rate || 350) + 100)).toLocaleString('en-IN')} / day
+                                             {bike.weekend_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekend_rate ?? bike.daily_rate).toLocaleString('en-IN')} / day`}
                                         </TableCell>
                                     </TableRow>
                                     <TableRow>
