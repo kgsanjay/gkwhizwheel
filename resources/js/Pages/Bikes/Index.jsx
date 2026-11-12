@@ -186,7 +186,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                 title="Bike & Scooter Rentals by Branch | GK WhizWheel"
                 description="Browse self-drive bikes and scooters by branch and dates. Check current pricing and availability with no security deposit for new online bike bookings."
                 canonicalUrl="https://whizwheels.in/services/bikes"
-                ogImage="/images/services/two_wheelers.jpg"
+                ogImage={featuredBike?.primary_image_url || featuredBike?.images?.[0]?.image_url || undefined}
                 ogType="website"
                 structuredData={bikeFaqSchema}
             />
