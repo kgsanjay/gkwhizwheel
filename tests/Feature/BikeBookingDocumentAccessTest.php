@@ -162,6 +162,13 @@ test('billing details cannot be replaced after bike payment initiation', functio
         'idempotency_key' => 'document-access-test-772',
     ]);
 
+    // Billing-enabled checkouts must explicitly accept rental terms.
+    $this->actingAs($customer)->postJson("/api/v1/bookings/{$booking->id}/checkout", [
+        'gateway' => 'phonepe',
+        'payment_option' => 'full',
+        'billing' => $originalBilling,
+    ])->assertUnprocessable()->assertJsonValidationErrors(['accept_rental_terms']);
+
     $this->actingAs($customer)->postJson("/api/v1/bookings/{$booking->id}/checkout", [
         'gateway' => 'phonepe',
         'payment_option' => 'full',
