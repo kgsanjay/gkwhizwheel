@@ -137,6 +137,7 @@ class BookingController extends Controller
             'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
             'payment_option' => ['nullable', 'string', 'in:advance,full'],
             'redirect_url' => ['nullable', 'string', 'max:500'],
+            'accept_rental_terms' => ['required_with:billing', 'accepted'],
             'billing' => ['nullable', 'array'],
             'billing.type' => ['required_with:billing', 'in:personal,business'],
             'billing.name' => ['required_with:billing', 'string', 'min:2', 'max:150'],
@@ -197,6 +198,10 @@ class BookingController extends Controller
                 ]);
             }
             $breakdown['checkout_billing'] = $billing;
+            // Record acceptance for the same checkout identity and quote.
+            // Do not reset it on retries or permit a new consent timestamp.
+            $breakdown['checkout_terms_accepted_at'] ??= now()->toIso8601String();
+            $breakdown['checkout_terms_path'] ??= '/rental-terms';
         }
         $breakdown['checkout_payment_option'] = $option;
         $breakdown['checkout_gateway'] = $gateway;
