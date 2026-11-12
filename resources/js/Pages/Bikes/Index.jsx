@@ -158,6 +158,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     });
 
     const bikes = bikesResponse?.data || [];
+    const listedRates = bikes
+        .map((bike) => Number(bike.weekday_rate ?? bike.daily_rate))
+        .filter((rate) => Number.isFinite(rate) && rate > 0);
+    const minimumDailyRate = listedRates.length ? Math.min(...listedRates) : null;
+    const displayedFleetNames = [...new Set(bikes.map((bike) => [bike.brand, bike.model_name].filter(Boolean).join(' ')).filter(Boolean))];
     const featuredBike = bikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url) || null;
     const legacyBikes = bikes.filter((bike) => !bike.bike_model_id);
     // Public comparison uses registered inventory and actual configured rates.
@@ -580,8 +585,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     {/* 3 Metric Pillars Under Image */}
                                     <Grid container sx={{ p: 1.2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0' }}>
                                         {[
-                                            { label: 'DAILY RATE', val: 'See Live Quote' },
-                                            { label: 'PICKUP', val: 'Select Branch' },
+                                            { label: 'DAILY RATE', val: minimumDailyRate === null ? 'See Live Quote' : `From ₹${minimumDailyRate.toLocaleString('en-IN')}` },
+                                            { label: 'PICKUP', val: stores.length ? `${stores.length} Branch${stores.length === 1 ? '' : 'es'}` : 'Select Branch' },
                                             { label: 'SECURITY DEPOSIT', val: 'Zero Deposit' },
                                         ].map((stat, idx) => (
                                             <Grid key={idx} size={{ xs: 4 }} sx={{ textAlign: 'center', borderRight: idx < 2 ? (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0') : 'none', py: 0.5 }}>
@@ -1279,7 +1284,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     mb: 2.5,
                                 }}
                             >
-                                Multi-Day Rental Volume Discounts
+                                Rental Durations & Live Pricing
                             </Typography>
 
                             <Grid container spacing={3}>
@@ -1309,7 +1314,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Check live bike API rates for your dates</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>{minimumDailyRate !== null ? `Daily rates from ₹${minimumDailyRate.toLocaleString('en-IN')}` : 'Select a bike to check rates'}</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
@@ -1379,7 +1384,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#F59E0B', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>10% Tiered Discount</Typography>
+                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Exact quote calculated for your dates</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
@@ -1435,7 +1440,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>15% Volume Discount</Typography>
+                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Check multi-day prices online</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
@@ -1490,7 +1495,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Up to 25% Max Savings</Typography>
+                                                <Typography variant="body2" sx={{ color: primaryTextColor, fontWeight: 800 }}>Request an extended rental quote</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
@@ -1717,42 +1722,42 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     route: 'Sharavathi River & Mangrove Loop',
                                     distance: '12 km circuit',
                                     time: '25 mins ride',
-                                    bike: 'View available bikes',
+                                    bike: null,
                                     highlight: 'Mangrove boardwalks, boat points & suspension bridge views',
                                 },
                                 {
                                     route: 'Honnavar Eco Beach Sunset Trail',
                                     distance: '5.8 km one-way',
                                     time: '12 mins ride',
-                                    bike: 'View available bikes',
+                                    bike: null,
                                     highlight: 'Blue Flag eco beach, palm groves & sunset seaside walkway',
                                 },
                                 {
                                     route: 'Apsarakonda Waterfalls & Ocean Cliff',
                                     distance: '7.2 km one-way',
                                     time: '18 mins ride',
-                                    bike: 'View available bikes',
+                                    bike: null,
                                     highlight: 'Natural freshwater pool, Pandava caves & panoramic cliff viewpoint',
                                 },
                                 {
                                     route: 'Murudeshwar Coastal Highway (NH-66)',
                                     distance: '27 km one-way',
                                     time: '35 mins ride',
-                                    bike: 'View available bikes',
+                                    bike: null,
                                     highlight: 'Gigantic Shiva statue, 18-storey Raja Gopura & beach water sports',
                                 },
                                 {
                                     route: 'Mirjan Historic Fort Trail',
                                     distance: '11.5 km one-way',
                                     time: '18 mins ride',
-                                    bike: 'View available bikes',
+                                    bike: null,
                                     highlight: '16th-century laterite stone architecture & lush green moat lawns',
                                 },
                                 {
                                     route: 'Gokarna Om Beach & Cliff Circuit',
                                     distance: '44 km one-way',
                                     time: '55 mins ride',
-                                    bike: 'View available bikes',
+                                    bike: null,
                                     highlight: 'Kudle Beach, Om Beach cliff cafes & Mahabaleshwar temple trail',
                                 },
                             ].map((item, idx) => (
@@ -1803,7 +1808,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                             <Typography variant="caption" sx={{ color: isDark ? '#38BDF8' : '#0369A1', fontWeight: 750 }}>
-                                                Best Bike: {item.bike}
+                                                Fleet availability: {displayedFleetNames.length ? displayedFleetNames[idx % displayedFleetNames.length] : 'Check the bike catalog'}
                                             </Typography>
                                         </Box>
                                     </Paper>
