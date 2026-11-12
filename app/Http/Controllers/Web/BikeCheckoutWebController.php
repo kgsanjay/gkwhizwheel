@@ -71,6 +71,14 @@ final class BikeCheckoutWebController extends Controller
             $backUrl = '/services/bikes/'.$unit->id;
         }
 
+        // Preserve the selected route and dates if a customer edits the trip.
+        $backUrl .= '?'.http_build_query([
+            'pickup_store_id' => $pickup->id,
+            'return_store_id' => $return->id,
+            'start_date' => $params['start_date'],
+            'end_date' => $params['end_date'],
+        ]);
+
         return Inertia::render('Bikes/Checkout', [
             'bike' => $bike,
             'bikeModelId' => $bikeModelId !== null ? (int) $bikeModelId : null,
