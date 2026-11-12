@@ -10,11 +10,6 @@ Route::get('/blog', [\App\Http\Controllers\Web\BlogController::class, 'index'])-
 Route::get('/blog/{slug}', [\App\Http\Controllers\Web\BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/', function () {
-    $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
-        ->where('status', \App\Enums\BikeStatus::AVAILABLE)
-        ->orderBy('id')
-        ->get();
-
     $categories = \App\Models\BikeCategory::withCount(['bikes' => function ($query) {
         $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
     }])->get();
@@ -37,7 +32,6 @@ Route::get('/', function () {
     }
 
     return Inertia::render('Welcome', [
-        'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
         'categories' => $categories,
         'stores' => $stores,
         'availableItems' => \App\Models\ServiceItem::query()
