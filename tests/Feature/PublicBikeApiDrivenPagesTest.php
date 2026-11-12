@@ -66,7 +66,10 @@ test('bike listing and marketing pages fetch real fleet and customer review APIs
         ->toContain('heroService?.primary_image_url')
         ->not->toContain('Custom Combos • Save 10%')
         ->not->toContain('5.0 Verified')
-        ->not->toContain('src="/images/services/tour.jpg"');
+        ->not->toContain('src="/images/services/tour.jpg"')
+        ->not->toContain('"reviewCount": "324"')
+        ->not->toContain('5.0 Google Rated (324+)')
+        ->not->toContain('Free 12h cancellation');
 });
 
 
