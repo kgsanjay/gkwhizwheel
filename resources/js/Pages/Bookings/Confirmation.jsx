@@ -143,6 +143,27 @@ export default function BookingConfirmation({ booking }) {
                     )}
                 </Box>
 
+                {booking.billing && (
+                    <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', textAlign: 'left' }}>
+                        <Typography variant="subtitle2" fontWeight={800}>Billing details on this booking</Typography>
+                        <Typography variant="body2">{booking.billing.name}</Typography>
+                        <Typography variant="body2">{booking.billing.address}</Typography>
+                        {booking.billing.gstin && (
+                            <Typography variant="body2">GSTIN: {booking.billing.gstin}</Typography>
+                        )}
+                        {booking.bike_gst?.status === 'configured' ? (
+                            <Typography variant="body2">
+                                GST ({booking.bike_gst.gst_rate_percent}%): ₹{Number(booking.bike_gst.gst_amount).toFixed(2)}
+                                {' '}— included in the booking total.
+                            </Typography>
+                        ) : (
+                            <Typography variant="caption" color="text.secondary">
+                                GST not configured. Rental voucher is not a GST tax invoice.
+                            </Typography>
+                        )}
+                    </Box>
+                )}
+
                 <Box sx={{ mt: 2.5, display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>
                     <Button
                         variant="contained"
