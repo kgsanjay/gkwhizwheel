@@ -617,13 +617,13 @@ export default function BikesIndex({ categories: initialCategories = [], stores:
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981', flexShrink: 0 }} />
                                             <Typography variant="caption" sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800, fontSize: '0.78rem' }}>
-                                                Fleet Ready for Handover at Railway Station Counter
+                                                {bikes.length ? `${bikes.length} bike(s) listed in available fleet` : 'Check the live catalog for available bikes'}
                                             </Typography>
                                         </Box>
 
                                         {/* Quick Fleet Model Badges */}
                                         <Stack direction="row" spacing={0.8} flexWrap="wrap" sx={{ gap: 0.6, mb: 2 }}>
-                                            {['Honda Activa 6G', 'Classic 350', 'CB350', 'Electric EV'].map((modelName, mIdx) => (
+                                            {displayedFleetNames.slice(0, 4).map((modelName, mIdx) => (
                                                 <Chip
                                                     key={mIdx}
                                                     label={modelName}
