@@ -437,3 +437,42 @@ test('other customers cannot start payment for an owned model hold', function ()
 
     expect(Booking::findOrFail($id)->status)->toBe(BookingStatus::HELD);
 });
+
+
+test('repeated Razorpay checkout reuses the existing order for the same booking', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-REUSE-01');
+    Sanctum::actingAs($this->customer);
+    $id = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'razorpay-reuse-01'))->assertCreated()->json('data.id');
+
+    $first = $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'razorpay', 'payment_option' => 'advance',
+    ])->assertOk()->json('data');
+
+    $retry = $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'razorpay', 'payment_option' => 'advance',
+    ])->assertOk()->json('data');
+
+    expect($retry['order_id'])->toBe($first['order_id'])
+        ->and($retry['amount_paise'])->toBe($first['amount_paise'])
+        ->and(Booking::findOrFail($id)->price_breakdown_json['razorpay_order_id'])->toBe($first['order_id']);
+});
+
+test('repeated PhonePe checkout resumes the original payment link', function (): void {
+    allocationBike($this, $this->honnavar, 'KA-47-REUSE-02');
+    Sanctum::actingAs($this->customer);
+    $id = $this->postJson('/api/v1/bookings/model-hold',
+        allocationPayload($this, key: 'phonepe-reuse-01'))->assertCreated()->json('data.id');
+
+    $first = $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'phonepe', 'payment_option' => 'advance',
+    ])->assertOk()->json('data');
+
+    $retry = $this->postJson("/api/v1/bookings/{$id}/checkout", [
+        'gateway' => 'phonepe', 'payment_option' => 'advance',
+    ])->assertOk()->json('data');
+
+    expect($retry['merchant_transaction_id'])->toBe($first['merchant_transaction_id'])
+        ->and($retry['redirect_url'])->toBe($first['redirect_url'])
+        ->and($retry['amount_paise'])->toBe($first['amount_paise']);
+});
