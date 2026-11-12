@@ -300,15 +300,22 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
     };
 
     const currentHeroSlide = HERO_SLIDES[currentSlide % HERO_SLIDES.length];
-    const activeSlide = currentHeroSlide.id === 'bikes'
-        ? {
-            ...currentHeroSlide,
-            image: featuredBikeImage,
-            subtitle: apiBikes.length > 0
-                ? `Browse ${apiBikes.length} listed bike(s) from our live inventory. Choose dates for exact rates.`
-                : 'Check the live bike catalog for current availability and pricing.',
-        }
-        : currentHeroSlide;
+    const heroServiceType = ({
+        boating: 'boating', cabs: 'taxi', scuba: 'scuba',
+        homestays: 'homestay', tours: 'tours',
+    })[currentHeroSlide.id];
+    const heroService = publishedServices.find((item) => item.service_type === heroServiceType);
+    const activeSlide = {
+        ...currentHeroSlide,
+        image: currentHeroSlide.id === 'bikes'
+            ? featuredBikeImage
+            : heroService?.primary_image_url || heroService?.image_url || null,
+        subtitle: currentHeroSlide.id === 'bikes'
+            ? (apiBikes.length
+                ? `Browse ${apiBikes.length} listed bike(s) from live inventory. Choose dates for exact rates.`
+                : 'Check the live bike catalog for current availability and pricing.')
+            : heroService?.description || 'Explore published service options and confirm pricing before booking.',
+    };
     const publishedBranches = stores.filter((s) => s.publication_status === 'published');
     const branchList = (publishedBranches.length > 0 ? publishedBranches : stores)
         .slice()
