@@ -877,7 +877,9 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                 />
                                             ) : (
                                                 <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
-                                                    <TwoWheelerIcon sx={{ fontSize: 110, color: '#94A3B8' }} aria-hidden="true" />
+                                                    {activeSlide.id === 'bikes'
+                                                        ? <TwoWheelerIcon sx={{ fontSize: 110, color: '#94A3B8' }} aria-hidden="true" />
+                                                        : <ExploreIcon sx={{ fontSize: 110, color: '#94A3B8' }} aria-hidden="true" />}
                                                 </Box>
                                             )}
                                             <Box
