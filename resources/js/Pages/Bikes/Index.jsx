@@ -417,7 +417,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                             '&:hover': { bgcolor: '#D97706' },
                                         }}
                                     >
-                                        Explore Available Fleet ({bikes.length > 0 ? bikes.length : '9'} Bikes) ↓
+                                        Explore Available Fleet ({isLoading ? 'Loading…' : bikes.length} Bikes) ↓
                                     </Button>
                                     <Button
                                         component="a"
@@ -552,7 +552,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                 />
                                                 <Chip
                                                     icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 13 }} />}
-                                                    label="5.0 ★ Verified"
+                                                    label={`${bikes.length} bikes in live catalog` }
                                                     size="small"
                                                     sx={{
                                                         bgcolor: 'rgba(15, 23, 42, 0.85)',
@@ -744,7 +744,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         },
                                     }}
                                 >
-                                    <MenuItem value="">All Hubs (Honnavar)</MenuItem>
+                                    <MenuItem value="">All available hubs</MenuItem>
                                     {stores.map((store) => (
                                         <MenuItem key={store.id} value={store.id}>
                                             {store.name} ({store.city})
@@ -911,8 +911,8 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                             <Grid container spacing={3}>
                                 {legacyBikes.map((bike) => {
-                                    const weekdayRate = bike.weekday_rate || bike.daily_rate || bike.base_daily_rate_override || bike.category?.base_daily_rate || '350.00';
-                                    const weekendRate = bike.weekend_rate || (Number(weekdayRate) + (Number(weekdayRate) >= 1000 ? (Number(weekdayRate) >= 1200 ? 300 : 200) : (Number(weekdayRate) === 450 ? 50 : 100)));
+                                    const weekdayRate = bike.weekday_rate ?? bike.daily_rate ?? bike.category?.base_daily_rate ?? null;
+                                    const weekendRate = bike.weekend_rate ?? bike.daily_rate ?? bike.category?.base_daily_rate ?? null;
                                     const isElectric = bike.fuel_type === 'electric';
 
                                     // Build forward query params to retain user dates
@@ -922,7 +922,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     if (filters.store_id) queryParams.set('pickup_store_id', filters.store_id);
                                     const detailUrl = `/bikes/${bike.id}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
-                                    const imageSrc = bike.primary_image_url || (bike.primary_image_path ? (bike.primary_image_path.startsWith('http') ? bike.primary_image_path : `/storage/${bike.primary_image_path}`) : null) || '/storage/bikes/honda-activa.jpg';
+                                    const imageSrc = bike.primary_image_url || bike.images?.[0]?.image_url || null;
 
                                     return (
                                         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={bike.id}>
@@ -1049,7 +1049,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 fontSize: '0.72rem',
                                                             }}
                                                         >
-                                                            {bike.category?.name || 'Two-Wheeler'} • {bike.transmission || 'Automatic'}
+                                                            {bike.category?.name || 'Two-Wheeler'} • {bike.transmission || 'Transmission not listed'}
                                                         </Typography>
                                                         <Typography variant="caption" sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 750 }}>
                                                             ✓ Verified
@@ -1074,7 +1074,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 2 }}>
                                                         <LocationOnIcon aria-hidden="true" sx={{ fontSize: 16, color: isDark ? '#F59E0B' : '#D97706' }} />
                                                         <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
-                                                            {bike.current_store?.name || 'Honnavar Main Hub (Palya & Railway Stn)'}
+                                                            {bike.current_store?.name || 'Location not available'}
                                                         </Typography>
                                                     </Box>
 
@@ -1311,7 +1311,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         <Stack spacing={1.2} sx={{ mb: 3, flexGrow: 1 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Standard Tariff (From ₹350)</Typography>
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, fontWeight: 600 }}>Check live bike API rates for your dates</Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <CheckCircleIcon aria-hidden="true" sx={{ color: '#059669', fontSize: 16 }} />
@@ -1585,7 +1585,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         step: '01',
                                         badge: '⚡ Real-Time Fleet',
                                         title: 'Choose Bike & Hub',
-                                        desc: 'Pick your preferred Honda Activa, Dio, or Royal Enfield with live real-time stock at Honnavar (Palya Main Rd) or Murudeshwar (Temple Main Rd).',
+                                        desc: 'Browse the available bike models returned by our fleet API, choose a pickup branch and check the rental dates before booking.',
                                         color: '#F59E0B',
                                         bgBadge: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
                                     },
@@ -1719,42 +1719,42 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                     route: 'Sharavathi River & Mangrove Loop',
                                     distance: '12 km circuit',
                                     time: '25 mins ride',
-                                    bike: 'Any Scooter (Activa/Dio)',
+                                    bike: 'View available bikes',
                                     highlight: 'Mangrove boardwalks, boat points & suspension bridge views',
                                 },
                                 {
                                     route: 'Honnavar Eco Beach Sunset Trail',
                                     distance: '5.8 km one-way',
                                     time: '12 mins ride',
-                                    bike: 'Scooter or Electric EV',
+                                    bike: 'View available bikes',
                                     highlight: 'Blue Flag eco beach, palm groves & sunset seaside walkway',
                                 },
                                 {
                                     route: 'Apsarakonda Waterfalls & Ocean Cliff',
                                     distance: '7.2 km one-way',
                                     time: '18 mins ride',
-                                    bike: 'Any Scooter / Bike',
+                                    bike: 'View available bikes',
                                     highlight: 'Natural freshwater pool, Pandava caves & panoramic cliff viewpoint',
                                 },
                                 {
                                     route: 'Murudeshwar Coastal Highway (NH-66)',
                                     distance: '27 km one-way',
                                     time: '35 mins ride',
-                                    bike: 'Royal Enfield / Cruiser / 125cc',
+                                    bike: 'View available bikes',
                                     highlight: 'Gigantic Shiva statue, 18-storey Raja Gopura & beach water sports',
                                 },
                                 {
                                     route: 'Mirjan Historic Fort Trail',
                                     distance: '11.5 km one-way',
                                     time: '18 mins ride',
-                                    bike: 'Any Two-Wheeler',
+                                    bike: 'View available bikes',
                                     highlight: '16th-century laterite stone architecture & lush green moat lawns',
                                 },
                                 {
                                     route: 'Gokarna Om Beach & Cliff Circuit',
                                     distance: '44 km one-way',
                                     time: '55 mins ride',
-                                    bike: 'Classic 350 / Ntorq 125 / Commuter',
+                                    bike: 'View available bikes',
                                     highlight: 'Kudle Beach, Om Beach cliff cafes & Mahabaleshwar temple trail',
                                 },
                             ].map((item, idx) => (
