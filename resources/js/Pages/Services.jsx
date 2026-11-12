@@ -348,12 +348,23 @@ export default function Services({ availableItems = [] }) {
                 : getServiceItemMedia(item, preview.image);
             enhanced[key] = {
                 ...preview,
+                tagline: item?.description || (key === 'bikes' ? `${rentalBikes.length} listed rental bikes available to browse` : 'View the published service details.'),
+                rate: key === 'bikes'
+                    ? 'Check Live Rates'
+                    : item?.price_base != null && Number(item.price_base) > 0
+                        ? `From ₹${Number(item.price_base).toLocaleString('en-IN')}`
+                        : 'Check Live Rates',
+                perks: key === 'bikes'
+                    ? [`${rentalBikes.length} listed bikes`, 'Check your dates', 'Review confirmed price']
+                    : Array.isArray(item?.features) && item.features.length
+                        ? item.features.slice(0, 3)
+                        : ['View published service details'],
                 item,
                 media,
             };
         });
         return enhanced;
-    }, [publishedServices, liveBikeImageUrl]);
+    }, [publishedServices, liveBikeImageUrl, rentalBikes.length]);
 
     const servicesWithMedia = React.useMemo(() => {
         return services.map((srv) => {
@@ -363,11 +374,27 @@ export default function Services({ availableItems = [] }) {
                 : getServiceItemMedia(item, srv.image);
             return {
                 ...srv,
+                // Category headings and visual styles stay the same. Published
+                // item details replace promotional claims when inventory exists.
+                tagline: item?.description || (srv.id === 'bikes'
+                    ? srv.tagline
+                    : 'Browse currently published experiences and confirm details before booking.'),
+                rate: srv.id === 'bikes'
+                    ? srv.rate
+                    : item?.price_base != null && Number(item.price_base) > 0
+                        ? `From ₹${Number(item.price_base).toLocaleString('en-IN')}${item.price_unit ? ` / ${item.price_unit}` : ''}`
+                        : 'Check live rates',
+                highlights: srv.id === 'bikes'
+                    ? [`${rentalBikes.length} bike(s) in the live catalog`, 'Choose your pickup branch', 'Review the exact rental quote']
+                    : Array.isArray(item?.features) && item.features.length
+                        ? item.features.slice(0, 3)
+                        : ['View the published service details', 'Confirm availability before booking'],
+                badgeText: item?.badge || (srv.id === 'bikes' ? 'Live Bike Fleet' : 'View Details'),
                 item,
                 media,
             };
         });
-    }, [publishedServices, liveBikeImageUrl]);
+    }, [publishedServices, liveBikeImageUrl, rentalBikes.length]);
 
     const tourItem = getItemForService('tours');
     const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
