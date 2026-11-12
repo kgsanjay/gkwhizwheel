@@ -59,8 +59,14 @@ test('bike listing and marketing pages fetch real fleet and customer review APIs
         ->not->toContain("['Honda Activa 6G', 'Classic 350', 'CB350', 'Electric EV']")
         ->not->toContain('10% Tiered Discount');
 
-    expect($home)->not->toContain('Custom Combos • Save 10%')
-        ->not->toContain('5.0 Verified');
+    expect($home)->toContain("apiClient.get('/services')")
+        ->toContain('].map(enhanceHomeService).map((srv) => (')
+        ->toContain('featuredTour?.description')
+        ->toContain('heroService?.description')
+        ->toContain('heroService?.primary_image_url')
+        ->not->toContain('Custom Combos • Save 10%')
+        ->not->toContain('5.0 Verified')
+        ->not->toContain('src="/images/services/tour.jpg"');
 });
 
 
