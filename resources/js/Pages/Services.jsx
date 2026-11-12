@@ -345,7 +345,7 @@ export default function Services({ availableItems = [] }) {
             const item = getItemForService(key);
             const media = key === 'bikes'
                 ? { primary: liveBikeImageUrl, gallery: liveBikeImageUrl ? [liveBikeImageUrl] : [], count: Number(Boolean(liveBikeImageUrl)), hasMultiple: false }
-                : getServiceItemMedia(item, preview.image);
+                : getServiceItemMedia(item, null);
             enhanced[key] = {
                 ...preview,
                 tagline: item?.description || (key === 'bikes' ? `${rentalBikes.length} listed rental bikes available to browse` : 'View the published service details.'),
@@ -371,7 +371,7 @@ export default function Services({ availableItems = [] }) {
             const item = getItemForService(srv.id);
             const media = srv.id === 'bikes'
                 ? { primary: liveBikeImageUrl, gallery: liveBikeImageUrl ? [liveBikeImageUrl] : [], count: Number(Boolean(liveBikeImageUrl)), hasMultiple: false }
-                : getServiceItemMedia(item, srv.image);
+                : getServiceItemMedia(item, null);
             return {
                 ...srv,
                 // Category headings and visual styles stay the same. Published
@@ -397,7 +397,7 @@ export default function Services({ availableItems = [] }) {
     }, [publishedServices, liveBikeImageUrl, rentalBikes.length]);
 
     const tourItem = getItemForService('tours');
-    const tourMedia = getServiceItemMedia(tourItem, '/images/services/tour.jpg');
+    const tourMedia = getServiceItemMedia(tourItem, null);
 
     // Reuse the existing four-column presentation for actual published packages.
     const combos = publishedServices
@@ -1444,19 +1444,21 @@ export default function Services({ availableItems = [] }) {
                                                 overflow: 'hidden',
                                             }}
                                         >
-                                            <Box
-                                                component="img"
-                                                className="tour-img"
-                                                src={tourMedia.primary || "/images/services/tour.jpg"}
-                                                alt="Custom Karavali and Honnavar sightseeing tour packages with private cab and boat charter"
-                                                loading="lazy"
-                                                sx={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'cover',
-                                                    transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-                                                }}
-                                            />
+                                            {tourMedia.primary ? (
+                                                <Box component="img" className="tour-img"
+                                                    src={tourMedia.primary}
+                                                    alt={tourItem?.name || 'Published tour package'}
+                                                    loading="lazy"
+                                                    sx={{
+                                                        width: '100%', height: '100%', objectFit: 'cover',
+                                                        transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                                    <AutoAwesomeIcon sx={{ fontSize: 90, color: '#A78BFA' }} aria-hidden="true" />
+                                                </Box>
+                                            )}
                                             <Box
                                                 sx={{
                                                     position: 'absolute',
