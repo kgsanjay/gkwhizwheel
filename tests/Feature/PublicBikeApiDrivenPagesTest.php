@@ -46,7 +46,18 @@ test('bike listing and marketing pages fetch real fleet and customer review APIs
         ->not->toContain("id: 'ankit-bike'");
 
     expect($services)->toContain("apiClient.get('/bikes')")
-        ->not->toContain("'Activa 6G, Classic 350 & CB350'");
+        ->toContain("apiClient.get('/services')")
+        ->toContain("apiClient.get('/reviews')")
+        ->not->toContain("'Activa 6G, Classic 350 & CB350'")
+        ->not->toContain('Combo Rate (Save 10%)')
+        ->not->toContain('5.0 Verified');
+
+    expect($catalog)->toContain('displayedFleetNames.slice(0, 4)')
+        ->not->toContain("['Honda Activa 6G', 'Classic 350', 'CB350', 'Electric EV']")
+        ->not->toContain('10% Tiered Discount');
+
+    expect($home)->not->toContain('Custom Combos • Save 10%')
+        ->not->toContain('5.0 Verified');
 });
 
 
