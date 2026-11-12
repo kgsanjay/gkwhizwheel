@@ -24,6 +24,7 @@ use App\Services\RazorpayService;
 use App\Services\RefundService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
@@ -95,6 +96,32 @@ class BookingController extends Controller
      * and transitions booking from held to pending_payment.
      */
     public function checkout(
+        int $id,
+        Request $request,
+        RazorpayService $razorpayService,
+        BookingService $bookingService,
+        ?PhonePeService $phonePeService = null
+    ): JsonResponse {
+        // Serialize checkout initiation at the database row, across PHP workers
+        // and web nodes sharing the same database. Keep the lock through the
+        // gateway request so no second request can issue a parallel order.
+        return DB::transaction(function () use (
+            $id, $request, $razorpayService, $bookingService, $phonePeService
+        ): JsonResponse {
+            Booking::where('user_id', $request->user()->id)
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            return $this->checkoutWithLockedBooking(
+                $id, $request, $razorpayService, $bookingService, $phonePeService
+            );
+        }, 3);
+    }
+
+    /**
+     * Only call inside the checkout transaction while holding the booking row lock.
+     */
+    private function checkoutWithLockedBooking(
         int $id,
         Request $request,
         RazorpayService $razorpayService,
