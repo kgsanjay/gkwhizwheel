@@ -154,17 +154,17 @@ class BookingController extends Controller
         $billing = $validated['billing'] ?? null;
         if ($billing !== null) {
             if ($billing['type'] === 'business' && empty($billing['gstin'])) {
-                throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                throw \Illuminate\Validation\ValidationException::withMessages([
                     'billing.gstin' => 'Business GST invoices require a GSTIN.',
                 ]);
             }
             if (isset($billing['gstin']) && substr($billing['gstin'], 0, 2) !== $billing['state_code']) {
-                throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                throw \Illuminate\Validation\ValidationException::withMessages([
                     'billing.gstin' => 'GSTIN state code must match the billing state.',
                 ]);
             }
             if (isset($breakdown['checkout_billing']) && $breakdown['checkout_billing'] !== $billing) {
-                throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                throw \Illuminate\Validation\ValidationException::withMessages([
                     'billing' => 'Billing details are locked after payment has been initiated.',
                 ]);
             }
@@ -192,7 +192,7 @@ class BookingController extends Controller
         }
         if ($billing !== null) {
             if (isset($breakdown['checkout_payment_option']) && ! isset($breakdown['checkout_billing'])) {
-                throw \\Illuminate\\Validation\\ValidationException::withMessages([
+                throw \Illuminate\Validation\ValidationException::withMessages([
                     'billing' => 'Billing details cannot be added to a payment already in progress.',
                 ]);
             }
