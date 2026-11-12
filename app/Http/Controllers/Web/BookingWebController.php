@@ -147,6 +147,15 @@ class BookingWebController extends Controller
             }
         }
 
+        if (! in_array($booking->status, [
+            BookingStatus::CONFIRMED,
+            BookingStatus::HANDED_OVER,
+            BookingStatus::RETURNED,
+            BookingStatus::COMPLETED,
+        ], true)) {
+            abort(409, 'Rental documents are available only after booking confirmation.');
+        }
+
         return $voucherService->generateBikeVoucherPdf($booking, $request->boolean('stream'));
     }
 
@@ -228,6 +237,15 @@ class BookingWebController extends Controller
             if (! $isOwner && ! $isStaffOrAdmin) {
                 abort(403, 'You are not authorized to view this booking voucher.');
             }
+        }
+
+        if (! in_array($booking->status, [
+            BookingStatus::CONFIRMED,
+            BookingStatus::HANDED_OVER,
+            BookingStatus::RETURNED,
+            BookingStatus::COMPLETED,
+        ], true)) {
+            abort(409, 'Rental documents are available only after booking confirmation.');
         }
 
         return $voucherService->renderBikeVoucherHtml($booking);
