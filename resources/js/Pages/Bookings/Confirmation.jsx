@@ -186,6 +186,23 @@ export default function BookingConfirmation({ booking }) {
                     <Button
                         variant="outlined"
                         component="a"
+                        href={`/bookings/${booking.id}/billing-statement`}
+                        startIcon={<ReceiptLongIcon />}
+                        sx={{
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                            color: isDark ? '#F1F5F9' : '#334155',
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            px: 2.5,
+                            py: 1,
+                            borderRadius: 2,
+                        }}
+                    >
+                        Download Billing Statement (PDF)
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        component="a"
                         href={`/bookings/${booking.id}/print`}
                         target="_blank"
                         startIcon={<PrintIcon />}
