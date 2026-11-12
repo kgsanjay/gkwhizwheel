@@ -58,7 +58,7 @@ const SERVICES_FAQS = [
     },
     {
         q: 'Can I bundle multiple services into an all-in-one vacation package?',
-        a: 'Yes! Through our custom Karavali packages, you can combine bike or cab rentals with riverfront homestays, Sharavathi backwater boat cruises, and Netrani scuba diving into a single coordinated itinerary. All multi-service combo bookings receive an automatic 10% discount and a dedicated trip coordinator.',
+        a: 'Yes! Through our custom Karavali packages, you can combine bike or cab rentals with riverfront homestays, Sharavathi backwater boat cruises, and Netrani scuba diving into a single coordinated itinerary. Multi-service packages and their prices are shown when published in the service catalog.',
     },
     {
         q: 'What documents are required for two-wheelers versus cabs and activities?',
@@ -95,6 +95,12 @@ export default function Services({ availableItems = [] }) {
         retry: false,
     });
     const publishedServices = publishedServicesResponse?.data ?? availableItems;
+    const { data: publicReviewResponse } = useQuery({
+        queryKey: ['approved-public-bike-reviews'],
+        queryFn: () => apiClient.get('/reviews'),
+        retry: false,
+    });
+    const reviewMeta = publicReviewResponse?.meta || { total: 0, average_rating: null };
     const rentalBikes = rentalBikeResponse?.data || [];
     const liveBikeImage = rentalBikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url);
     const liveBikeImageUrl = liveBikeImage?.primary_image_url || liveBikeImage?.images?.[0]?.image_url || null;
@@ -1259,7 +1265,7 @@ export default function Services({ availableItems = [] }) {
                                                 }}
                                             >
                                                 <StarIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                                5.0 Verified
+                                                {srv.id === 'bikes' && reviewMeta.total > 0 ? `${reviewMeta.average_rating} / 5 (${reviewMeta.total})` : 'View service details'}
                                             </Box>
                                         </Box>
                                     </Box>
@@ -1522,7 +1528,7 @@ export default function Services({ availableItems = [] }) {
                                                         boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
                                                     }}
                                                 >
-                                                    Custom Combos • Save 10%
+                                                    Explore Published Packages
                                                 </Box>
                                                 <Box
                                                     sx={{
@@ -1541,7 +1547,7 @@ export default function Services({ availableItems = [] }) {
                                                     }}
                                                 >
                                                     <StarIcon sx={{ fontSize: 14, color: '#F59E0B' }} />
-                                                    5.0 Rated
+                                                    Explore Packages
                                                 </Box>
                                             </Box>
                                         </Box>
@@ -1561,7 +1567,7 @@ export default function Services({ availableItems = [] }) {
                                             <Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                                                     <Chip
-                                                        label="SAVE 10% ON COMBO BOOKINGS"
+                                                        label="CHECK AVAILABLE PACKAGE RATES"
                                                         size="small"
                                                         sx={{
                                                             bgcolor: isDark ? 'rgba(139, 92, 246, 0.2)' : '#EDE9FE',
