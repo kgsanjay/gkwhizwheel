@@ -22,6 +22,8 @@ import {
     Chip,
     TextField,
     MenuItem,
+    Checkbox,
+    Link as MuiLink,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -72,7 +74,8 @@ export default function CheckoutModal({
     const [billingType, setBillingType] = useState('personal');
     const [billingName, setBillingName] = useState('');
     const [billingAddress, setBillingAddress] = useState('');
-    const [billingStateCode, setBillingStateCode] = useState('29');
+    const [billingStateCode, setBillingStateCode] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [billingGstin, setBillingGstin] = useState('');
 
 
@@ -142,6 +145,10 @@ export default function CheckoutModal({
     const handleBookAndPay = async () => {
         if (!heldBooking && !pointSelectionValid) {
             setErrorMessage('Choose pickup and return points with configured charges. Hotel/custom requests also need an address.');
+            return;
+        }
+        if (heldBooking && !acceptedTerms) {
+            setErrorMessage('Please review and accept the rental terms before payment.');
             return;
         }
         if (billingName.trim().length < 2 || billingAddress.trim().length < 8 || !/^\\d{2}$/.test(billingStateCode)) {
@@ -251,6 +258,7 @@ export default function CheckoutModal({
                 );
                 booking = holdRes.data;
                 setHeldBooking(booking);
+                setAcceptedTerms(false);
 
                 // Require review for individual bikes AND model bookings.
                 // Pickup fees, final allocation and tax may change the initial estimate.
@@ -627,11 +635,11 @@ export default function CheckoutModal({
                         </Alert>
                     </Stack>
                 </Card>
-                {finalQuote && <Alert severity="info" sx={{ mb: 2 }}>
+                {heldBooking && finalQuote && <Alert severity="info" sx={{ mb: 2 }}>
                     Pickup-point fee: ₹{Number(finalQuote.pickup_fee_amount || 0).toLocaleString('en-IN')} ·
                     Return-point fee: ₹{Number(finalQuote.return_fee_amount || 0).toLocaleString('en-IN')} ·
                     Total location fees: ₹{Number(finalQuote.location_fee_amount || 0).toLocaleString('en-IN')}.
-                    These are included in the total above, alongside any applicable inter-branch fee.
+                    These are included in the confirmed booking total alongside any inter-branch fee.
                 </Alert>}
                 {/* Capture billing details before gateway initiation; server locks these on first checkout. */}
                 <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2 }}>
@@ -669,7 +677,7 @@ export default function CheckoutModal({
                     <>
                 {/* No refundable security deposit is required for new online bike bookings. */}
                 <Alert severity="success" sx={{ mb: 2 }}>
-                    No security deposit required. Pay ₹100 now to reserve, or pay the full rental amount.
+                    No refundable deposit for this online reservation. Choose an advance or full rental payment.
                 </Alert>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#0F172A' }}>
                     Choose payment option
@@ -825,6 +833,25 @@ export default function CheckoutModal({
                     </Box>
                 )}
 
+                <FormControlLabel
+                    sx={{ mt: 2, alignItems: 'flex-start' }}
+                    control={
+                        <Checkbox
+                            checked={acceptedTerms}
+                            onChange={(event) => setAcceptedTerms(event.target.checked)}
+                            inputProps={{ 'aria-label': 'Agree to bike rental terms' }}
+                        />
+                    }
+                    label={
+                        <Typography variant="body2">
+                            I have reviewed the rental price, pickup and return conditions, and agree to the{' '}
+                            <MuiLink href="/rental-terms" target="_blank" rel="noopener noreferrer">
+                                bike rental terms
+                            </MuiLink>. I understand the amount due at pickup.
+                        </Typography>
+                    }
+                />
+
                 {/* Amount Due Summary */}
                 <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #E2E8F0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -851,7 +878,7 @@ export default function CheckoutModal({
                     color="secondary"
                     fullWidth
                     size="large"
-                    disabled={isSubmitting || (!heldBooking && !pointSelectionValid) || (Boolean(heldBooking) && timeLeftSeconds <= 0)}
+                    disabled={isSubmitting || (!heldBooking && !pointSelectionValid) || (Boolean(heldBooking) && (timeLeftSeconds <= 0 || !acceptedTerms))}
                     onClick={handleBookAndPay}
                     sx={{
                         py: 1.5,
