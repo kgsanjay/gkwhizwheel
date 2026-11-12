@@ -165,6 +165,7 @@ test('billing details cannot be replaced after bike payment initiation', functio
     $this->actingAs($customer)->postJson("/api/v1/bookings/{$booking->id}/checkout", [
         'gateway' => 'phonepe',
         'payment_option' => 'full',
+        'accept_rental_terms' => true,
         'billing' => [
             ...$originalBilling,
             'name' => 'Changed Identity',
@@ -174,6 +175,7 @@ test('billing details cannot be replaced after bike payment initiation', functio
     $this->postJson("/api/v1/bookings/{$booking->id}/checkout", [
         'gateway' => 'phonepe',
         'payment_option' => 'full',
+        'accept_rental_terms' => true,
         'billing' => [
             'type' => 'business',
             'name' => 'Sample Company',
