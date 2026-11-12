@@ -217,6 +217,8 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
         retry: false,
     });
     const publishedServices = publicServicesResponse?.data ?? availableItems;
+    const featuredTour = publishedServices.find((item) => item.service_type === 'tours') || null;
+    const featuredTourImage = featuredTour?.primary_image_url || featuredTour?.image_url || null;
     const enhanceHomeService = (source) => {
         const isBike = source.id === 'bikes';
         const serviceType = ({ bikes: 'two_wheelers', cabs: 'taxi', homestays: 'homestay' })[source.id] || source.id;
@@ -1071,7 +1073,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
             {(() => {
                 const activeServiceTab = QUICK_BOOK_SERVICES.find((s) => s.id === activeBookingTab) || QUICK_BOOK_SERVICES[0];
                 const isBikeTab = activeServiceTab.id === 'two_wheelers';
-                const tabItems = availableItems.filter((item) => item.service_type === activeServiceTab.id);
+                const tabItems = publishedServices.filter((item) => item.service_type === activeServiceTab.id);
 
                 const handleUnifiedSubmit = (e) => {
                     e.preventDefault();
@@ -1967,19 +1969,21 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             overflow: 'hidden',
                                         }}
                                     >
-                                        <Box
-                                            component="img"
-                                            className="tour-img"
-                                            src="/images/services/tour.jpg"
-                                            alt="Custom Karavali and Honnavar sightseeing tour packages by GK WhizWheel"
-                                            loading="lazy"
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
-                                            }}
-                                        />
+                                        {featuredTourImage ? (
+                                            <Box component="img" className="tour-img"
+                                                src={featuredTourImage}
+                                                alt={featuredTour?.name || 'Published tour package'}
+                                                loading="lazy"
+                                                sx={{
+                                                    width: '100%', height: '100%', objectFit: 'cover',
+                                                    transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                }}
+                                            />
+                                        ) : (
+                                            <Box sx={{ height: '100%', display: 'grid', placeItems: 'center' }}>
+                                                <AutoAwesomeIcon sx={{ fontSize: 90, color: '#A78BFA' }} aria-hidden="true" />
+                                            </Box>
+                                        )}
                                         <Box
                                             sx={{
                                                 position: 'absolute',
@@ -2058,7 +2062,9 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                     boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)',
                                                 }}
                                             >
-                                                Explore Published Packages
+                                                {featuredTour?.price_base != null && Number(featuredTour.price_base) > 0
+                                                    ? `From ₹${Number(featuredTour.price_base).toLocaleString('en-IN')}`
+                                                    : 'Explore Published Packages'}
                                             </Box>
                                             <Box
                                                 sx={{
@@ -2108,7 +2114,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                     }}
                                                 />
                                                 <Typography variant="caption" sx={{ color: isDark ? '#A78BFA' : '#7C3AED', fontWeight: 700 }}>
-                                                    • 100% Customized
+                                                    • {featuredTour ? 'Published Package' : 'Packages on Request'}
                                                 </Typography>
                                             </Box>
 
@@ -2124,7 +2130,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                     fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2.1rem' },
                                                 }}
                                             >
-                                                Custom Tour Packages & Karavali Combos
+                                                {featuredTour?.name || 'Custom Tour Packages & Karavali Combos'}
                                             </Typography>
 
                                             <Typography
@@ -2136,10 +2142,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                     mb: 3,
                                                 }}
                                             >
-                                                Why coordinate with 5 different operators? We curate your end-to-end trip under one verified roof.
-                                                Bundle <strong>two-wheelers or private AC cabs</strong>, <strong>Sharavathi riverfront cottages</strong>,
-                                                <strong>mangrove sunset boating</strong>, and <strong>Netrani scuba diving</strong> into a personalized itinerary
-                                                backed by a dedicated local coastal coordinator.
+                                                {featuredTour?.description || 'Browse published tour packages and confirm their prices and inclusions before booking.'}
                                             </Typography>
 
                                             {/* Multi-service bundled inclusions tag cloud */}
@@ -2169,11 +2172,10 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
 
                                             {/* Key Pillars */}
                                             <Stack spacing={1.2} sx={{ mb: 4 }}>
-                                                {[
-                                                    'Tailored for Couples, Family Getaways, Group Treks & Weekend Roadtrips',
-                                                    'Published package rates confirmed before booking',
-                                                    'Dedicated Local Coastal Trip Manager On 24/7 Call From Arrival to Departure',
-                                                ].map((text, i) => (
+                                                {(Array.isArray(featuredTour?.features) && featuredTour.features.length
+                                                    ? featuredTour.features.slice(0, 3)
+                                                    : ['View published tour packages', 'Confirm inclusions and prices before booking']
+                                                ).map((text, i) => (
                                                     <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                                                         <CheckCircleIcon sx={{ fontSize: 17, color: '#8B5CF6', flexShrink: 0 }} />
                                                         <Typography
@@ -4140,7 +4142,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                 open={serviceModalOpen}
                 onClose={() => setServiceModalOpen(false)}
                 initialServiceId={serviceModalId}
-                availableItems={availableItems}
+                availableItems={publishedServices}
             />
         </AppLayout>
     );
