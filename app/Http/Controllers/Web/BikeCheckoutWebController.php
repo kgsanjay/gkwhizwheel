@@ -24,8 +24,8 @@ final class BikeCheckoutWebController extends Controller
     public function show(Request $request): Response
     {
         $params = $request->validate([
-            'bike_id' => ['required_without:bike_model_id', 'prohibited_with:bike_model_id', 'integer', 'exists:bikes,id'],
-            'bike_model_id' => ['required_without:bike_id', 'prohibited_with:bike_id', 'integer', 'exists:bike_models,id'],
+            'bike_id' => ['required_without:bike_model_id', 'prohibits:bike_model_id', 'integer', 'exists:bikes,id'],
+            'bike_model_id' => ['required_without:bike_id', 'prohibits:bike_id', 'integer', 'exists:bike_models,id'],
             'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'pickup_store_id' => ['required', 'integer', 'exists:stores,id'],
