@@ -42,7 +42,10 @@ class BookingWebController extends Controller
         $currentUser = $request->user();
 
         // Enforce authorization if user is logged into web session
-        if ($currentUser !== null) {
+        if ($currentUser === null) {
+            abort(401, 'Sign in to access your booking documents.');
+        }
+        {
             $isOwner = $currentUser->id === $booking->user_id;
             $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
@@ -132,7 +135,10 @@ class BookingWebController extends Controller
             ->firstOrFail();
 
         $currentUser = $request->user();
-        if ($currentUser !== null) {
+        if ($currentUser === null) {
+            abort(401, 'Sign in to access your booking documents.');
+        }
+        {
             $isOwner = $currentUser->id === $booking->user_id;
             $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
@@ -182,7 +188,10 @@ class BookingWebController extends Controller
             ->firstOrFail();
 
         $currentUser = $request->user();
-        if ($currentUser !== null) {
+        if ($currentUser === null) {
+            abort(401, 'Sign in to access your booking documents.');
+        }
+        {
             $isOwner = $currentUser->id === $booking->user_id;
             $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
