@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
@@ -104,7 +104,16 @@ export default function BikeShow({ bike, stores = [] }) {
     const quote = quoteResponse?.data;
 
     const handleBookNowClick = () => {
-        setCheckoutModalOpen(true);
+        if (!canFetchQuote || !quote) return;
+        router.get('/services/bikes/checkout', {
+            bike_id: bike.id,
+            pickup_store_id: pickupStoreId,
+            return_store_id: returnStoreId,
+            start_date: startDate,
+            end_date: endDate,
+            coupon_code: couponCode.trim() || undefined,
+            addons: JSON.stringify(selectedAddons),
+        });
     };
 
     const handleAuthSuccess = (user) => {
@@ -570,7 +579,7 @@ export default function BikeShow({ bike, stores = [] }) {
                                     boxShadow: '0 10px 15px -3px rgba(245, 158, 11, 0.3)',
                                 }}
                             >
-                                Book This Bike (15m Hold)
+                                Continue to Secure Checkout
                             </Button>
 
                             <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#64748B', mt: 1.5 }}>
