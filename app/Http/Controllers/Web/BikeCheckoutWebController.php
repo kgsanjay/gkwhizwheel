@@ -31,7 +31,23 @@ final class BikeCheckoutWebController extends Controller
             'pickup_store_id' => ['required', 'integer', 'exists:stores,id'],
             'return_store_id' => ['required', 'integer', 'exists:stores,id'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            'addons' => ['nullable', 'json', 'max:2000'],
         ]);
+
+        $addons = json_decode($params['addons'] ?? '[]', true);
+        if (! is_array($addons) || count($addons) > 10) {
+            throw ValidationException::withMessages(['addons' => 'Invalid booking add-ons.']);
+        }
+        foreach ($addons as $addon) {
+            if (! is_array($addon)
+                || ! isset($addon['addon_type'], $addon['quantity'])
+                || ! in_array($addon['addon_type'], array_keys(\App\Services\PricingService::ADDON_RATES), true)
+                || ! is_numeric($addon['quantity'])
+                || (int) $addon['quantity'] < 1
+                || (int) $addon['quantity'] > 10) {
+                throw ValidationException::withMessages(['addons' => 'Invalid booking add-on selection.']);
+            }
+        }
 
         $pickup = Store::query()->where('status', StoreStatus::ACTIVE)
             ->findOrFail((int) $params['pickup_store_id']);
@@ -63,6 +79,10 @@ final class BikeCheckoutWebController extends Controller
             'startDate' => $params['start_date'],
             'endDate' => $params['end_date'],
             'couponCode' => $params['coupon_code'] ?? '',
+            'selectedAddons' => array_map(fn (array $addon) => [
+                'addon_type' => $addon['addon_type'],
+                'quantity' => (int) $addon['quantity'],
+            ], $addons),
             'backUrl' => $backUrl,
         ]);
     }
