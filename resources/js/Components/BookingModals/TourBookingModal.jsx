@@ -33,7 +33,8 @@ import HomeWorkIcon from '@mui/icons-material/HomeWork';
 import SailingIcon from '@mui/icons-material/Sailing';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP } from './bookingUtils';
+import GoogleButton from '../Auth/GoogleButton';
+import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP, resolveGuestAccount } from './bookingUtils';
 
 const TOUR_PACKAGES = [
     { id: '2d1n_karavali', title: '2D/1N Coastal Karavali Explorer', duration: '2 Days / 1 Night', basePrice: 4999 },
@@ -70,6 +71,7 @@ export default function TourBookingModal({
 
     const [currentUser, setCurrentUser] = useState(auth?.user || null);
     const [authModalOpen, setAuthModalOpen] = useState(false);
+    const [otpChallenge, setOtpChallenge] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -183,7 +185,24 @@ export default function TourBookingModal({
         }
 
         if (!currentUser) {
-            setAuthModalOpen(true);
+            setSubmitting(true);
+            resolveGuestAccount({
+                name: customerName,
+                phone: customerPhone,
+            }).then((res) => {
+                setSubmitting(false);
+                if (res.status === 'authenticated') {
+                    const u = res.data?.user;
+                    setCurrentUser(u);
+                    submitBooking(u);
+                } else if (res.status === 'otp_required') {
+                    setOtpChallenge(res);
+                    setAuthModalOpen(true);
+                }
+            }).catch((err) => {
+                setSubmitting(false);
+                setErrorMessage(err.message || 'Could not verify customer account.');
+            });
             return;
         }
 
@@ -438,10 +457,15 @@ export default function TourBookingModal({
 
                     {/* Step 3: Lead Traveler Details */}
                     <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#E2E8F0' : '#1E293B', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <VerifiedUserIcon sx={{ fontSize: 18, color: '#7C3AED' }} />
-                            3. Lead Traveler Contact & Pickup
-                        </Typography>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#E2E8F0' : '#1E293B', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <VerifiedUserIcon sx={{ fontSize: 18, color: '#7C3AED' }} />
+                                3. Lead Traveler Contact & Pickup
+                            </Typography>
+                            {!currentUser && (
+                                <GoogleButton size="small" fullWidth={false} label="1-Tap Google" />
+                            )}
+                        </Stack>
 
                         <Grid container spacing={2}>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -589,12 +613,17 @@ export default function TourBookingModal({
             {/* Auth Modal if unauthenticated user clicks confirm */}
             <AuthModal
                 open={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
+                onClose={() => {
+                    setAuthModalOpen(false);
+                    setOtpChallenge(null);
+                }}
                 onSuccess={(user) => {
                     setAuthModalOpen(false);
+                    setOtpChallenge(null);
                     setCurrentUser(user);
                     submitBooking(user);
                 }}
+                otpChallenge={otpChallenge}
             />
         </>
     );

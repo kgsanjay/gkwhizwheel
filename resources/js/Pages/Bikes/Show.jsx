@@ -104,12 +104,7 @@ export default function BikeShow({ bike, stores = [] }) {
     const quote = quoteResponse?.data;
 
     const handleBookNowClick = () => {
-        const hasToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        if (!currentUser && !hasToken) {
-            setAuthModalOpen(true);
-        } else {
-            setCheckoutModalOpen(true);
-        }
+        setCheckoutModalOpen(true);
     };
 
     const handleAuthSuccess = (user) => {
@@ -159,7 +154,7 @@ export default function BikeShow({ bike, stores = [] }) {
                 structuredData={bikeStructuredData}
             />
 
-            <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
+            <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: 4 }}>
                 {/* Back Navigation */}
                 <Box sx={{ mb: 3 }}>
                     <Button
@@ -333,7 +328,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                                 <CheckCircleIcon sx={{ color: '#10B981', fontSize: 18, mt: 0.3 }} />
                                 <Typography variant="body2" color="text.secondary">
-                                    <strong>One-Way Drop Permitted:</strong> Rent at Palya Main Rd, return at Honnavar Railway Station with dynamic store routing.
+                                    <strong>Flexible Coastal Pickup:</strong> Pick up at our Honnavar or Murudeshwar hub with seamless booking support.
                                 </Typography>
                             </Box>
                         </Stack>

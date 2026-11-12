@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import CabsBookingModal from '../Components/BookingModals/CabsBookingModal';
+import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
@@ -347,7 +348,7 @@ export default function CabsPage({ availableItems = [] }) {
                         }}
                     />
 
-                    <Box sx={{ maxWidth: '1380px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
+                    <Box sx={{ maxWidth: '1440px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
                         <Grid container spacing={{ xs: 4, lg: 5 }} alignItems="center">
                             {/* Left Column: Headline, Narrative & Trust Badges */}
                             <Grid size={{ xs: 12, lg: 6.5 }}>
@@ -726,7 +727,7 @@ export default function CabsPage({ availableItems = [] }) {
                 {/* =========================================================================
                     2. INTERACTIVE FARE ESTIMATOR & OUTSTATION FARE CALCULATOR
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 5, md: 7 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 5, md: 7 } }}>
                     <Paper
                         elevation={0}
                         sx={{
@@ -972,7 +973,7 @@ export default function CabsPage({ availableItems = [] }) {
                 {/* =========================================================================
                     3. POPULAR SIGHTSEEING CAB TOURS & DAY TRIPS (Fixed Transparent Rates)
                 ========================================================================== */}
-                <Box id="popular-routes" sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 6, md: 9 } }}>
+                <Box id="popular-routes" sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 6, md: 9 } }}>
                     <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                         <Chip
                             label="FIXED-RATE SCENIC DAY TOURS"
@@ -1085,7 +1086,7 @@ export default function CabsPage({ availableItems = [] }) {
                     4. LIVE DB VEHICLES CATALOG (Toyota Innova Crysta, Dzire, Tempo)
                 ========================================================================== */}
                 {availableItems && availableItems.length > 0 && (
-                    <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                    <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 4 }}>
                             <Box>
                                 <Chip label="FLEET SPECIFICATIONS" size="small" sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1 }} />
@@ -1293,7 +1294,7 @@ export default function CabsPage({ availableItems = [] }) {
                 {/* =========================================================================
                     5. HOW HONNAVAR CAB BOOKING WORKS (Step-by-Step Flow)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 7 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 7 } }}>
                     <Box sx={{ textAlign: 'center', mb: 3 }}>
                         <Chip
                             label="PUNCTUAL & CONVENIENT"
@@ -1405,7 +1406,7 @@ export default function CabsPage({ availableItems = [] }) {
                 {/* =========================================================================
                     6. INCLUSIONS & POLICIES CHECKLIST
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Grid container spacing={3}>
                         <Grid size={{ xs: 12, md: 6 }}>
                             <Paper
@@ -1483,7 +1484,7 @@ export default function CabsPage({ availableItems = [] }) {
                 {/* =========================================================================
                     7. HONNAVAR CAB FAQS (Detailed Accordion)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1 }}>
                         Honnavar Cab Services — Frequently Asked Questions
                     </Typography>
@@ -1577,7 +1578,7 @@ export default function CabsPage({ availableItems = [] }) {
                 {/* =========================================================================
                     10. BOTTOM CALLOUT & 24/7 CONTACT PORTAL
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: 8 }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: 8 }}>
                     <Paper
                         sx={{
                             p: { xs: 3, md: 5 },
@@ -1660,6 +1661,11 @@ export default function CabsPage({ availableItems = [] }) {
                         setGalleryModalOpen(false);
                         setModalOpen(true);
                     }}
+                />
+                <RelatedGuidesStrip
+                    serviceKey="cabs"
+                    title="AC Cab & Sightseeing Transfer Guides"
+                    subtitle="Airport pickup checklists, Jog Falls day circuits & Gokarna cab routes across Honnavar and Murudeshwar."
                 />
             </Box>
         </AppLayout>

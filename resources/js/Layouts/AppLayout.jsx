@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
 import {
     AppBar,
@@ -58,53 +58,75 @@ import CardTravelIcon from '@mui/icons-material/CardTravel';
 import StarIcon from '@mui/icons-material/Star';
 import { useColorMode } from '../theme/ColorModeContext';
 
+// Unified 1440px container matching hero and page content sections
+const SITE_CONTAINER_SX = {
+    maxWidth: '1440px',
+    width: '100%',
+    mx: 'auto',
+    px: { xs: 2, sm: 3, md: 4 },
+};
+
 const servicesList = [
     {
         title: 'Bike & Scooter Rentals',
+        shortTitle: 'Bike Rentals',
         desc: 'Browse listed scooters and motorcycles',
         href: '/services/bikes',
+        matchPrefixes: ['/services/bikes', '/bikes', '/bike-rentals'],
         icon: <TwoWheelerIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
         badge: 'Browse Fleet',
     },
     {
         title: 'Coastal Cabs & Taxis',
+        shortTitle: 'Cabs & Taxis',
         desc: 'Sedan, SUV & tempo for Gokarna, Murudeshwar & airport',
         href: '/services/cabs',
+        matchPrefixes: ['/services/cabs'],
         icon: <DirectionsCarIcon sx={{ color: '#0284C7', fontSize: 22 }} />,
         badge: 'AC Cabs',
     },
     {
         title: 'Homestays & Coastal Rooms',
+        shortTitle: 'Homestays',
         desc: 'Verified riverside cottages & beachfront villas',
         href: '/services/homestays',
+        matchPrefixes: ['/services/homestays'],
         icon: <HouseIcon sx={{ color: '#059669', fontSize: 22 }} />,
         badge: 'Verified',
     },
     {
         title: 'Sharavathi Backwater Boating',
+        shortTitle: 'Boating',
         desc: 'Island cruises, mangrove safari & sunset rides',
         href: '/services/boating',
+        matchPrefixes: ['/services/boating'],
         icon: <SailingIcon sx={{ color: '#2563EB', fontSize: 22 }} />,
         badge: 'Popular',
     },
     {
         title: 'Netrani Island Scuba Diving',
+        shortTitle: 'Scuba Diving',
         desc: 'PADI certified guides & clear coral reef diving',
         href: '/services/scuba',
+        matchPrefixes: ['/services/scuba'],
         icon: <ScubaDivingIcon sx={{ color: '#0D9488', fontSize: 22 }} />,
         badge: 'PADI Cert',
     },
     {
         title: 'Local Travel Guides & Trails',
+        shortTitle: 'Local Guides',
         desc: 'Native experts for waterfall treks & temple heritage',
         href: '/services/guide',
+        matchPrefixes: ['/services/guide'],
         icon: <HikingIcon sx={{ color: '#D97706', fontSize: 22 }} />,
         badge: 'Native Guides',
     },
     {
         title: 'Custom Tour Packages',
+        shortTitle: 'Tour Packages',
         desc: 'All-inclusive Karavali coastal combos & customized itineraries',
         href: '/services/tours',
+        matchPrefixes: ['/services/tours'],
         icon: <CardTravelIcon sx={{ color: '#7C3AED', fontSize: 22 }} />,
         badge: 'Best Value',
     },
@@ -117,7 +139,22 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
     const isDark = mode === 'dark';
     const activeCities = [...new Set(publicBranches.map((branch) => branch.city).filter(Boolean))];
     const locationLabel = activeCities.length ? activeCities.join(' & ') : 'Coastal Karnataka';
-    const whatsappGeneralUrl = 'https://wa.me/918660989586?text='
+    const formatBranchPhone = (raw) => {
+        const digits = String(raw || '+918660989586').replace(/\D/g, '');
+        if (digits.length === 12 && digits.startsWith('91')) {
+            return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+        }
+        return raw || '+91 86609 89586';
+    };
+    const primaryBranchPhone = publicBranches[0]?.phone || '+918660989586';
+    const primaryWhatsappDigits = primaryBranchPhone.replace(/\D/g, '') || '918660989586';
+    const getBranchDirectionsUrl = (branch) => (
+        branch?.google_maps_url
+        || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+            [branch?.address_line, branch?.city, branch?.state, branch?.pincode].filter(Boolean).join(', ') || locationLabel,
+        )}`
+    );
+    const whatsappGeneralUrl = `https://wa.me/${primaryWhatsappDigits}?text=`
         + encodeURIComponent('Hi GK WhizWheel, I would like to enquire about your travel and rental services.');
 
     const [userMenuAnchor, setUserMenuAnchor] = useState(null);
@@ -128,6 +165,21 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const y = window.scrollY;
+            setIsScrolled((prev) => {
+                if (y > 80) return true;
+                if (y < 24) return false;
+                return prev;
+            });
+        };
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleOpenServicesMenu = (event) => {
         setServicesAnchorEl(event.currentTarget);
@@ -158,8 +210,12 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
     };
 
 
+    const isServiceLinkActive = (svc) => (
+        svc.matchPrefixes.some((prefix) => url === prefix || url.startsWith(`${prefix}/`))
+    );
+
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: isDark ? '#0B1120' : '#F8FAFC', color: isDark ? '#F8FAFC' : '#0F172A', width: '100%', overflowX: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: isDark ? '#0B1120' : '#F8FAFC', color: isDark ? '#F8FAFC' : '#0F172A', width: '100%', overflowX: 'clip' }}>
             {/* WCAG 2.2 Level A/AA Skip to Main Content Link */}
             <Box
                 component="a"
@@ -189,68 +245,108 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                 Skip to main content
             </Box>
 
-            {/* Top Announcement Bar (1920px Container-Fluid) */}
+            {/* Tier 1: Top Utility Bar (1440px Container — Multi-service Coastal Travel Hub) */}
             <Box
                 sx={{
-                    bgcolor: 'rgba(15, 23, 42, 0.98)',
+                    background: 'linear-gradient(90deg, #050914 0%, #0B1528 50%, #050914 100%)',
                     borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                    py: 0.8,
+                    py: { xs: 0.65, md: 0.75 },
                     width: '100%',
-                    display: { xs: 'none', md: 'block' },
                 }}
             >
-                <Box sx={{ width: '100%', px: { xs: 2, sm: 3, md: 4, lg: 6 }, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Stack direction="row" spacing={2.5} alignItems="center">
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
-                            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-                                {locationLabel} · Karnataka
+                <Box sx={{ ...SITE_CONTAINER_SX, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1.5 }}>
+                    <Stack direction="row" spacing={{ xs: 1, md: 1.75 }} alignItems="center" sx={{ minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
+                            <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B', flexShrink: 0 }} />
+                            <Typography variant="caption" noWrap sx={{ color: '#E2E8F0', fontWeight: 600, fontSize: { xs: '0.72rem', md: '0.76rem' } }}>
+                                {locationLabel}
                             </Typography>
                             <Box
-                                component="a"
-                                href="/services/bikes"
-                                target="_blank"
-                                rel="noreferrer"
+                                component={Link}
+                                href="/explore"
                                 sx={{
-                                    display: 'inline-flex',
+                                    display: { xs: 'none', sm: 'inline-flex' },
                                     alignItems: 'center',
-                                    gap: 0.4,
+                                    gap: 0.35,
                                     color: '#38BDF8',
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.74rem',
                                     fontWeight: 700,
                                     textDecoration: 'none',
                                     ml: 0.5,
+                                    whiteSpace: 'nowrap',
                                     '&:hover': { textDecoration: 'underline' },
                                 }}
                             >
-                                <DirectionsIcon sx={{ fontSize: 13 }} /> Explore Branches
+                                <ExploreIcon sx={{ fontSize: 13.5 }} /> Explore
                             </Box>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <VerifiedUserIcon sx={{ fontSize: 14, color: '#10B981' }} />
-                            <Typography variant="caption" sx={{ color: '#FBBF24', fontWeight: 700 }}>
-                                Travel, rentals & local experiences
+                        <Box
+                            sx={{
+                                display: { xs: 'none', md: 'inline-flex' },
+                                alignItems: 'center',
+                                gap: 0.6,
+                                px: 1.1,
+                                py: 0.2,
+                                borderRadius: 9999,
+                                bgcolor: 'rgba(245, 158, 11, 0.1)',
+                                border: '1px solid rgba(245, 158, 11, 0.25)',
+                            }}
+                        >
+                            <VerifiedUserIcon sx={{ fontSize: 13.5, color: '#10B981', flexShrink: 0 }} />
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    display: { xs: 'none', md: 'inline', lg: 'none' },
+                                    color: '#FBBF24',
+                                    fontWeight: 700,
+                                    fontSize: '0.73rem',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                Trusted Coastal Travel Hub
                             </Typography>
-                        </Box>
-                        <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', gap: 0.75 }}>
-                            <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                                Ride Freely. Explore More.
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    display: { xs: 'none', lg: 'inline' },
+                                    color: '#FBBF24',
+                                    fontWeight: 700,
+                                    fontSize: '0.74rem',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                Coastal Travel Hub • Rides, Stays & Experiences
                             </Typography>
                         </Box>
                     </Stack>
 
-                    <Stack direction="row" spacing={2.5} alignItems="center">
+                    <Stack direction="row" spacing={{ xs: 1.25, md: 2 }} alignItems="center" sx={{ flexShrink: 0 }}>
+                        <Box
+                            sx={{
+                                display: { xs: 'none', lg: 'flex' },
+                                alignItems: 'center',
+                                gap: 0.45,
+                                color: '#34D399',
+                                fontSize: '0.74rem',
+                                fontWeight: 700,
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            <AccessTimeIcon sx={{ fontSize: 13.5, color: '#34D399' }} />
+                            Open 24/7
+                        </Box>
                         <Box
                             component="a"
                             href="tel:+918660989586"
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 0.6,
+                                gap: 0.5,
                                 color: '#E2E8F0',
                                 textDecoration: 'none',
-                                fontSize: '0.75rem',
+                                fontSize: { xs: '0.72rem', md: '0.76rem' },
                                 fontWeight: 600,
+                                whiteSpace: 'nowrap',
                                 '&:hover': { color: '#F59E0B' },
                             }}
                         >
@@ -259,32 +355,16 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         </Box>
                         <Box
                             component="a"
-                            href="tel:09731699125"
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.6,
-                                color: '#E2E8F0',
-                                textDecoration: 'none',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                '&:hover': { color: '#F59E0B' },
-                            }}
-                        >
-                            <PhoneIcon sx={{ fontSize: 13, color: '#10B981' }} />
-                            097316 99125
-                        </Box>
-                        <Box
-                            component="a"
                             href="mailto:contact@whizwheels.in"
                             sx={{
-                                display: 'flex',
+                                display: { xs: 'none', xl: 'flex' },
                                 alignItems: 'center',
-                                gap: 0.6,
+                                gap: 0.5,
                                 color: '#E2E8F0',
                                 textDecoration: 'none',
-                                fontSize: '0.75rem',
+                                fontSize: '0.76rem',
                                 fontWeight: 600,
+                                whiteSpace: 'nowrap',
                                 '&:hover': { color: '#F59E0B' },
                             }}
                         >
@@ -299,25 +379,33 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 0.5,
-                                color: '#10B981',
+                                gap: 0.45,
+                                px: { xs: 0.9, md: 1.1 },
+                                py: 0.25,
+                                borderRadius: 1.5,
+                                bgcolor: 'rgba(16, 185, 129, 0.14)',
+                                border: '1px solid rgba(16, 185, 129, 0.35)',
+                                color: '#34D399',
                                 textDecoration: 'none',
-                                fontSize: '0.75rem',
+                                fontSize: { xs: '0.7rem', md: '0.74rem' },
                                 fontWeight: 700,
-                                '&:hover': { textDecoration: 'underline' },
+                                whiteSpace: 'nowrap',
+                                '&:hover': { bgcolor: 'rgba(16, 185, 129, 0.24)' },
                             }}
                         >
-                            <WhatsAppIcon sx={{ fontSize: 15 }} />
-                            WhatsApp Booking
+                            <WhatsAppIcon sx={{ fontSize: 14 }} />
+                            WhatsApp
                         </Box>
                         <Box
                             component={Link}
                             href="/admin/login"
                             sx={{
-                                color: '#64748B',
+                                display: { xs: 'none', md: 'inline-flex' },
+                                color: '#94A3B8',
                                 textDecoration: 'none',
                                 fontSize: '0.75rem',
                                 fontWeight: 600,
+                                whiteSpace: 'nowrap',
                                 '&:hover': { color: '#F59E0B' },
                             }}
                         >
@@ -327,67 +415,47 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                 </Box>
             </Box>
 
-            {/* Top Navigation Bar (1920px Container-Fluid) */}
+            {/* Tier 2 & 3: Sticky Navbar + Service Navigation Bar (1440px Container) */}
             <AppBar
                 position="sticky"
                 elevation={0}
                 sx={{
-                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.96)',
                     backdropFilter: 'blur(16px)',
                     borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     width: '100%',
                     color: isDark ? '#F8FAFC' : '#0F172A',
                 }}
             >
-                <Box sx={{ width: '100%', px: { xs: 2, sm: 3, md: 4, lg: 6 } }}>
-                    <Toolbar disableGutters sx={{ justifyContent: 'space-between', py: 1 }}>
-                        {/* Brand Logo & Name */}
+                <Box sx={SITE_CONTAINER_SX}>
+                    <Toolbar disableGutters sx={{ justifyContent: 'space-between', py: { xs: 0.4, md: 0.35 }, minHeight: { xs: 52, md: 58 }, gap: 1 }}>
+                        {/* Brand Logo Only */}
                         <Box
                             component={Link}
                             href="/"
+                            aria-label="G.K. WhizWheel Home"
                             sx={{
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 textDecoration: 'none',
-                                color: 'inherit',
-                                gap: 1.5,
+                                flexShrink: 0,
                             }}
                         >
                             <Box
                                 component="img"
-                                src="/images/logo.png"
-                                alt="GK WhizWheel — travel and rental services"
+                                src="/images/whizwheel-logo.png"
+                                alt="G.K. WhizWheel"
                                 sx={{
-                                    height: { xs: 44, sm: 52 },
-                                    width: 'auto',
+                                    width: { xs: 175, sm: 200, md: 220 },
+                                    maxWidth: '100%',
+                                    height: 'auto',
+                                    display: 'block',
                                     objectFit: 'contain',
-                                    borderRadius: 1.5,
-                                    filter: isDark ? 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.1))',
+                                    filter: isDark ? 'drop-shadow(0 4px 10px rgba(0,0,0,0.45))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.08))',
                                     transition: 'transform 0.2s ease',
-                                    '&:hover': { transform: 'scale(1.04)' },
+                                    '&:hover': { transform: 'scale(1.02)' },
                                 }}
                             />
-                            <Box>
-                                <Typography
-                                    variant="h6"
-                                    component="div"
-                                    sx={{
-                                        fontWeight: 900,
-                                        letterSpacing: '-0.02em',
-                                        lineHeight: 1.1,
-                                        fontSize: { xs: '1.02rem', sm: '1.25rem' },
-                                        color: isDark ? '#FFFFFF' : '#0F172A',
-                                    }}
-                                >
-                                    GK WhizWheels
-                                </Typography>
-                                <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5, mt: 0.2 }}>
-                                    <ElectricBoltIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                                    <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, letterSpacing: '0.02em' }}>
-                                        {locationLabel}, Karnataka
-                                    </Typography>
-                                </Box>
-                            </Box>
                         </Box>
 
                         {/* Desktop Navigation Links & Action Buttons (md and up) */}
@@ -455,6 +523,23 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 }}
                             >
                                 Services
+                            </Button>
+
+                            <Button
+                                component={Link}
+                                href="/blog"
+                                sx={{
+                                    color: url.startsWith('/blog') ? '#F59E0B' : (isDark ? '#E2E8F0' : '#1E293B'),
+                                    bgcolor: url.startsWith('/blog') ? (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)') : 'transparent',
+                                    fontWeight: url.startsWith('/blog') ? 700 : 600,
+                                    fontSize: '0.875rem',
+                                    px: 1.6,
+                                    py: 0.6,
+                                    borderRadius: 2,
+                                    '&:hover': { color: '#F59E0B', bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)' },
+                                }}
+                            >
+                                Guides
                             </Button>
 
                             <Button
@@ -763,6 +848,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         size="small"
                                         startIcon={<PhoneIcon />}
                                         sx={{
+                                            display: { xs: 'none', lg: 'inline-flex' },
                                             color: isDark ? '#FBBF24' : '#D97706',
                                             fontWeight: 700,
                                             fontSize: '0.85rem',
@@ -837,6 +923,98 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         </Box>
                     </Toolbar>
                 </Box>
+
+                {/* Tier 3: Service Bar below Navbar (hidden once page scrolls so sticky header stays compact) */}
+                <Collapse in={!isScrolled} timeout={200}>
+                    <Box
+                        component="nav"
+                        aria-label="Services navigation"
+                        sx={{
+                            borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                            bgcolor: isDark ? 'rgba(7, 13, 25, 0.65)' : '#F8FAFC',
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                ...SITE_CONTAINER_SX,
+                                py: 0.75,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: { xs: 'flex-start', lg: 'space-between' },
+                                gap: { xs: 0.75, lg: 1 },
+                                overflowX: 'auto',
+                                WebkitOverflowScrolling: 'touch',
+                                scrollbarWidth: 'none',
+                                '&::-webkit-scrollbar': { display: 'none' },
+                            }}
+                        >
+                            <Link
+                                href="/services"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '6px 12px',
+                                    borderRadius: '9999px',
+                                    fontSize: '13px',
+                                    fontWeight: url === '/services' ? 800 : 600,
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0,
+                                    textDecoration: 'none',
+                                    color: url === '/services' ? '#D97706' : (isDark ? '#E2E8F0' : '#334155'),
+                                    backgroundColor: url === '/services'
+                                        ? (isDark ? 'rgba(217, 119, 6, 0.16)' : '#FEF3C7')
+                                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF'),
+                                    border: `1px solid ${url === '/services' ? 'rgba(217, 119, 6, 0.45)' : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0')}`,
+                                    transition: 'all 0.2s ease',
+                                }}
+                            >
+                                <ExploreIcon sx={{ fontSize: 17 }} />
+                                <span>All Services</span>
+                            </Link>
+                            {servicesList.map((svc) => {
+                                const active = isServiceLinkActive(svc);
+                                return (
+                                    <Link
+                                        key={svc.href}
+                                        href={svc.href}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '6px 12px',
+                                            borderRadius: '9999px',
+                                            fontSize: '13px',
+                                            fontWeight: active ? 800 : 600,
+                                            whiteSpace: 'nowrap',
+                                            flexShrink: 0,
+                                            textDecoration: 'none',
+                                            color: active ? '#D97706' : (isDark ? '#CBD5E1' : '#334155'),
+                                            backgroundColor: active
+                                                ? (isDark ? 'rgba(217, 119, 6, 0.16)' : '#FEF3C7')
+                                                : 'transparent',
+                                            border: `1px solid ${active ? 'rgba(217, 119, 6, 0.45)' : 'transparent'}`,
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                color: active ? '#D97706' : (isDark ? '#94A3B8' : '#64748B'),
+                                                '& svg': { fontSize: 17 },
+                                            }}
+                                        >
+                                            {svc.icon}
+                                        </Box>
+                                        <span>{svc.shortTitle}</span>
+                                    </Link>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                </Collapse>
             </AppBar>
 
             {/* Desktop 2-Column Services Mega Menu Popover */}
@@ -980,23 +1158,40 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                     }}
                 >
                     <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600 }}>
-                        ⚡ 24/7 On-Demand Booking • Station Platform 1 Exit Counter & Home/Resort Delivery
+                        ⚡ 24/7 On-Demand Booking • Honnavar (Palya Main Rd) &amp; Murudeshwar (Temple Main Rd)
                     </Typography>
-                    <Button
-                        component={Link}
-                        href="/services"
-                        onClick={handleCloseServicesMenu}
-                        size="small"
-                        sx={{
-                            fontWeight: 850,
-                            fontSize: '0.8rem',
-                            color: isDark ? '#FBBF24' : '#B45309',
-                            textTransform: 'none',
-                            '&:hover': { textDecoration: 'underline' },
-                        }}
-                    >
-                        Explore All 7 Services Hub →
-                    </Button>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                        <Button
+                            component={Link}
+                            href="/blog"
+                            onClick={handleCloseServicesMenu}
+                            size="small"
+                            sx={{
+                                fontWeight: 800,
+                                fontSize: '0.8rem',
+                                color: isDark ? '#38BDF8' : '#0284C7',
+                                textTransform: 'none',
+                                '&:hover': { textDecoration: 'underline' },
+                            }}
+                        >
+                            Travel Guides &amp; Blogs →
+                        </Button>
+                        <Button
+                            component={Link}
+                            href="/services"
+                            onClick={handleCloseServicesMenu}
+                            size="small"
+                            sx={{
+                                fontWeight: 850,
+                                fontSize: '0.8rem',
+                                color: isDark ? '#FBBF24' : '#B45309',
+                                textTransform: 'none',
+                                '&:hover': { textDecoration: 'underline' },
+                            }}
+                        >
+                            Explore All 7 Services Hub →
+                        </Button>
+                    </Stack>
                 </Box>
             </Popover>
 
@@ -1035,22 +1230,15 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         component={Link}
                         href="/"
                         onClick={handleCloseMobileDrawer}
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1.5, textDecoration: 'none', color: 'inherit' }}
+                        aria-label="G.K. WhizWheel Home"
+                        sx={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
                     >
                         <Box
                             component="img"
-                            src="/images/logo.png"
-                            alt="GK WhizWheels Logo"
-                            sx={{ height: 38, width: 'auto', borderRadius: 1 }}
+                            src="/images/whizwheel-logo.png"
+                            alt="G.K. WhizWheel"
+                            sx={{ width: 200, maxWidth: '100%', height: 'auto', display: 'block', objectFit: 'contain' }}
                         />
-                        <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                GK WhizWheels
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: isDark ? '#F59E0B' : '#B45309', fontWeight: 700 }}>
-                                {locationLabel}, Karnataka
-                            </Typography>
-                        </Box>
                     </Box>
 
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -1454,6 +1642,41 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             </Box>
                         </Collapse>
 
+                        {/* Travel Guides Link */}
+                        <ListItem disablePadding sx={{ mb: 0.6 }}>
+                            <ListItemButton
+                                component={Link}
+                                href="/blog"
+                                onClick={handleCloseMobileDrawer}
+                                sx={{
+                                    py: 1.1,
+                                    px: 1.5,
+                                    borderRadius: 2.5,
+                                    bgcolor: url.startsWith('/blog')
+                                        ? (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)')
+                                        : 'transparent',
+                                    border: url.startsWith('/blog')
+                                        ? (isDark ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(217, 119, 6, 0.3)')
+                                        : '1px solid transparent',
+                                    '&:hover': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9' },
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 36 }}>
+                                    <ExploreIcon fontSize="small" sx={{ color: '#F59E0B' }} />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Travel Guides & Blogs"
+                                    primaryTypographyProps={{
+                                        fontWeight: url.startsWith('/blog') ? 850 : 650,
+                                        fontSize: '0.92rem',
+                                        color: url.startsWith('/blog')
+                                            ? (isDark ? '#FBBF24' : '#B45309')
+                                            : (isDark ? '#E2E8F0' : '#1E293B'),
+                                    }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+
                         {/* Contact Link */}
                         <ListItem disablePadding sx={{ mb: 0.6 }}>
                             <ListItemButton
@@ -1578,14 +1801,14 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
             {/* Flash notification banner */}
             {flash?.success && (
-                <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mt: 2, width: '100%' }}>
+                <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mt: 2, width: '100%' }}>
                     <Alert severity="success" sx={{ borderRadius: 2 }}>
                         {flash.success}
                     </Alert>
                 </Box>
             )}
             {flash?.error && (
-                <Box sx={{ maxWidth: '1240px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mt: 2, width: '100%' }}>
+                <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mt: 2, width: '100%' }}>
                     <Alert severity="error" sx={{ borderRadius: 2 }}>
                         {flash.error}
                     </Alert>
@@ -1597,420 +1820,333 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                 {children}
             </Box>
 
-            {/* Comprehensive Enhanced Footer */}
+            {/* Clean Editorial Coastal Footer */}
             <Box
                 component="footer"
                 sx={{
-                    bgcolor: '#070D19',
+                    bgcolor: '#0A0F1C',
                     color: '#CBD5E1',
                     borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                    pt: { xs: 5, md: 7 },
-                    pb: { xs: 12, md: 5 },
-                    mt: noFooterMargin ? 0 : { xs: 6, md: 10 },
+                    pt: { xs: 5.5, md: 7 },
+                    pb: { xs: 11, md: 4.5 },
+                    mt: noFooterMargin ? 0 : { xs: 5, md: 6 },
                     width: '100%',
                 }}
             >
-                <Box sx={{ width: '100%', px: { xs: 2.5, sm: 4, md: 6, lg: 8, xl: 10 } }}>
-                    {/* Top Trust & Highlight Strip */}
-                    <Box
-                        sx={{
-                            p: { xs: 2, md: 2.5 },
-                            mb: { xs: 4, md: 6 },
-                            borderRadius: 3.5,
-                            bgcolor: 'rgba(15, 23, 42, 0.7)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            display: 'grid',
-                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' },
-                            gap: { xs: 1.8, md: 2 },
-                        }}
-                    >
-                        {[
-                            {
-                                icon: <VerifiedUserIcon sx={{ color: '#10B981', fontSize: 22 }} />,
-                                title: 'Govt. Approved Fleet',
-                                desc: '100% Commercial permits, valid insurance & PUC',
-                            },
-                            {
-                                icon: <StarIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-                                title: 'Multiple Travel Services',
-                                desc: 'Bikes, cabs, stays, boating, diving and tours',
-                            },
-                            {
-                                icon: <LocationOnIcon sx={{ color: '#38BDF8', fontSize: 22 }} />,
-                                title: 'Active Rental Branches',
-                                desc: locationLabel,
-                            },
-                            {
-                                icon: <ElectricBoltIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-                                title: 'Deposit-Free Online Bike Rentals',
-                                desc: 'Paperless digital KYC & instant confirmation',
-                            },
-                        ].map((badge, bIdx) => (
-                            <Box key={bIdx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Box
-                                    sx={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 2,
-                                        bgcolor: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    {badge.icon}
-                                </Box>
-                                <Box>
-                                    <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.85rem', lineHeight: 1.2 }}>
-                                        {badge.title}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.74rem', display: 'block' }}>
-                                        {badge.desc}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        ))}
-                    </Box>
-
-                    {/* Main Footer Columns */}
-                    <Grid container spacing={{ xs: 3.5, sm: 3, md: 4 }} sx={{ mb: 5 }}>
-                        {/* Column 1: Brand & Office Details */}
-                        <Grid size={{ xs: 12, md: 3.5 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Box sx={SITE_CONTAINER_SX}>
+                    <Grid container spacing={{ xs: 4, md: 4.5 }} sx={{ mb: { xs: 4.5, md: 5.5 } }}>
+                        {/* Brand Overview & Direct Support */}
+                        <Grid size={{ xs: 12, lg: 4 }}>
+                            <Box
+                                component={Link}
+                                href="/"
+                                aria-label="G.K. WhizWheel Home"
+                                sx={{ display: 'inline-block', textDecoration: 'none', mb: 2 }}
+                            >
                                 <Box
                                     component="img"
-                                    src="/images/logo.png"
-                                    alt="GK WhizWheel — travel and rental services"
-                                    sx={{ height: 48, width: 'auto', borderRadius: 1.5 }}
+                                    src="/images/whizwheel-logo.png"
+                                    alt="G.K. WhizWheel"
+                                    sx={{ height: { xs: 78, sm: 88, md: 96 }, width: 'auto', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
                                 />
-                                <Box>
-                                    <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, lineHeight: 1.1 }}>
-                                        GK WhizWheels
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800, letterSpacing: '0.02em' }}>
-                                        Coastal Karnataka Travel & Rental Services
-                                    </Typography>
-                                </Box>
                             </Box>
-                            <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.65, mb: 2.5, maxWidth: 360, fontSize: '0.86rem' }}>
-                                Your all-in-one coastal Karnataka travel partner. Explore Sharavathi Backwaters, Honnavar Eco Beach, Apsarakonda Falls, Mirjan Fort, Murudeshwar, and Gokarna with reliable rental two-wheelers, AC cabs, boating cruises, homestays, and scuba diving.
+
+                            <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.7, mb: 2.25, maxWidth: 350, fontSize: '0.88rem' }}>
+                                Coastal Karnataka’s 24/7 travel desk for rental scooters, private AC cabs, Sharavathi boating, Netrani scuba diving, and riverfront homestays across {locationLabel}.
                             </Typography>
 
-                            <Stack spacing={1.2} sx={{ mb: 2.5 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                    <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, mt: '2px', flexShrink: 0 }} />
-                                    <Box>
-                                        <Typography variant="body2" sx={{ color: '#F1F5F9', fontWeight: 700, fontSize: '0.84rem' }}>
-                                            {locationLabel} · Karnataka
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>
-                                            Plus Railway Station Hub (Platform 1 Exit)
-                                        </Typography>
-                                        <Box
-                                            component="a"
-                                            href="/services/bikes"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            sx={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: 0.5,
-                                                color: '#38BDF8',
-                                                fontSize: '0.78rem',
-                                                fontWeight: 750,
-                                                textDecoration: 'none',
-                                                mt: 0.3,
-                                                '&:hover': { textDecoration: 'underline' },
-                                            }}
-                                        >
-                                            <DirectionsIcon sx={{ fontSize: 13 }} /> Explore Branches on Google Maps ↗
-                                        </Box>
-                                    </Box>
+                            <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1.5} sx={{ mb: 2.75 }}>
+                                <Box
+                                    component="a"
+                                    href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.6,
+                                        color: '#FBBF24',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 700,
+                                        textDecoration: 'none',
+                                        '&:hover': { textDecoration: 'underline' },
+                                    }}
+                                >
+                                    <StarIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
+                                    5.0 on Google (324+ Reviews)
                                 </Box>
-
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <PhoneIcon sx={{ color: '#10B981', fontSize: 17, flexShrink: 0 }} />
-                                    <Typography
-                                        component="a"
-                                        href="tel:+918660989586"
-                                        variant="body2"
-                                        sx={{ color: '#F1F5F9', fontWeight: 700, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}
-                                    >
-                                        +91 8660989586
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: '#64748B' }}>•</Typography>
-                                    <Typography
-                                        component="a"
-                                        href="tel:09731699125"
-                                        variant="body2"
-                                        sx={{ color: '#F1F5F9', fontWeight: 700, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}
-                                    >
-                                        097316 99125
-                                    </Typography>
-                                </Box>
-
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <AccessTimeIcon sx={{ color: '#F59E0B', fontSize: 17, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ color: '#10B981', fontWeight: 800, fontSize: '0.84rem' }}>
-                                        Open 24 Hours Daily • Instant Support
-                                    </Typography>
-                                </Box>
-
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <EmailIcon sx={{ color: '#38BDF8', fontSize: 17, flexShrink: 0 }} />
-                                    <Typography
-                                        component="a"
-                                        href="mailto:contact@whizwheels.in"
-                                        variant="body2"
-                                        sx={{ color: '#F1F5F9', fontWeight: 600, textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}
-                                    >
-                                        contact@whizwheels.in
-                                    </Typography>
-                                </Box>
+                                <Box component="span" sx={{ color: '#334155' }}>•</Box>
+                                <Typography variant="caption" sx={{ color: '#34D399', fontWeight: 700, fontSize: '0.78rem' }}>
+                                    Zero Deposit Online
+                                </Typography>
                             </Stack>
 
-                            <Stack direction="row" spacing={1.5}>
+                            <Stack direction="row" spacing={1.25} flexWrap="wrap" useFlexGap>
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    color="success"
                                     component="a"
-                                    href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20want%20to%20inquire%20about%20travel%20and%20rental%20services%20in%20Honnavar."
+                                    href={whatsappGeneralUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    startIcon={<WhatsAppIcon />}
-                                    sx={{ fontWeight: 800, textTransform: 'none', fontSize: '0.82rem', py: 0.7, bgcolor: '#16A34A', '&:hover': { bgcolor: '#15803D' } }}
+                                    startIcon={<WhatsAppIcon sx={{ fontSize: 16 }} />}
+                                    sx={{
+                                        bgcolor: '#10B981',
+                                        color: '#052E16',
+                                        fontWeight: 800,
+                                        textTransform: 'none',
+                                        fontSize: '0.82rem',
+                                        borderRadius: 2,
+                                        px: 2.1,
+                                        py: 0.75,
+                                        boxShadow: 'none',
+                                        '&:hover': { bgcolor: '#34D399', boxShadow: 'none' },
+                                    }}
                                 >
-                                    WhatsApp Now
+                                    WhatsApp 24/7
                                 </Button>
                                 <Button
                                     variant="outlined"
                                     size="small"
                                     component="a"
-                                    href="tel:+918660989586"
-                                    startIcon={<PhoneIcon />}
-                                    sx={{ borderColor: 'rgba(255, 255, 255, 0.25)', color: '#FFFFFF', textTransform: 'none', fontSize: '0.82rem', py: 0.7, '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.1)' } }}
+                                    href={`tel:${primaryBranchPhone}`}
+                                    startIcon={<PhoneIcon sx={{ fontSize: 15, color: '#F59E0B' }} />}
+                                    sx={{
+                                        borderColor: 'rgba(255, 255, 255, 0.18)',
+                                        color: '#F8FAFC',
+                                        fontWeight: 700,
+                                        textTransform: 'none',
+                                        fontSize: '0.82rem',
+                                        borderRadius: 2,
+                                        px: 2.1,
+                                        py: 0.75,
+                                        '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
+                                    }}
                                 >
-                                    Call 24/7 Desk
+                                    Call Desk
                                 </Button>
                             </Stack>
                         </Grid>
 
-                        {/* Column 2: Rental Bikes & Scooters */}
-                        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 850, mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.84rem' }}>
-                                Two-Wheeler Fleet
-                            </Typography>
-                            <Stack spacing={1.3}>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#F59E0B', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
-                                    All Rental Bikes →
-                                </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Honda Activa 6G
-                                </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Suzuki Access 125
-                                </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Royal Enfield Classic 350
-                                </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Honda H'ness CB350
-                                </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Honda Shine 125 & Pulsar
-                                </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Smart Electric Scooters (EV)
-                                </Typography>
-                                <Typography component={Link} href="/how-it-works" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Tariffs & Booking Terms
-                                </Typography>
-                            </Stack>
-                        </Grid>
-
-                        {/* Column 3: Complete Travel Services (All 7 Services) */}
-                        <Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 850, mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.84rem' }}>
-                                All 7 Services
+                        {/* Services Navigation */}
+                        <Grid size={{ xs: 6, sm: 3, lg: 2 }}>
+                            <Typography
+                                variant="subtitle2"
+                                sx={{ color: '#F8FAFC', fontWeight: 800, fontSize: '0.82rem', letterSpacing: '0.04em', mb: 2 }}
+                            >
+                                Services
                             </Typography>
                             <Stack spacing={1.2}>
-                                <Typography component={Link} href="/services" variant="body2" sx={{ color: '#F59E0B', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
-                                    Explore All 7 Services Hub →
-                                </Typography>
-                                <Typography component={Link} href="/services/bikes" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    🏍️ 1. Bike & Scooter Rentals
-                                </Typography>
-                                <Typography component={Link} href="/services/cabs" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    🚗 2. Coastal Cabs & Taxis
-                                </Typography>
-                                <Typography component={Link} href="/services/homestays" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    🏡 3. Homestays & Coastal Rooms
-                                </Typography>
-                                <Typography component={Link} href="/services/boating" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    🚤 4. Backwater Boating
-                                </Typography>
-                                <Typography component={Link} href="/services/scuba" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    🤿 5. Netrani Island Scuba
-                                </Typography>
-                                <Typography component={Link} href="/services/guide" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    📍 6. Local Guides & Trails
-                                </Typography>
-                                <Typography component={Link} href="/services/tours" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    🧳 7. Custom Tour Packages
-                                </Typography>
+                                {[
+                                    { label: 'Bikes & Scooters', href: '/services/bikes' },
+                                    { label: 'Coastal AC Cabs', href: '/services/cabs' },
+                                    { label: 'Homestays', href: '/services/homestays' },
+                                    { label: 'Sharavathi Boating', href: '/services/boating' },
+                                    { label: 'Netrani Scuba', href: '/services/scuba' },
+                                    { label: 'Local Guides', href: '/services/guide' },
+                                    { label: 'Custom Tours', href: '/services/tours' },
+                                ].map((item) => (
+                                    <Typography
+                                        key={item.href}
+                                        component={Link}
+                                        href={item.href}
+                                        variant="body2"
+                                        sx={{
+                                            color: '#94A3B8',
+                                            textDecoration: 'none',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 500,
+                                            transition: 'color 0.15s ease',
+                                            '&:hover': { color: '#FBBF24' },
+                                        }}
+                                    >
+                                        {item.label}
+                                    </Typography>
+                                ))}
                             </Stack>
                         </Grid>
 
-                        {/* Column 4: Popular Honnavar Destinations */}
-                        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 850, mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.84rem' }}>
-                                Scenic Attractions
-                            </Typography>
-                            <Stack spacing={1.3}>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#F59E0B', fontWeight: 750, textDecoration: 'none', fontSize: '0.86rem', '&:hover': { textDecoration: 'underline' } }}>
-                                    Explore Honnavar →
-                                </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Sharavathi Backwaters
-                                </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Honnavar Eco Beach
-                                </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Apsarakonda Falls
-                                </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Mirjan Fort Citadel
-                                </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Murudeshwar Shiva Temple
-                                </Typography>
-                                <Typography component={Link} href="/explore" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.86rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Gokarna Om Beach
-                                </Typography>
-                                <Typography component={Link} href="/services/cabs" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Jog Falls Sightseeing Trip
-                                </Typography>
-                            </Stack>
-                        </Grid>
-
-                        {/* Column 5: Hubs & Customer Portal */}
-                        <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                            <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 850, mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.84rem' }}>
-                                Hubs & Portals
+                        {/* Explore & Customer Portal */}
+                        <Grid size={{ xs: 6, sm: 3, lg: 2 }}>
+                            <Typography
+                                variant="subtitle2"
+                                sx={{ color: '#F8FAFC', fontWeight: 800, fontSize: '0.82rem', letterSpacing: '0.04em', mb: 2 }}
+                            >
+                                Company
                             </Typography>
                             <Stack spacing={1.2}>
-                                <Typography variant="body2" sx={{ color: '#E2E8F0', fontWeight: 700, fontSize: '0.84rem' }}>
-                                    Hub 1: Palya Main Rd
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#E2E8F0', fontWeight: 700, fontSize: '0.84rem' }}>
-                                    Hub 2: Railway Station Hub
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 800, display: 'block' }}>
-                                    ● 24/7 Dispatch & Road Rescue
-                                </Typography>
+                                {[
+                                    { label: 'All Services Hub', href: '/services' },
+                                    { label: 'Travel Guides & Blogs', href: '/blog' },
+                                    { label: 'Explore Places', href: '/explore' },
+                                    { label: 'How It Works', href: '/how-it-works' },
+                                    { label: 'My Bookings', href: '/account' },
+                                    { label: 'Digital KYC', href: '/account/kyc' },
+                                    { label: 'About Us', href: '/about' },
+                                    { label: 'Contact Us', href: '/contact' },
+                                ].map((item) => (
+                                    <Typography
+                                        key={item.href}
+                                        component={Link}
+                                        href={item.href}
+                                        variant="body2"
+                                        sx={{
+                                            color: '#94A3B8',
+                                            textDecoration: 'none',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 500,
+                                            transition: 'color 0.15s ease',
+                                            '&:hover': { color: '#FBBF24' },
+                                        }}
+                                    >
+                                        {item.label}
+                                    </Typography>
+                                ))}
+                            </Stack>
+                        </Grid>
+
+                        {/* Unified 2-Branch Dock */}
+                        <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                 <Typography
-                                    component="a"
-                                    href="https://share.google/GoM4iOgiuUIa7ZfwV"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    variant="caption"
-                                    sx={{ color: '#38BDF8', fontWeight: 750, textDecoration: 'none', '&:hover': { textDecoration: 'underline' }, display: 'inline-block' }}
+                                    variant="subtitle2"
+                                    sx={{ color: '#F8FAFC', fontWeight: 800, fontSize: '0.82rem', letterSpacing: '0.04em' }}
                                 >
-                                    ★ 5.0 on Google (324 Reviews) →
+                                    Pickup &amp; Return Branches
                                 </Typography>
-                                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)', my: 0.5 }} />
-                                <Typography component={Link} href="/account" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Booking History
+                                <Typography variant="caption" sx={{ color: '#34D399', fontWeight: 700, fontSize: '0.74rem' }}>
+                                    ● Open 24/7
                                 </Typography>
-                                <Typography component={Link} href="/account/kyc" variant="body2" sx={{ color: '#CBD5E1', textDecoration: 'none', fontSize: '0.84rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Upload KYC Documents
-                                </Typography>
-                                <Typography component={Link} href="/admin/login" variant="body2" sx={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.82rem', '&:hover': { color: '#F59E0B' } }}>
-                                    Staff & Admin Login
-                                </Typography>
-                            </Stack>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    borderRadius: 3,
+                                    bgcolor: 'rgba(255, 255, 255, 0.03)',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                {publicBranches.slice(0, 2).map((branch, idx) => {
+                                    const branchPhone = branch.phone || '+918660989586';
+                                    const branchAddress = [branch.address_line, branch.city, branch.pincode].filter(Boolean).join(', ');
+                                    const accentColor = idx === 0 ? '#F59E0B' : '#10B981';
+
+                                    return (
+                                        <Box
+                                            key={branch.id}
+                                            sx={{
+                                                p: 2,
+                                                borderTop: idx > 0 ? '1px solid rgba(255, 255, 255, 0.07)' : 'none',
+                                                borderLeft: `3px solid ${accentColor}`,
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 0.45 }}>
+                                                <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.88rem' }}>
+                                                    {branch.city || branch.name} Branch
+                                                </Typography>
+                                                <Typography
+                                                    component={Link}
+                                                    href={`/bike-rentals/branches/${branch.id}/${branch.slug}`}
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: '#FBBF24',
+                                                        fontWeight: 700,
+                                                        textDecoration: 'none',
+                                                        whiteSpace: 'nowrap',
+                                                        '&:hover': { textDecoration: 'underline' },
+                                                    }}
+                                                >
+                                                    View Fleet →
+                                                </Typography>
+                                            </Box>
+
+                                            {branchAddress && (
+                                                <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', lineHeight: 1.45, mb: 0.85 }}>
+                                                    {branchAddress}
+                                                </Typography>
+                                            )}
+
+                                            <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1.5} flexWrap="wrap">
+                                                <Typography
+                                                    component="a"
+                                                    href={`tel:${branchPhone}`}
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: '#E2E8F0',
+                                                        fontWeight: 700,
+                                                        textDecoration: 'none',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.55,
+                                                        whiteSpace: 'nowrap',
+                                                        '&:hover': { color: '#FBBF24' },
+                                                    }}
+                                                >
+                                                    <PhoneIcon sx={{ fontSize: 13, color: accentColor }} />
+                                                    {formatBranchPhone(branchPhone)}
+                                                </Typography>
+                                                <Typography
+                                                    component="a"
+                                                    href={getBranchDirectionsUrl(branch)}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: '#38BDF8',
+                                                        fontWeight: 700,
+                                                        textDecoration: 'none',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.35,
+                                                        whiteSpace: 'nowrap',
+                                                        '&:hover': { textDecoration: 'underline' },
+                                                    }}
+                                                >
+                                                    <DirectionsIcon sx={{ fontSize: 13 }} />
+                                                    Google Maps ↗
+                                                </Typography>
+                                            </Stack>
+                                        </Box>
+                                    );
+                                })}
+                            </Box>
                         </Grid>
                     </Grid>
 
-                    {/* Payment Methods & Security Strip */}
+                    {/* Grounded Bottom Legal & Email Bar */}
                     <Box
                         sx={{
                             pt: 3,
-                            pb: 3,
                             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                            mb: 3,
                             display: 'flex',
                             flexDirection: { xs: 'column', md: 'row' },
                             justifyContent: 'space-between',
-                            alignItems: { xs: 'flex-start', md: 'center' },
-                            gap: 2,
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                Secure Payment Accepted:
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {['UPI (GPay / PhonePe / Paytm)', 'Credit & Debit Cards', 'Net Banking', 'Cash at Pickup'].map((payMethod, pIdx) => (
-                                    <Chip
-                                        key={pIdx}
-                                        label={payMethod}
-                                        size="small"
-                                        sx={{
-                                            bgcolor: 'rgba(255, 255, 255, 0.05)',
-                                            color: '#E2E8F0',
-                                            fontSize: '0.74rem',
-                                            fontWeight: 650,
-                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        }}
-                                    />
-                                ))}
-                            </Box>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 750 }}>
-                                🔒 256-Bit SSL Encrypted
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B' }}>•</Typography>
-                            <Typography variant="caption" sx={{ color: '#38BDF8', fontWeight: 750 }}>
-                                ⚡ No Deposit for Online Bike Rentals
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    {/* SEO Footnote & Copyright */}
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: { xs: 'column', sm: 'row' },
-                            justifyContent: 'space-between',
                             alignItems: 'center',
-                            gap: 2,
+                            gap: 1.5,
                         }}
                     >
-                        <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.82rem', textAlign: { xs: 'center', sm: 'left' } }}>
-                            © {new Date().getFullYear()} GK WhizWheels. All rights reserved. {locationLabel} · Karnataka.
+                        <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.8rem', textAlign: { xs: 'center', md: 'left' } }}>
+                            © {new Date().getFullYear()} GK WhizWheels · {locationLabel}, Karnataka
                         </Typography>
-                        <Stack direction="row" spacing={2.5} flexWrap="wrap" justifyContent="center">
-                            <Typography component={Link} href="/about" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                About Us
+
+                        <Stack direction="row" spacing={{ xs: 2, sm: 3 }} flexWrap="wrap" justifyContent="center" alignItems="center">
+                            <Typography
+                                component="a"
+                                href="mailto:contact@whizwheels.in"
+                                variant="caption"
+                                sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#38BDF8' } }}
+                            >
+                                contact@whizwheels.in
                             </Typography>
-                            <Typography component={Link} href="/how-it-works" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                How It Works
+                            <Typography component={Link} href="/terms" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#FBBF24' } }}>
+                                Terms &amp; Policies
                             </Typography>
-                            <Typography component={Link} href="/terms" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                Rental Terms & Policies
-                            </Typography>
-                            <Typography component={Link} href="/privacy" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
+                            <Typography component={Link} href="/privacy" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#FBBF24' } }}>
                                 Privacy Policy
                             </Typography>
-                            <Typography component={Link} href="/contact" variant="caption" sx={{ color: '#94A3B8', textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}>
-                                Contact Us
+                            <Typography component={Link} href="/admin/login" variant="caption" sx={{ color: '#64748B', textDecoration: 'none', '&:hover': { color: '#FBBF24' } }}>
+                                Staff Login
                             </Typography>
                         </Stack>
                     </Box>
@@ -2040,7 +2176,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
             >
                 <Button
                     component="a"
-                    href="tel:+918660989586"
+                    href={`tel:${primaryBranchPhone}`}
                     sx={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -2062,7 +2198,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
                 <Button
                     component="a"
-                    href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20want%20to%20book%20a%20bike%20or%20service%20in%20Honnavar."
+                    href={whatsappGeneralUrl}
                     target="_blank"
                     rel="noreferrer"
                     sx={{

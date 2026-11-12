@@ -166,7 +166,7 @@ export default function Privacy() {
                     overflow: 'hidden',
                 }}
             >
-                <Container maxWidth="lg">
+                <Container maxWidth={false} sx={{ maxWidth: '1440px' }}>
                     <Breadcrumbs
                         separator="›"
                         sx={{
@@ -254,7 +254,7 @@ export default function Privacy() {
 
             {/* Filter Pills */}
             <Box sx={{ bgcolor: isDark ? '#1E293B' : '#F8FAFC', py: 2, borderBottom: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
-                <Container maxWidth="lg">
+                <Container maxWidth={false} sx={{ maxWidth: '1440px' }}>
                     <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5 }}>
                         {categories.map((c) => (
                             <Chip
@@ -278,7 +278,7 @@ export default function Privacy() {
             </Box>
 
             {/* Policy Clauses Body */}
-            <Container maxWidth="lg" sx={{ py: 6 }}>
+            <Container maxWidth={false} sx={{ maxWidth: '1440px', py: 6 }}>
                 <Stack spacing={3}>
                     {filteredSections.map((sec) => (
                         <Card

@@ -4,6 +4,7 @@ import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
 import apiClient from '../../api/client';
+import RelatedGuidesStrip from '../../Components/Blog/RelatedGuidesStrip';
 import ModelRentalCatalog from '../../Components/Bikes/ModelRentalCatalog';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -238,7 +239,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                         }}
                     />
 
-                    <Box sx={{ maxWidth: '1380px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
+                    <Box sx={{ maxWidth: '1440px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
                         <Grid container spacing={{ xs: 4, lg: 5 }} alignItems="center">
                             {/* Left Column: Headline, Narrative, Value Props & CTAs */}
                             <Grid size={{ xs: 12, lg: 6.5 }}>
@@ -653,7 +654,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                 ========================================================================== */}
                 <Box
                     sx={{
-                        maxWidth: '1380px',
+                        maxWidth: '1440px',
                         width: '100%',
                         mx: 'auto',
                         px: { xs: 2, sm: 3, md: 4 },
@@ -1584,7 +1585,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                         step: '01',
                                         badge: '⚡ Real-Time Fleet',
                                         title: 'Choose Bike & Hub',
-                                        desc: 'Pick your preferred Honda Activa, Dio, or Royal Enfield with live real-time stock at Palya Main Rd or Honnavar Railway Station.',
+                                        desc: 'Pick your preferred Honda Activa, Dio, or Royal Enfield with live real-time stock at Honnavar (Palya Main Rd) or Murudeshwar (Temple Main Rd).',
                                         color: '#F59E0B',
                                         bgBadge: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
                                     },
@@ -2038,6 +2039,11 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                     </Paper>
                 </Box>
             </Box>
+            <RelatedGuidesStrip
+                serviceKey="bikes"
+                title="Two-Wheeler Rental & NH-66 Coastal Route Guides"
+                subtitle="Scooter vs cruiser comparisons, digital KYC steps & self-drive loops connecting Honnavar and Murudeshwar."
+            />
         </AppLayout>
     );
 }

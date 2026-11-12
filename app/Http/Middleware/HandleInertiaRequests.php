@@ -41,13 +41,27 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'public_branches' => fn () => \App\Models\Store::query()
                 ->where('status', \App\Enums\StoreStatus::ACTIVE)
-                ->orderBy('name')
-                ->get(['id', 'name', 'city', 'state'])
-                ->map(fn ($store): array => [
-                    'id' => $store->id, 'name' => $store->name,
-                    'city' => $store->city, 'state' => $store->state,
-                    'slug' => \Illuminate\Support\Str::slug($store->city ?: $store->name),
-                ])->values()->all(),
+                ->orderBy('id')
+                ->get()
+                ->pipe(function ($stores) {
+                    $published = $stores->where('publication_status', 'published');
+                    $selected = $published->isNotEmpty() ? $published : $stores;
+
+                    return $selected->map(fn ($store): array => [
+                        'id' => $store->id,
+                        'name' => $store->name,
+                        'public_name' => $store->public_name ?? $store->name,
+                        'address_line' => $store->address_line,
+                        'city' => $store->city,
+                        'state' => $store->state,
+                        'pincode' => $store->pincode,
+                        'phone' => $store->phone,
+                        'latitude' => $store->latitude,
+                        'longitude' => $store->longitude,
+                        'google_maps_url' => $store->google_maps_url,
+                        'slug' => \Illuminate\Support\Str::slug($store->city ?: $store->name),
+                    ])->values()->all();
+                }),
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,

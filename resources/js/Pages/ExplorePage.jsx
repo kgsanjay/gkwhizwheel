@@ -115,7 +115,7 @@ export default function ExplorePage() {
         },
         {
             q: 'Can I get vehicle pickup or drop right at Honnavar Railway Station?',
-            a: 'Yes! We maintain an active Honnavar Railway Station Hub on Station Road. Our executive meets you right outside the station on your arrival for a swift 5-minute handover.',
+            a: 'Yes! We operate two 24/7 hubs in Honnavar (Palya Main Rd) and Murudeshwar (Temple Main Rd, near KSRTC Bus Stand), and also coordinate station/bus-stand pickup on advance call (+91 86609 89586 / +91 78920 94155).',
         },
     ];
 
@@ -129,7 +129,7 @@ export default function ExplorePage() {
                 />
             </Head>
 
-            <Box sx={{ maxWidth: '1240px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pt: { xs: 4, md: 6 }, pb: 10 }}>
+            <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pt: { xs: 4, md: 6 }, pb: 10 }}>
                 {/* Hero Header */}
                 <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
                     <Box
@@ -443,10 +443,10 @@ export default function ExplorePage() {
                     }}
                 >
                     <Typography variant="h4" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1.5 }}>
-                        Ready to Explore Honnavar on Two Wheels?
+                        Ready to Explore Coastal Karnataka on Two Wheels?
                     </Typography>
                     <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#475569', maxWidth: 640, mx: 'auto', mb: 3 }}>
-                        Pick up your sanitized rental bike right outside Honnavar Railway Station or at our Palya Main Rd Hub and hit the coastal highway.
+                        Pick up your sanitized rental bike at our Honnavar (Palya Main Rd) or Murudeshwar (Temple Main Rd) Hub and hit the coastal highway.
                     </Typography>
                     <Button
                         variant="contained"

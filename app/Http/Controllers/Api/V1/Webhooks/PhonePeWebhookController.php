@@ -12,14 +12,19 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Models\ServiceBooking;
+use App\Models\ServicePaymentReceipt;
+use App\Notifications\ServicePaymentReceivedNotification;
 use App\Services\BookingService;
 use App\Services\BikeBookingPayments;
 use App\Services\PhonePeService;
+use App\Services\ServicePaymentEligibility;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class PhonePeWebhookController extends Controller
 {
@@ -68,6 +73,17 @@ class PhonePeWebhookController extends Controller
         $gatewayTransactionId = (string) ($data['transactionId'] ?? $merchantTransactionId);
         $amountPaise = (int) ($data['amount'] ?? 0);
         $amount = round($amountPaise / 100, 2);
+
+        if (preg_match('/^TXN_SRV_(\d+)_/', $merchantTransactionId, $srvMatches)) {
+            return $this->handleServiceBookingWebhook(
+                (int) $srvMatches[1],
+                $merchantTransactionId,
+                $gatewayTransactionId,
+                $amountPaise,
+                $amount,
+                $code
+            );
+        }
 
         try {
             return DB::transaction(function () use (
@@ -187,6 +203,107 @@ class PhonePeWebhookController extends Controller
                 ],
                 'message' => 'Duplicate webhook delivery acknowledged.',
             ], 200);
+        }
+    }
+
+    /**
+     * Process PhonePe payments for travel service bookings.
+     */
+    protected function handleServiceBookingWebhook(
+        int $serviceBookingId,
+        string $merchantTransactionId,
+        string $gatewayTransactionId,
+        int $amountPaise,
+        float $amount,
+        string $code
+    ): JsonResponse {
+        try {
+            return DB::transaction(function () use (
+                $serviceBookingId,
+                $merchantTransactionId,
+                $gatewayTransactionId,
+                $amountPaise,
+                $amount,
+                $code
+            ) {
+                $booking = ServiceBooking::where('id', $serviceBookingId)->lockForUpdate()->first();
+                if (! $booking) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Service booking not found for PhonePe payment webhook.',
+                    ], 404);
+                }
+
+                if (ServicePaymentReceipt::where('provider', 'phonepe')->where('payment_id', $gatewayTransactionId)->exists()) {
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'booking_number' => $booking->booking_number,
+                            'status' => $booking->status,
+                            'gateway_reference' => $gatewayTransactionId,
+                        ],
+                        'message' => 'Service payment webhook already processed.',
+                    ]);
+                }
+
+                ServicePaymentReceipt::create([
+                    'service_booking_id' => $booking->id,
+                    'provider' => 'phonepe',
+                    'payment_id' => $gatewayTransactionId,
+                    'order_id' => $merchantTransactionId,
+                    'amount_paise' => $amountPaise,
+                ]);
+
+                $newAdvance = round((float) $booking->advance_paid + $amount, 2);
+                $newBalance = max(0.0, round((float) $booking->total_amount - $newAdvance, 2));
+                $newPaymentStatus = $newBalance <= 0.01 ? 'paid' : 'partial';
+
+                $booking->update([
+                    'advance_paid' => $newAdvance,
+                    'balance_due' => $newBalance,
+                    'payment_status' => $newPaymentStatus,
+                    'payment_method' => 'online',
+                ]);
+
+                ActivityLog::create([
+                    'user_id' => $booking->user_id,
+                    'store_id' => $booking->store_id,
+                    'action' => 'service_booking.phonepe_payment_received',
+                    'subject_type' => ServiceBooking::class,
+                    'subject_id' => (string) $booking->id,
+                    'new_values' => [
+                        'code' => $code,
+                        'payment_id' => $gatewayTransactionId,
+                        'merchant_transaction_id' => $merchantTransactionId,
+                        'amount' => $amount,
+                        'balance_due' => $newBalance,
+                        'payment_status' => $newPaymentStatus,
+                    ],
+                ]);
+
+                // Send payment receipt
+                $receiptNotification = new ServicePaymentReceivedNotification($booking, $gatewayTransactionId, $amountPaise);
+                if ($booking->user && filter_var($booking->user->email, FILTER_VALIDATE_EMAIL)) {
+                    $booking->user->notify($receiptNotification);
+                } elseif ($booking->customer_email && filter_var($booking->customer_email, FILTER_VALIDATE_EMAIL)) {
+                    Notification::route('mail', $booking->customer_email)->notify($receiptNotification);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'booking_number' => $booking->booking_number,
+                        'status' => $booking->status,
+                        'gateway_reference' => $gatewayTransactionId,
+                    ],
+                    'message' => 'PhonePe payment for service booking verified successfully.',
+                ]);
+            });
+        } catch (UniqueConstraintViolationException) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Duplicate service payment delivery acknowledged.',
+            ]);
         }
     }
 }

@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import BoatingBookingModal from '../Components/BookingModals/BoatingBookingModal';
+import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import {
     Box,
     Typography,
@@ -189,7 +190,7 @@ export default function BoatingPage({ availableItems = [] }) {
                         }}
                     />
 
-                    <Box sx={{ maxWidth: '1380px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
+                    <Box sx={{ maxWidth: '1440px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
                         <Grid container spacing={{ xs: 4, lg: 5 }} alignItems="center">
                             {/* Left Column: Headline, Narrative & Trust Badges */}
                             <Grid size={{ xs: 12, lg: 6.5 }}>
@@ -601,7 +602,7 @@ export default function BoatingPage({ availableItems = [] }) {
                 {/* =========================================================================
                     2. DEDICATED PRE-WEDDING & PHOTOSHOOT BOAT SERVICE CARD
                 ========================================================================== */}
-                <Box id="pre-wedding-shoots" sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 5, md: 7 } }}>
+                <Box id="pre-wedding-shoots" sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 5, md: 7 } }}>
                     <Card
                         elevation={0}
                         sx={{
@@ -763,7 +764,7 @@ export default function BoatingPage({ availableItems = [] }) {
                 {/* =========================================================================
                     3. HONNAVAR BACKWATER BOATING PACKAGE SHOWCASE
                 ========================================================================== */}
-                <Box id="boating-package" sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box id="boating-package" sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Box sx={{ mb: 4 }}>
                         <Chip label="SHARAVATHI BACKWATER BOATING" size="small" sx={{ bgcolor: 'rgba(5, 150, 105, 0.12)', color: '#059669', fontWeight: 850, mb: 1 }} />
                         <Typography variant="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', fontSize: { xs: '1.8rem', sm: '2.3rem', md: '2.6rem' } }}>
@@ -1000,7 +1001,7 @@ export default function BoatingPage({ availableItems = [] }) {
                 {/* =========================================================================
                     4. HOW HONNAVAR BOATING & SHOOT BOOKING WORKS (4-Step Pipeline)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                         <Chip
                             label="EASY DOCKING WORKFLOW"
@@ -1093,7 +1094,7 @@ export default function BoatingPage({ availableItems = [] }) {
                 {/* =========================================================================
                     5. DISTANCES & BOARDING JETTY ACCESS GUIDE
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Box sx={{ textAlign: 'center', mb: 4 }}>
                         <Chip
                             label="BOARDING JETTY & SURROUNDING ATTRACTIONS"
@@ -1152,7 +1153,7 @@ export default function BoatingPage({ availableItems = [] }) {
                 {/* =========================================================================
                     6. INCLUSIONS & SAFETY POLICIES CHECKLIST
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Grid container spacing={3}>
                         <Grid size={{ xs: 12, md: 6 }}>
                             <Paper
@@ -1230,7 +1231,7 @@ export default function BoatingPage({ availableItems = [] }) {
                 {/* =========================================================================
                     7. HONNAVAR BOATING FAQS (Detailed Accordion)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Typography variant="h3" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1 }}>
                         Sharavathi Boating & Photoshoots — FAQs
                     </Typography>
@@ -1269,7 +1270,7 @@ export default function BoatingPage({ availableItems = [] }) {
                 {/* =========================================================================
                     8. BOTTOM CALLOUT BANNER
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: 8 }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: 8 }}>
                     <Paper
                         sx={{
                             p: { xs: 3, md: 5 },
@@ -1334,6 +1335,12 @@ export default function BoatingPage({ availableItems = [] }) {
                         </Stack>
                     </Paper>
                 </Box>
+
+                <RelatedGuidesStrip
+                    serviceKey="boating"
+                    title="Sharavathi Backwater & Mangrove Guides"
+                    subtitle="Morning birding vs 4:30 PM sunset estuary slots, jetty tips & safety walkthroughs."
+                />
 
                 {/* Dedicated Boating Booking Modal */}
                 <BoatingBookingModal

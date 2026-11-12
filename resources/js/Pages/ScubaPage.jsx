@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import ScubaBookingModal from '../Components/BookingModals/ScubaBookingModal';
+import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
@@ -433,7 +434,7 @@ export default function ScubaPage({ availableItems = [] }) {
                         }}
                     />
 
-                    <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, position: 'relative', zIndex: 2 }}>
+                    <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, position: 'relative', zIndex: 2 }}>
                         {/* Breadcrumbs & Live Conditions Bar */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                             <Breadcrumbs
@@ -917,7 +918,7 @@ export default function ScubaPage({ availableItems = [] }) {
                 {/* =========================================================================
                     2. MANDATORY GOVERNMENT RULES & REGULATIONS + INTERACTIVE SELF-CHECKER
                 ========================================================================== */}
-                <Box id="govt-rules" sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 7, md: 10 } }}>
+                <Box id="govt-rules" sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 7, md: 10 } }}>
                     <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                         {/* Official Compliance Seals */}
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
@@ -1175,7 +1176,7 @@ export default function ScubaPage({ availableItems = [] }) {
                 {/* =========================================================================
                     3. CURATED DIVING & SNORKELING PACKAGES
                 ========================================================================== */}
-                <Box id="scuba-packages" sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box id="scuba-packages" sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 4 }}>
                         <Box>
                             <Chip label="TRANSPARENT TARIFFS • NO HIDDEN CHARGES" size="small" sx={{ bgcolor: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', fontWeight: 850, mb: 1 }} />
@@ -1431,7 +1432,7 @@ export default function ScubaPage({ availableItems = [] }) {
                 {/* =========================================================================
                     4. DIVE DAY TIMELINE: HOW NETRANI EXPEDITION WORKS (Compact Strip)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 7 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 7 } }}>
                     <Box sx={{ textAlign: 'center', mb: 3 }}>
                         <Chip
                             label="STEP-BY-STEP DIVE DAY SCHEDULE"
@@ -1553,7 +1554,7 @@ export default function ScubaPage({ availableItems = [] }) {
                 {/* =========================================================================
                     5. NETRANI DIVE SITES & MARINE LIFE (Depth Meters & Biodiversity)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                         <Chip label="UNDERWATER BIODIVERSITY" size="small" sx={{ bgcolor: 'rgba(5, 150, 105, 0.12)', color: '#059669', fontWeight: 850, mb: 1 }} />
                         <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, letterSpacing: '-0.02em', mb: 1.5 }}>
@@ -1808,7 +1809,7 @@ export default function ScubaPage({ availableItems = [] }) {
                 {/* =========================================================================
                     8. BOTTOM CTA BANNER (Deep Ocean Gradient)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
                     <Paper
                         elevation={0}
                         sx={{
@@ -1907,6 +1908,11 @@ export default function ScubaPage({ availableItems = [] }) {
                         setGalleryModalOpen(false);
                         setModalOpen(true);
                     }}
+                />
+                <RelatedGuidesStrip
+                    serviceKey="scuba"
+                    title="Netrani Island Scuba Diving Guides"
+                    subtitle="Non-swimmer walkthrough, 6:30 AM Murudeshwar harbor timeline, visibility months & pre-dive checklist."
                 />
             </Box>
         </AppLayout>

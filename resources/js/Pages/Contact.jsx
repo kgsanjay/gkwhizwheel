@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
 import { useColorMode } from '../theme/ColorModeContext';
@@ -33,8 +33,52 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 export default function Contact() {
+    const { public_branches: publicBranches = [] } = usePage().props;
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
+
+    const contactBranches = publicBranches.length > 0
+        ? publicBranches
+        : [
+            {
+                id: 1,
+                public_name: 'GK WhizWheels Honnavar Hub',
+                city: 'Honnavar',
+                address_line: 'Palya Main Rd, Honnavar',
+                state: 'Karnataka',
+                pincode: '581334',
+                phone: '+918660989586',
+                latitude: '14.2800000',
+                longitude: '74.4500000',
+                slug: 'honnavar',
+            },
+            {
+                id: 52,
+                public_name: 'GK WhizWheels Murudeshwar Hub',
+                city: 'Murudeshwar',
+                address_line: 'Temple Main Road, near KSRTC Bus Stand',
+                state: 'Karnataka',
+                pincode: '581350',
+                phone: '+917892094155',
+                latitude: '14.0946201',
+                longitude: '74.4892104',
+                google_maps_url: 'https://maps.app.goo.gl/y94Ap38BbZGWGSDdA',
+                slug: 'murudeshwar',
+            },
+        ];
+
+    const formatPhone = (raw) => {
+        const digits = String(raw || '').replace(/\D/g, '');
+        if (digits.length === 12 && digits.startsWith('91')) {
+            return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+        }
+        return raw || '+91 86609 89586';
+    };
+
+    const honnavarBranch = contactBranches[0];
+    const murudeshwarBranch = contactBranches[1] || contactBranches[0];
+    const honnavarPhone = honnavarBranch?.phone || '+918660989586';
+    const murudeshwarPhone = murudeshwarBranch?.phone || '+917892094155';
 
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [copiedPhone, setCopiedPhone] = useState(false);
@@ -92,25 +136,27 @@ export default function Contact() {
             },
             {
                 '@type': 'ContactPoint',
-                telephone: '+919731699125',
+                telephone: '+917892094155',
                 contactType: 'reservations',
-                areaServed: ['Honnavar Railway Station', 'Honnavar', 'Karavali coast'],
+                areaServed: ['Murudeshwar', 'Honnavar', 'Karavali coast'],
                 availableLanguage: ['en', 'kn', 'hi', 'kok'],
             },
         ],
         areaServed: [
             { '@type': 'City', name: 'Honnavar' },
+            { '@type': 'City', name: 'Murudeshwar' },
             { '@type': 'AdministrativeArea', name: 'Karavali coast' },
             { '@type': 'AdministrativeArea', name: 'Uttara Kannada district' },
         ],
         sameAs: [
             'https://share.google/GoM4iOgiuUIa7ZfwV',
+            'https://maps.app.goo.gl/y94Ap38BbZGWGSDdA',
             'https://wa.me/918660989586',
         ],
         address: {
             '@type': 'PostalAddress',
-            streetAddress: 'Palya Main Rd, near Honnavar Railway Station',
-            addressLocality: 'Honnavar',
+            streetAddress: 'Palya Main Rd, Honnavar & Temple Main Road, Murudeshwar',
+            addressLocality: 'Honnavar & Murudeshwar',
             addressRegion: 'Karnataka',
             postalCode: '581334',
             addressCountry: 'IN',
@@ -133,8 +179,8 @@ export default function Contact() {
     return (
         <AppLayout>
             <PageHead
-                title="Contact GK WhizWheel Honnavar | 24/7 Station & Main Rd Hub"
-                description="Contact GK WhizWheels in Honnavar: 24/7 Railway Station counter and Palya Main Rd hub. Call +91 8660989586 or WhatsApp for instant bike & tour booking."
+                title="Contact GK WhizWheel | 24/7 Honnavar & Murudeshwar Hubs"
+                description="Contact GK WhizWheels across Honnavar (+91 86609 89586) and Murudeshwar (+91 78920 94155). Open 24/7 for two-wheeler rentals, cabs, boating & scuba."
                 canonicalUrl="https://whizwheels.in/contact"
                 ogImage="/images/logo.png"
                 ogType="website"
@@ -265,7 +311,7 @@ export default function Contact() {
                                 </Button>
                                 <Button
                                     component="a"
-                                    href="tel:09731699125"
+                                    href={`tel:${murudeshwarPhone}`}
                                     variant="outlined"
                                     size="large"
                                     startIcon={<PhoneIcon sx={{ color: '#F59E0B' }} />}
@@ -279,7 +325,7 @@ export default function Contact() {
                                         '&:hover': { borderColor: '#F59E0B' },
                                     }}
                                 >
-                                    Call Desk: 097316 99125
+                                    Murudeshwar: {formatPhone(murudeshwarPhone)}
                                 </Button>
                             </Stack>
 
@@ -322,94 +368,71 @@ export default function Contact() {
                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                     <Chip
                                         icon={<SupportAgentIcon sx={{ fontSize: 16, color: '#10B981 !important' }} />}
-                                        label="Live Honnavar Desk"
+                                        label="Live Coastal Desks • 24/7"
                                         size="small"
                                         sx={{ bgcolor: 'rgba(16, 185, 129, 0.12)', color: '#10B981', fontWeight: 800 }}
                                     />
                                     <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 700 }}>
-                                        ● Online & Taking Calls
+                                        ● Online &amp; Taking Calls
                                     </Typography>
                                 </Box>
 
                                 <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', mb: 0.5 }}>
-                                    Immediate Contact Numbers
+                                    Branch Helplines
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mb: 3 }}>
-                                    Call or WhatsApp our on-ground team for reservations, station deliveries, and extensions.
+                                    Call or WhatsApp our Honnavar or Murudeshwar desks for instant pickups, station transfers, and custom tours.
                                 </Typography>
 
                                 <Stack spacing={2} sx={{ mb: 3 }}>
-                                    <Box
-                                        sx={{
-                                            p: 2,
-                                            borderRadius: 2.5,
-                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.03)',
-                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <PhoneIcon sx={{ color: '#F59E0B' }} />
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
-                                                    Primary Helpline / WhatsApp
-                                                </Typography>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                                    +91 8660989586
-                                                </Typography>
+                                    {contactBranches.map((hub, idx) => {
+                                        const hubPhone = hub.phone || '+918660989586';
+                                        const isPrimary = idx === 0;
+                                        return (
+                                            <Box
+                                                key={hub.id}
+                                                sx={{
+                                                    p: 2,
+                                                    borderRadius: 2.5,
+                                                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.03)',
+                                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    gap: 1.5,
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                    <PhoneIcon sx={{ color: isPrimary ? '#F59E0B' : '#10B981' }} />
+                                                    <Box>
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
+                                                            {hub.city || hub.name} 24/7 Desk
+                                                        </Typography>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                                            {formatPhone(hubPhone)}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                                <Button
+                                                    component="a"
+                                                    href={`tel:${hubPhone}`}
+                                                    size="small"
+                                                    variant={isPrimary ? 'contained' : 'outlined'}
+                                                    color={isPrimary ? 'secondary' : 'primary'}
+                                                    sx={{
+                                                        fontWeight: 700,
+                                                        borderRadius: 2,
+                                                        ...(isPrimary ? {} : {
+                                                            borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1',
+                                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                                        }),
+                                                    }}
+                                                >
+                                                    Call
+                                                </Button>
                                             </Box>
-                                        </Box>
-                                        <Button
-                                            component="a"
-                                            href="tel:+918660989586"
-                                            size="small"
-                                            variant="contained"
-                                            color="secondary"
-                                            sx={{ fontWeight: 700, borderRadius: 2 }}
-                                        >
-                                            Call
-                                        </Button>
-                                    </Box>
-
-                                    <Box
-                                        sx={{
-                                            p: 2,
-                                            borderRadius: 2.5,
-                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.03)',
-                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <PhoneIcon sx={{ color: '#38BDF8' }} />
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
-                                                    Railway Station Desk
-                                                </Typography>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                                    097316 99125
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                        <Button
-                                            component="a"
-                                            href="tel:09731699125"
-                                            size="small"
-                                            variant="outlined"
-                                            sx={{
-                                                fontWeight: 700,
-                                                borderRadius: 2,
-                                                borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1',
-                                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                            }}
-                                        >
-                                            Call
-                                        </Button>
-                                    </Box>
+                                        );
+                                    })}
                                 </Stack>
 
                                 <Divider sx={{ borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0', mb: 2 }} />
@@ -422,7 +445,7 @@ export default function Contact() {
                                         </Typography>
                                     </Box>
                                     <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
-                                        Honnavar, Karnataka 581334
+                                        Honnavar & Murudeshwar, Karnataka
                                     </Typography>
                                 </Box>
                             </Paper>
@@ -432,178 +455,154 @@ export default function Contact() {
             </Box>
 
             {/* Main Content */}
-            <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
+            <Container maxWidth={false} sx={{ maxWidth: '1440px', py: { xs: 6, md: 8 } }}>
                 {/* Dual Store Hubs Section */}
                 <Box sx={{ mb: 8 }}>
                     <Box sx={{ mb: 4 }}>
                         <Chip label="Visit Our Operational Hubs" size="small" sx={{ fontWeight: 700, mb: 1, bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', color: '#D97706' }} />
                         <Typography variant="h3" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', fontSize: { xs: '1.75rem', sm: '2.25rem' } }}>
-                            Two Convenient Locations in Honnavar
+                            Two Live Branches Across Honnavar & Murudeshwar
                         </Typography>
                         <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                            Pick up at one hub and drop off at the other. One-way rentals are natively supported.
+                            Direct 24/7 key handover, verified commercial yellow-plate bikes, and local support at both coastal hubs.
                         </Typography>
                     </Box>
 
                     <Grid container spacing={3}>
-                        {/* Hub 1: Palya Main Rd */}
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <Paper
-                                elevation={0}
-                                sx={{
-                                    p: { xs: 3, sm: 4 },
-                                    height: '100%',
-                                    borderRadius: 3.5,
-                                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                                    backdropFilter: 'blur(16px)',
-                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        borderColor: '#F59E0B',
-                                        boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.4)' : '0 10px 25px rgba(0,0,0,0.06)',
-                                    },
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                    <Box sx={{ p: 1.2, borderRadius: 2.5, bgcolor: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B' }}>
-                                        <LocationOnIcon fontSize="medium" />
-                                    </Box>
-                                    <Box>
-                                        <Chip label="Headquarters & Main Fleet" size="small" color="secondary" sx={{ fontWeight: 700, height: 20, mb: 0.5, fontSize: '0.7rem' }} />
-                                        <Typography variant="h5" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                            Palya Main Rd Hub
-                                        </Typography>
-                                    </Box>
-                                </Box>
+                        {contactBranches.map((hub, idx) => {
+                            const isPrimary = idx === 0;
+                            const accent = isPrimary ? '#F59E0B' : '#10B981';
+                            const hubCity = hub.city || hub.name || (isPrimary ? 'Honnavar' : 'Murudeshwar');
+                            const hubTitle = hub.public_name || `${hubCity} Hub`;
+                            const hubPhone = hub.phone || (isPrimary ? '+918660989586' : '+917892094155');
+                            const hubAddress = [hub.address_line, hub.city, hub.state, hub.pincode].filter(Boolean).join(', ');
+                            const mapQuery = hub.latitude && hub.longitude
+                                ? `${hub.latitude},${hub.longitude}`
+                                : encodeURIComponent(hubAddress || `${hubCity}, Karnataka`);
+                            const directionsUrl = hub.google_maps_url
+                                || `https://www.google.com/maps/dir/?api=1&destination=${mapQuery}`;
+                            const branchSlug = hub.slug || hubCity.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-                                <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mb: 3, lineHeight: 1.7 }}>
-                                    Central Honnavar store located on Palya Main Rd, offering direct connectivity to NH-66 highway, Sharavathi River bridge, and coastal tour routes.
-                                </Typography>
+                            return (
+                                <Grid key={hub.id || hubCity} size={{ xs: 12, md: 6 }}>
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: { xs: 3, sm: 4 },
+                                            height: '100%',
+                                            borderRadius: 3.5,
+                                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                                            backdropFilter: 'blur(16px)',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                borderColor: accent,
+                                                boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.4)' : '0 10px 25px rgba(0,0,0,0.06)',
+                                            },
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                            <Box sx={{ p: 1.2, borderRadius: 2.5, bgcolor: isPrimary ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)', color: accent }}>
+                                                <LocationOnIcon fontSize="medium" />
+                                            </Box>
+                                            <Box>
+                                                <Chip
+                                                    label={isPrimary ? 'Headquarters & Main Fleet' : 'Temple & Beach Corridor Hub'}
+                                                    size="small"
+                                                    color={isPrimary ? 'secondary' : 'success'}
+                                                    sx={{ fontWeight: 700, height: 20, mb: 0.5, fontSize: '0.7rem' }}
+                                                />
+                                                <Typography variant="h5" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                                    {hubTitle}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
 
-                                <Stack spacing={1.5} sx={{ mb: 3.5, flexGrow: 1 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                                        <AccessTimeIcon sx={{ fontSize: 18, color: '#10B981' }} />
-                                        <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600 }}>
-                                            Open 24 Hours • Every Day of the Week
+                                        <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mb: 2.5, lineHeight: 1.7 }}>
+                                            {hubAddress}
                                         </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                                        <PhoneIcon sx={{ fontSize: 18, color: '#38BDF8' }} />
-                                        <Typography
-                                            component="a"
-                                            href="tel:+918660989586"
-                                            variant="body2"
-                                            sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 700, textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}
+
+                                        <Box
+                                            sx={{
+                                                mb: 2.5,
+                                                borderRadius: 2.5,
+                                                overflow: 'hidden',
+                                                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #E2E8F0',
+                                                height: 200,
+                                                bgcolor: isDark ? '#0B1120' : '#F8FAFC',
+                                            }}
                                         >
-                                            +91 8660989586 / 097316 99125
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                                        <EmailIcon sx={{ fontSize: 18, color: '#A855F7' }} />
-                                        <Typography
-                                            component="a"
-                                            href="mailto:contact@whizwheels.in"
-                                            variant="body2"
-                                            sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600, textDecoration: 'none', '&:hover': { color: '#F59E0B' } }}
-                                        >
-                                            contact@whizwheels.in
-                                        </Typography>
-                                    </Box>
-                                </Stack>
+                                            <iframe
+                                                title={`${hubTitle} Location Map`}
+                                                src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
+                                                width="100%"
+                                                height="100%"
+                                                style={{ border: 0 }}
+                                                loading="lazy"
+                                                referrerPolicy="no-referrer-when-downgrade"
+                                            />
+                                        </Box>
 
-                                <Button
-                                    component="a"
-                                    href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    variant="outlined"
-                                    color="primary"
-                                    startIcon={<DirectionsIcon />}
-                                    sx={{ fontWeight: 800, borderRadius: 2, py: 1 }}
-                                >
-                                    Get Directions on Google Maps
-                                </Button>
-                            </Paper>
-                        </Grid>
+                                        <Stack spacing={1.5} sx={{ mb: 3, flexGrow: 1 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                                                <AccessTimeIcon sx={{ fontSize: 18, color: '#10B981' }} />
+                                                <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600 }}>
+                                                    Open 24 Hours • Every Day of the Week
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                                                <PhoneIcon sx={{ fontSize: 18, color: '#38BDF8' }} />
+                                                <Typography
+                                                    component="a"
+                                                    href={`tel:${hubPhone}`}
+                                                    variant="body2"
+                                                    sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 700, textDecoration: 'none', '&:hover': { color: accent } }}
+                                                >
+                                                    {formatPhone(hubPhone)}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                                                <EmailIcon sx={{ fontSize: 18, color: '#A855F7' }} />
+                                                <Typography
+                                                    component="a"
+                                                    href="mailto:contact@whizwheels.in"
+                                                    variant="body2"
+                                                    sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600, textDecoration: 'none', '&:hover': { color: accent } }}
+                                                >
+                                                    contact@whizwheels.in
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
 
-                        {/* Hub 2: Honnavar Railway Station Hub */}
-                        <Grid size={{ xs: 12, md: 6 }}>
-                            <Paper
-                                elevation={0}
-                                sx={{
-                                    p: { xs: 3, sm: 4 },
-                                    height: '100%',
-                                    borderRadius: 3.5,
-                                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                                    backdropFilter: 'blur(16px)',
-                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        borderColor: '#10B981',
-                                        boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.4)' : '0 10px 25px rgba(0,0,0,0.06)',
-                                    },
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                    <Box sx={{ p: 1.2, borderRadius: 2.5, bgcolor: 'rgba(16, 185, 129, 0.15)', color: '#10B981' }}>
-                                        <LocationOnIcon fontSize="medium" />
-                                    </Box>
-                                    <Box>
-                                        <Chip label="Train Arrival Express Counter" size="small" color="success" sx={{ fontWeight: 700, height: 20, mb: 0.5, fontSize: '0.7rem' }} />
-                                        <Typography variant="h5" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                            Honnavar Railway Station Hub
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mb: 3, lineHeight: 1.7 }}>
-                                    Positioned right outside Honnavar Railway Station for seamless key handovers to passengers arriving on Vande Bharat, Matsyagandha, and Netravati Express.
-                                </Typography>
-
-                                <Stack spacing={1.5} sx={{ mb: 3.5, flexGrow: 1 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                                        <AccessTimeIcon sx={{ fontSize: 18, color: '#10B981' }} />
-                                        <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600 }}>
-                                            Synchronized with Konkan Railway Timings
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                                        <PhoneIcon sx={{ fontSize: 18, color: '#38BDF8' }} />
-                                        <Typography
-                                            component="a"
-                                            href="tel:+918660989586"
-                                            variant="body2"
-                                            sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 700, textDecoration: 'none', '&:hover': { color: '#10B981' } }}
-                                        >
-                                            +91 8660989586
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                                        <WhatsAppIcon sx={{ fontSize: 18, color: '#25D366' }} />
-                                        <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600 }}>
-                                            Instant WhatsApp Train Arrival Coordination
-                                        </Typography>
-                                    </Box>
-                                </Stack>
-
-                                <Button
-                                    component="a"
-                                    href="https://www.google.com/maps/dir/?api=1&destination=Honnavar+Railway+Station,+Karnataka"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    variant="outlined"
-                                    color="success"
-                                    startIcon={<DirectionsIcon />}
-                                    sx={{ fontWeight: 800, borderRadius: 2, py: 1 }}
-                                >
-                                    Station Hub Directions
-                                </Button>
-                            </Paper>
-                        </Grid>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                                            <Button
+                                                component={Link}
+                                                href={`/bike-rentals/branches/${hub.id}/${branchSlug}`}
+                                                variant="contained"
+                                                color={isPrimary ? 'secondary' : 'success'}
+                                                sx={{ fontWeight: 800, borderRadius: 2, py: 1, flex: 1 }}
+                                            >
+                                                View {hubCity} Fleet →
+                                            </Button>
+                                            <Button
+                                                component="a"
+                                                href={directionsUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                variant="outlined"
+                                                color={isPrimary ? 'primary' : 'success'}
+                                                startIcon={<DirectionsIcon />}
+                                                sx={{ fontWeight: 800, borderRadius: 2, py: 1, flex: 1 }}
+                                            >
+                                                Get Directions
+                                            </Button>
+                                        </Stack>
+                                    </Paper>
+                                </Grid>
+                            );
+                        })}
                     </Grid>
                 </Box>
 
@@ -645,14 +644,14 @@ export default function Contact() {
                                 </Button>
                                 <Button
                                     component="a"
-                                    href="tel:09731699125"
+                                    href={`tel:${murudeshwarPhone}`}
                                     variant="contained"
                                     color="secondary"
                                     size="large"
                                     startIcon={<PhoneIcon />}
                                     sx={{ fontWeight: 800, py: 1.3, borderRadius: 2 }}
                                 >
-                                    Call 24/7 Desk (097316 99125)
+                                    Murudeshwar Desk ({formatPhone(murudeshwarPhone)})
                                 </Button>
                             </Stack>
 
@@ -677,10 +676,10 @@ export default function Contact() {
                                         size="small"
                                         variant="outlined"
                                         startIcon={<ContentCopyIcon sx={{ fontSize: '0.85rem !important' }} />}
-                                        onClick={() => handleCopyPhone('09731699125')}
+                                        onClick={() => handleCopyPhone(murudeshwarPhone)}
                                         sx={{ textTransform: 'none', fontSize: '0.78rem', borderRadius: 1.5 }}
                                     >
-                                        097316 99125
+                                        {formatPhone(murudeshwarPhone)}
                                     </Button>
                                 </Stack>
                             </Box>

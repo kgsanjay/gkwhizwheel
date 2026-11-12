@@ -6,7 +6,8 @@ import {
     TextField, Typography,
 } from '@mui/material';
 import AuthModal from '../Auth/AuthModal';
-import { sanitizePhone, validatePhone } from './bookingUtils';
+import GoogleButton from '../Auth/GoogleButton';
+import { sanitizePhone, validatePhone, resolveGuestAccount } from './bookingUtils';
 
 const tripTypes = [
     { value: 'one_way', label: 'One-way transfer' },
@@ -28,6 +29,7 @@ export default function CabsBookingModal({ open, onClose, initialTripType = 'one
     const { auth } = usePage().props;
     const user = auth?.user;
     const [authOpen, setAuthOpen] = useState(false);
+    const [otpChallenge, setOtpChallenge] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
     const [received, setReceived] = useState(false);
@@ -67,16 +69,38 @@ export default function CabsBookingModal({ open, onClose, initialTripType = 'one
     }, [user]);
 
     const submit = (event) => {
-        event.preventDefault();
+        if (event) event.preventDefault();
         setErrors({});
-        if (!user) {
-            setAuthOpen(true);
-            return;
-        }
         if (!validatePhone(form.customer_phone)) {
             setErrors({ customer_phone: 'Enter a valid 10-digit Indian mobile number.' });
             return;
         }
+
+        if (!user) {
+            setSubmitting(true);
+            resolveGuestAccount({
+                name: form.customer_name,
+                phone: form.customer_phone,
+                email: form.customer_email,
+            }).then((res) => {
+                setSubmitting(false);
+                if (res.status === 'authenticated') {
+                    proceedWithSubmission();
+                } else if (res.status === 'otp_required') {
+                    setOtpChallenge(res);
+                    setAuthOpen(true);
+                }
+            }).catch((err) => {
+                setSubmitting(false);
+                setErrors({ customer_phone: err.message || 'Could not verify customer account.' });
+            });
+            return;
+        }
+
+        proceedWithSubmission();
+    };
+
+    const proceedWithSubmission = () => {
         const stops = form.stops.split('\n').map((part) => part.trim()).filter(Boolean);
         if (stops.length > 6) {
             setErrors({ stops: 'Enter no more than six intermediate stops.' });
@@ -188,6 +212,21 @@ export default function CabsBookingModal({ open, onClose, initialTripType = 'one
                                     inputProps={{ maxLength: 1200 }} error={!!errors.special_requests}
                                     helperText={errors.special_requests} />
                             </Grid>
+                            <Grid size={{ xs: 12 }}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mt: 1, mb: 0.5 }}>
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                            Passenger Contact Details
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Account auto-created with your phone number.
+                                        </Typography>
+                                    </Box>
+                                    {!user && (
+                                        <GoogleButton size="small" fullWidth={false} label="1-Tap Google" />
+                                    )}
+                                </Stack>
+                            </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField fullWidth required label="Full name" value={form.customer_name}
                                     onChange={(e) => setField('customer_name', e.target.value)}
@@ -221,7 +260,12 @@ export default function CabsBookingModal({ open, onClose, initialTripType = 'one
                     </Button>
                 </DialogActions>
             </Dialog>
-            <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+            <AuthModal
+                open={authOpen}
+                onClose={() => { setAuthOpen(false); setOtpChallenge(null); }}
+                onSuccess={() => proceedWithSubmission()}
+                otpChallenge={otpChallenge}
+            />
         </>
     );
 }

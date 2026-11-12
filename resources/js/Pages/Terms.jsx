@@ -418,7 +418,7 @@ export default function Terms() {
                                     </Box>
                                     <Button
                                         component="a"
-                                        href="tel:09731699125"
+                                        href="tel:+917892094155"
                                         size="small"
                                         variant="outlined"
                                         sx={{
@@ -428,7 +428,7 @@ export default function Terms() {
                                             color: isDark ? '#FFFFFF' : '#0F172A',
                                         }}
                                     >
-                                        Station Desk
+                                        Murudeshwar Desk
                                     </Button>
                                 </Box>
                             </Paper>
@@ -438,7 +438,7 @@ export default function Terms() {
             </Box>
 
             {/* Main Content */}
-            <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
+            <Container maxWidth={false} sx={{ maxWidth: '1440px', py: { xs: 6, md: 8 } }}>
                 {/* Category Filter Chips */}
                 <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1, color: 'text.secondary' }}>
@@ -639,7 +639,7 @@ export default function Terms() {
                                         fullWidth
                                         startIcon={<PhoneIcon sx={{ color: '#F59E0B' }} />}
                                         component="a"
-                                        href="tel:09731699125"
+                                        href="tel:+917892094155"
                                         sx={{
                                             justifyContent: 'flex-start',
                                             fontWeight: 700,
@@ -649,7 +649,7 @@ export default function Terms() {
                                             '&:hover': { borderColor: '#F59E0B', color: '#F59E0B' },
                                         }}
                                     >
-                                        Call Desk: 097316 99125
+                                        Murudeshwar: +91 78920 94155
                                     </Button>
                                 </Stack>
                             </Paper>

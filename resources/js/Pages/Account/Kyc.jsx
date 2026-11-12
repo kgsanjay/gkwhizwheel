@@ -226,7 +226,7 @@ export default function AccountKyc({ documents = [], user = null }) {
                                 fontSize: { xs: '0.875rem', sm: '0.95rem' },
                             }}
                         >
-                            Complete your digital KYC before pickup for instantaneous vehicle key handover at Palya Main Rd or Honnavar Railway Station.
+                            Complete your digital KYC before pickup for instantaneous vehicle key handover at our Honnavar or Murudeshwar hub.
                         </Typography>
 
                         {user && (

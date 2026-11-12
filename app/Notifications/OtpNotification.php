@@ -24,7 +24,26 @@ class OtpNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        $channels = ['mail'];
+        $phone = (method_exists($notifiable, 'routeNotificationFor') ? $notifiable->routeNotificationFor('whatsapp', $this) : null)
+            ?? ($notifiable->phone ?? null);
+
+        if (! empty($phone)) {
+            $channels[] = \App\Channels\WhatsAppChannel::class;
+        }
+
+        return $channels;
+    }
+
+    /**
+     * Get the WhatsApp representation of the notification.
+     */
+    public function toWhatsApp(object $notifiable): \App\Notifications\Messages\WhatsAppMessage
+    {
+        return \App\Notifications\Messages\WhatsAppMessage::create('verification_otp')
+            ->parameters([
+                $this->otp,
+            ]);
     }
 
     /**

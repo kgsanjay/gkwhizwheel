@@ -37,7 +37,7 @@ export default function About() {
     const stats = [
         { label: 'Happy Coastal Riders', value: '5,000+', icon: <TwoWheelerIcon sx={{ color: '#F59E0B', fontSize: 30 }} />, detail: 'Across Karnataka & Goa travelers' },
         { label: 'Google Rating', value: '5.0 ★', icon: <StarIcon sx={{ color: '#F59E0B', fontSize: 30 }} />, detail: '324+ Verified rider reviews' },
-        { label: 'Active Honnavar Hubs', value: '2 Hubs', icon: <LocationOnIcon sx={{ color: '#10B981', fontSize: 30 }} />, detail: 'Railway Station & Palya Main Rd' },
+        { label: 'Active Coastal Hubs', value: '2 Hubs', icon: <LocationOnIcon sx={{ color: '#10B981', fontSize: 30 }} />, detail: 'Honnavar & Murudeshwar' },
         { label: 'On-Road Support', value: '24/7 Live', icon: <SupportAgentIcon sx={{ color: '#38BDF8', fontSize: 30 }} />, detail: 'Real-time rescue & backup bike' },
     ];
 
@@ -56,7 +56,7 @@ export default function About() {
         },
         {
             title: 'Dual Hubs with One-Way Drops',
-            desc: 'Arriving by train? Pick up your ride immediately outside Honnavar Railway Station. Returning to town? Drop off at our central Palya Main Rd store.',
+            desc: 'Pick up in Honnavar (Palya Main Rd) or Murudeshwar (Temple Main Rd), or coordinate express train/bus-stand handover with our 24/7 dispatch desk.',
             icon: <LocationOnIcon sx={{ fontSize: 34, color: '#38BDF8' }} />,
             highlight: 'Complete Flexibility',
         },
@@ -293,8 +293,8 @@ export default function About() {
                                         },
                                         {
                                             icon: <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 20 }} />,
-                                            title: 'Dual Convenient Hubs',
-                                            desc: 'Palya Main Rd Head Office & Honnavar Railway Station Counter.',
+                                            title: 'Dual Coastal Hubs',
+                                            desc: 'Honnavar (Palya Main Rd) & Murudeshwar (Temple Main Rd).',
                                         },
                                         {
                                             icon: <ShieldIcon sx={{ color: '#10B981', fontSize: 20 }} />,
@@ -341,7 +341,7 @@ export default function About() {
                                     </Box>
                                     <Button
                                         component="a"
-                                        href="tel:09731699125"
+                                        href="tel:+917892094155"
                                         size="small"
                                         variant="outlined"
                                         sx={{
@@ -351,7 +351,7 @@ export default function About() {
                                             color: isDark ? '#FFFFFF' : '#0F172A',
                                         }}
                                     >
-                                        Call Station Desk
+                                        Murudeshwar Desk
                                     </Button>
                                 </Box>
                             </Paper>
@@ -361,7 +361,7 @@ export default function About() {
             </Box>
 
             {/* Main Content Area */}
-            <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
+            <Container maxWidth={false} sx={{ maxWidth: '1440px', py: { xs: 6, md: 8 } }}>
                 {/* Stats Ribbon */}
                 <Grid container spacing={3} sx={{ mb: 8 }}>
                     {stats.map((stat, i) => (
@@ -469,10 +469,10 @@ export default function About() {
                                     }}
                                 >
                                     <Typography variant="caption" sx={{ fontWeight: 700, color: '#F59E0B', display: 'block' }}>
-                                        Honnavar Head Office Fleet
+                                        Honnavar & Murudeshwar Fleet
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: '#E2E8F0' }}>
-                                        Ready for immediate departure at Palya Main Rd & Railway Station Hub
+                                        Ready for immediate departure at Palya Main Rd & Temple Main Rd
                                     </Typography>
                                 </Box>
                             </Box>

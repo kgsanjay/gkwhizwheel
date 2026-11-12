@@ -47,7 +47,7 @@ class BookingConfirmationNotification extends Notification
                 "{$pickupStore} ({$startDate})",
                 '₹'.number_format((float) $this->booking->total_amount, 2),
             ])
-            ->buttonUrl(url("/bookings/{$this->booking->id}"));
+            ->buttonUrl(route('bookings.confirmation', $this->booking->id));
     }
 
     /**
@@ -71,7 +71,7 @@ class BookingConfirmationNotification extends Notification
             ->line("Pickup Location: {$pickupStore} ({$startDate})")
             ->line("Return Location: {$returnStore} ({$endDate})")
             ->line('Total Charged (Advance + Deposit): ₹'.number_format((float) $this->booking->total_amount, 2))
-            ->action('View Booking Details', url("/bookings/{$this->booking->id}"))
+            ->action('View Booking Details', route('bookings.confirmation', $this->booking->id))
             ->line('Thank you for choosing GK WhizWheel! Please carry your valid Driving License at pickup time.');
     }
 

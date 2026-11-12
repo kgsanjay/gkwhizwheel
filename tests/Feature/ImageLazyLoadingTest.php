@@ -46,7 +46,7 @@ class ImageLazyLoadingTest extends TestCase
     public function test_hero_and_above_fold_images_are_loaded_eagerly(): void
     {
         $heroImageChecks = [
-            'resources/js/Pages/Welcome.jsx' => 'src="/images/logo.png"',
+            'resources/js/Pages/Welcome.jsx' => 'src={activeSlide.image}',
             'resources/js/Pages/Services.jsx' => 'src={active.media?.primary || active.image}',
             'resources/js/Pages/ServiceDetail.jsx' => 'src={service.image}',
             'resources/js/Pages/BoatingPage.jsx' => 'src="/images/services/honnavar-backwater-boating.jpg"',

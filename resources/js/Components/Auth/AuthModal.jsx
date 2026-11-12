@@ -11,6 +11,7 @@ import {
     Button,
     Alert,
     CircularProgress,
+    Divider,
     FormControlLabel,
     Checkbox,
     Stack,
@@ -21,12 +22,14 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import apiClient, { setAuthToken } from '../../api/client';
+import GoogleButton from './GoogleButton';
 
-export default function AuthModal({ open, onClose, onSuccess, initialTab = 0 }) {
+export default function AuthModal({ open, onClose, onSuccess, initialTab = 0, otpChallenge = null }) {
     const [activeTab, setActiveTab] = useState(initialTab);
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState(null);
     const [fieldErrors, setFieldErrors] = useState({});
+    const [otpCode, setOtpCode] = useState('');
 
     // Login fields
     const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -38,6 +41,39 @@ export default function AuthModal({ open, onClose, onSuccess, initialTab = 0 }) 
     const [regPhone, setRegPhone] = useState('');
     const [regPassword, setRegPassword] = useState('');
     const [regWhatsapp, setRegWhatsapp] = useState(true);
+
+    const googleRedirectUrl = typeof window !== 'undefined'
+        ? `/auth/google?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`
+        : '/auth/google';
+
+    const handleOtpVerifySubmit = async (e) => {
+        e.preventDefault();
+        if (!otpChallenge?.user_id) return;
+        setLoading(true);
+        setErrorMsg(null);
+        setFieldErrors({});
+
+        try {
+            const response = await apiClient.post('/auth/checkout-verify-otp', {
+                user_id: otpChallenge.user_id,
+                otp: otpCode.trim(),
+            });
+            const token = response.data?.token;
+            const user = response.data?.user;
+            if (token) {
+                setAuthToken(token);
+                window.dispatchEvent(new Event('auth:login'));
+            }
+            setOtpCode('');
+            if (onSuccess) onSuccess(user, token);
+            onClose();
+        } catch (err) {
+            setErrorMsg(err.message || 'Invalid verification code.');
+            if (err.errors) setFieldErrors(err.errors);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
@@ -135,7 +171,7 @@ export default function AuthModal({ open, onClose, onSuccess, initialTab = 0 }) 
         >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {activeTab === 0 ? 'Log In to Book' : 'Create Customer Account'}
+                    {otpChallenge ? 'Verify Your Existing Account' : activeTab === 0 ? 'Log In to Book' : 'Create Customer Account'}
                 </Typography>
                 <IconButton onClick={onClose} size="small">
                     <CloseIcon />
@@ -143,6 +179,61 @@ export default function AuthModal({ open, onClose, onSuccess, initialTab = 0 }) 
             </DialogTitle>
 
             <DialogContent dividers sx={{ p: 3 }}>
+                {otpChallenge ? (
+                    <Box component="form" onSubmit={handleOtpVerifySubmit}>
+                        <Alert severity="info" sx={{ mb: 2.5 }}>
+                            Welcome back! An account matching <strong>{otpChallenge.masked_phone || otpChallenge.masked_email}</strong> already exists. Enter the 6-digit OTP sent to your WhatsApp/Email to continue booking safely.
+                        </Alert>
+                        {errorMsg && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {errorMsg}
+                            </Alert>
+                        )}
+                        <Stack spacing={2}>
+                            <TextField
+                                fullWidth
+                                autoFocus
+                                label="6-Digit Verification Code (OTP)"
+                                placeholder="123456"
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                                required
+                                error={Boolean(fieldErrors.otp)}
+                                helperText={fieldErrors.otp?.[0]}
+                            />
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="secondary"
+                                fullWidth
+                                size="large"
+                                disabled={loading || otpCode.length !== 6}
+                                sx={{ py: 1.3, fontWeight: 800 }}
+                            >
+                                {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify OTP & Continue Booking'}
+                            </Button>
+                            <Divider>
+                                <Typography variant="caption" color="text.secondary">or</Typography>
+                            </Divider>
+                            <GoogleButton
+                                label="Continue with Google Instead"
+                                redirect={typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/'}
+                            />
+                        </Stack>
+                    </Box>
+                ) : (
+                <>
+                <GoogleButton
+                    label="Continue with Google (1-Tap)"
+                    redirect={typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/'}
+                    sx={{ mb: 2 }}
+                />
+
+                <Divider sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary">OR WITH PHONE / EMAIL</Typography>
+                </Divider>
+
                 <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
                     {activeTab === 0
                         ? 'Sign in to access real-time 15-minute booking hold and instant reservation.'
@@ -286,6 +377,8 @@ export default function AuthModal({ open, onClose, onSuccess, initialTab = 0 }) 
                             </Button>
                         </Stack>
                     </Box>
+                )}
+                </>
                 )}
             </DialogContent>
         </Dialog>

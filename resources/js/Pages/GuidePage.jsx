@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import GuideBookingModal from '../Components/BookingModals/GuideBookingModal';
+import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
@@ -424,7 +425,7 @@ export default function GuidePage({ availableItems = [] }) {
                         borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         {/* Breadcrumbs */}
                         <Breadcrumbs
                             aria-label="breadcrumb"
@@ -843,7 +844,7 @@ export default function GuidePage({ availableItems = [] }) {
                         bgcolor: isDark ? '#0B1120' : '#F8FAFC',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                             <Chip
                                 label="CHOOSE YOUR EXPERIENCE"
@@ -1073,7 +1074,7 @@ export default function GuidePage({ availableItems = [] }) {
                         bgcolor: isDark ? '#0F172A' : '#FFFFFF',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 5 } }}>
                             <Chip
                                 label="POPULAR GUIDED CIRCUITS"
@@ -1333,7 +1334,7 @@ export default function GuidePage({ availableItems = [] }) {
                         borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                             <Chip
                                 label="REAL PEOPLE • AUTHENTIC STORIES"
@@ -1503,7 +1504,7 @@ export default function GuidePage({ availableItems = [] }) {
                         borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Stack
                             direction={{ xs: 'column', md: 'row' }}
                             alignItems={{ xs: 'flex-start', md: 'center' }}
@@ -1655,7 +1656,7 @@ export default function GuidePage({ availableItems = [] }) {
                         bgcolor: isDark ? '#0B1120' : '#F8FAFC',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                             <Chip
                                 label="NO SURPRISES PRICING"
@@ -1888,7 +1889,7 @@ export default function GuidePage({ availableItems = [] }) {
                         bgcolor: isDark ? '#0F172A' : '#FFFFFF',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                             <Chip
                                 label="ETHICS & TRAVELER PROTECTION"
@@ -2306,6 +2307,11 @@ export default function GuidePage({ availableItems = [] }) {
             />
 
             {/* Multi-Image Guide Gallery Lightbox */}
+            <RelatedGuidesStrip
+                serviceKey="guide"
+                title="Local Trails, Waterfalls & Heritage Guides"
+                subtitle="Offbeat Apsarakonda cascades, 16th-century Mirjan Fort history & golden-hour photography spots."
+            />
             <ServiceGalleryModal
                 open={galleryModalOpen}
                 onClose={() => setGalleryModalOpen(false)}

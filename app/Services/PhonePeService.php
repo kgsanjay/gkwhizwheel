@@ -5,18 +5,61 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\ServiceBooking;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class PhonePeService
 {
     /**
-     * Create a PhonePe standard pay request for advance + deposit combined (Option A).
+     * Create a PhonePe standard pay request for bike rental advance + deposit combined (Option A).
      *
      * @return array<string, mixed>
      */
     public function createPayment(Booking $booking, ?string $redirectUrl = null): array
     {
+        $amount = BikeBookingPayments::expectedGatewayAmount($booking);
+        $merchantTransactionId = 'TXN_BK_'.$booking->id.'_'.Str::random(8);
+
+        return $this->initiateStandardPay(
+            $merchantTransactionId,
+            'USER_'.($booking->user_id ?? 'GUEST'),
+            $amount,
+            (string) ($booking->user?->phone ?? '9999999999'),
+            $redirectUrl
+        );
+    }
+
+    /**
+     * Create a PhonePe standard pay request for a travel service booking balance.
+     *
+     * @return array<string, mixed>
+     */
+    public function createServicePayment(ServiceBooking $booking, float $amount, ?string $redirectUrl = null): array
+    {
+        $merchantTransactionId = 'TXN_SRV_'.$booking->id.'_'.Str::random(8);
+
+        return $this->initiateStandardPay(
+            $merchantTransactionId,
+            'USER_'.($booking->user_id ?? 'GUEST'),
+            $amount,
+            (string) ($booking->customer_phone ?: $booking->user?->phone ?: '9999999999'),
+            $redirectUrl
+        );
+    }
+
+    /**
+     * Shared PhonePe PAY_PAGE initiation for bookings and travel services.
+     *
+     * @return array<string, mixed>
+     */
+    protected function initiateStandardPay(
+        string $merchantTransactionId,
+        string $merchantUserId,
+        float $amount,
+        string $mobileNumber,
+        ?string $redirectUrl = null
+    ): array {
         $merchantId = (string) config('services.phonepe.merchant_id', 'PGTESTPAYUAT');
         $saltKey = (string) config('services.phonepe.salt_key', 'test_phonepe_salt_key');
         $saltIndex = (string) config('services.phonepe.salt_index', '1');
@@ -24,18 +67,17 @@ class PhonePeService
         $callbackUrl = (string) config('services.phonepe.callback_url', url('/webhooks/phonepe'));
         $finalRedirectUrl = $redirectUrl ?? (string) config('services.phonepe.redirect_url', url('/payment/phonepe/callback'));
 
-        $amountPaise = (int) round(BikeBookingPayments::expectedGatewayAmount($booking) * 100);
-        $merchantTransactionId = 'TXN_BK_'.$booking->id.'_'.Str::random(8);
+        $amountPaise = (int) round($amount * 100);
 
         $requestData = [
             'merchantId' => $merchantId,
             'merchantTransactionId' => $merchantTransactionId,
-            'merchantUserId' => 'USER_'.$booking->user_id,
+            'merchantUserId' => $merchantUserId,
             'amount' => $amountPaise,
             'redirectUrl' => $finalRedirectUrl,
             'redirectMode' => 'POST',
             'callbackUrl' => $callbackUrl,
-            'mobileNumber' => (string) ($booking->user?->phone ?? '9999999999'),
+            'mobileNumber' => $mobileNumber,
             'paymentInstrument' => [
                 'type' => 'PAY_PAGE',
             ],
@@ -59,7 +101,7 @@ class PhonePeService
 
                 return [
                     'merchant_transaction_id' => $merchantTransactionId,
-                    'amount' => BikeBookingPayments::expectedGatewayAmount($booking),
+                    'amount' => $amount,
                     'amount_paise' => $amountPaise,
                     'redirect_url' => $json['data']['instrumentResponse']['redirectInfo']['url'] ?? null,
                     'status' => 'pending_payment',
@@ -74,7 +116,7 @@ class PhonePeService
             // ponytail: synthetic order generation for PhonePe sandbox/local dev testing
             return [
                 'merchant_transaction_id' => $merchantTransactionId,
-                'amount' => BikeBookingPayments::expectedGatewayAmount($booking),
+                'amount' => $amount,
                 'amount_paise' => $amountPaise,
                 'redirect_url' => 'https://mercury-uat.phonepe.com/transact/simulator?token='.Str::random(32),
                 'status' => 'pending_payment',
@@ -86,7 +128,7 @@ class PhonePeService
             ];
         }
 
-        throw new \RuntimeException('PhonePe payment initiation failed: '.($response->body() ?? 'unknown error'));
+        throw new \RuntimeException('PhonePe payment initiation failed: '.(isset($response) ? $response->body() : 'unknown error'));
     }
 
     /**

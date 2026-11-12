@@ -11,6 +11,8 @@ Route::prefix('v1')->group(function (): void {
         Route::middleware('throttle:auth')->group(function (): void {
             Route::post('/register', [AuthController::class, 'register']);
             Route::post('/login', [AuthController::class, 'login']);
+            Route::post('/checkout-resolve', [AuthController::class, 'checkoutResolve']);
+            Route::post('/checkout-verify-otp', [AuthController::class, 'checkoutVerifyOtp']);
         });
 
         Route::middleware('throttle:otp')->group(function (): void {

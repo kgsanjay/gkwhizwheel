@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Enums\BikeStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Web\BlogController;
 use App\Models\Bike;
 use App\Models\ServiceItem;
 use Illuminate\Http\Response;
@@ -34,8 +35,19 @@ class SitemapController extends Controller
             ['loc' => url('/explore'), 'priority' => '0.7', 'changefreq' => 'weekly'],
             ['loc' => url('/about'), 'priority' => '0.6', 'changefreq' => 'monthly'],
             ['loc' => url('/how-it-works'), 'priority' => '0.6', 'changefreq' => 'monthly'],
+            ['loc' => url('/blog'), 'priority' => '0.8', 'changefreq' => 'weekly'],
             ['loc' => url('/contact'), 'priority' => '0.6', 'changefreq' => 'monthly'],
         ];
+
+        foreach (BlogController::articles() as $article) {
+            if (! empty($article['slug'])) {
+                $staticPages[] = [
+                    'loc' => url('/blog/' . $article['slug']),
+                    'priority' => '0.75',
+                    'changefreq' => 'monthly',
+                ];
+            }
+        }
 
         foreach ($staticPages as $page) {
             $urls[] = [

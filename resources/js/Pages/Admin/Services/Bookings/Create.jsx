@@ -311,14 +311,13 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                         type="number"
                                         fullWidth
                                         disabled
-                                        helperText="Payment is recorded after resource approval."
+                                        helperText="Payment is recorded after resource approval (enter 0 if paying on arrival)."
                                         value={data.advance_paid}
                                         onChange={(e) => setData('advance_paid', parseFloat(e.target.value) || 0)}
                                         error={Boolean(errors.advance_paid)}
                                         InputProps={{
                                             startAdornment: <InputAdornment position="start"><CurrencyRupeeIcon fontSize="small" /></InputAdornment>,
                                         }}
-                                        helperText="Enter 0 if paying on arrival"
                                     />
                                 </Grid>
 

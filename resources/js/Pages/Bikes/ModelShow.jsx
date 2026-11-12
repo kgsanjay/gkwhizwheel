@@ -44,12 +44,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
     const title = `${model.brand} ${model.name} Bike Rental | GK WhizWheel`;
     const description = model.description || `Rent a ${model.brand} ${model.name} with GK WhizWheel. Compare availability at our branches, choose your rental dates and see the exact fare before payment.`;
     const beginBooking = () => {
-        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        if (!token) {
-            setAuthOpen(true);
-        } else {
-            setCheckoutOpen(true);
-        }
+        setCheckoutOpen(true);
     };
     const availabilityText = !datesValid
         ? 'Select branches and dates to check availability.'
@@ -93,7 +88,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                     },
                 ]}
             />
-            <Box component="main" sx={{ maxWidth: 1200, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
+            <Box component="main" sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
                 <Button component={Link} href="/services/bikes" startIcon={<ArrowBackIcon />} sx={{ mb: 3 }}>
                     Back to bike rentals
                 </Button>

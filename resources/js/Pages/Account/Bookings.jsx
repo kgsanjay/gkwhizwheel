@@ -231,7 +231,7 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                 fontSize: { xs: '0.875rem', sm: '0.925rem' },
                             }}
                         >
-                            Track active reservations, review vehicle handovers at Palya Main Rd or Honnavar Railway Station, and access official vehicle documents.
+                            Track active reservations, review vehicle handovers at our Honnavar or Murudeshwar hub, and access official vehicle documents.
                         </Typography>
 
                         {/* Authenticated Rider Profile Chip */}

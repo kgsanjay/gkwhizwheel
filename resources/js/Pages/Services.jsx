@@ -438,7 +438,7 @@ export default function Services({ availableItems = [] }) {
                         overflow: 'hidden',
                     }}
                 >
-                    <Box sx={{ maxWidth: '1280px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
+                    <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
                         {/* Top Breadcrumb & Live Hub Status */}
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
                             <Breadcrumbs
@@ -469,7 +469,7 @@ export default function Services({ availableItems = [] }) {
                                 }}
                             >
                                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981', boxShadow: '0 0 10px #10B981' }} />
-                                Dual Hubs Active • Honnavar Rly Stn & Palya Main Rd
+                                Dual Hubs Active • Honnavar &amp; Murudeshwar (24/7)
                             </Box>
                         </Box>
 
@@ -480,7 +480,7 @@ export default function Services({ availableItems = [] }) {
                                 <Box sx={{ mb: 2 }}>
                                     <Chip
                                         icon={<AutoAwesomeIcon sx={{ fontSize: '15px !important', color: '#F59E0B !important' }} />}
-                                        label="HONNAVAR'S OFFICIAL ALL-IN-ONE TRAVEL FLEET"
+                                        label="COASTAL KARNATAKA'S ALL-IN-ONE TRAVEL FLEET"
                                         sx={{
                                             bgcolor: 'rgba(245, 158, 11, 0.12)',
                                             color: '#F59E0B',
@@ -1041,7 +1041,7 @@ export default function Services({ availableItems = [] }) {
                     id="service-catalog"
                     component="section"
                     aria-labelledby="service-catalog-heading"
-                    sx={{ maxWidth: '1240px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mt: { xs: 7, md: 10 } }}
+                    sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mt: { xs: 7, md: 10 } }}
                 >
                     <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
                         <Chip
@@ -1709,7 +1709,7 @@ export default function Services({ availableItems = [] }) {
                     component="section"
                     aria-labelledby="combos-heading"
                     sx={{
-                        maxWidth: '1240px',
+                        maxWidth: '1440px',
                         width: '100%',
                         mx: 'auto',
                         px: { xs: 2, sm: 3, md: 4 },
@@ -1937,7 +1937,7 @@ export default function Services({ availableItems = [] }) {
                     component="section"
                     aria-labelledby="services-cta-heading"
                     sx={{
-                        maxWidth: '1240px',
+                        maxWidth: '1440px',
                         width: '100%',
                         mx: 'auto',
                         px: { xs: 2, sm: 3, md: 4 },
@@ -2082,7 +2082,7 @@ export default function Services({ availableItems = [] }) {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 20 }} />
                                 <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600 }}>
-                                    Palya Main Rd & Railway Station, Honnavar 581334
+                                    Honnavar (Palya Main Rd) &amp; Murudeshwar (Temple Main Rd)
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -2099,12 +2099,12 @@ export default function Services({ availableItems = [] }) {
                                         '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
                                     }}
                                 >
-                                    +91 8660989586
+                                    Honnavar: +91 86609 89586
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#64748B' }}>•</Typography>
                                 <Typography
                                     component="a"
-                                    href="tel:09731699125"
+                                    href="tel:+917892094155"
                                     variant="body2"
                                     sx={{
                                         color: isDark ? '#E2E8F0' : '#1E293B',
@@ -2114,7 +2114,7 @@ export default function Services({ availableItems = [] }) {
                                         '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
                                     }}
                                 >
-                                    097316 99125
+                                    Murudeshwar: +91 78920 94155
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

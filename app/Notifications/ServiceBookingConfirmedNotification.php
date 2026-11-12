@@ -60,7 +60,7 @@ class ServiceBookingConfirmedNotification extends Notification
         $coordinatorInfo = $coord['phone'] !== ''
             ? "{$coord['name']} ({$coord['phone']})"
             : "{$coord['name']} — contact details pending verification";
-        $voucherUrl = url("/services/booking/confirmation/{$this->serviceBooking->booking_number}");
+        $voucherUrl = route('services.booking.confirmation', $this->serviceBooking->booking_number);
         $customerName = $notifiable->name ?? $this->serviceBooking->customer_name ?? 'Valued Customer';
 
         return WhatsAppMessage::create('service_booking_confirmed')
@@ -86,7 +86,7 @@ class ServiceBookingConfirmedNotification extends Notification
         $coordinatorInfo = $coord['phone'] !== ''
             ? "{$coord['name']} ({$coord['phone']})"
             : "{$coord['name']} — contact details pending verification";
-        $voucherUrl = url("/services/booking/confirmation/{$this->serviceBooking->booking_number}");
+        $voucherUrl = route('services.booking.confirmation', $this->serviceBooking->booking_number);
         $customerName = $notifiable->name ?? $this->serviceBooking->customer_name ?? 'Valued Customer';
         $startDate = $this->serviceBooking->start_datetime ? Carbon::parse($this->serviceBooking->start_datetime)->toFormattedDateString() : '';
 

@@ -53,7 +53,7 @@ final class ServicePaymentReceivedNotification extends Notification
             ->line('Total Paid: ₹'.number_format((float) $this->booking->advance_paid, 2))
             ->line('Balance Due: ₹'.number_format((float) $this->booking->balance_due, 2))
             ->line('Reservation Status: '.ucwords(str_replace('_', ' ', $this->booking->status)))
-            ->action('View Booking', url('/services/booking/confirmation/'.$this->booking->booking_number))
+            ->action('View Booking', route('services.booking.confirmation', $this->booking->booking_number))
             ->line('This payment receipt does not change your reservation status.');
     }
 }

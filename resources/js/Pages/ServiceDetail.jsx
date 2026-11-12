@@ -784,7 +784,7 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
                         }}
                     />
 
-                    <Box sx={{ maxWidth: '1380px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
+                    <Box sx={{ maxWidth: '1440px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
                         <Grid container spacing={{ xs: 4, lg: 5 }} alignItems="center">
                             {/* Left Column: Headline, Narrative, Value Props & CTAs */}
                             <Grid size={{ xs: 12, lg: 6.5 }}>
@@ -1199,7 +1199,7 @@ export default function ServiceDetail({ slug = 'boating', availableItems = [] })
                 <Box
                     id="packages-section"
                     sx={{
-                        maxWidth: '1380px',
+                        maxWidth: '1440px',
                         width: '100%',
                         mx: 'auto',
                         px: { xs: 2, sm: 3, md: 4 },

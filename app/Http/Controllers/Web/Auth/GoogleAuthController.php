@@ -20,7 +20,7 @@ class GoogleAuthController extends Controller
     /**
      * Redirect the customer to the Google authentication page.
      */
-    public function redirectToGoogle(): RedirectResponse
+    public function redirectToGoogle(Request $request): RedirectResponse
     {
         $clientId = config('services.google.client_id');
         $clientSecret = config('services.google.client_secret');
@@ -30,6 +30,12 @@ class GoogleAuthController extends Controller
             return redirect()->route('login')->withErrors([
                 'login' => 'Google Login requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env. Please use mobile or email sign-in in the meantime.',
             ]);
+        }
+
+        // Preserve customer's current booking/page URL so OAuth returns them right back to checkout
+        $redirect = $request->query('redirect');
+        if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+            $request->session()->put('url.intended', url($redirect));
         }
 
         return Socialite::driver('google')->redirect();
@@ -85,7 +91,7 @@ class GoogleAuthController extends Controller
                 ]);
             }
 
-            Auth::login($user, true);
+            Auth::login($user);
             $request->session()->regenerate();
 
             if ($user->role === UserRole::CUSTOMER) {

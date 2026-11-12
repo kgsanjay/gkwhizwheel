@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { router, usePage } from '@inertiajs/react';
 import AuthModal from './Auth/AuthModal';
+import apiClient, { setAuthToken } from '../api/client';
 import {
     Dialog,
     DialogTitle,
@@ -46,6 +47,7 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import GoogleButton from './Auth/GoogleButton';
 
 export const SERVICES_LIST = [
     {
@@ -136,6 +138,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
     const { auth } = usePage().props;
     const [currentUser, setCurrentUser] = useState(auth?.user || null);
     const [authModalOpen, setAuthModalOpen] = useState(false);
+    const [otpChallenge, setOtpChallenge] = useState(null);
     const [customerName, setCustomerName] = useState(auth?.user?.name || '');
     const [customerPhone, setCustomerPhone] = useState(auth?.user?.phone || '');
     const [customerEmail, setCustomerEmail] = useState(auth?.user?.email || '');
@@ -451,12 +454,31 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             return;
         }
 
-        // STRICT RULE: Customer must be logged in before booking
+        // Check if user is logged in
         const hasToken = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
         const isUserLoggedIn = Boolean(currentUser || auth?.user || hasToken);
 
         if (!isUserLoggedIn) {
-            setAuthModalOpen(true);
+            setSubmitting(true);
+            apiClient.post('/auth/checkout-resolve', {
+                name: customerName.trim(),
+                phone: phoneClean,
+                email: customerEmail ? customerEmail.trim() : undefined,
+            }).then((res) => {
+                setSubmitting(false);
+                if (res.status === 'authenticated') {
+                    const user = res.data?.user;
+                    if (res.data?.token) setAuthToken(res.data.token);
+                    setCurrentUser(user);
+                    submitBookingNow(user);
+                } else if (res.status === 'otp_required') {
+                    setOtpChallenge(res);
+                    setAuthModalOpen(true);
+                }
+            }).catch((err) => {
+                setSubmitting(false);
+                setErrorMessage(err.message || 'Could not verify customer account. Please try again.');
+            });
             return;
         }
 
@@ -466,6 +488,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
     const handleAuthSuccess = (user) => {
         setCurrentUser(user);
         setAuthModalOpen(false);
+        setOtpChallenge(null);
         if (user?.name) setCustomerName(user.name);
         if (user?.phone) setCustomerPhone(user.phone);
         if (user?.email) setCustomerEmail(user.email);
@@ -1135,7 +1158,7 @@ _Sent via whizwheels.in - Service pricing subject to official booking quote_`;
                                 sx={{ bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F8FAFC' }}
                             >
                                 <MenuItem value="Palya Main Rd Hub, Honnavar">Palya Main Rd Hub, Honnavar</MenuItem>
-                                <MenuItem value="Honnavar Railway Station Hub">Honnavar Railway Station Hub (Direct Train Pickup)</MenuItem>
+                                <MenuItem value="Temple Main Rd Hub, Murudeshwar">Temple Main Rd Hub, Murudeshwar</MenuItem>
                             </TextField>
                         </Stack>
                     )}
@@ -1233,9 +1256,23 @@ _Sent via whizwheels.in - Service pricing subject to official booking quote_`;
                     {/* Shared Lead Traveler Contact Details */}
                     <Divider sx={{ my: 2.5, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }} />
 
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: isDark ? '#94A3B8' : '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 1.5 }}>
-                        Lead Traveler Contact Details
-                    </Typography>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
+                        <Box>
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: isDark ? '#94A3B8' : '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
+                                Lead Traveler Contact Details
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: isDark ? '#64748B' : '#94A3B8' }}>
+                                No password needed — account auto-created with your phone & voucher.
+                            </Typography>
+                        </Box>
+                        {!currentUser && !auth?.user && (
+                            <GoogleButton
+                                size="small"
+                                fullWidth={false}
+                                label="1-Tap Google"
+                            />
+                        )}
+                    </Stack>
 
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, sm: 6 }}>
@@ -1395,11 +1432,15 @@ _Sent via whizwheels.in - Service pricing subject to official booking quote_`;
             </DialogActions>
         </Dialog>
 
-        {/* Mandatory Authentication Modal for unauthenticated guests */}
+        {/* Authentication & Smart OTP Modal for unauthenticated guests */}
         <AuthModal
             open={authModalOpen}
-            onClose={() => setAuthModalOpen(false)}
+            onClose={() => {
+                setAuthModalOpen(false);
+                setOtpChallenge(null);
+            }}
             onSuccess={handleAuthSuccess}
+            otpChallenge={otpChallenge}
         />
         </>
     );

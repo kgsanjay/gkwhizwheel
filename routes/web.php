@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/sitemap.xml', [\App\Http\Controllers\Web\SitemapController::class, 'index'])->name('sitemap');
+Route::get('/blog', [\App\Http\Controllers\Web\BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [\App\Http\Controllers\Web\BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/', function () {
     $bikes = \App\Models\Bike::with(['category', 'currentStore', 'images'])
@@ -18,10 +20,21 @@ Route::get('/', function () {
     }])->get();
 
     $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+        ->where('publication_status', 'published')
         ->withCount(['bikes' => function ($query) {
             $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
         }])
+        ->orderBy('id')
         ->get();
+
+    if ($stores->isEmpty()) {
+        $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+            ->withCount(['bikes' => function ($query) {
+                $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
+            }])
+            ->orderBy('id')
+            ->get();
+    }
 
     return Inertia::render('Welcome', [
         'featuredBikes' => \App\Http\Resources\BikeResource::collection($bikes)->resolve(),
@@ -165,6 +178,7 @@ Route::post('/services/quote', [\App\Http\Controllers\Web\CustomerServiceBooking
     ->middleware('throttle:coupons')
     ->name('services.quote');
 Route::get('/services/bookings/{bookingNumber}/confirmation', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'confirmation'])->name('services.booking.confirmation');
+Route::get('/services/booking/confirmation/{bookingNumber}', fn (string $bookingNumber) => redirect()->route('services.booking.confirmation', $bookingNumber));
 Route::post('/services/bookings/{bookingNumber}/initiate-payment', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'initiatePayment'])
     ->middleware('throttle:payments')
     ->name('services.booking.initiate-payment');
@@ -188,9 +202,13 @@ Route::get('/privacy', fn () => Inertia::render('Privacy'))->name('privacy');
 Route::get('/privacy-policy', fn () => Inertia::render('Privacy'));
 
 Route::get('/bookings/{id}/confirmation', [\App\Http\Controllers\Web\BookingWebController::class, 'confirmation'])->name('bookings.confirmation');
+Route::get('/bookings/{id}', fn (int $id) => redirect()->route('bookings.confirmation', $id))->whereNumber('id');
 Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\BookingWebController::class, 'downloadVoucher'])->name('bookings.voucher');
 Route::get('/bookings/{id}/print', [\App\Http\Controllers\Web\BookingWebController::class, 'printVoucher'])->name('bookings.print');
 Route::post('/dev/bookings/{id}/simulate-payment', [\App\Http\Controllers\Web\BookingWebController::class, 'simulateTestPayment'])->name('dev.bookings.simulate-payment');
+Route::match(['get', 'post'], '/payment/phonepe/callback', [\App\Http\Controllers\Web\BookingWebController::class, 'handlePhonePeCallback'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+    ->name('payment.phonepe.callback');
 
 Route::get('/account', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'index'])->name('account.index');
 Route::get('/account/bookings/{id}', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'show'])->name('account.bookings.show');

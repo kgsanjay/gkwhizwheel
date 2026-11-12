@@ -34,6 +34,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 export default function ServiceBookingConfirmation({ booking = {}, coordinator = {}, razorpayKey = '' }) {
     const [currentBooking, setCurrentBooking] = React.useState(booking);
+    const [gateway, setGateway] = React.useState('phonepe');
     const [paying, setPaying] = React.useState(false);
     const [paySuccessMsg, setPaySuccessMsg] = React.useState('');
     const [payErrorMsg, setPayErrorMsg] = React.useState('');
@@ -69,10 +70,16 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
         try {
             const initRes = await window.axios.post(`/services/bookings/${currentBooking.booking_number}/initiate-payment`, {
                 amount: amountToPay,
+                gateway: gateway,
             });
 
             if (!initRes.data || !initRes.data.success) {
                 throw new Error(initRes.data?.message || 'Could not initiate online payment.');
+            }
+
+            if (initRes.data.gateway === 'phonepe' && initRes.data.redirect_url) {
+                window.location.href = initRes.data.redirect_url;
+                return;
             }
 
             const { order, key_id, customer } = initRes.data;
@@ -461,20 +468,74 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                                     />
                                 </Box>
 
-                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2.5 }}>
-                                    Pay the approved outstanding balance securely online. Partial payment options for non-bike services will appear only after their terms are configured.
+                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                                    Pay the approved outstanding balance securely online via UPI, PhonePe, Cards or NetBanking.
                                 </Typography>
+
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 2.5 }}>
+                                    <Paper
+                                        variant="outlined"
+                                        onClick={() => setGateway('phonepe')}
+                                        sx={{
+                                            p: 1.5,
+                                            flex: 1,
+                                            cursor: 'pointer',
+                                            borderRadius: 2,
+                                            border: gateway === 'phonepe' ? '2px solid #6739B7' : '1px solid #E2E8F0',
+                                            bgcolor: gateway === 'phonepe' ? 'rgba(103, 57, 183, 0.05)' : '#FFFFFF',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1.5,
+                                        }}
+                                    >
+                                        <AccountBalanceWalletIcon sx={{ color: '#6739B7' }} />
+                                        <Box>
+                                            <Typography variant="body2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                                PhonePe Payment
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                UPI, PhonePe Wallet & QR
+                                            </Typography>
+                                        </Box>
+                                    </Paper>
+
+                                    <Paper
+                                        variant="outlined"
+                                        onClick={() => setGateway('razorpay')}
+                                        sx={{
+                                            p: 1.5,
+                                            flex: 1,
+                                            cursor: 'pointer',
+                                            borderRadius: 2,
+                                            border: gateway === 'razorpay' ? '2px solid #0284C7' : '1px solid #E2E8F0',
+                                            bgcolor: gateway === 'razorpay' ? 'rgba(2, 132, 199, 0.05)' : '#FFFFFF',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1.5,
+                                        }}
+                                    >
+                                        <CreditCardIcon sx={{ color: '#0284C7' }} />
+                                        <Box>
+                                            <Typography variant="body2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                                Razorpay Checkout
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                Cards, NetBanking, All UPI
+                                            </Typography>
+                                        </Box>
+                                    </Paper>
+                                </Stack>
 
                                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                                     <Button
                                         variant="contained"
-                                        color="primary"
+                                        color={gateway === 'phonepe' ? 'secondary' : 'primary'}
                                         onClick={() => handlePayOnline(balanceDue)}
                                         disabled={paying}
                                         startIcon={paying ? <CircularProgress size={16} color="inherit" /> : <AccountBalanceWalletIcon />}
-                                        sx={{ textTransform: 'none', fontWeight: 800, py: 1.2, px: 3, borderRadius: 2, flexGrow: 1 }}
+                                        sx={{ textTransform: 'none', fontWeight: 800, py: 1.4, px: 3, borderRadius: 2, flexGrow: 1 }}
                                     >
-                                        {paying ? 'Processing...' : `Pay Full Balance: ₹${balanceDue.toLocaleString('en-IN')}`}
+                                        {paying ? 'Processing...' : `Pay ₹${balanceDue.toLocaleString('en-IN')} via ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'}`}
                                     </Button>
 
                                 </Stack>

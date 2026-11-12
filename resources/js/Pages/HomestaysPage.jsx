@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import HomestayBookingModal from '../Components/BookingModals/HomestayBookingModal';
+import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import {
     Box,
     Typography,
@@ -366,7 +367,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                         }}
                     />
 
-                    <Box sx={{ maxWidth: '1380px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
+                    <Box sx={{ maxWidth: '1440px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
                         <Grid container spacing={{ xs: 4, lg: 5 }} alignItems="center">
                             {/* Left Column: Headline, Narrative & Trust Badges */}
                             <Grid size={{ xs: 12, lg: 6.5 }}>
@@ -745,7 +746,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                 {/* =========================================================================
                     2. DATE & GUEST SEARCH DOCK
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 4, md: 5 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 4, md: 5 } }}>
                     <Paper
                         elevation={0}
                         sx={{
@@ -837,7 +838,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                 {/* =========================================================================
                     3. ROOMS & COTTAGES CATALOG (Live DB Items + Curated Tiers)
                 ========================================================================== */}
-                <Box id="rooms-catalog" sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box id="rooms-catalog" sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 4 }}>
                         <Box>
                             <Chip label="HANDPICKED COASTAL STAYS" size="small" sx={{ bgcolor: 'rgba(225, 29, 72, 0.12)', color: '#E11D48', fontWeight: 850, mb: 1 }} />
@@ -1107,7 +1108,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                 {/* =========================================================================
                     5. HOW HONNAVAR HOMESTAY BOOKING WORKS (COMPACT STRIP)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 6 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 6 } }}>
                     <Stack
                         direction={{ xs: 'column', md: 'row' }}
                         alignItems={{ xs: 'flex-start', md: 'center' }}
@@ -1242,7 +1243,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                 {/* =========================================================================
                     6. INCLUSIONS & POLICIES CHECKLIST
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Grid container spacing={3}>
                         <Grid size={{ xs: 12, md: 6 }}>
                             <Paper
@@ -1320,7 +1321,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                 {/* =========================================================================
                     7. FREQUENTLY ASKED QUESTIONS (Accordion)
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 7, md: 10 } }}>
                     <Typography variant="h3" component="h2" sx={{ fontWeight: 950, color: primaryTextColor, mb: 1 }}>
                         Honnavar Homestays — Frequently Asked Questions
                     </Typography>
@@ -1413,7 +1414,7 @@ export default function HomestaysPage({ availableItems = [] }) {
                 {/* =========================================================================
                     9. BOTTOM CALLOUT BANNER
                 ========================================================================== */}
-                <Box sx={{ maxWidth: '1380px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: 8 }}>
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pb: 8 }}>
                     <Paper
                         sx={{
                             p: { xs: 3, md: 5 },
@@ -1589,6 +1590,12 @@ export default function HomestaysPage({ availableItems = [] }) {
                         </DialogActions>
                     </Dialog>
                 )}
+
+                <RelatedGuidesStrip
+                    serviceKey="homestays"
+                    title="Homestays & Coastal Living Guides"
+                    subtitle="Compare Sharavathi riverfront cottages with Murudeshwar corridor rooms & Karavali dinner options."
+                />
 
                 {/* Dedicated Homestay Booking Modal */}
                 <HomestayBookingModal

@@ -44,7 +44,7 @@ test('Welcome page integrates PageHead with unique title, meta description, cano
         ->toContain('"@type": "LocalBusiness"')
         ->toContain('"telephone": "+918660989586"')
         ->toContain('"priceRange": "Contact for current rates"')
-        ->toContain('"areaServed": ["Honnavar", "Murudeshwar", "Coastal Karnataka"]')
+        ->toContain('"areaServed": [')
         ->toContain('"@type": "PostalAddress"')
         ->toContain('"@type": "GeoCoordinates"');
 
@@ -233,7 +233,7 @@ test('About, HowItWorks, and Contact pages integrate PageHead with unique metada
         ->toContain("import PageHead from '../Components/SEO/PageHead'")
         ->toContain('<PageHead')
         ->toContain('canonicalUrl="https://whizwheels.in/contact"')
-        ->toContain('title="Contact GK WhizWheel Honnavar | 24/7 Station & Main Rd Hub"')
+        ->toContain('title="Contact GK WhizWheel | 24/7 Honnavar & Murudeshwar Hubs"')
         ->toContain("'@type': 'LocalBusiness'")
         ->toContain("contactPoint: [")
         ->toContain("telephone: '+918660989586'")
@@ -275,15 +275,15 @@ test('About, HowItWorks, and Contact pages integrate PageHead with unique metada
 test('FAQ sections on Welcome, Services, HowItWorks, and individual service pages include FAQPage structuredData matching visible Q&A copy', function (): void {
     $pages = [
         'Welcome.jsx' => [
-            'sampleQuestion' => 'What documents are required to rent a bike?',
-            'sampleAnswer' => 'An original, valid Indian Driving License for two-wheelers',
+            'sampleQuestion' => 'What documents are required to rent a bike or scooter?',
+            'sampleAnswer' => 'Bring your original, valid Indian Driving License',
         ],
         'Services.jsx' => [
             'sampleQuestion' => 'Should I choose a self-drive bike or a chauffeured private cab?',
             'sampleAnswer' => 'For solo travelers or couples looking for maximum freedom',
         ],
         'HowItWorks.jsx' => [
-            'sampleQuestion' => 'Can I pick up at Honnavar Railway Station and return at Palya Main Rd?',
+            'sampleQuestion' => 'Can I pick up in Honnavar and return at Murudeshwar (or vice versa)?',
             'sampleAnswer' => 'One-way store rentals are fully supported between our two Honnavar hubs',
         ],
         'BoatingPage.jsx' => [

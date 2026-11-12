@@ -60,7 +60,7 @@ export default function HowItWorks() {
         {
             num: '03',
             title: 'Express Hub Pickup & 360° Walkthrough',
-            desc: 'Arrive at our Palya Main Rd store or Honnavar Railway Station counter. Verify the digital condition log with our staff, collect sanitized helmets, and receive the keys.',
+            desc: 'Arrive at our Honnavar (Palya Main Rd) or Murudeshwar (Temple Main Rd) hub. Verify the digital condition log with our staff, collect sanitized helmets, and receive the keys.',
             icon: <KeyIcon sx={{ fontSize: 30, color: '#38BDF8' }} />,
             tag: 'Step 3 • Vehicle Handover',
             time: 'Under 3 minutes',
@@ -82,7 +82,7 @@ export default function HowItWorks() {
             icon: <CurrencyRupeeIcon sx={{ fontSize: 30, color: '#10B981' }} />,
             tag: 'Step 5 • Return & Settle',
             time: 'Instant refund release',
-            tip: 'Tip: One-way drops between Honnavar Railway Station and Palya Main Rd are supported seamlessly.',
+            tip: 'Tip: Inter-branch pickup and return between Honnavar and Murudeshwar hubs is supported on request.',
         },
     ];
 
@@ -95,7 +95,7 @@ export default function HowItWorks() {
 
     const faqs = [
         {
-            q: 'Can I pick up at Honnavar Railway Station and return at Palya Main Rd?',
+            q: 'Can I pick up in Honnavar and return at Murudeshwar (or vice versa)?',
             a: 'Yes! One-way store rentals are fully supported between our two Honnavar hubs with zero friction. Select your desired pickup and return locations during checkout.',
         },
         {
@@ -133,7 +133,7 @@ export default function HowItWorks() {
         <AppLayout>
             <PageHead
                 title="How It Works – 4 Simple Steps to Rent a Bike in Honnavar"
-                description="Rent bikes in Honnavar in 4 easy steps: select fleet, complete 2-minute digital KYC, pick up at Railway Station or Palya Main Rd, and ride Karavali coast."
+                description="Rent bikes in Honnavar & Murudeshwar in 4 easy steps: select fleet, quick digital KYC, pick up at our hub, and ride the scenic Karavali coast."
                 canonicalUrl="https://whizwheels.in/how-it-works"
                 ogImage="/images/logo.png"
                 ogType="website"
@@ -413,7 +413,7 @@ export default function HowItWorks() {
             </Box>
 
             {/* Main Content */}
-            <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
+            <Container maxWidth={false} sx={{ maxWidth: '1440px', py: { xs: 6, md: 8 } }}>
                 {/* 5-Stage Step Ribbon */}
                 <Paper
                     elevation={0}

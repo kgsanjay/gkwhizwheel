@@ -247,10 +247,16 @@ class CustomerServiceBookingController extends Controller
     }
 
     /**
-     * Initiate online Razorpay payment for booking (advance or full balance)
+     * Initiate online payment (PhonePe or Razorpay) for booking (advance or full balance)
      */
-    public function initiatePayment(string $bookingNumber, Request $request, \App\Services\RazorpayService $razorpayService): \Illuminate\Http\JsonResponse
-    {
+    public function initiatePayment(
+        string $bookingNumber,
+        Request $request,
+        \App\Services\RazorpayService $razorpayService,
+        ?\App\Services\PhonePeService $phonePeService = null
+    ): \Illuminate\Http\JsonResponse {
+        $phonePeService ??= app(\App\Services\PhonePeService::class);
+
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
@@ -261,7 +267,11 @@ class CustomerServiceBookingController extends Controller
         if ($message = $eligibility->issue($booking)) {
             return response()->json(['success' => false, 'message' => $message], 422);
         }
-        $validated = $request->validate(['amount' => ['nullable', 'numeric', 'min:1']]);
+        $validated = $request->validate([
+            'amount' => ['nullable', 'numeric', 'min:1'],
+            'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
+        ]);
+        $gateway = $validated['gateway'] ?? 'razorpay';
         $amount = (float) $booking->balance_due;
         $requestedPaise = (int) round((float) ($validated['amount'] ?? $amount) * 100);
         if (! $eligibility->amountAllowed($booking, $requestedPaise)) {
@@ -272,10 +282,28 @@ class CustomerServiceBookingController extends Controller
         }
 
         try {
+            if ($gateway === 'phonepe') {
+                $paymentData = $phonePeService->createServicePayment(
+                    $booking,
+                    $amount,
+                    route('payment.phonepe.callback')
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'gateway' => 'phonepe',
+                    'redirect_url' => $paymentData['redirect_url'],
+                    'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
+                    'amount' => $amount,
+                    'booking_number' => $booking->booking_number,
+                ]);
+            }
+
             $order = $razorpayService->createServiceOrder($booking, $amount);
 
             return response()->json([
                 'success' => true,
+                'gateway' => 'razorpay',
                 'order' => $order,
                 'amount' => $amount,
                 'key_id' => $order['key_id'] ?? config('services.razorpay.key_id', 'rzp_test_placeholder'),

@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
 import TourBookingModal from '../Components/BookingModals/TourBookingModal';
+import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import {
@@ -417,7 +418,7 @@ export default function ToursPage({ availableItems = [] }) {
                         borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         {/* Breadcrumbs */}
                         <Breadcrumbs
                             aria-label="breadcrumb"
@@ -807,7 +808,7 @@ export default function ToursPage({ availableItems = [] }) {
                         borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                             <Chip
                                 label="REAL-TIME TRIP ESTIMATOR"
@@ -1227,7 +1228,7 @@ export default function ToursPage({ availableItems = [] }) {
                         bgcolor: isDark ? '#0F172A' : '#FFFFFF',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                             <Chip
                                 label="HANDCRAFTED CIRCUITS"
@@ -1632,7 +1633,7 @@ export default function ToursPage({ availableItems = [] }) {
                         bgcolor: isDark ? '#0F172A' : '#FFFFFF',
                     }}
                 >
-                    <Box sx={{ maxWidth: 1320, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
                         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 6 } }}>
                             <Chip
                                 label="TRANSPARENT GUARANTEE"
@@ -2055,6 +2056,11 @@ export default function ToursPage({ availableItems = [] }) {
             />
 
             {/* Multi-Image Tour Gallery Lightbox */}
+            <RelatedGuidesStrip
+                serviceKey="tours"
+                title="Custom Karavali Tour Package Guides"
+                subtitle="Day-by-day 3-day coastal blueprints bundling bikes/cabs, riverfront stays, boating & scuba."
+            />
             <ServiceGalleryModal
                 open={galleryModalOpen}
                 onClose={() => setGalleryModalOpen(false)}

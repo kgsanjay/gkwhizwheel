@@ -14,4 +14,7 @@ return [
     'testing' => [
         'ensure_pages_exist' => true,
     ],
+    'ssr' => [
+        'enabled' => false,
+    ],
 ];

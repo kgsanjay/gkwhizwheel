@@ -18,9 +18,11 @@ use App\Models\User;
 use App\Notifications\OtpNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -261,6 +263,190 @@ class AuthController extends Controller
                 'user' => new UserResource($user),
             ],
             'message' => 'Profile updated successfully.',
+        ]);
+    }
+
+    /**
+     * Resolve customer account at checkout:
+     * - If already authenticated: return current user.
+     * - If existing customer by phone or email: challenge with OTP to protect account/KYC.
+     * - If brand new customer: auto-create account, log into web session and issue API token.
+     */
+    public function checkoutResolve(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if ($user !== null) {
+            if (empty($user->phone) && $request->filled('phone')) {
+                $cleanPhone = preg_replace('/\D+/', '', (string) $request->input('phone')) ?? '';
+                if (preg_match('/^[6-9]\d{9}$/', $cleanPhone)) {
+                    $taken = User::where('id', '!=', $user->id)
+                        ->where(fn ($q) => $q->where('phone', $cleanPhone)->orWhere('phone', '91'.$cleanPhone)->orWhere('phone', '+91'.$cleanPhone))
+                        ->exists();
+                    if (! $taken) {
+                        $user->update(['phone' => $cleanPhone]);
+                    }
+                }
+            }
+            $this->loadUserStores($user);
+
+            return response()->json([
+                'success' => true,
+                'status' => 'authenticated',
+                'data' => [
+                    'user' => new UserResource($user),
+                    'token' => null,
+                ],
+                'message' => 'Already signed in.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
+            'email' => ['nullable', 'email', 'max:150'],
+        ]);
+
+        $cleanPhone = preg_replace('/\D+/', '', $validated['phone']) ?? '';
+        $email = ! empty($validated['email']) ? strtolower(trim($validated['email'])) : null;
+
+        // 1. Search for existing user by phone or email
+        $existing = User::where(function ($q) use ($cleanPhone): void {
+                $q->where('phone', $cleanPhone)
+                    ->orWhere('phone', '91'.$cleanPhone)
+                    ->orWhere('phone', '+91'.$cleanPhone);
+            })
+            ->orWhere(function ($q) use ($email): void {
+                if ($email !== null) {
+                    $q->where('email', $email);
+                }
+            })
+            ->first();
+
+        if ($existing) {
+            if ($existing->status === UserStatus::BLACKLISTED) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'suspended',
+                    'message' => 'This account has been suspended or deactivated.',
+                ], 403);
+            }
+
+            // Generate 6-digit OTP cached for 10 minutes
+            $otp = (string) random_int(100000, 999999);
+            Cache::put("checkout_otp:{$existing->id}", $otp, now()->addMinutes(10));
+
+            // Deliver via Mail if email available
+            if ($existing->email && filter_var($existing->email, FILTER_VALIDATE_EMAIL)) {
+                try {
+                    Notification::route('mail', $existing->email)->notify(new OtpNotification($otp));
+                } catch (\Throwable) {}
+            }
+
+            // Deliver via WhatsApp if phone available
+            if ($existing->phone) {
+                try {
+                    Notification::route(\App\Channels\WhatsAppChannel::class, $existing->phone)->notify(new OtpNotification($otp));
+                } catch (\Throwable) {}
+            }
+
+            $maskedPhone = substr($existing->phone ?? $cleanPhone, 0, 2).'******'.substr($existing->phone ?? $cleanPhone, -2);
+            $maskedEmail = null;
+            if ($existing->email) {
+                $parts = explode('@', $existing->email);
+                $maskedEmail = substr($parts[0], 0, 2).'***@'.($parts[1] ?? '');
+            }
+
+            return response()->json([
+                'success' => true,
+                'status' => 'otp_required',
+                'user_id' => $existing->id,
+                'masked_phone' => $maskedPhone,
+                'masked_email' => $maskedEmail,
+                'message' => 'Welcome back! We found your existing account. Please enter the 6-digit verification code sent to your phone/email to continue.',
+            ]);
+        }
+
+        // 2. Brand new customer: Auto-provision account with zero friction
+        $finalEmail = $email ?: ("guest_{$cleanPhone}@whizwheels.local");
+        $newUser = User::create([
+            'name' => $validated['name'],
+            'phone' => $cleanPhone,
+            'email' => $finalEmail,
+            'password' => Hash::make(Str::random(32)),
+            'role' => UserRole::CUSTOMER,
+            'status' => UserStatus::ACTIVE,
+            'whatsapp_opt_in' => true,
+            'email_verified_at' => $email ? now() : null,
+        ]);
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($newUser);
+            $request->session()->regenerate();
+        }
+
+        $token = $this->issueToken($newUser);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'authenticated',
+            'data' => [
+                'user' => new UserResource($newUser),
+                'token' => $token,
+            ],
+            'message' => 'Customer account created successfully.',
+        ], 201);
+    }
+
+    /**
+     * Verify 6-digit OTP for existing customer at checkout.
+     */
+    public function checkoutVerifyOtp(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'otp' => ['required', 'string', 'size:6'],
+        ]);
+
+        $userId = (int) $validated['user_id'];
+        $otp = $validated['otp'];
+        $cachedOtp = Cache::get("checkout_otp:{$userId}");
+
+        if (! $cachedOtp || (string) $cachedOtp !== (string) $otp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired verification code. Please try again.',
+                'errors' => [
+                    'otp' => ['Invalid or expired verification code.'],
+                ],
+            ], 422);
+        }
+
+        Cache::forget("checkout_otp:{$userId}");
+
+        $user = User::findOrFail($userId);
+        if ($user->status === UserStatus::BLACKLISTED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account has been suspended or deactivated.',
+            ], 403);
+        }
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+        }
+
+        $this->loadUserStores($user);
+        $token = $this->issueToken($user);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'authenticated',
+            'data' => [
+                'user' => new UserResource($user),
+                'token' => $token,
+            ],
+            'message' => 'Verified and signed in successfully.',
         ]);
     }
 

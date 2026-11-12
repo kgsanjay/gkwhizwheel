@@ -37,13 +37,7 @@ export default function ModelRentalCatalog({ filters, stores, onModelsLoaded }) 
 
     const beginReservation = (model) => {
         setChosenModel(model);
-        const hasToken = typeof window !== 'undefined'
-            && (localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token'));
-        if (!hasToken) {
-            setLoginOpen(true);
-        } else {
-            setCheckoutOpen(true);
-        }
+        setCheckoutOpen(true);
     };
 
     return (

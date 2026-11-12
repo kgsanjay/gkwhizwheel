@@ -121,7 +121,7 @@ test('ServiceBookingConfirmedNotification formats WhatsApp payload with coordina
     expect($waMessage->parameters)->toContain('Aditi Sharma');
     expect($waMessage->parameters)->toContain('GKW-BT-260909-TEST');
     expect($waMessage->parameters)->toContain('Sharavathi Sunset Shikara');
-    expect($waMessage->buttonUrl)->toBe(url('/services/booking/confirmation/GKW-BT-260909-TEST'));
+    expect($waMessage->buttonUrl)->toBe(route('services.booking.confirmation', 'GKW-BT-260909-TEST'));
 });
 
 test('ServiceBookingConfirmedNotification formats Mail message with coordinator and balance breakdown', function (): void {
@@ -129,7 +129,7 @@ test('ServiceBookingConfirmedNotification formats Mail message with coordinator 
     $mail = $notification->toMail($this->customer);
 
     expect($mail->subject)->toBe('Service Booking Confirmed - GKW-BT-260909-TEST');
-    expect($mail->actionUrl)->toBe(url('/services/booking/confirmation/GKW-BT-260909-TEST'));
+    expect($mail->actionUrl)->toBe(route('services.booking.confirmation', 'GKW-BT-260909-TEST'));
 });
 
 test('coordinator details come from booking branch and never from placeholder numbers', function (): void {

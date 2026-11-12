@@ -31,7 +31,8 @@ import DirectionsBoatIcon from '@mui/icons-material/DirectionsBoat';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
-import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP } from './bookingUtils';
+import GoogleButton from '../Auth/GoogleButton';
+import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP, resolveGuestAccount } from './bookingUtils';
 
 const DIVE_PROGRAMS = [
     { id: 'discovery_scuba', title: 'Beginner Discovery Scuba Dive (Non-Swimmers Welcome)', rate: 3499, desc: '1-on-1 PADI Instructor • 4K GoPro Video & Photos • Island Boat Cruise' },
@@ -62,6 +63,7 @@ export default function ScubaBookingModal({
 
     const [currentUser, setCurrentUser] = useState(auth?.user || null);
     const [authModalOpen, setAuthModalOpen] = useState(false);
+    const [otpChallenge, setOtpChallenge] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -168,7 +170,24 @@ export default function ScubaBookingModal({
         }
 
         if (!currentUser) {
-            setAuthModalOpen(true);
+            setSubmitting(true);
+            resolveGuestAccount({
+                name: customerName,
+                phone: customerPhone,
+            }).then((res) => {
+                setSubmitting(false);
+                if (res.status === 'authenticated') {
+                    const u = res.data?.user;
+                    setCurrentUser(u);
+                    submitBooking(u);
+                } else if (res.status === 'otp_required') {
+                    setOtpChallenge(res);
+                    setAuthModalOpen(true);
+                }
+            }).catch((err) => {
+                setSubmitting(false);
+                setErrorMessage(err.message || 'Could not verify customer account.');
+            });
             return;
         }
 
@@ -374,10 +393,15 @@ export default function ScubaBookingModal({
 
                     {/* Step 3: Diver Contact Info */}
                     <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#E2E8F0' : '#1E293B', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <VerifiedUserIcon sx={{ fontSize: 18, color: '#4F46E5' }} />
-                            3. Lead Diver Contact Information
-                        </Typography>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#E2E8F0' : '#1E293B', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <VerifiedUserIcon sx={{ fontSize: 18, color: '#4F46E5' }} />
+                                3. Lead Diver Contact Information
+                            </Typography>
+                            {!currentUser && (
+                                <GoogleButton size="small" fullWidth={false} label="1-Tap Google" />
+                            )}
+                        </Stack>
 
                         <Grid container spacing={2}>
                             <Grid size={{ xs: 12, sm: 6 }}>
@@ -522,12 +546,17 @@ export default function ScubaBookingModal({
             {/* Auth Modal if unauthenticated user clicks confirm */}
             <AuthModal
                 open={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
+                onClose={() => {
+                    setAuthModalOpen(false);
+                    setOtpChallenge(null);
+                }}
                 onSuccess={(user) => {
                     setAuthModalOpen(false);
+                    setOtpChallenge(null);
                     setCurrentUser(user);
                     submitBooking(user);
                 }}
+                otpChallenge={otpChallenge}
             />
         </>
     );

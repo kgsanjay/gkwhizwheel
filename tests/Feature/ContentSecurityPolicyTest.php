@@ -11,6 +11,12 @@ class ContentSecurityPolicyTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config()->set('csp.enabled_while_hot_reloading', true);
+    }
+
     public function test_csp_header_is_present_on_web_requests(): void
     {
         $response = $this->get('/');

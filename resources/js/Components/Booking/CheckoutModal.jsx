@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Dialog,
@@ -28,7 +28,8 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SecurityIcon from '@mui/icons-material/Security';
 import TimerIcon from '@mui/icons-material/Timer';
-import apiClient from '../../api/client';
+import apiClient, { setAuthToken } from '../../api/client';
+import GoogleButton from '../Auth/GoogleButton';
 
 /**
  * Generate a client-side RFC4122 v4 UUID.
@@ -58,7 +59,18 @@ export default function CheckoutModal({
     quote,
     currentUser,
 }) {
-    const [gateway, setGateway] = useState('razorpay');
+    const { auth } = usePage().props;
+    const [resolvedUser, setResolvedUser] = useState(currentUser || auth?.user || null);
+    const activeUser = resolvedUser || currentUser || auth?.user || null;
+    const needsRiderContact = !activeUser || !activeUser.phone;
+
+    const [riderName, setRiderName] = useState(activeUser?.name || '');
+    const [riderPhone, setRiderPhone] = useState(activeUser?.phone || '');
+    const [riderEmail, setRiderEmail] = useState(activeUser?.email || '');
+    const [otpChallenge, setOtpChallenge] = useState(null);
+    const [otpCode, setOtpCode] = useState('');
+
+    const [gateway, setGateway] = useState('phonepe');
     const [paymentOption, setPaymentOption] = useState('advance');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
@@ -128,6 +140,76 @@ export default function CheckoutModal({
         }
         setIsSubmitting(true);
         setErrorMessage('');
+
+        // Step 1: Resolve guest auto-account or missing phone number (e.g. Google login user)
+        if (needsRiderContact && !heldBooking) {
+            const finalName = (riderName || activeUser?.name || '').trim();
+            const cleanPhone = (riderPhone || '').replace(/\D/g, '');
+            if (!finalName) {
+                setErrorMessage('Please enter the lead rider full name.');
+                setIsSubmitting(false);
+                return;
+            }
+            if (cleanPhone.length !== 10 || !/^[6-9]/.test(cleanPhone)) {
+                setErrorMessage('Please enter a valid 10-digit WhatsApp mobile number (e.g. 9845123456).');
+                setIsSubmitting(false);
+                return;
+            }
+
+            setStatusMessage('Preparing your customer account...');
+            try {
+                const resolveRes = await apiClient.post('/auth/checkout-resolve', {
+                    name: finalName,
+                    phone: cleanPhone,
+                    email: (riderEmail || activeUser?.email || '').trim() || undefined,
+                });
+
+                if (resolveRes.status === 'otp_required') {
+                    setOtpChallenge(resolveRes);
+                    setStatusMessage('');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                if (resolveRes.status === 'authenticated') {
+                    if (resolveRes.data?.token) setAuthToken(resolveRes.data.token);
+                    if (resolveRes.data?.user) setResolvedUser(resolveRes.data.user);
+                }
+            } catch (err) {
+                setErrorMessage(err.message || 'Could not set up customer account. Please try again.');
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
+        await proceedWithHoldAndPay();
+    };
+
+    const handleVerifyOtpAndPay = async () => {
+        if (!otpChallenge?.user_id || otpCode.trim().length !== 6) return;
+        setIsSubmitting(true);
+        setErrorMessage('');
+        setStatusMessage('Verifying code...');
+
+        try {
+            const verifyRes = await apiClient.post('/auth/checkout-verify-otp', {
+                user_id: otpChallenge.user_id,
+                otp: otpCode.trim(),
+            });
+            if (verifyRes.status === 'authenticated') {
+                if (verifyRes.data?.token) setAuthToken(verifyRes.data.token);
+                if (verifyRes.data?.user) setResolvedUser(verifyRes.data.user);
+                setOtpChallenge(null);
+                setOtpCode('');
+                await proceedWithHoldAndPay();
+            }
+        } catch (err) {
+            setErrorMessage(err.message || 'Invalid or expired OTP. Please try again.');
+            setIsSubmitting(false);
+        }
+    };
+
+    const proceedWithHoldAndPay = async () => {
         setStatusMessage(heldBooking ? 'Preparing secure payment checkout...' : 'Checking available vehicles and reserving a bike...');
 
         try {
@@ -344,6 +426,96 @@ export default function CheckoutModal({
                     </Alert>
                 )}
 
+                {otpChallenge && (
+                    <Card variant="outlined" sx={{ mb: 3, p: 2.5, borderRadius: 2, borderColor: '#F59E0B', bgcolor: '#FFFBEB' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
+                            Verify Existing Account
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>
+                            Welcome back! An account matching <strong>{otpChallenge.masked_phone || otpChallenge.masked_email}</strong> already exists. Enter the 6-digit OTP sent to your WhatsApp/Email to continue checkout safely.
+                        </Typography>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="stretch">
+                            <TextField
+                                fullWidth
+                                label="6-Digit OTP"
+                                placeholder="123456"
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                                size="small"
+                            />
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={handleVerifyOtpAndPay}
+                                disabled={isSubmitting || otpCode.length !== 6}
+                                sx={{ fontWeight: 800, minWidth: 160 }}
+                            >
+                                Verify & Pay
+                            </Button>
+                        </Stack>
+                    </Card>
+                )}
+
+                {needsRiderContact && !heldBooking && !otpChallenge && (
+                    <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2, borderColor: '#CBD5E1' }}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                    Lead Rider Details (Auto-Account & WhatsApp Voucher)
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    No password needed — we create your booking account automatically.
+                                </Typography>
+                            </Box>
+                            {!activeUser && (
+                                <GoogleButton
+                                    size="small"
+                                    fullWidth={false}
+                                    label="1-Tap Google"
+                                    redirect={typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/services/bikes'}
+                                />
+                            )}
+                        </Stack>
+                        <Stack spacing={1.5}>
+                            {!activeUser?.name && (
+                                <TextField
+                                    fullWidth
+                                    required
+                                    size="small"
+                                    label="Full Name (As on Driving License)"
+                                    placeholder="e.g. Rahul Sharma"
+                                    value={riderName}
+                                    onChange={(e) => setRiderName(e.target.value)}
+                                />
+                            )}
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                                <TextField
+                                    fullWidth
+                                    required
+                                    size="small"
+                                    label="10-Digit WhatsApp Mobile"
+                                    placeholder="9845123456"
+                                    value={riderPhone}
+                                    onChange={(e) => setRiderPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                    inputProps={{ maxLength: 10, inputMode: 'tel' }}
+                                />
+                                {!activeUser?.email && (
+                                    <TextField
+                                        fullWidth
+                                        size="small"
+                                        type="email"
+                                        label="Email Address (Optional)"
+                                        placeholder="rahul@example.com"
+                                        value={riderEmail}
+                                        onChange={(e) => setRiderEmail(e.target.value)}
+                                    />
+                                )}
+                            </Stack>
+                        </Stack>
+                    </Card>
+                )}
+
                 {/* Booking Route Summary Card */}
                 <Card variant="outlined" sx={{ mb: 3, bgcolor: '#F8FAFC', borderRadius: 2 }}>
                     <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
@@ -477,41 +649,9 @@ export default function CheckoutModal({
                 <RadioGroup value={gateway} onChange={(e) => setGateway(e.target.value)}>
                     <Card
                         variant="outlined"
-                        onClick={() => setGateway('razorpay')}
-                        sx={{
-                            mb: 1.5,
-                            borderRadius: 2,
-                            borderColor: gateway === 'razorpay' ? '#F59E0B' : '#E2E8F0',
-                            bgcolor: gateway === 'razorpay' ? 'rgba(245, 158, 11, 0.04)' : '#FFFFFF',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                            <FormControlLabel
-                                value="razorpay"
-                                control={<Radio color="secondary" />}
-                                label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <PaymentIcon sx={{ color: '#0F172A' }} />
-                                        <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                Razorpay Secure Checkout
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                                UPI (GPay/PhonePe), Credit/Debit Cards, NetBanking
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                }
-                                sx={{ width: '100%', m: 0 }}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    <Card
-                        variant="outlined"
                         onClick={() => setGateway('phonepe')}
                         sx={{
+                            mb: 1.5,
                             borderRadius: 2,
                             borderColor: gateway === 'phonepe' ? '#F59E0B' : '#E2E8F0',
                             bgcolor: gateway === 'phonepe' ? 'rgba(245, 158, 11, 0.04)' : '#FFFFFF',
@@ -531,6 +671,38 @@ export default function CheckoutModal({
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: '#64748B' }}>
                                                 PhonePe UPI, PhonePe Wallet & QR Intent
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                }
+                                sx={{ width: '100%', m: 0 }}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    <Card
+                        variant="outlined"
+                        onClick={() => setGateway('razorpay')}
+                        sx={{
+                            borderRadius: 2,
+                            borderColor: gateway === 'razorpay' ? '#F59E0B' : '#E2E8F0',
+                            bgcolor: gateway === 'razorpay' ? 'rgba(245, 158, 11, 0.04)' : '#FFFFFF',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                            <FormControlLabel
+                                value="razorpay"
+                                control={<Radio color="secondary" />}
+                                label={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <PaymentIcon sx={{ color: '#0F172A' }} />
+                                        <Box>
+                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                Razorpay Secure Checkout
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: '#64748B' }}>
+                                                UPI (GPay/PhonePe), Credit/Debit Cards, NetBanking
                                             </Typography>
                                         </Box>
                                     </Box>

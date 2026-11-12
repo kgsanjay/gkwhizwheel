@@ -65,6 +65,35 @@ class BookingService
                     'error' => $exception->getMessage(),
                 ]);
             }
+
+            // Alert branch managers and super admin via WhatsApp & Email
+            try {
+                $managers = \App\Models\User::query()
+                    ->where('role', \App\Enums\UserRole::STORE_MANAGER)
+                    ->where('status', \App\Enums\UserStatus::ACTIVE)
+                    ->whereHas('stores', fn ($q) => $q->where('stores.id', $booking->pickup_store_id))
+                    ->get();
+
+                if ($managers->isEmpty()) {
+                    $managers = \App\Models\User::query()
+                        ->where('role', \App\Enums\UserRole::SUPER_ADMIN)
+                        ->where('status', \App\Enums\UserStatus::ACTIVE)
+                        ->get();
+                }
+
+                foreach ($managers as $manager) {
+                    try {
+                        $manager->notify(new \App\Notifications\BikeManagerBookingAlertNotification($booking));
+                    } catch (\Throwable) {
+                        // Transient alert error must not affect committed booking
+                    }
+                }
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::warning('Bike booking manager alert lookup failed', [
+                    'booking_id' => $booking->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         });
 
         return $booking->refresh();

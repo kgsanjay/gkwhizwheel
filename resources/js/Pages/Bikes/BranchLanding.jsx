@@ -43,7 +43,7 @@ export default function BranchLanding({ branch, models = [], unlinked_count = 0,
                     },
                 ]}
             />
-            <Box component="main" id="main-content" sx={{ maxWidth: 1260, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 5 } }}>
+            <Box component="main" id="main-content" sx={{ maxWidth: 1440, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 5 } }}>
                 <Breadcrumbs aria-label="Breadcrumbs" sx={{ mb: 3 }}>
                     <Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>Home</Link>
                     <Link href="/services/bikes" style={{ color: 'inherit', textDecoration: 'none' }}>Bike Rentals</Link>

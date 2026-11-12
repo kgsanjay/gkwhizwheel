@@ -37,6 +37,6 @@ final class ServiceBookingCancelledNotification extends Notification
             ->line('Recorded Payment: ₹'.number_format((float) $this->booking->advance_paid, 2))
             ->line('A cancellation does not mean a refund has been approved or completed.')
             ->line('Any eligible refund requires separate policy review and payment reconciliation.')
-            ->action('View Booking', url('/services/booking/confirmation/'.$this->booking->booking_number));
+            ->action('View Booking', route('services.booking.confirmation', $this->booking->booking_number));
     }
 }

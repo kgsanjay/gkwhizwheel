@@ -145,6 +145,33 @@ class BookingWebController extends Controller
     }
 
     /**
+     * Handle browser redirect callback from PhonePe payment gateway.
+     */
+    public function handlePhonePeCallback(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $txnId = (string) ($request->input('transactionId')
+            ?? $request->input('merchantTransactionId')
+            ?? $request->query('transactionId')
+            ?? $request->query('merchantTransactionId')
+            ?? '');
+
+        if (preg_match('/^TXN_BK_(\d+)_/', $txnId, $m)) {
+            return redirect()->route('bookings.confirmation', (int) $m[1])
+                ->with('success', 'PhonePe payment processed. Review your booking details below.');
+        }
+
+        if (preg_match('/^TXN_SRV_(\d+)_/', $txnId, $m)) {
+            $srvBooking = \App\Models\ServiceBooking::find((int) $m[1]);
+            if ($srvBooking) {
+                return redirect()->route('services.booking.confirmation', $srvBooking->booking_number)
+                    ->with('success', 'PhonePe payment processed. Review your service booking details below.');
+            }
+        }
+
+        return redirect()->route('account.index');
+    }
+
+    /**
      * View print-optimized rental agreement / pass in browser
      */
     public function printVoucher(int|string $id, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\View\View

@@ -3,6 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
+import blogArticles from '../data/blogArticles.json';
 import {
     Box,
     Typography,
@@ -48,6 +49,7 @@ import BeachAccessIcon from '@mui/icons-material/BeachAccess';
 import LandscapeIcon from '@mui/icons-material/Landscape';
 import CastleIcon from '@mui/icons-material/Castle';
 import DirectionsIcon from '@mui/icons-material/Directions';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import LocalTaxiIcon from '@mui/icons-material/LocalTaxi';
 import ScubaDivingIcon from '@mui/icons-material/Pool';
 import HomeWorkIcon from '@mui/icons-material/HomeWork';
@@ -57,6 +59,148 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
+
+const HERO_SLIDES = [
+    {
+        id: 'bikes',
+        badge: '01 • Two-Wheelers',
+        shortLabel: 'Bikes & Scooters',
+        title: 'Bikes & Scooters on Rent',
+        subtitle: 'Honda Activa 6G, Access 125 & Fascino • Zero security deposit online',
+        image: '/images/services/two_wheelers.webp',
+        href: '/services/bikes',
+        cta: 'Browse Live Fleet',
+        accent: '#F59E0B',
+    },
+    {
+        id: 'boating',
+        badge: '02 • Backwaters',
+        shortLabel: 'Backwater Boating',
+        title: 'Sharavathi Backwater Boating',
+        subtitle: 'Mangrove boardwalk safaris, island cruises & sunset Shikara rides',
+        image: '/images/services/honnavar-backwater-boating.webp',
+        href: '/services/boating',
+        cta: 'Explore Boating',
+        accent: '#38BDF8',
+    },
+    {
+        id: 'cabs',
+        badge: '03 • Coastal Cabs',
+        shortLabel: 'Private AC Cabs',
+        title: 'Private AC Cabs & Station Taxis',
+        subtitle: 'Punctual railway station pickups, Murudeshwar & Gokarna day tours',
+        image: '/images/services/taxi.webp',
+        href: '/services/cabs',
+        cta: 'Book AC Cab',
+        accent: '#0EA5E9',
+    },
+    {
+        id: 'scuba',
+        badge: '04 • Water Adventures',
+        shortLabel: 'Netrani Scuba',
+        title: 'Netrani Island Scuba Diving',
+        subtitle: 'PADI certified coral reef dives, GoPro footage & boat transfers',
+        image: '/images/services/netrani_scuba_dive.webp',
+        href: '/services/scuba',
+        cta: 'Dive Netrani',
+        accent: '#14B8A6',
+    },
+    {
+        id: 'homestays',
+        badge: '05 • Coastal Stays',
+        shortLabel: 'Homestays',
+        title: 'Riverfront Homestays & Villas',
+        subtitle: 'Handpicked Sharavathi cottages & beach rooms with Karavali meals',
+        image: '/images/services/homestay.webp',
+        href: '/services/homestays',
+        cta: 'View Homestays',
+        accent: '#10B981',
+    },
+    {
+        id: 'tours',
+        badge: '06 • Packages & Guides',
+        shortLabel: 'Tours & Guides',
+        title: 'Custom Tours & Local Guides',
+        subtitle: 'Mirjan Fort, Apsarakonda Falls & Gokarna all-in-one itineraries',
+        image: '/images/services/tour.webp',
+        href: '/services/tours',
+        cta: 'Plan Custom Tour',
+        accent: '#A78BFA',
+    },
+];
+
+const QUICK_BOOK_SERVICES = [
+    {
+        id: 'two_wheelers',
+        tabKey: 'bikes',
+        label: 'Bikes & Scooters',
+        href: '/services/bikes',
+        icon: <TwoWheelerIcon sx={{ fontSize: 18 }} />,
+        accent: '#F59E0B',
+        note: 'Zero Security Deposit • Reserve online with ₹100 advance',
+        usesReturnDate: true,
+    },
+    {
+        id: 'taxi',
+        tabKey: 'cabs',
+        label: 'Cabs & Taxis',
+        href: '/services/cabs',
+        icon: <LocalTaxiIcon sx={{ fontSize: 18 }} />,
+        accent: '#0284C7',
+        note: 'AC Station Pickups, Murudeshwar, Gokarna & Outstation Transfers',
+        usesReturnDate: false,
+    },
+    {
+        id: 'homestay',
+        tabKey: 'homestays',
+        label: 'Homestays',
+        href: '/services/homestays',
+        icon: <HomeWorkIcon sx={{ fontSize: 18 }} />,
+        accent: '#059669',
+        note: 'Sharavathi Riverfront Cottages & Beachside Coastal Stays',
+        usesReturnDate: true,
+    },
+    {
+        id: 'boating',
+        tabKey: 'boating',
+        label: 'Boating',
+        href: '/services/boating',
+        icon: <DirectionsBoatIcon sx={{ fontSize: 18 }} />,
+        accent: '#2563EB',
+        note: 'Mangrove Backwater Safaris & Sunset Island Cruises in Honnavar',
+        usesReturnDate: false,
+    },
+    {
+        id: 'scuba',
+        tabKey: 'scuba',
+        label: 'Scuba Diving',
+        href: '/services/scuba',
+        icon: <ScubaDivingIcon sx={{ fontSize: 18 }} />,
+        accent: '#0D9488',
+        note: 'Netrani Island PADI Guided Dives, Boat Transfer & Underwater Video',
+        usesReturnDate: false,
+    },
+    {
+        id: 'guide',
+        tabKey: 'guide',
+        label: 'Local Guides',
+        href: '/services/guide',
+        icon: <ExploreIcon sx={{ fontSize: 18 }} />,
+        accent: '#D97706',
+        note: 'Native Guides for Waterfalls, Mirjan Fort & Coastal Trails',
+        usesReturnDate: false,
+    },
+    {
+        id: 'tours',
+        tabKey: 'tours',
+        label: 'Tour Packages',
+        href: '/services/tours',
+        icon: <LuggageIcon sx={{ fontSize: 18 }} />,
+        accent: '#7C3AED',
+        note: 'All-in-One Custom Karavali Bundles (Stay + Ride + Activities)',
+        usesReturnDate: true,
+    },
+];
 
 export default function Welcome({ featuredBikes = [], categories = [], stores = [] , availableItems = [] }) {
     const theme = useTheme();
@@ -68,27 +212,66 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
 
     const [searchStore, setSearchStore] = useState('');
     const [searchCategory, setSearchCategory] = useState('');
+    const [activeBookingTab, setActiveBookingTab] = useState('two_wheelers');
+    const [selectedServiceOption, setSelectedServiceOption] = useState('');
+    const [guestCount, setGuestCount] = useState('2 Guests');
     const [startDate, setStartDate] = useState(today);
     const [endDate, setEndDate] = useState(dayAfter);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [serviceModalOpen, setServiceModalOpen] = useState(false);
     const [serviceModalId, setServiceModalId] = useState('boating');
+    const [bookingFlowTab, setBookingFlowTab] = useState('bikes');
+    const [reviewFilter, setReviewFilter] = useState('all');
+    const [selectedHubIndex, setSelectedHubIndex] = useState(0);
+    const [faqCategory, setFaqCategory] = useState('all');
+    const [expandedFaq, setExpandedFaq] = useState('faq-docs');
+    const [activeGuideTab, setActiveGuideTab] = useState('all');
 
     useEffect(() => {
         if (isPaused) return;
         const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % 6);
+            setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
         }, 8000);
         return () => clearInterval(timer);
     }, [isPaused]);
 
     const handlePrevSlide = () => {
-        setCurrentSlide((prev) => (prev === 0 ? 5 : prev - 1));
+        setCurrentSlide((prev) => (prev === 0 ? HERO_SLIDES.length - 1 : prev - 1));
     };
 
     const handleNextSlide = () => {
-        setCurrentSlide((prev) => (prev + 1) % 6);
+        setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    };
+
+    const activeSlide = HERO_SLIDES[currentSlide % HERO_SLIDES.length];
+    const publishedBranches = stores.filter((s) => s.publication_status === 'published');
+    const branchList = (publishedBranches.length > 0 ? publishedBranches : stores)
+        .slice()
+        .sort((a, b) => a.id - b.id);
+    const branchCities = [...new Set(branchList.map((s) => s.city).filter(Boolean))];
+    const branchCitiesLabel = branchCities.length ? branchCities.join(' & ') : 'Coastal Karnataka';
+    const primaryBranch = branchList[0] || null;
+    const getBranchMapUrl = (store) => (
+        store?.google_maps_url
+        || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+            [store?.address_line, store?.city, store?.state, store?.pincode].filter(Boolean).join(', ') || branchCitiesLabel,
+        )}`
+    );
+    const getBranchEmbedUrl = (store) => {
+        const lat = Number(store?.latitude);
+        const lng = Number(store?.longitude);
+        const query = (Number.isFinite(lat) && Number.isFinite(lng) && lat !== 0 && lng !== 0)
+            ? `${lat},${lng}`
+            : [store?.address_line, store?.city, store?.state, store?.pincode].filter(Boolean).join(', ') || branchCitiesLabel;
+        return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
+    };
+    const getBranchPhone = (store) => store?.phone || '+918660989586';
+    const formatBranchPhone = (raw) => {
+        const digits = String(raw || '').replace(/\D/g, '');
+        return digits.length === 12 && digits.startsWith('91')
+            ? `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`
+            : raw;
     };
 
     const handleOpenServiceModal = (id) => {
@@ -120,7 +303,6 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         "email": "contact@whizwheels.in",
         "url": "https://whizwheels.in/",
         "priceRange": "Contact for current rates",
-        "areaServed": ["Honnavar", "Murudeshwar", "Coastal Karnataka"],
         "address": {
             "@type": "PostalAddress",
             "streetAddress": "Palya Main Rd, near Honnavar Railway Station",
@@ -234,43 +416,78 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
         }
     };
 
+    const branchHelplineText = branchList
+        .map((s) => `${s.city || s.name} (${formatBranchPhone(getBranchPhone(s))})`)
+        .join(' and ');
+
+    const faqItems = [
+        {
+            id: 'faq-docs',
+            category: 'rentals',
+            categoryLabel: 'KYC & Docs',
+            accent: '#F59E0B',
+            icon: VerifiedUserIcon,
+            question: 'What documents are required to rent a bike or scooter?',
+            answer: 'Bring your original, valid Indian Driving License (two-wheeler) and one government ID proof (Aadhaar Card, Voter ID, or Passport). Digital KYC can be completed online in advance or in 3 minutes at pickup.',
+        },
+        {
+            id: 'faq-deposit',
+            category: 'rentals',
+            categoryLabel: 'Zero Deposit',
+            accent: '#10B981',
+            icon: CurrencyRupeeIcon,
+            question: 'Is a security deposit required for online bike bookings?',
+            answer: 'No refundable security deposit is charged on online bike rental bookings. Confirm your slot with a ₹100 advance or pay online in full, with any remaining rental balance settled at vehicle handover.',
+        },
+        {
+            id: 'faq-cancel',
+            category: 'rentals',
+            categoryLabel: 'Cancellation',
+            accent: '#0EA5E9',
+            icon: AccessTimeIcon,
+            question: 'What is your cancellation and rescheduling policy?',
+            answer: 'Cancel up to 12 hours before your scheduled pickup for a full refund. Rescheduling dates or shifting pickup timings is free of charge, subject to fleet and slot availability.',
+        },
+        {
+            id: 'faq-roadside',
+            category: 'rentals',
+            categoryLabel: '24/7 Support',
+            accent: '#8B5CF6',
+            icon: BuildCircleIcon,
+            question: 'What happens if a bike breaks down or gets a flat tire?',
+            answer: 'Every vehicle completes a pre-ride mechanical check before handover. In case of a puncture or breakdown along the coastal circuit, our 24/7 mobile roadside team arranges on-site repair or an immediate replacement.',
+        },
+        {
+            id: 'faq-branches',
+            category: 'services',
+            categoryLabel: '24/7 Branches',
+            accent: '#F59E0B',
+            icon: LocationOnIcon,
+            question: `Where are your ${branchCitiesLabel} branches located, and are you open 24/7?`,
+            answer: `We operate 24/7 across ${branchHelplineText || branchCitiesLabel}. Pick up directly at our Honnavar or Murudeshwar hubs, request railway station or bus stand handovers, and select cross-branch returns while booking.`,
+        },
+        {
+            id: 'faq-services',
+            category: 'services',
+            categoryLabel: 'All 7 Services',
+            accent: '#0284C7',
+            icon: ExploreIcon,
+            question: 'Can I book AC cabs, boating, Netrani scuba, homestays, or tours here?',
+            answer: 'Yes. Use the Quick Search & Booking Hub above or contact our 24/7 desk to combine two-wheeler rentals, private AC cabs, Sharavathi backwater boating, Netrani Island scuba diving, riverfront homestays, local guides, and custom tours.',
+        },
+    ];
+
     const welcomeFaqSchema = {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: 'What documents are required to rent a bike?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'To rent a two-wheeler, you need: (1) An original, valid Indian Driving License for two-wheelers, and (2) One government ID proof (Aadhaar Card, Voter ID, or Passport). Digital KYC can be completed online in advance or in 3 minutes during the vehicle handover.',
-                },
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.answer,
             },
-            {
-                '@type': 'Question',
-                name: 'Is there a security deposit for bike bookings?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'New online bike rental reservations have no refundable security deposit. Choose a ₹100 advance or pay the full quoted rental amount; the remaining rental balance, if any, is collected at pickup.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'What is your cancellation and booking rescheduling policy?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'We offer completely flexible cancellation. You can cancel your booking up to 12 hours before scheduled pickup for a full refund. Rescheduling dates or changing pickup times is free of charge, subject to fleet availability.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'What happens if the bike breaks down or gets a flat tire?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'All GK WhizWheel bikes undergo rigorous mechanical checkups before every rental. In the rare event of a breakdown or puncture anywhere along the coastal circuit, our 24/7 mobile roadside assistance team will provide on-site repair or dispatch an immediate vehicle replacement.',
-                },
-            },
-        ],
+        })),
     };
 
     return (
@@ -285,357 +502,894 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             />
 
             {/* =========================================================================
-                1. MASTER HERO SECTION (G.K. WHIZWHEEL OVERARCHING SERVICE PROVIDER)
+                1. MASTER HERO SECTION (COASTAL KARNATAKA TRAVEL & MOBILITY HUB)
             ========================================================================== */}
             <Box
                 component="section"
                 sx={{
                     width: '100%',
                     position: 'relative',
-                    py: { xs: 5, sm: 7, md: 9 },
-                    px: { xs: 2, sm: 4, md: 6, lg: 8 },
-                    mb: { xs: 4, md: 6 },
+                    pt: { xs: 4, sm: 5.5, md: 7 },
+                    pb: { xs: 6.5, sm: 8, md: 10 },
+                    mb: 0,
                     background: isDark
-                        ? 'radial-gradient(130% 120% at 90% 10%, #1E293B 0%, #0F172A 60%, #090E17 100%)'
-                        : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #EFF6FF 100%)',
+                        ? 'radial-gradient(125% 115% at 88% 12%, #132238 0%, #09101D 58%, #050912 100%)'
+                        : 'linear-gradient(135deg, #FFFDF7 0%, #F8FAFC 52%, #E0F2FE 100%)',
                     borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                    boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 10px 30px -10px rgba(15, 23, 42, 0.05)',
+                    boxShadow: isDark ? '0 24px 48px -12px rgba(0, 0, 0, 0.5)' : '0 10px 30px -10px rgba(15, 23, 42, 0.05)',
                     overflow: 'hidden',
                 }}
             >
-                {/* Background Ambient Glows */}
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: -120,
-                        right: -100,
-                        width: 550,
-                        height: 550,
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, rgba(245, 158, 11, 0) 70%)',
-                        pointerEvents: 'none',
-                    }}
-                />
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        bottom: -150,
-                        left: -100,
-                        width: 500,
-                        height: 500,
-                        borderRadius: '50%',
-                        background: 'radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 70%)',
-                        pointerEvents: 'none',
-                    }}
-                />
+                        {/* Ambient Coastal Glows */}
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: -140,
+                                right: -120,
+                                width: 560,
+                                height: 560,
+                                borderRadius: '50%',
+                                background: 'radial-gradient(circle, rgba(245, 158, 11, 0.16) 0%, rgba(245, 158, 11, 0) 70%)',
+                                pointerEvents: 'none',
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                bottom: -160,
+                                left: -120,
+                                width: 520,
+                                height: 520,
+                                borderRadius: '50%',
+                                background: 'radial-gradient(circle, rgba(14, 165, 233, 0.14) 0%, rgba(14, 165, 233, 0) 70%)',
+                                pointerEvents: 'none',
+                            }}
+                        />
 
-                <Box sx={{ maxWidth: '1440px', mx: 'auto', width: '100%', position: 'relative', zIndex: 1 }}>
-                    <Grid container spacing={{ xs: 4, md: 6 }} alignItems="center">
-                        {/* Left Hero Story & Introduction */}
-                        <Grid size={{ xs: 12, lg: 7 }}>
-                            <Chip
-                                icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 16 }} />}
-                                label="G.K. WhizWheel • Coastal Karnataka Travel & Rental Services"
+                        <Box sx={{ maxWidth: '1440px', mx: 'auto', width: '100%', px: { xs: 2, sm: 3, md: 4 }, position: 'relative', zIndex: 1 }}>
+                            <Grid container spacing={{ xs: 3.5, md: 5 }} alignItems="center">
+                                {/* Left Hero Column — Brand Promise, Multi-Service Positioning & Action Controls */}
+                                <Grid size={{ xs: 12, lg: 6.5 }}>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center" sx={{ mb: 2.25 }}>
+                                        <Chip
+                                            icon={<AccessTimeIcon sx={{ color: isDark ? '#34D399 !important' : '#059669 !important', fontSize: 15 }} />}
+                                            label={`Open 24/7 • ${branchCitiesLabel}`}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: isDark ? 'rgba(16, 185, 129, 0.14)' : '#ECFDF5',
+                                                color: isDark ? '#34D399' : '#047857',
+                                                fontWeight: 700,
+                                                fontSize: { xs: '0.72rem', sm: '0.78rem' },
+                                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                                height: 30,
+                                            }}
+                                        />
+                                        <Box
+                                            component="a"
+                                            href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            sx={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 0.6,
+                                                px: 1.4,
+                                                height: 30,
+                                                borderRadius: 9999,
+                                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                                border: '1px solid rgba(245, 158, 11, 0.32)',
+                                                color: isDark ? '#FBBF24' : '#B45309',
+                                                textDecoration: 'none',
+                                                fontSize: { xs: '0.72rem', sm: '0.78rem' },
+                                                fontWeight: 800,
+                                                '&:hover': { filter: 'brightness(0.96)' },
+                                            }}
+                                        >
+                                            <StarIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
+                                            5.0 Google Rated (324+)
+                                        </Box>
+                                    </Stack>
+
+                                    <Typography
+                                        variant="h1"
+                                        component="h1"
+                                        sx={{
+                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                            fontSize: { xs: '2.15rem', sm: '2.9rem', md: '3.45rem' },
+                                            fontWeight: 950,
+                                            lineHeight: 1.12,
+                                            letterSpacing: '-0.03em',
+                                            mb: 2,
+                                        }}
+                                    >
+                                        Explore Coastal Karnataka{' '}
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                display: 'block',
+                                                background: 'linear-gradient(90deg, #F59E0B 0%, #FB923C 32%, #0284C7 72%, #10B981 100%)',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent',
+                                            }}
+                                        >
+                                            Rides, Stays &amp; Experiences.
+                                        </Box>
+                                    </Typography>
+
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            color: isDark ? '#CBD5E1' : '#334155',
+                                            fontSize: { xs: '0.96rem', md: '1.08rem' },
+                                            lineHeight: 1.7,
+                                            mb: 3,
+                                            maxWidth: 640,
+                                        }}
+                                    >
+                                        One trusted local platform for <strong>two-wheeler rentals</strong>, <strong>private AC cabs</strong>, <strong>Sharavathi backwater boating</strong>, <strong>riverfront homestays</strong>, <strong>Netrani scuba diving</strong>, <strong>trail guides</strong>, and <strong>custom tours</strong> — with transparent pricing and zero hidden fees.
+                                    </Typography>
+
+                                    {/* Quick Service Pill Selector — syncs live with the showcase stage */}
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.9, mb: 3.25 }}>
+                                        {HERO_SLIDES.map((slide, idx) => {
+                                            const isSelected = currentSlide % HERO_SLIDES.length === idx;
+                                            return (
+                                                <Chip
+                                                    key={slide.id}
+                                                    label={slide.shortLabel}
+                                                    size="small"
+                                                    clickable
+                                                    onClick={() => {
+                                                        setCurrentSlide(idx);
+                                                        setIsPaused(true);
+                                                    }}
+                                                    sx={{
+                                                        fontWeight: isSelected ? 800 : 600,
+                                                        fontSize: '0.76rem',
+                                                        height: 30,
+                                                        bgcolor: isSelected
+                                                            ? (isDark ? 'rgba(245, 158, 11, 0.2)' : '#0F172A')
+                                                            : (isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF'),
+                                                        color: isSelected
+                                                            ? (isDark ? '#FBBF24' : '#FFFFFF')
+                                                            : (isDark ? '#CBD5E1' : '#334155'),
+                                                        border: isSelected
+                                                            ? `1px solid ${isDark ? '#F59E0B' : '#0F172A'}`
+                                                            : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #CBD5E1'),
+                                                        '&:hover': {
+                                                            borderColor: '#F59E0B',
+                                                        },
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Box>
+
+                                    {/* Hero Primary Action Buttons */}
+                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 3.5 }}>
+                                        <Button
+                                            variant="contained"
+                                            component="a"
+                                            href="#service-offerings"
+                                            size="large"
+                                            endIcon={<ArrowForwardIcon />}
+                                            sx={{
+                                                bgcolor: '#F59E0B',
+                                                color: '#0F172A',
+                                                fontWeight: 800,
+                                                py: 1.4,
+                                                px: 3.2,
+                                                borderRadius: 2.5,
+                                                fontSize: '0.96rem',
+                                                boxShadow: '0 8px 20px -4px rgba(245, 158, 11, 0.42)',
+                                                '&:hover': { bgcolor: '#D97706' },
+                                            }}
+                                        >
+                                            Explore All 7 Services
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            component={Link}
+                                            href="/services/bikes"
+                                            size="large"
+                                            startIcon={<TwoWheelerIcon />}
+                                            sx={{
+                                                bgcolor: isDark ? '#1E293B' : '#0F172A',
+                                                color: '#FFFFFF',
+                                                fontWeight: 700,
+                                                py: 1.4,
+                                                px: 3,
+                                                borderRadius: 2.5,
+                                                fontSize: '0.96rem',
+                                                border: isDark ? '1px solid rgba(255,255,255,0.14)' : 'none',
+                                                '&:hover': { bgcolor: isDark ? '#334155' : '#1E293B' },
+                                            }}
+                                        >
+                                            Rent a Bike
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            onClick={() => handleOpenServiceModal(activeSlide.id === 'bikes' ? 'tours' : activeSlide.id)}
+                                            size="large"
+                                            startIcon={<ExploreIcon />}
+                                            sx={{
+                                                borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : '#CBD5E1',
+                                                color: isDark ? '#F8FAFC' : '#0F172A',
+                                                fontWeight: 700,
+                                                py: 1.4,
+                                                px: 2.6,
+                                                borderRadius: 2.5,
+                                                fontSize: '0.94rem',
+                                                '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
+                                            }}
+                                        >
+                                            Quick Enquiry
+                                        </Button>
+                                    </Stack>
+
+                                    {/* Compact Coastal Key Facts Bar */}
+                                    <Grid container spacing={1.5}>
+                                        {[
+                                            { label: 'Zero Security Deposit', sub: 'Book bikes with ₹100 advance', color: '#10B981' },
+                                            { label: '7 Travel Services', sub: 'Bikes, Cabs, Stays, Water & Tours', color: '#F59E0B' },
+                                            { label: '24/7 Local Desk', sub: 'Call or WhatsApp +91 8660989586', color: '#38BDF8' },
+                                        ].map((item, i) => (
+                                            <Grid key={i} size={{ xs: 12, sm: 4 }}>
+                                                <Box
+                                                    sx={{
+                                                        p: 1.5,
+                                                        borderRadius: 2.5,
+                                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.85)',
+                                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                    }}
+                                                >
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.35 }}>
+                                                        <CheckCircleIcon sx={{ color: item.color, fontSize: 16 }} />
+                                                        <Typography variant="subtitle2" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, fontSize: '0.82rem' }}>
+                                                            {item.label}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#475569', fontSize: '0.73rem', display: 'block' }}>
+                                                        {item.sub}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </Grid>
+
+                                {/* Right Hero Column — Interactive Coastal Experience Showcase + Direct Contact Dock */}
+                                <Grid size={{ xs: 12, lg: 5.5 }}>
+                                    <Paper
+                                        elevation={0}
+                                        onMouseEnter={() => setIsPaused(true)}
+                                        onMouseLeave={() => setIsPaused(false)}
+                                        sx={{
+                                            p: { xs: 1.5, sm: 2 },
+                                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.8)' : '#FFFFFF',
+                                            backdropFilter: 'blur(16px)',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                                            boxShadow: isDark
+                                                ? '0 24px 48px -15px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                                                : '0 24px 48px -15px rgba(15, 23, 42, 0.12)',
+                                            borderRadius: 4,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1.5,
+                                        }}
+                                    >
+                                        {/* Interactive Photo Stage */}
+                                        <Box
+                                            sx={{
+                                                position: 'relative',
+                                                borderRadius: 3,
+                                                overflow: 'hidden',
+                                                height: { xs: 280, sm: 330, md: 360 },
+                                                bgcolor: '#0F172A',
+                                            }}
+                                        >
+                                            <Box
+                                                component="img"
+                                                key={activeSlide.image}
+                                                src={activeSlide.image}
+                                                alt={`${activeSlide.title} — GK WhizWheel Coastal Karnataka`}
+                                                sx={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    display: 'block',
+                                                    transition: 'transform 0.6s ease',
+                                                }}
+                                            />
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    background: 'linear-gradient(180deg, rgba(6, 11, 22, 0.25) 0%, rgba(6, 11, 22, 0.15) 40%, rgba(6, 11, 22, 0.92) 100%)',
+                                                }}
+                                            />
+
+                                            {/* Top Bar inside Photo Stage */}
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 14,
+                                                    left: 14,
+                                                    right: 14,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    gap: 1,
+                                                }}
+                                            >
+                                                <Chip
+                                                    size="small"
+                                                    label={activeSlide.badge}
+                                                    sx={{
+                                                        bgcolor: 'rgba(15, 23, 42, 0.78)',
+                                                        backdropFilter: 'blur(8px)',
+                                                        color: '#FFFFFF',
+                                                        border: `1px solid ${activeSlide.accent}`,
+                                                        fontWeight: 800,
+                                                        fontSize: '0.73rem',
+                                                    }}
+                                                />
+                                                <Stack direction="row" spacing={0.75}>
+                                                    <IconButton
+                                                        size="small"
+                                                        aria-label="Previous featured service"
+                                                        onClick={handlePrevSlide}
+                                                        sx={{
+                                                            bgcolor: 'rgba(15, 23, 42, 0.7)',
+                                                            color: '#FFFFFF',
+                                                            backdropFilter: 'blur(8px)',
+                                                            border: '1px solid rgba(255,255,255,0.18)',
+                                                            '&:hover': { bgcolor: '#F59E0B', color: '#0F172A' },
+                                                        }}
+                                                    >
+                                                        <ChevronLeftIcon fontSize="small" />
+                                                    </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        aria-label="Next featured service"
+                                                        onClick={handleNextSlide}
+                                                        sx={{
+                                                            bgcolor: 'rgba(15, 23, 42, 0.7)',
+                                                            color: '#FFFFFF',
+                                                            backdropFilter: 'blur(8px)',
+                                                            border: '1px solid rgba(255,255,255,0.18)',
+                                                            '&:hover': { bgcolor: '#F59E0B', color: '#0F172A' },
+                                                        }}
+                                                    >
+                                                        <ChevronRightIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Stack>
+                                            </Box>
+
+                                            {/* Bottom Caption & Direct Service Link inside Photo Stage */}
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    p: { xs: 2, sm: 2.5 },
+                                                    display: 'flex',
+                                                    flexDirection: { xs: 'column', sm: 'row' },
+                                                    alignItems: { xs: 'flex-start', sm: 'flex-end' },
+                                                    justifyContent: 'space-between',
+                                                    gap: 1.5,
+                                                }}
+                                            >
+                                                <Box sx={{ minWidth: 0 }}>
+                                                    <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 900, fontSize: { xs: '1.1rem', sm: '1.25rem' }, lineHeight: 1.2, mb: 0.4 }}>
+                                                        {activeSlide.title}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: '#CBD5E1', fontSize: '0.8rem', display: 'block', lineHeight: 1.4 }}>
+                                                        {activeSlide.subtitle}
+                                                    </Typography>
+                                                </Box>
+                                                <Button
+                                                    component={Link}
+                                                    href={activeSlide.href}
+                                                    size="small"
+                                                    variant="contained"
+                                                    endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                                                    sx={{
+                                                        bgcolor: '#F59E0B',
+                                                        color: '#0F172A',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.78rem',
+                                                        px: 1.8,
+                                                        py: 0.75,
+                                                        borderRadius: 2,
+                                                        whiteSpace: 'nowrap',
+                                                        flexShrink: 0,
+                                                        '&:hover': { bgcolor: '#FBBF24' },
+                                                    }}
+                                                >
+                                                    {activeSlide.cta}
+                                                </Button>
+                                            </Box>
+                                        </Box>
+
+                                        {/* Compact Contact & Directions Dock */}
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                flexWrap: 'wrap',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                gap: 1.25,
+                                                bgcolor: isDark ? 'rgba(15, 23, 42, 0.65)' : '#F8FAFC',
+                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                px: 1.75,
+                                                py: 1.35,
+                                                borderRadius: 2.5,
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.9, minWidth: 0 }}>
+                                                <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, flexShrink: 0 }} />
+                                                <Box sx={{ minWidth: 0 }}>
+                                                    <Typography variant="caption" sx={{ color: isDark ? '#F1F5F9' : '#0F172A', fontWeight: 700, fontSize: '0.77rem', display: 'block' }}>
+                                                        {branchList.length > 0
+                                                            ? `${branchList.length} Active ${branchList.length === 1 ? 'Branch' : 'Branches'}: ${branchCitiesLabel}`
+                                                            : branchCitiesLabel}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.72rem', display: 'block' }}>
+                                                        24/7 Helpline: +91 8660989586
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+                                                <Button
+                                                    component="a"
+                                                    href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20to%20enquire%20about%20your%20coastal%20travel%20services."
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    size="small"
+                                                    startIcon={<WhatsAppIcon sx={{ fontSize: 15 }} />}
+                                                    sx={{
+                                                        bgcolor: isDark ? 'rgba(16, 185, 129, 0.16)' : '#ECFDF5',
+                                                        color: isDark ? '#34D399' : '#047857',
+                                                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.74rem',
+                                                        px: 1.25,
+                                                        py: 0.45,
+                                                        borderRadius: 1.5,
+                                                    }}
+                                                >
+                                                    WhatsApp
+                                                </Button>
+                                                <Box
+                                                    component="a"
+                                                    href={getBranchMapUrl(primaryBranch)}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.3,
+                                                        color: isDark ? '#38BDF8' : '#0284C7',
+                                                        fontSize: '0.74rem',
+                                                        fontWeight: 700,
+                                                        textDecoration: 'none',
+                                                        '&:hover': { textDecoration: 'underline' },
+                                                    }}
+                                                >
+                                                    <DirectionsIcon sx={{ fontSize: 14 }} /> Map ↗
+                                                </Box>
+                                            </Stack>
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </Box>
+
+            {/* =========================================================================
+                1.5 ALL-IN-ONE SEARCH & INSTANT BOOKING HUB (Directly Bridging Hero)
+            ========================================================================== */}
+            {(() => {
+                const activeServiceTab = QUICK_BOOK_SERVICES.find((s) => s.id === activeBookingTab) || QUICK_BOOK_SERVICES[0];
+                const isBikeTab = activeServiceTab.id === 'two_wheelers';
+                const tabItems = availableItems.filter((item) => item.service_type === activeServiceTab.id);
+
+                const handleUnifiedSubmit = (e) => {
+                    e.preventDefault();
+                    if (isBikeTab) {
+                        handleSearch(e);
+                        return;
+                    }
+                    handleOpenServiceModal(activeServiceTab.id);
+                };
+
+                return (
+                    <Box
+                        id="quick-search"
+                        component="section"
+                        aria-label="All-in-One Search and Booking Hub"
+                        sx={{
+                            maxWidth: '1440px',
+                            width: '100%',
+                            mx: 'auto',
+                            px: { xs: 2, sm: 3, md: 4 },
+                            mt: { xs: -3.5, md: -5 },
+                            mb: { xs: 5, md: 7.5 },
+                            position: 'relative',
+                            zIndex: 2,
+                        }}
+                    >
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                borderRadius: 4,
+                                overflow: 'hidden',
+                                bgcolor: isDark ? 'rgba(15, 23, 42, 0.96)' : '#FFFFFF',
+                                backdropFilter: 'blur(16px)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid #CBD5E1',
+                                boxShadow: isDark
+                                    ? '0 24px 48px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                                    : '0 22px 48px -14px rgba(15, 23, 42, 0.14)',
+                            }}
+                        >
+                            {/* Top Coastal Accent Bar */}
+                            <Box
                                 sx={{
-                                    bgcolor: 'rgba(245, 158, 11, 0.12)',
-                                    color: '#FBBF24',
-                                    fontWeight: 700,
-                                    fontSize: { xs: '0.72rem', sm: '0.85rem' },
-                                    mb: 2.5,
-                                    py: 0.5,
-                                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                                    height: 4,
+                                    width: '100%',
+                                    background: 'linear-gradient(90deg, #F59E0B 0%, #FB923C 32%, #0284C7 68%, #10B981 100%)',
                                 }}
                             />
 
-                            <Typography
-                                variant="h1"
-                                component="h1"
+                            {/* Row 1: All 7 Services Selector Tabs */}
+                            <Box
                                 sx={{
-                                    color: isDark ? '#FFFFFF' : '#0F172A',
-                                    fontSize: { xs: '2.2rem', sm: '3rem', md: '3.6rem' },
-                                    fontWeight: 900,
-                                    lineHeight: 1.15,
-                                    letterSpacing: '-0.03em',
-                                    mb: 2,
-                                }}
-                            >
-                                Your Complete Coastal Karnataka <br />
-                                <Box
-                                    component="span"
-                                    sx={{
-                                        background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 40%, #0284C7 80%, #10B981 100%)',
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
-                                    }}
-                                >
-                                    Travel & Mobility Partner
-                                </Box>
-                            </Typography>
-
-                            <Typography
-                                variant="subtitle1"
-                                sx={{
-                                    color: isDark ? '#FBBF24' : '#D97706',
-                                    fontWeight: 700,
-                                    fontStyle: 'italic',
-                                    mb: 2,
-                                    fontSize: { xs: '1rem', sm: '1.15rem' },
-                                }}
-                            >
-                                “Ride the Freedom, Feel the Wind • Two-Wheelers, Cabs, Homestays, Boating & Scuba.”
-                            </Typography>
-
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    color: isDark ? '#CBD5E1' : '#334155',
-                                    fontSize: { xs: '0.95rem', md: '1.1rem' },
-                                    lineHeight: 1.7,
-                                    mb: 4,
-                                    maxWidth: 680,
-                                }}
-                            >
-                                Welcome to <strong>G.K. WhizWheel</strong>. We serve coastal Karnataka with travel and mobility services. Whether you want to <strong>rent a bike with transparent, date-based pricing</strong>, hire a <strong>private AC cab</strong> for station pickup & Gokarna tours, book a serene <strong>Sharavathi riverfront homestay</strong>, cruise the <strong>mangrove backwaters</strong>, or explore underwater coral reefs at <strong>Netrani Island</strong> — our local team manages every detail under one verified roof with zero hidden fees.
-                            </Typography>
-
-                            {/* Key Highlights Pill Badges */}
-                            <Grid container spacing={1.5} sx={{ mb: 4 }}>
-                                {[
-                                    { text: 'Bikes, Cabs, Stays & Experiences', color: '#F59E0B' },
-                                    { text: 'Serving Multiple Coastal Branches', color: '#0284C7' },
-                                    { text: 'Deposit-Free Online Bike Bookings', color: '#10B981' },
-                                    { text: 'Local Travel & Rental Support', color: '#7C3AED' },
-                                ].map((item, i) => (
-                                    <Grid key={i} size={{ xs: 12, sm: 6 }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <CheckCircleIcon sx={{ color: item.color, fontSize: 18 }} />
-                                            <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#334155', fontWeight: 600 }}>
-                                                {item.text}
-                                            </Typography>
-                                        </Box>
-                                    </Grid>
-                                ))}
-                            </Grid>
-
-                            {/* Hero Action Buttons */}
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                                <Button
-                                    variant="contained"
-                                    component={Link}
-                                    href="/services/bikes"
-                                    size="large"
-                                    startIcon={<TwoWheelerIcon />}
-                                    sx={{
-                                        bgcolor: '#F59E0B',
-                                        color: '#0F172A',
-                                        fontWeight: 800,
-                                        py: 1.4,
-                                        px: 3.5,
-                                        borderRadius: 2.5,
-                                        fontSize: '0.98rem',
-                                        boxShadow: '0 8px 20px -4px rgba(245, 158, 11, 0.4)',
-                                        '&:hover': { bgcolor: '#D97706' },
-                                    }}
-                                >
-                                    Book Your Bike Now →
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    component="a"
-                                    href="#service-offerings"
-                                    size="large"
-                                    sx={{
-                                        borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
-                                        color: isDark ? '#FFFFFF' : '#0F172A',
-                                        fontWeight: 700,
-                                        py: 1.4,
-                                        px: 3,
-                                        borderRadius: 2.5,
-                                        fontSize: '0.98rem',
-                                        '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.06)' },
-                                    }}
-                                >
-                                    Explore All 7 Services ↓
-                                </Button>
-                            </Stack>
-                        </Grid>
-
-                        {/* Right Hero Showcase — Official Emblem & Direct Contact Card */}
-                        <Grid size={{ xs: 12, lg: 5 }}>
-                            <Paper
-                                elevation={0}
-                                sx={{
-                                    p: { xs: 3, sm: 3.5 },
-                                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                                    backdropFilter: 'blur(16px)',
-                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
-                                    boxShadow: isDark
-                                        ? '0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-                                        : '0 20px 40px -15px rgba(15, 23, 42, 0.08)',
-                                    borderRadius: 4,
+                                    px: { xs: 1.5, sm: 2.5, md: 3 },
+                                    py: 1.4,
+                                    borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                    bgcolor: isDark ? 'rgba(7, 13, 25, 0.55)' : '#F8FAFC',
                                     display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 2.5,
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: 1.5,
                                 }}
                             >
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                                <Box
+                                    role="tablist"
+                                    aria-label="Choose a service to search or book"
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.85,
+                                        overflowX: 'auto',
+                                        WebkitOverflowScrolling: 'touch',
+                                        scrollbarWidth: 'none',
+                                        '&::-webkit-scrollbar': { display: 'none' },
+                                        flex: 1,
+                                    }}
+                                >
+                                    {QUICK_BOOK_SERVICES.map((svc) => {
+                                        const active = activeServiceTab.id === svc.id;
+                                        return (
+                                            <Button
+                                                key={svc.id}
+                                                role="tab"
+                                                aria-selected={active}
+                                                onClick={() => {
+                                                    setActiveBookingTab(svc.id);
+                                                    setSelectedServiceOption('');
+                                                }}
+                                                startIcon={svc.icon}
+                                                size="small"
+                                                sx={{
+                                                    flexShrink: 0,
+                                                    whiteSpace: 'nowrap',
+                                                    borderRadius: 9999,
+                                                    px: 1.6,
+                                                    py: 0.75,
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: active ? 800 : 600,
+                                                    textTransform: 'none',
+                                                    bgcolor: active
+                                                        ? (isDark ? 'rgba(245, 158, 11, 0.18)' : '#0F172A')
+                                                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF'),
+                                                    color: active
+                                                        ? (isDark ? '#FBBF24' : '#FFFFFF')
+                                                        : (isDark ? '#CBD5E1' : '#334155'),
+                                                    border: active
+                                                        ? `1px solid ${isDark ? '#F59E0B' : '#0F172A'}`
+                                                        : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #CBD5E1'),
+                                                    '& .MuiButton-startIcon': {
+                                                        color: active ? (isDark ? '#FBBF24' : '#F59E0B') : svc.accent,
+                                                        mr: 0.75,
+                                                    },
+                                                    '&:hover': {
+                                                        borderColor: '#F59E0B',
+                                                        bgcolor: active
+                                                            ? (isDark ? 'rgba(245, 158, 11, 0.24)' : '#1E293B')
+                                                            : (isDark ? 'rgba(245, 158, 11, 0.08)' : '#FFFBEB'),
+                                                    },
+                                                }}
+                                            >
+                                                {svc.label}
+                                            </Button>
+                                        );
+                                    })}
+                                </Box>
+
+                                <Chip
+                                    icon={<StarIcon sx={{ fontSize: '15px !important', color: '#F59E0B !important' }} />}
+                                    label="5.0 ★ (324+)"
+                                    size="small"
+                                    component="a"
+                                    href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    clickable
+                                    sx={{
+                                        display: { xs: 'none', xl: 'inline-flex' },
+                                        flexShrink: 0,
+                                        fontWeight: 800,
+                                        fontSize: '0.75rem',
+                                        bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                        color: isDark ? '#FBBF24' : '#B45309',
+                                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                                    }}
+                                />
+                            </Box>
+
+                            {/* Row 2: Dynamic All-in-One Search & Book Form */}
+                            <Box
+                                component="form"
+                                onSubmit={handleUnifiedSubmit}
+                                sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}
+                            >
+                                <Grid container spacing={1.75} alignItems="center">
+                                    {/* Field 1: Branch / Pickup Hub */}
+                                    <Grid size={{ xs: 12, sm: 6, lg: 2.75 }}>
+                                        <TextField
+                                            select
+                                            fullWidth
+                                            size="small"
+                                            label={isBikeTab ? 'Pickup Branch' : 'Location / Hub'}
+                                            value={searchStore}
+                                            onChange={(e) => setSearchStore(e.target.value)}
+                                        >
+                                            <MenuItem value="">All Branches ({branchCitiesLabel})</MenuItem>
+                                            {branchList.map((store) => (
+                                                <MenuItem key={store.id} value={store.id}>
+                                                    {store.public_name || store.name}{store.city ? ` · ${store.city}` : ''}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Grid>
+
+                                    {/* Field 2: Vehicle Category (Bikes) OR Package / Option (Other Services) */}
+                                    <Grid size={{ xs: 12, sm: 6, lg: 2.75 }}>
+                                        {isBikeTab ? (
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                size="small"
+                                                label="Scooter / Bike Type"
+                                                value={searchCategory}
+                                                onChange={(e) => setSearchCategory(e.target.value)}
+                                            >
+                                                <MenuItem value="">All Scooters &amp; Bikes</MenuItem>
+                                                {categories.map((cat) => (
+                                                    <MenuItem key={cat.id} value={cat.id}>
+                                                        {cat.name}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        ) : (
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                size="small"
+                                                label={`${activeServiceTab.label} Option`}
+                                                value={selectedServiceOption}
+                                                onChange={(e) => setSelectedServiceOption(e.target.value)}
+                                            >
+                                                <MenuItem value="">All {activeServiceTab.label} Options</MenuItem>
+                                                {tabItems.map((item) => (
+                                                    <MenuItem key={item.id} value={item.id}>
+                                                        {item.name}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        )}
+                                    </Grid>
+
+                                    {/* Field 3: Start / Trip Date */}
+                                    <Grid size={{ xs: 6, lg: 2 }}>
+                                        <TextField
+                                            type="date"
+                                            fullWidth
+                                            size="small"
+                                            label={isBikeTab ? 'Pickup Date' : (activeServiceTab.id === 'homestay' ? 'Check-In' : 'Preferred Date')}
+                                            value={startDate}
+                                            onChange={(e) => {
+                                                const next = e.target.value;
+                                                setStartDate(next);
+                                                if (endDate && next > endDate) {
+                                                    setEndDate(next);
+                                                }
+                                            }}
+                                            InputLabelProps={{ shrink: true }}
+                                            inputProps={{ min: today }}
+                                        />
+                                    </Grid>
+
+                                    {/* Field 4: Return Date (Bikes/Stays/Tours) OR Group Size (Day Experiences) */}
+                                    <Grid size={{ xs: 6, lg: 2 }}>
+                                        {activeServiceTab.usesReturnDate ? (
+                                            <TextField
+                                                type="date"
+                                                fullWidth
+                                                size="small"
+                                                label={activeServiceTab.id === 'homestay' ? 'Check-Out' : 'Return Date'}
+                                                value={endDate}
+                                                onChange={(e) => setEndDate(e.target.value)}
+                                                InputLabelProps={{ shrink: true }}
+                                                inputProps={{ min: startDate || today }}
+                                            />
+                                        ) : (
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                size="small"
+                                                label="Travelers"
+                                                value={guestCount}
+                                                onChange={(e) => setGuestCount(e.target.value)}
+                                            >
+                                                {['1 Guest', '2 Guests', '3–4 Guests', '5–8 Group', '9+ Group'].map((opt) => (
+                                                    <MenuItem key={opt} value={opt}>
+                                                        {opt}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        )}
+                                    </Grid>
+
+                                    {/* Field 5: Submit / Action CTAs */}
+                                    <Grid size={{ xs: 12, lg: 2.5 }}>
+                                        <Stack direction="row" spacing={1}>
+                                            <Button
+                                                type="submit"
+                                                fullWidth
+                                                variant="contained"
+                                                startIcon={isBikeTab ? <SearchIcon /> : <CalendarMonthIcon />}
+                                                sx={{
+                                                    py: 1.05,
+                                                    px: 2,
+                                                    fontWeight: 800,
+                                                    fontSize: '0.88rem',
+                                                    borderRadius: 2,
+                                                    bgcolor: '#F59E0B',
+                                                    color: '#0F172A',
+                                                    boxShadow: '0 6px 18px -4px rgba(245, 158, 11, 0.45)',
+                                                    whiteSpace: 'nowrap',
+                                                    '&:hover': { bgcolor: '#D97706' },
+                                                }}
+                                            >
+                                                {isBikeTab ? 'Search Bikes' : 'Book Now'}
+                                            </Button>
+                                            {!isBikeTab && (
+                                                <Button
+                                                    component={Link}
+                                                    href={activeServiceTab.href}
+                                                    variant="outlined"
+                                                    sx={{
+                                                        py: 1.05,
+                                                        px: 1.6,
+                                                        fontWeight: 700,
+                                                        fontSize: '0.82rem',
+                                                        borderRadius: 2,
+                                                        whiteSpace: 'nowrap',
+                                                        flexShrink: 0,
+                                                        borderColor: isDark ? 'rgba(255,255,255,0.22)' : '#CBD5E1',
+                                                        color: isDark ? '#F8FAFC' : '#0F172A',
+                                                        '&:hover': { borderColor: '#F59E0B' },
+                                                    }}
+                                                >
+                                                    Explore
+                                                </Button>
+                                            )}
+                                        </Stack>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+
+                            {/* Row 3: Compact Dynamic Highlight & Direct Desk Strip */}
+                            <Box
+                                sx={{
+                                    px: { xs: 2, sm: 3 },
+                                    py: 1.15,
+                                    bgcolor: isDark ? 'rgba(7, 13, 25, 0.65)' : '#F8FAFC',
+                                    borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: 1.25,
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.9, minWidth: 0 }}>
+                                    <VerifiedUserIcon sx={{ fontSize: 16, color: '#10B981', flexShrink: 0 }} />
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: isDark ? '#CBD5E1' : '#334155',
+                                            fontWeight: 600,
+                                            fontSize: { xs: '0.73rem', sm: '0.78rem' },
+                                        }}
+                                    >
+                                        {activeServiceTab.note}
+                                    </Typography>
+                                </Box>
+
+                                <Stack direction="row" spacing={1.75} alignItems="center" sx={{ flexShrink: 0 }}>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: isDark ? '#34D399' : '#047857',
+                                            fontWeight: 800,
+                                            fontSize: '0.74rem',
+                                        }}
+                                    >
+                                        ● Open 24/7
+                                    </Typography>
                                     <Box
                                         component="a"
-                                        href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                        href="tel:+918660989586"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 0.45,
+                                            color: isDark ? '#FBBF24' : '#B45309',
+                                            fontSize: '0.76rem',
+                                            fontWeight: 700,
+                                            textDecoration: 'none',
+                                            '&:hover': { textDecoration: 'underline' },
+                                        }}
+                                    >
+                                        <PhoneIcon sx={{ fontSize: 13.5 }} />
+                                        +91 8660989586
+                                    </Box>
+                                    <Box
+                                        component="a"
+                                        href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20help%20booking%20a%20coastal%20service."
                                         target="_blank"
                                         rel="noreferrer"
                                         sx={{
                                             display: 'inline-flex',
                                             alignItems: 'center',
-                                            gap: 0.8,
-                                            px: 1.5,
-                                            py: 0.6,
-                                            borderRadius: 9999,
-                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7',
-                                            border: '1px solid rgba(245, 158, 11, 0.3)',
-                                            color: isDark ? '#FBBF24' : '#B45309',
+                                            gap: 0.45,
+                                            color: isDark ? '#34D399' : '#047857',
+                                            fontSize: '0.76rem',
+                                            fontWeight: 700,
                                             textDecoration: 'none',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 800,
+                                            '&:hover': { textDecoration: 'underline' },
                                         }}
                                     >
-                                        <StarIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
-                                        5.0 Google Rating (324+ Reviews)
+                                        <WhatsAppIcon sx={{ fontSize: 14 }} />
+                                        WhatsApp Desk
                                     </Box>
-                                    <Chip
-                                        size="small"
-                                        label="● Open 24/7"
-                                        sx={{
-                                            bgcolor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5',
-                                            color: isDark ? '#34D399' : '#047857',
-                                            fontWeight: 800,
-                                            fontSize: '0.72rem',
-                                            border: '1px solid rgba(16, 185, 129, 0.25)',
-                                        }}
-                                    />
-                                </Box>
-
-                                <Box
-                                    sx={{
-                                        bgcolor: '#FFFFFF',
-                                        borderRadius: 3,
-                                        p: { xs: 2, sm: 2.5 },
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: '1px solid #E2E8F0',
-                                        boxShadow: '0 8px 24px -4px rgba(15, 23, 42, 0.08)',
-                                    }}
-                                >
-                                    <Box
-                                        component="img"
-                                        src="/images/logo.png"
-                                        alt="GK WhizWheel Official Logo - Bike Rental and Coastal Tourism Services in Honnavar"
-                                        sx={{ width: '100%', maxWidth: 260, height: 'auto', display: 'block', mx: 'auto' }}
-                                    />
-                                </Box>
-
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Typography variant="subtitle1" sx={{ color: isDark ? '#F1F5F9' : '#0F172A', fontWeight: 800 }}>
-                                        Coastal Karnataka Travel & Rental Services
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#334155', display: 'block', mt: 0.3 }}>
-                                        Two-Wheelers • AC Cabs • Stays • Boating • Scuba • Tours
-                                    </Typography>
-                                </Box>
-
-                                {/* 3 Metrics (component="span" to avoid skipped heading levels) */}
-                                <Grid container spacing={1.5} sx={{ textAlign: 'center' }}>
-                                    <Grid size={{ xs: 4 }}>
-                                        <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
-                                            <Typography component="span" variant="h6" sx={{ display: 'block', color: '#F59E0B', fontWeight: 900, lineHeight: 1.2 }}>Live</Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Bike rates</Typography>
-                                        </Box>
-                                    </Grid>
-                                    <Grid size={{ xs: 4 }}>
-                                        <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
-                                            <Typography component="span" variant="h6" sx={{ display: 'block', color: '#0284C7', fontWeight: 900, lineHeight: 1.2 }}>Multi</Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Locations</Typography>
-                                        </Box>
-                                    </Grid>
-                                    <Grid size={{ xs: 4 }}>
-                                        <Box sx={{ p: 1.2, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
-                                            <Typography component="span" variant="h6" sx={{ display: 'block', color: '#10B981', fontWeight: 900, lineHeight: 1.2 }}>0 Lock</Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 600, fontSize: '0.7rem' }}>Zero Deposit</Typography>
-                                        </Box>
-                                    </Grid>
-                                </Grid>
-
-                                {/* Contact & Directions */}
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC', border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0', p: 1.8, borderRadius: 2 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 17, flexShrink: 0 }} />
-                                        <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#0F172A', fontWeight: 600, fontSize: '0.75rem' }}>
-                                            Palya Main Rd, Honnavar, Karnataka 581334
-                                        </Typography>
-                                        <Box component="a" href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334" target="_blank" rel="noreferrer" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: '#38BDF8', fontSize: '0.72rem', fontWeight: 700, textDecoration: 'none', ml: 'auto', flexShrink: 0 }}>
-                                            <DirectionsIcon sx={{ fontSize: 13 }} /> Directions ↗
-                                        </Box>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <PhoneIcon sx={{ color: '#10B981', fontSize: 15, flexShrink: 0 }} />
-                                        <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#0F172A', fontWeight: 600, fontSize: '0.75rem' }}>
-                                            +91 8660989586 • 097316 99125
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Paper>
-                        </Grid>
-                    </Grid>
-                </Box>
-            </Box>
-
-            {/* =========================================================================
-                1.5 CONDENSED TRUST BADGES STRIP (Directly Under Hero)
-            ========================================================================== */}
-            <Box sx={{ maxWidth: '1240px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mb: { xs: 4, md: 6 }, mt: { xs: 2, md: 3 } }}>
-                <Box
-                    sx={{
-                        py: 1.5,
-                        px: { xs: 2, md: 3 },
-                        borderRadius: 3,
-                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.5)' : '#FFFFFF',
-                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                        boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 2px 12px rgba(15, 23, 42, 0.04)',
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
-                        gap: { xs: 1.5, md: 2 },
-                        alignItems: 'center',
-                    }}
-                >
-                    {[
-                        { icon: <VerifiedUserIcon sx={{ color: '#10B981', fontSize: 22 }} />, title: 'Verified Documents', desc: 'Govt. approved legal fleet' },
-                        { icon: <ElectricBoltIcon sx={{ color: '#F59E0B', fontSize: 22 }} />, title: 'Instant Confirmation', desc: 'Reserve online in < 60s' },
-                        { icon: <AccessTimeIcon sx={{ color: '#38BDF8', fontSize: 22 }} />, title: '24/7 Road Support', desc: 'Breakdown & trip helpline' },
-                        { icon: <LocationOnIcon sx={{ color: '#A855F7', fontSize: 22 }} />, title: 'Local Honnavar Team', desc: 'Station & Palya Main Rd' },
-                    ].map((item, idx) => (
-                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
-                            <Box sx={{ p: 1, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                {item.icon}
+                                </Stack>
                             </Box>
-                            <Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.85rem', color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1.2 }}>
-                                    {item.title}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.74rem', display: 'block', lineHeight: 1.2 }}>
-                                    {item.desc}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    ))}
-                </Box>
-            </Box>
+                        </Paper>
+                    </Box>
+                );
+            })()}
 
             {/* =========================================================================
                 2. DEDICATED SERVICE OFFERINGS SHOWCASE (7 CURATED SERVICES)
                    ORDER: 1. Bike Rentals, 2. Cab, 3. Homestay/Rooms, 4. Boating, 5. Scuba, 6. Guide, 7. Custom Tour Package
             ========================================================================== */}
-            <Box id="service-offerings" sx={{ maxWidth: '1240px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mb: 9 }}>
+            <Box id="service-offerings" sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mb: 9 }}>
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
                     <Box
                         sx={{
@@ -670,7 +1424,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             lineHeight: 1.15,
                         }}
                     >
-                        7 Curated Services For Your Honnavar Trip
+                        7 Curated Services For Your {branchCitiesLabel} Trip
                     </Typography>
                     <Typography
                         variant="body1"
@@ -700,12 +1454,13 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             color: '#F59E0B',
                             gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                             href: '/services/bikes',
+                            guideHref: '/blog/honnavar-murudeshwar-bike-rental-complete-guide',
                             cta: 'Explore Bikes & Rent',
                             icon: <TwoWheelerIcon sx={{ fontSize: 20 }} />,
                             highlights: [
                                 'Browse available models by branch',
                                 '2 Sanitized ISI Helmets & Phone Mount Free',
-                                'Honnavar Railway Station Delivery Available',
+                                'Honnavar & Murudeshwar Station Delivery',
                             ],
                         },
                         {
@@ -719,6 +1474,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             color: '#0284C7',
                             gradient: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
                             href: '/services/cabs',
+                            guideHref: '/blog/coastal-karnataka-cab-hire-transfers-itinerary',
                             cta: 'View Cabs & Book Transfer',
                             icon: <LocalTaxiIcon sx={{ fontSize: 20 }} />,
                             highlights: [
@@ -738,6 +1494,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             color: '#E11D48',
                             gradient: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)',
                             href: '/services/homestays',
+                            guideHref: '/blog/sharavathi-riverfront-homestays-coastal-stays-guide',
                             cta: 'View Stays & Check Availability',
                             icon: <HomeWorkIcon sx={{ fontSize: 20 }} />,
                             highlights: [
@@ -757,6 +1514,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             color: '#059669',
                             gradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                             href: '/services/boating',
+                            guideHref: '/blog/sharavathi-backwater-mangrove-boating-guide',
                             cta: 'View Cruises & Reserve Slot',
                             icon: <DirectionsBoatIcon sx={{ fontSize: 20 }} />,
                             highlights: [
@@ -776,6 +1534,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             color: '#6366F1',
                             gradient: 'linear-gradient(135deg, #6366F1 0%, #4338CA 100%)',
                             href: '/services/scuba',
+                            guideHref: '/blog/netrani-island-scuba-diving-beginners-guide',
                             cta: 'View Dive Packages & Book',
                             icon: <ScubaDivingIcon sx={{ fontSize: 20 }} />,
                             highlights: [
@@ -795,6 +1554,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                             color: '#D97706',
                             gradient: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
                             href: '/services/guide',
+                            guideHref: '/blog/hidden-honnavar-waterfalls-mirjan-fort-local-guide',
                             cta: 'View Guided Trails & Tours',
                             icon: <ExploreIcon sx={{ fontSize: 20 }} />,
                             highlights: [
@@ -1059,6 +1819,28 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                         <span>{srv.cta}</span>
                                         <ArrowForwardIcon className="cta-arrow" sx={{ fontSize: 18, transition: 'transform 0.3s ease' }} />
                                     </Button>
+
+                                    {srv.guideHref && (
+                                        <Box sx={{ textAlign: 'center', mt: 1.2 }}>
+                                            <Typography
+                                                component={Link}
+                                                href={srv.guideHref}
+                                                variant="caption"
+                                                sx={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 0.5,
+                                                    fontWeight: 750,
+                                                    color: isDark ? '#CBD5E1' : '#475569',
+                                                    textDecoration: 'none',
+                                                    '&:hover': { color: srv.color, textDecoration: 'underline' },
+                                                }}
+                                            >
+                                                <AutoStoriesIcon sx={{ fontSize: 14, color: srv.color }} />
+                                                Read Complete Guide →
+                                            </Typography>
+                                        </Box>
+                                    )}
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -1279,7 +2061,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 Why coordinate with 5 different operators? We curate your end-to-end trip under one verified roof.
                                                 Bundle <strong>two-wheelers or private AC cabs</strong>, <strong>Sharavathi riverfront cottages</strong>,
                                                 <strong>mangrove sunset boating</strong>, and <strong>Netrani scuba diving</strong> into a personalized itinerary
-                                                backed by a dedicated local Honnavar coordinator.
+                                                backed by a dedicated local coastal coordinator.
                                             </Typography>
 
                                             {/* Multi-service bundled inclusions tag cloud */}
@@ -1312,7 +2094,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                                 {[
                                                     'Tailored for Couples, Family Getaways, Group Treks & Weekend Roadtrips',
                                                     '10% Instant Package Discount vs Booking Each Service Individually',
-                                                    'Dedicated Local Honnavar Trip Manager On 24/7 Call From Arrival to Departure',
+                                                    'Dedicated Local Coastal Trip Manager On 24/7 Call From Arrival to Departure',
                                                 ].map((text, i) => (
                                                     <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                                                         <CheckCircleIcon sx={{ fontSize: 17, color: '#8B5CF6', flexShrink: 0 }} />
@@ -1364,7 +2146,7 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             <Button
                                                 variant="outlined"
                                                 component="a"
-                                                href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheel%2C%20I%20want%20to%20plan%20a%20custom%20tour%20package%20for%20Honnavar"
+                                                href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheel%2C%20I%20want%20to%20plan%20a%20custom%20tour%20package%20across%20Honnavar%20%26%20Murudeshwar"
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 size="large"
@@ -1386,6 +2168,24 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
                                             >
                                                 WhatsApp Tour Specialist
                                             </Button>
+
+                                            <Button
+                                                variant="text"
+                                                component={Link}
+                                                href="/blog/3-day-karavali-coastal-tour-package-blueprint"
+                                                size="large"
+                                                startIcon={<AutoStoriesIcon sx={{ color: '#8B5CF6' }} />}
+                                                sx={{
+                                                    color: isDark ? '#C4B5FD' : '#6D28D9',
+                                                    fontWeight: 800,
+                                                    px: 2,
+                                                    textTransform: 'none',
+                                                    fontSize: '0.92rem',
+                                                    '&:hover': { bgcolor: 'rgba(139, 92, 246, 0.08)' },
+                                                }}
+                                            >
+                                                Read 3-Day Combo Guide →
+                                            </Button>
                                         </Stack>
                                     </Box>
                                 </Grid>
@@ -1396,774 +2196,1918 @@ export default function Welcome({ featuredBikes = [], categories = [], stores = 
             </Box>
 
             {/* =========================================================================
-                REST OF ALL SECTIONS (1240px CONTAINER)
+                REST OF ALL SECTIONS (1440px CONTAINER)
             ========================================================================== */}
-            <Box sx={{ maxWidth: '1240px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
+            <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
 
                 {/* =========================================================================
-                    4. CONDENSED 4-STEP BOOKING ROADMAP (Horizontal Strip)
+                    4. HOW BOOKING WORKS (Split Editorial Container + Connected Vertical Stepper)
                 ========================================================================== */}
-                <Box component="section" id="how-it-works" aria-labelledby="process-title" sx={{ mb: 8 }}>
-                    <Box sx={{ textAlign: 'center', mb: 4 }}>
-                        <Typography
-                            id="process-title"
-                            variant="h4"
-                            component="h2"
+                {(() => {
+                    const isBikeFlow = bookingFlowTab === 'bikes';
+                    const bookingSteps = isBikeFlow
+                        ? [
+                            {
+                                num: '1',
+                                accent: '#F59E0B',
+                                title: 'Select Branch & Dates',
+                                desc: `Choose ${branchCitiesLabel} hub, pickup dates, and compare live scooter or motorcycle models.`,
+                                tag: 'Live Fleet Stock',
+                            },
+                            {
+                                num: '2',
+                                accent: '#0284C7',
+                                title: 'Lock With ₹100 or Full Pay',
+                                desc: 'Instant booking hold with transparent 24-hour billing and zero refundable security deposit.',
+                                tag: 'Zero Security Deposit',
+                            },
+                            {
+                                num: '3',
+                                accent: '#10B981',
+                                title: '3-Min Station or Hub Handover',
+                                desc: `Quick DL & Aadhaar verification at our ${branchCitiesLabel} desk with 2 sanitized ISI helmets.`,
+                                tag: 'Fast Digital KYC',
+                            },
+                            {
+                                num: '4',
+                                accent: '#8B5CF6',
+                                title: 'Ride & Hassle-Free Return',
+                                desc: 'Cruise NH66 with 24/7 roadside backup and return smoothly at your selected branch.',
+                                tag: '24/7 Roadside Help',
+                            },
+                        ]
+                        : [
+                            {
+                                num: '1',
+                                accent: '#F59E0B',
+                                title: 'Pick Your Experience',
+                                desc: 'Choose AC cabs, Sharavathi boating, Netrani scuba, homestays, local guides or custom tours.',
+                                tag: '6 Coastal Services',
+                            },
+                            {
+                                num: '2',
+                                accent: '#0284C7',
+                                title: 'Share Date & Group Size',
+                                desc: 'Send your travel date, guest count, and pickup point across Coastal Karnataka in under a minute.',
+                                tag: 'Instant Availability',
+                            },
+                            {
+                                num: '3',
+                                accent: '#10B981',
+                                title: 'Direct Local Confirmation',
+                                desc: 'Our local coordinator confirms boat slots, chauffeur details or homestay check-in right away.',
+                                tag: 'Verified Local Crew',
+                            },
+                            {
+                                num: '4',
+                                accent: '#8B5CF6',
+                                title: 'Punctual Pickup & Trip',
+                                desc: 'Meet on time at your railway station, jetty or hotel with 24/7 coordinator assistance.',
+                                tag: 'On-Time Guarantee',
+                            },
+                        ];
+
+                    return (
+                        <Box
+                            component="section"
+                            id="how-it-works"
+                            aria-labelledby="process-title"
                             sx={{
-                                fontWeight: 900,
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                letterSpacing: '-0.02em',
-                                mb: 0.5,
+                                mb: { xs: 7, md: 10 },
+                                p: { xs: 2.5, sm: 4, md: 5 },
+                                borderRadius: 5,
+                                background: isDark
+                                    ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(17, 28, 48, 0.92) 100%)'
+                                    : 'linear-gradient(135deg, #FFFDF7 0%, #F8FAFC 58%, #F0F9FF 100%)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                             }}
                         >
-                            How Booking Works
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#64748B' }}>
-                            Four simple steps to your rental bike or coastal tour in Honnavar
-                        </Typography>
-                    </Box>
+                            <Grid container spacing={{ xs: 3.5, md: 6 }} alignItems="center">
+                                {/* Left Sticky Editorial Column */}
+                                <Grid size={{ xs: 12, lg: 5 }}>
+                                    <Typography
+                                        variant="overline"
+                                        sx={{
+                                            display: 'block',
+                                            fontWeight: 800,
+                                            letterSpacing: '0.12em',
+                                            color: isDark ? '#FBBF24' : '#D97706',
+                                            mb: 1,
+                                        }}
+                                    >
+                                        BOOK IN UNDER 60 SECONDS • OPEN 24/7
+                                    </Typography>
+                                    <Typography
+                                        id="process-title"
+                                        variant="h3"
+                                        component="h2"
+                                        sx={{
+                                            fontWeight: 950,
+                                            fontSize: { xs: '1.85rem', md: '2.4rem' },
+                                            lineHeight: 1.12,
+                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                            letterSpacing: '-0.03em',
+                                            mb: 1.5,
+                                        }}
+                                    >
+                                        How Booking Works
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#475569', lineHeight: 1.7, mb: 3 }}>
+                                        Transparent 24-hour tariffs and punctual coastal handovers across {branchCitiesLabel}. Switch modes to preview your exact booking flow.
+                                    </Typography>
 
-                    <Grid container spacing={2}>
-                        {[
-                            {
-                                icon: <ExploreIcon sx={{ color: '#F59E0B', fontSize: 22 }} />,
-                                title: 'Choose Fleet & Dates',
-                                desc: 'Pick your bike, cab, or tour package and select travel dates.',
-                            },
-                            {
-                                icon: <SecurityIcon sx={{ color: '#0284C7', fontSize: 22 }} />,
-                                title: 'Instant Online Hold',
-                                desc: 'Lock in with transparent daily tariffs and zero hidden fees.',
-                            },
-                            {
-                                icon: <LocationOnIcon sx={{ color: '#10B981', fontSize: 22 }} />,
-                                title: 'Station or Hub Handover',
-                                desc: 'Rapid 3-min pickup at Honnavar Station or Palya Main Rd.',
-                            },
-                            {
-                                icon: <PhoneIcon sx={{ color: '#8B5CF6', fontSize: 22 }} />,
-                                title: 'Ride & Prompt Return',
-                                desc: 'Return at the agreed branch and complete the standard return inspection.',
-                            },
-                        ].map((step, sIdx) => (
-                            <Grid key={sIdx} size={{ xs: 12, sm: 6, md: 3 }}>
-                                <Paper
-                                    elevation={0}
+                                    {/* Flow Switcher Pills */}
+                                    <Box
+                                        role="tablist"
+                                        aria-label="Booking process type"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            p: 0.5,
+                                            borderRadius: 9999,
+                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0',
+                                            mb: 3,
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
+                                        {[
+                                            { id: 'bikes', label: 'Bikes & Scooters', icon: <TwoWheelerIcon sx={{ fontSize: 16 }} /> },
+                                            { id: 'experiences', label: 'Cabs, Stays & Tours', icon: <DirectionsBoatIcon sx={{ fontSize: 16 }} /> },
+                                        ].map((tab) => {
+                                            const active = bookingFlowTab === tab.id;
+                                            return (
+                                                <Button
+                                                    key={tab.id}
+                                                    role="tab"
+                                                    aria-selected={active}
+                                                    size="small"
+                                                    startIcon={tab.icon}
+                                                    onClick={() => setBookingFlowTab(tab.id)}
+                                                    sx={{
+                                                        px: 2,
+                                                        py: 0.75,
+                                                        borderRadius: 9999,
+                                                        textTransform: 'none',
+                                                        fontWeight: active ? 800 : 600,
+                                                        fontSize: '0.8rem',
+                                                        bgcolor: active ? (isDark ? '#F59E0B' : '#0F172A') : 'transparent',
+                                                        color: active ? (isDark ? '#0F172A' : '#FFFFFF') : (isDark ? '#CBD5E1' : '#334155'),
+                                                        '&:hover': {
+                                                            bgcolor: active ? (isDark ? '#F59E0B' : '#0F172A') : 'rgba(148, 163, 184, 0.16)',
+                                                        },
+                                                    }}
+                                                >
+                                                    {tab.label}
+                                                </Button>
+                                            );
+                                        })}
+                                    </Box>
+
+                                    {/* Compact Readiness Checklist */}
+                                    <Stack spacing={1} sx={{ mb: 3.25 }}>
+                                        {(isBikeFlow
+                                            ? ['Keep ready: Original Driving License + Aadhaar / Govt ID', 'Free cancellation or rescheduling up to 12 hours prior']
+                                            : ['Zero KYC paperwork needed for cabs, boats, scuba & stays', 'Direct 24/7 local coordinator updates on WhatsApp']
+                                        ).map((note) => (
+                                            <Box key={note} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <CheckCircleIcon sx={{ fontSize: 16, color: '#10B981', flexShrink: 0 }} />
+                                                <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#334155', fontSize: '0.86rem', fontWeight: 500 }}>
+                                                    {note}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Stack>
+
+                                    <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+                                        <Button
+                                            variant="contained"
+                                            component={isBikeFlow ? Link : 'a'}
+                                            href={isBikeFlow ? '/services/bikes' : '#quick-search'}
+                                            endIcon={<ArrowForwardIcon />}
+                                            sx={{
+                                                bgcolor: '#F59E0B',
+                                                color: '#0F172A',
+                                                fontWeight: 800,
+                                                textTransform: 'none',
+                                                px: 2.75,
+                                                py: 1.15,
+                                                borderRadius: 2.5,
+                                                '&:hover': { bgcolor: '#D97706' },
+                                            }}
+                                        >
+                                            {isBikeFlow ? 'Check Live Bike Fleet' : 'Open Quick Search'}
+                                        </Button>
+                                        <Button
+                                            variant="text"
+                                            component="a"
+                                            href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20need%20help%20with%20a%20booking."
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            startIcon={<WhatsAppIcon sx={{ color: '#10B981' }} />}
+                                            sx={{
+                                                color: isDark ? '#F8FAFC' : '#0F172A',
+                                                fontWeight: 700,
+                                                textTransform: 'none',
+                                                px: 1.5,
+                                            }}
+                                        >
+                                            WhatsApp Support
+                                        </Button>
+                                    </Stack>
+                                </Grid>
+
+                                {/* Right Connected Stepper Track (No Card Grid!) */}
+                                <Grid size={{ xs: 12, lg: 7 }}>
+                                    <Box sx={{ position: 'relative', pl: { xs: 0, sm: 1 } }}>
+                                        {/* Vertical Connecting Spine */}
+                                        <Box
+                                            aria-hidden="true"
+                                            sx={{
+                                                position: 'absolute',
+                                                left: { xs: 19, sm: 27 },
+                                                top: 28,
+                                                bottom: 28,
+                                                width: 2,
+                                                background: 'linear-gradient(180deg, #F59E0B 0%, #0284C7 35%, #10B981 70%, #8B5CF6 100%)',
+                                                opacity: 0.35,
+                                            }}
+                                        />
+
+                                        <Stack spacing={2}>
+                                            {bookingSteps.map((step) => (
+                                                <Box
+                                                    key={step.num}
+                                                    sx={{
+                                                        position: 'relative',
+                                                        display: 'flex',
+                                                        alignItems: { xs: 'flex-start', sm: 'center' },
+                                                        gap: { xs: 2, sm: 2.5 },
+                                                        p: { xs: 1.5, sm: 2 },
+                                                        borderRadius: 3,
+                                                        transition: 'background-color 0.2s ease, transform 0.2s ease',
+                                                        '&:hover': {
+                                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.9)',
+                                                            transform: 'translateX(4px)',
+                                                        },
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            position: 'relative',
+                                                            zIndex: 1,
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: '50%',
+                                                            flexShrink: 0,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            bgcolor: step.accent,
+                                                            color: '#0F172A',
+                                                            fontWeight: 900,
+                                                            fontSize: '0.95rem',
+                                                            boxShadow: `0 0 0 6px ${isDark ? '#0D1628' : '#FAFBFD'}`,
+                                                        }}
+                                                    >
+                                                        {step.num}
+                                                    </Box>
+
+                                                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1} sx={{ mb: 0.35 }}>
+                                                            <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', fontSize: '1rem' }}>
+                                                                {step.title}
+                                                            </Typography>
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    fontWeight: 700,
+                                                                    fontSize: '0.72rem',
+                                                                    color: step.accent,
+                                                                    bgcolor: `${step.accent}18`,
+                                                                    px: 1.15,
+                                                                    py: 0.3,
+                                                                    borderRadius: 9999,
+                                                                }}
+                                                            >
+                                                                {step.tag}
+                                                            </Typography>
+                                                        </Stack>
+                                                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: '0.88rem', lineHeight: 1.55 }}>
+                                                            {step.desc}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            ))}
+                                        </Stack>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    );
+                })()}
+
+                {/* =========================================================================
+                    7. CUSTOMER REVIEWS & EXPERIENCES (3x2 Verified Google Reviews Wall)
+                ========================================================================== */}
+                {(() => {
+                    const allReviews = [
+                        {
+                            id: 'ankit-bike',
+                            category: 'bikes',
+                            serviceLabel: 'Bike Rental • Honnavar',
+                            accent: '#F59E0B',
+                            headline: 'Zero deposit & 3-min station pickup',
+                            name: 'Ankit Sharma',
+                            location: 'Bengaluru',
+                            trip: 'Honda Activa 6G • Sharavathi & Eco Beach',
+                            timeAgo: 'Verified Booking',
+                            review:
+                                'Requested Honnavar Railway Station pickup and the executive arrived before our train pulled in. Spotless scooters, clean ISI helmets, and transparent 24-hour billing.',
+                        },
+                        {
+                            id: 'meera-scuba',
+                            category: 'water',
+                            serviceLabel: 'Scuba & Boating • Murudeshwar',
+                            accent: '#0EA5E9',
+                            headline: 'Unforgettable Netrani dive & mangrove cruise',
+                            name: 'Meera & Vivek Nair',
+                            location: 'Kochi',
+                            trip: 'Netrani Scuba + Sharavathi Boating',
+                            timeAgo: 'Google Review',
+                            review:
+                                'Coordinated both our Netrani Island scuba morning slot from Murudeshwar and evening boating in Honnavar on one WhatsApp chat. Calm PADI crew and zero wait time at the jetty.',
+                        },
+                        {
+                            id: 'karthik-cab',
+                            category: 'stays_cabs',
+                            serviceLabel: 'AC Cab & Tour • Honnavar',
+                            accent: '#10B981',
+                            headline: 'Punctual AC Innova for our family circuit',
+                            name: 'Karthik Venugopal',
+                            location: 'Mysuru',
+                            trip: 'Apsarakonda Falls, Mirjan Fort & Murudeshwar',
+                            timeAgo: 'Google Review',
+                            review:
+                                'Sanitized AC Innova with a friendly local driver who knew every coastal lookout and food stop. Covered Hanging Bridge, Apsarakonda, and Murudeshwar Temple at an upfront fixed tariff.',
+                        },
+                        {
+                            id: 'sneha-ride',
+                            category: 'bikes',
+                            serviceLabel: 'Bike Rental • Murudeshwar',
+                            accent: '#F59E0B',
+                            headline: 'Mint-condition Classic 350 for NH66',
+                            name: 'Dr. Sneha & Rohan K.',
+                            location: 'Mumbai',
+                            trip: 'Royal Enfield Classic 350 • 4-Day Ride',
+                            timeAgo: 'Verified Booking',
+                            review:
+                                'Great tyres, crisp brakes, and super responsive 24/7 WhatsApp helpline across our Honnavar–Murudeshwar–Gokarna ride. Zero hidden charges at drop-off.',
+                        },
+                        {
+                            id: 'prashanth-boating',
+                            category: 'water',
+                            serviceLabel: 'Backwater Boating • Honnavar',
+                            accent: '#2563EB',
+                            headline: 'Peaceful mangrove trail without crowd rush',
+                            name: 'Prashanth Hegde',
+                            location: 'Pune',
+                            trip: 'Sharavathi Estuary Mangrove Safari',
+                            timeAgo: 'Google Review',
+                            review:
+                                'Booked an early-morning private Shikara cruise through GK WhizWheel. Clean lifejackets, serene island stops, and honest recommendations from local boat captains.',
+                        },
+                        {
+                            id: 'divya-homestay',
+                            category: 'stays_cabs',
+                            serviceLabel: 'Homestay • Honnavar',
+                            accent: '#059669',
+                            headline: 'Riverfront stay bundled with scooters',
+                            name: 'Divya Deshpande',
+                            location: 'Hubballi',
+                            trip: 'Sharavathi Cottage + 2 Scooters',
+                            timeAgo: 'Verified Booking',
+                            review:
+                                'Reserved our cottage stay and two scooters together in one booking. Authentic Karavali breakfast, spotless rooms, and bikes fueled and ready right at check-in.',
+                        },
+                    ];
+
+                    const displayedReviews = reviewFilter === 'all'
+                        ? allReviews
+                        : allReviews.filter((r) => r.category === reviewFilter);
+
+                    const reviewFilters = [
+                        { id: 'all', label: `All Stories (${allReviews.length})` },
+                        { id: 'bikes', label: 'Bikes & Scooters' },
+                        { id: 'water', label: 'Boating & Scuba' },
+                        { id: 'stays_cabs', label: 'Cabs & Stays' },
+                    ];
+
+                    return (
+                        <Box component="section" id="reviews" aria-labelledby="reviews-title" sx={{ mb: { xs: 7, md: 10 } }}>
+                            {/* Top Google Trust Bar + Filters */}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', lg: 'row' },
+                                    alignItems: { xs: 'flex-start', lg: 'center' },
+                                    justifyContent: 'space-between',
+                                    gap: 2.5,
+                                    mb: 3.5,
+                                }}
+                            >
+                                <Box>
+                                    <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mb: 0.75 }}>
+                                        <Box
+                                            sx={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 0.75,
+                                                px: 1.25,
+                                                py: 0.35,
+                                                borderRadius: 1.5,
+                                                bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+                                                border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #E2E8F0',
+                                            }}
+                                        >
+                                            <Box component="svg" viewBox="0 0 24 24" sx={{ width: 15, height: 15, flexShrink: 0 }}>
+                                                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z" />
+                                                <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z" />
+                                                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z" />
+                                            </Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                                5.0
+                                            </Typography>
+                                            <Stack direction="row" spacing={0.1}>
+                                                {[...Array(5)].map((_, i) => (
+                                                    <StarIcon key={i} sx={{ fontSize: 13, color: '#F59E0B' }} />
+                                                ))}
+                                            </Stack>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600 }}>
+                                                (324+ reviews)
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                    <Typography
+                                        id="reviews-title"
+                                        variant="h3"
+                                        component="h2"
+                                        sx={{
+                                            fontWeight: 950,
+                                            fontSize: { xs: '1.85rem', md: '2.35rem' },
+                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                            letterSpacing: '-0.03em',
+                                        }}
+                                    >
+                                        Customer Experiences
+                                    </Typography>
+                                </Box>
+
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                    {reviewFilters.map((f) => {
+                                        const active = reviewFilter === f.id;
+                                        return (
+                                            <Button
+                                                key={f.id}
+                                                size="small"
+                                                onClick={() => setReviewFilter(f.id)}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    borderRadius: 9999,
+                                                    px: 1.85,
+                                                    py: 0.6,
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: active ? 800 : 600,
+                                                    bgcolor: active ? (isDark ? '#F59E0B' : '#0F172A') : 'transparent',
+                                                    color: active ? (isDark ? '#0F172A' : '#FFFFFF') : (isDark ? '#CBD5E1' : '#475569'),
+                                                    border: active ? '1px solid transparent' : (isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid #CBD5E1'),
+                                                    '&:hover': {
+                                                        bgcolor: active ? (isDark ? '#F59E0B' : '#0F172A') : 'rgba(245, 158, 11, 0.1)',
+                                                    },
+                                                }}
+                                            >
+                                                {f.label}
+                                            </Button>
+                                        );
+                                    })}
+                                    <Button
+                                        component="a"
+                                        href="https://share.google/GoM4iOgiuUIa7ZfwV"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        size="small"
+                                        endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+                                        sx={{
+                                            textTransform: 'none',
+                                            fontWeight: 700,
+                                            fontSize: '0.8rem',
+                                            color: isDark ? '#FBBF24' : '#B45309',
+                                            px: 1,
+                                        }}
+                                    >
+                                        Google Profile
+                                    </Button>
+                                </Stack>
+                            </Box>
+
+                            {/* 3x2 Authentic Review Grid */}
+                            <Grid container spacing={2.5}>
+                                {displayedReviews.map((rev) => (
+                                    <Grid size={{ xs: 12, sm: 6, lg: displayedReviews.length <= 2 ? 6 : 4 }} key={rev.id}>
+                                        <Box
+                                            sx={{
+                                                height: '100%',
+                                                p: 2.75,
+                                                borderRadius: 3.5,
+                                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                boxShadow: isDark ? 'none' : '0 4px 18px -6px rgba(15, 23, 42, 0.06)',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between',
+                                                gap: 2,
+                                                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-3px)',
+                                                    borderColor: isDark ? 'rgba(245, 158, 11, 0.45)' : '#CBD5E1',
+                                                    boxShadow: isDark
+                                                        ? '0 14px 28px -12px rgba(0, 0, 0, 0.55)'
+                                                        : '0 14px 28px -12px rgba(15, 23, 42, 0.1)',
+                                                },
+                                            }}
+                                        >
+                                            <Box>
+                                                {/* Author & Rating Row */}
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.75 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+                                                        <Avatar
+                                                            sx={{
+                                                                width: 38,
+                                                                height: 38,
+                                                                bgcolor: `${rev.accent}22`,
+                                                                color: rev.accent,
+                                                                fontWeight: 900,
+                                                                fontSize: '0.9rem',
+                                                                border: `1px solid ${rev.accent}44`,
+                                                            }}
+                                                        >
+                                                            {rev.name.charAt(0)}
+                                                        </Avatar>
+                                                        <Box sx={{ minWidth: 0 }}>
+                                                            <Typography variant="subtitle2" noWrap sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1.2 }}>
+                                                                {rev.name}
+                                                            </Typography>
+                                                            <Typography variant="caption" noWrap sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
+                                                                {rev.location} • {rev.timeAgo}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+
+                                                    <Stack direction="row" spacing={0.15} sx={{ flexShrink: 0 }}>
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <StarIcon key={i} sx={{ fontSize: 15, color: '#F59E0B' }} />
+                                                        ))}
+                                                    </Stack>
+                                                </Box>
+
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    component="h3"
+                                                    sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A', mb: 0.75, fontSize: '0.95rem' }}
+                                                >
+                                                    {rev.headline}
+                                                </Typography>
+
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ color: isDark ? '#CBD5E1' : '#475569', lineHeight: 1.62, fontSize: '0.86rem' }}
+                                                >
+                                                    {rev.review}
+                                                </Typography>
+                                            </Box>
+
+                                            {/* Service & Trip Footer */}
+                                            <Box
+                                                sx={{
+                                                    pt: 1.5,
+                                                    borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #F1F5F9',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    gap: 1,
+                                                    flexWrap: 'wrap',
+                                                }}
+                                            >
+                                                <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? '#94A3B8' : '#475569', fontSize: '0.74rem' }}>
+                                                    {rev.trip}
+                                                </Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        fontSize: '0.7rem',
+                                                        color: rev.accent,
+                                                        bgcolor: `${rev.accent}15`,
+                                                        px: 1,
+                                                        py: 0.25,
+                                                        borderRadius: 1,
+                                                    }}
+                                                >
+                                                    {rev.serviceLabel}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Box>
+                    );
+                })()}
+
+                {/* =========================================================================
+                    8. DYNAMIC BRANCH HUBS (Interactive Branch Directory + Focal Hub Console)
+                ========================================================================== */}
+                {(() => {
+                    const activeHub = branchList[selectedHubIndex] || branchList[0];
+                    if (!activeHub) return null;
+                    const activeAddress = [activeHub.address_line, activeHub.city, activeHub.state, activeHub.pincode].filter(Boolean).join(', ');
+                    const activeSlug = activeHub.slug || (activeHub.city || activeHub.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    const activeLabel = activeHub.public_name || activeHub.name;
+                    const activePhone = getBranchPhone(activeHub);
+                    const activeWaText = encodeURIComponent(`Hi GK WhizWheels, I would like to book pickup from ${activeLabel}.`);
+
+                    return (
+                        <Box component="section" id="hubs" aria-labelledby="hubs-title" sx={{ mb: { xs: 7, md: 10 } }}>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, mb: 3.5 }}>
+                                <Box>
+                                    <Typography
+                                        variant="overline"
+                                        sx={{
+                                            display: 'block',
+                                            fontWeight: 800,
+                                            letterSpacing: '0.12em',
+                                            color: isDark ? '#38BDF8' : '#0284C7',
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        {branchList.length} ACTIVE COASTAL {branchList.length === 1 ? 'BRANCH' : 'BRANCHES'} • ONE-WAY RETURN READY
+                                    </Typography>
+                                    <Typography
+                                        id="hubs-title"
+                                        variant="h3"
+                                        component="h2"
+                                        sx={{
+                                            fontWeight: 950,
+                                            fontSize: { xs: '1.85rem', md: '2.35rem' },
+                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                            letterSpacing: '-0.03em',
+                                        }}
+                                    >
+                                        {branchCitiesLabel} Pickup &amp; Return Branches
+                                    </Typography>
+                                </Box>
+
+                                <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', maxWidth: 420 }}>
+                                    Select a branch to inspect exact address, pickup instructions, coordinates, and live vehicle stock.
+                                </Typography>
+                            </Box>
+
+                            <Grid container spacing={3} alignItems="stretch">
+                                {/* Left Column: Dynamic Branch Cards (Honnavar & Murudeshwar) */}
+                                <Grid size={{ xs: 12, md: 5 }}>
+                                    <Stack spacing={2} sx={{ height: '100%' }}>
+                                        {branchList.map((hub, idx) => {
+                                            const safeHubIdx = selectedHubIndex < branchList.length ? selectedHubIndex : 0;
+                                            const isSelected = idx === safeHubIdx;
+                                            const branchAddress = [hub.address_line, hub.city, hub.state, hub.pincode].filter(Boolean).join(', ');
+                                            const branchSlug = hub.slug || (hub.city || hub.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                                            const label = hub.public_name || hub.name;
+                                            const hubPhone = getBranchPhone(hub);
+                                            const hubPhoneDigits = hubPhone.replace(/\D/g, '');
+                                            const hubWaText = encodeURIComponent(`Hi GK WhizWheels, I would like to book pickup from ${label}.`);
+
+                                            return (
+                                                <Box
+                                                    key={hub.id}
+                                                    onClick={() => setSelectedHubIndex(idx)}
+                                                    sx={{
+                                                        flex: 1,
+                                                        cursor: 'pointer',
+                                                        p: { xs: 2.25, sm: 2.75 },
+                                                        borderRadius: 3.5,
+                                                        bgcolor: isSelected
+                                                            ? (isDark ? 'rgba(245, 158, 11, 0.1)' : '#FFFBEB')
+                                                            : (isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF'),
+                                                        border: isSelected
+                                                            ? '2px solid #F59E0B'
+                                                            : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0'),
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'space-between',
+                                                        gap: 1.5,
+                                                        transition: 'all 0.2s ease',
+                                                        '&:hover': {
+                                                            borderColor: '#F59E0B',
+                                                        },
+                                                    }}
+                                                >
+                                                    <Box>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1 }}>
+                                                            <Stack direction="row" alignItems="center" spacing={1}>
+                                                                <Box
+                                                                    sx={{
+                                                                        width: 28,
+                                                                        height: 28,
+                                                                        borderRadius: 1.5,
+                                                                        bgcolor: isSelected ? '#F59E0B' : (isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9'),
+                                                                        color: isSelected ? '#0F172A' : (isDark ? '#CBD5E1' : '#334155'),
+                                                                        fontWeight: 900,
+                                                                        fontSize: '0.76rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                    }}
+                                                                >
+                                                                    0{idx + 1}
+                                                                </Box>
+                                                                <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                                                    {label}
+                                                                </Typography>
+                                                            </Stack>
+
+                                                            <Chip
+                                                                size="small"
+                                                                label={hub.bikes_count > 0 ? `${hub.bikes_count} Units` : 'Open 24/7'}
+                                                                sx={{
+                                                                    height: 22,
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 800,
+                                                                    bgcolor: isDark ? 'rgba(16, 185, 129, 0.14)' : '#ECFDF5',
+                                                                    color: isDark ? '#34D399' : '#047857',
+                                                                }}
+                                                            />
+                                                        </Box>
+
+                                                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', fontSize: '0.84rem', lineHeight: 1.5, mb: 0.75 }}>
+                                                            <LocationOnIcon sx={{ fontSize: 15, color: '#F59E0B', verticalAlign: 'text-bottom', mr: 0.5 }} />
+                                                            {branchAddress}
+                                                        </Typography>
+
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', lineHeight: 1.45 }}>
+                                                            Open 24/7 • Desk:{' '}
+                                                            <Box
+                                                                component="a"
+                                                                href={`tel:${hubPhone}`}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                sx={{ color: isDark ? '#FBBF24' : '#B45309', fontWeight: 700, textDecoration: 'none' }}
+                                                            >
+                                                                {formatBranchPhone(hubPhone)}
+                                                            </Box>
+                                                            {hub.pickup_instructions ? ` • ${hub.pickup_instructions}` : ''}
+                                                        </Typography>
+                                                    </Box>
+
+                                                    <Stack
+                                                        direction="row"
+                                                        spacing={1}
+                                                        flexWrap="wrap"
+                                                        useFlexGap
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <Button
+                                                            size="small"
+                                                            variant="contained"
+                                                            component={Link}
+                                                            href={`/bike-rentals/branches/${hub.id}/${branchSlug}`}
+                                                            endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+                                                            sx={{
+                                                                bgcolor: '#F59E0B',
+                                                                color: '#0F172A',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.76rem',
+                                                                textTransform: 'none',
+                                                                borderRadius: 1.75,
+                                                                px: 1.5,
+                                                                '&:hover': { bgcolor: '#D97706' },
+                                                            }}
+                                                        >
+                                                            View {hub.city || 'Branch'} Fleet
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            component="a"
+                                                            href={getBranchMapUrl(hub)}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            startIcon={<DirectionsIcon sx={{ fontSize: 14 }} />}
+                                                            sx={{
+                                                                borderColor: isDark ? 'rgba(255,255,255,0.18)' : '#CBD5E1',
+                                                                color: isDark ? '#E2E8F0' : '#0F172A',
+                                                                fontWeight: 700,
+                                                                fontSize: '0.76rem',
+                                                                textTransform: 'none',
+                                                                borderRadius: 1.75,
+                                                            }}
+                                                        >
+                                                            Directions
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            component="a"
+                                                            href={`https://wa.me/${hubPhoneDigits}?text=${hubWaText}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            startIcon={<WhatsAppIcon sx={{ fontSize: 14, color: '#10B981' }} />}
+                                                            sx={{
+                                                                borderColor: 'rgba(16, 185, 129, 0.35)',
+                                                                color: isDark ? '#34D399' : '#047857',
+                                                                fontWeight: 700,
+                                                                fontSize: '0.76rem',
+                                                                textTransform: 'none',
+                                                                borderRadius: 1.75,
+                                                            }}
+                                                        >
+                                                            WhatsApp
+                                                        </Button>
+                                                    </Stack>
+                                                </Box>
+                                            );
+                                        })}
+                                    </Stack>
+                                </Grid>
+
+                                {/* Right Column: Live Embedded Google Map + Selected Hub Info Strip */}
+                                <Grid size={{ xs: 12, md: 7 }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 1.5 }}>
+                                        <Box
+                                            sx={{
+                                                position: 'relative',
+                                                width: '100%',
+                                                height: { xs: 340, md: 430 },
+                                                borderRadius: 4,
+                                                overflow: 'hidden',
+                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #CBD5E1',
+                                                bgcolor: isDark ? '#0F172A' : '#E2E8F0',
+                                            }}
+                                        >
+                                            <Box
+                                                key={activeHub.id}
+                                                component="iframe"
+                                                title={`Google Map - ${activeLabel}`}
+                                                src={getBranchEmbedUrl(activeHub)}
+                                                loading="lazy"
+                                                referrerPolicy="no-referrer-when-downgrade"
+                                                allowFullScreen
+                                                sx={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    border: 0,
+                                                    display: 'block',
+                                                }}
+                                            />
+                                        </Box>
+
+                                        {/* Compact Map Info & Quick Call Dock */}
+                                        <Box
+                                            sx={{
+                                                px: 2.25,
+                                                py: 1.5,
+                                                borderRadius: 3,
+                                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                flexWrap: 'wrap',
+                                                gap: 1.5,
+                                            }}
+                                        >
+                                            <Box sx={{ minWidth: 0 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                                    {activeLabel}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
+                                                    {activeAddress} • Open 24/7
+                                                </Typography>
+                                            </Box>
+                                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                                <Button
+                                                    size="small"
+                                                    component="a"
+                                                    href={`tel:${activePhone}`}
+                                                    startIcon={<PhoneIcon sx={{ fontSize: 15 }} />}
+                                                    sx={{
+                                                        fontWeight: 800,
+                                                        fontSize: '0.78rem',
+                                                        textTransform: 'none',
+                                                        color: isDark ? '#FBBF24' : '#B45309',
+                                                    }}
+                                                >
+                                                    {formatBranchPhone(activePhone)}
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    component="a"
+                                                    href={getBranchMapUrl(activeHub)}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    startIcon={<DirectionsIcon sx={{ fontSize: 15 }} />}
+                                                    sx={{
+                                                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1',
+                                                        color: isDark ? '#FFFFFF' : '#0F172A',
+                                                        fontWeight: 700,
+                                                        fontSize: '0.78rem',
+                                                        textTransform: 'none',
+                                                        borderRadius: 2,
+                                                    }}
+                                                >
+                                                    Navigate in Google Maps
+                                                </Button>
+                                            </Stack>
+                                        </Box>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    );
+                })()}
+
+                {/* =========================================================================
+                    IN-DEPTH TRAVEL BLOGS & GUIDES ACROSS ALL 7 SERVICES
+                ========================================================================== */}
+                {(() => {
+                    const guideTabs = [
+                        { id: 'all', label: 'All 7 Guides' },
+                        { id: 'bikes', label: 'Bikes & Scooters' },
+                        { id: 'cabs', label: 'AC Cabs' },
+                        { id: 'homestays', label: 'Homestays' },
+                        { id: 'boating', label: 'Boating' },
+                        { id: 'scuba', label: 'Scuba' },
+                        { id: 'guide', label: 'Local Guides' },
+                        { id: 'tours', label: 'Tour Packages' },
+                    ];
+
+                    const filteredGuides = activeGuideTab === 'all'
+                        ? blogArticles
+                        : blogArticles.filter((a) => a.serviceKey === activeGuideTab);
+
+                    const leadGuide = filteredGuides[0];
+                    const sideGuides = filteredGuides.slice(1);
+
+                    return (
+                        <Box
+                            component="section"
+                            id="travel-guides"
+                            aria-labelledby="travel-guides-title"
+                            sx={{ mb: { xs: 7, md: 10 } }}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', md: 'row' },
+                                    justifyContent: 'space-between',
+                                    alignItems: { xs: 'flex-start', md: 'flex-end' },
+                                    gap: 2.5,
+                                    mb: 3.5,
+                                }}
+                            >
+                                <Box>
+                                    <Chip
+                                        icon={<AutoStoriesIcon sx={{ fontSize: 15 }} />}
+                                        label="Karavali Travel Journal • 7 Service Deep Dives"
+                                        size="small"
+                                        sx={{
+                                            mb: 1.2,
+                                            fontWeight: 800,
+                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                            color: isDark ? '#FBBF24' : '#B45309',
+                                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                                        }}
+                                    />
+                                    <Typography
+                                        id="travel-guides-title"
+                                        variant="h3"
+                                        sx={{
+                                            fontWeight: 950,
+                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                            letterSpacing: '-0.025em',
+                                            fontSize: { xs: '1.75rem', md: '2.35rem' },
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Detailed Guides For Every Coastal Service
+                                    </Typography>
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            color: isDark ? '#CBD5E1' : '#475569',
+                                            maxWidth: 740,
+                                            fontSize: '0.96rem',
+                                            lineHeight: 1.65,
+                                        }}
+                                    >
+                                        Plan smarter across Honnavar &amp; Murudeshwar with our coordinator-written guides covering self-drive routes, station transfers, riverfront homestays, sunset boating, Netrani scuba diving, local waterfall trails, and 3-day itineraries.
+                                    </Typography>
+                                </Box>
+
+                                <Button
+                                    component={Link}
+                                    href="/blog"
+                                    variant="outlined"
+                                    endIcon={<ArrowForwardIcon sx={{ fontSize: 17 }} />}
                                     sx={{
-                                        p: 2.5,
-                                        height: '100%',
-                                        borderRadius: 3,
-                                        bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#FFFFFF',
-                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 1,
+                                        borderRadius: 2.5,
+                                        fontWeight: 850,
+                                        px: 2.8,
+                                        py: 1.1,
+                                        textTransform: 'none',
+                                        whiteSpace: 'nowrap',
+                                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1',
+                                        color: isDark ? '#FFFFFF' : '#0F172A',
+                                        '&:hover': { borderColor: '#F59E0B', color: '#F59E0B' },
                                     }}
                                 >
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <Box sx={{ p: 0.9, borderRadius: 2, bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {step.icon}
-                                        </Box>
-                                        <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', fontSize: '0.92rem' }}>
-                                            {step.title}
-                                        </Typography>
-                                    </Box>
-                                    <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#64748B', fontSize: '0.82rem', lineHeight: 1.5 }}>
-                                        {step.desc}
-                                    </Typography>
-                                </Paper>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+                                    Open Full Blog Hub ({blogArticles.length})
+                                </Button>
+                            </Box>
 
-                {/* =========================================================================
-                    7. CUSTOMER REVIEWS & EXPERIENCES (What Our Riders Say)
-                ========================================================================== */}
-                <Box id="reviews" sx={{ mb: 10 }}>
-                    <Box sx={{ textAlign: 'center', mb: 6 }}>
-                        <Box
-                            sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                px: 2,
-                                py: 0.75,
-                                borderRadius: 10,
-                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7',
-                                color: '#D97706',
-                                fontWeight: 800,
-                                fontSize: '0.82rem',
-                                mb: 1.5,
-                            }}
-                        >
-                            <FormatQuoteIcon sx={{ fontSize: 18, color: '#F59E0B' }} />
-                            Customer Experiences
-                        </Box>
-                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 1 }}>
-                            What Our Riders Say
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155', maxWidth: 640, mx: 'auto' }}>
-                            Real feedback from road-trippers and explorers who chose GK WhizWheels for their Karnataka coastal journey.
-                        </Typography>
-                    </Box>
+                            {/* Filter Pills across all 7 Services */}
+                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 3.5 }}>
+                                {guideTabs.map((tab) => {
+                                    const active = activeGuideTab === tab.id;
+                                    return (
+                                        <Chip
+                                            key={tab.id}
+                                            label={tab.label}
+                                            clickable
+                                            onClick={() => setActiveGuideTab(tab.id)}
+                                            sx={{
+                                                fontWeight: 800,
+                                                fontSize: '0.8rem',
+                                                bgcolor: active ? '#F59E0B' : (isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'),
+                                                color: active ? '#0F172A' : (isDark ? '#E2E8F0' : '#334155'),
+                                                border: active ? '1px solid #F59E0B' : (isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #E2E8F0'),
+                                                '&:hover': {
+                                                    bgcolor: active ? '#D97706' : (isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0'),
+                                                },
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </Stack>
 
-                    <Grid container spacing={3.5}>
-                        {[
-                            {
-                                name: 'Ankit Sharma',
-                                location: 'Bangalore, Karnataka',
-                                bike: 'Honda Activa 6G',
-                                trip: 'Sharavathi Backwaters & Eco Beach',
-                                rating: 5,
-                                review:
-                                    'Super seamless experience! Booked online and selected Honnavar Railway Station pickup. The executive was waiting with the bike right as our train pulled in. Clean helmets, spotless scooter, and exact 24-hour block billing with zero surprise charges.',
-                            },
-                            {
-                                name: 'Dr. Sneha & Rohan K.',
-                                location: 'Mumbai, Maharashtra',
-                                bike: 'Royal Enfield Classic 350',
-                                trip: 'Coastal Ride to Mirjan Fort & Gokarna',
-                                rating: 5,
-                                review:
-                                    'Rented the Classic 350 for 4 days. The bike was in mint mechanical condition with great tyres and smooth brakes. Cruised along NH66 all the way to Om Beach. The zero deposit option and instant WhatsApp assistance made this our best road trip yet!',
-                            },
-                            {
-                                name: 'Karthik Venugopal',
-                                location: 'Mysore, Karnataka',
-                                bike: 'TVS Ntorq 125',
-                                trip: 'Apsarakonda Falls & Murudeshwar',
-                                rating: 5,
-                                review:
-                                    'Outstanding customer service by the GK WhizWheels team at Palya Main Rd. Quick KYC verification took under 3 minutes. The bike had great pickup for hill climbs around Apsarakonda. Deposit refund was credited directly within an hour of vehicle return.',
-                            },
-                        ].map((rev) => (
-                            <Grid size={{ xs: 12, md: 4 }} key={rev.name}>
+                            {leadGuide && (
                                 <Paper
                                     elevation={0}
                                     sx={{
-                                        p: 3.5,
-                                        height: '100%',
-                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                        borderRadius: 3,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        transition: 'transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
-                                        '&:hover': {
-                                            transform: 'translateY(-4px)',
-                                            borderColor: 'rgba(245, 158, 11, 0.4)',
-                                            boxShadow: isDark
-                                                ? '0 12px 28px -5px rgba(0, 0, 0, 0.5)'
-                                                : '0 10px 25px -4px rgba(15, 23, 42, 0.08)',
+                                        mb: sideGuides.length > 0 ? 3 : 0,
+                                        borderRadius: 4,
+                                        overflow: 'hidden',
+                                        bgcolor: isDark ? 'rgba(15, 23, 42, 0.72)' : '#FFFFFF',
+                                        border: `1.5px solid ${isDark ? `${leadGuide.color}45` : '#E2E8F0'}`,
+                                        boxShadow: isDark
+                                            ? '0 16px 40px -14px rgba(0,0,0,0.55)'
+                                            : '0 16px 40px -14px rgba(15,23,42,0.08)',
+                                    }}
+                                >
+                                    <Grid container>
+                                        <Grid size={{ xs: 12, md: 5 }}>
+                                            <Box sx={{ position: 'relative', height: { xs: 220, md: '100%' }, minHeight: { md: 280 }, bgcolor: '#0F172A' }}>
+                                                <Box
+                                                    component="img"
+                                                    src={leadGuide.image}
+                                                    alt={leadGuide.title}
+                                                    loading="lazy"
+                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                                />
+                                                <Chip
+                                                    label={leadGuide.badge}
+                                                    size="small"
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        top: 14,
+                                                        left: 14,
+                                                        fontWeight: 850,
+                                                        bgcolor: 'rgba(15, 23, 42, 0.86)',
+                                                        color: '#FBBF24',
+                                                    }}
+                                                />
+                                            </Box>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, md: 7 }}>
+                                            <Box sx={{ p: { xs: 2.5, sm: 3.5 }, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                                                <Box>
+                                                    <Stack direction="row" flexWrap="wrap" gap={1.2} alignItems="center" sx={{ mb: 1.2 }}>
+                                                        <Chip label={leadGuide.serviceLabel} size="small" sx={{ fontWeight: 800, bgcolor: `${leadGuide.color}18`, color: leadGuide.color }} />
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700 }}>
+                                                            {leadGuide.readTime} • {leadGuide.locationScope}
+                                                        </Typography>
+                                                    </Stack>
+                                                    <Typography variant="h5" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', mb: 1.2, lineHeight: 1.25 }}>
+                                                        {leadGuide.title}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569', lineHeight: 1.65, mb: 2 }}>
+                                                        {leadGuide.excerpt}
+                                                    </Typography>
+
+                                                    <Grid container spacing={1} sx={{ mb: 2.5 }}>
+                                                        {(leadGuide.highlights || []).map((hl, i) => (
+                                                            <Grid key={i} size={{ xs: 12, sm: 6 }}>
+                                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.8 }}>
+                                                                    <CheckCircleIcon sx={{ fontSize: 16, color: leadGuide.color, mt: '2px', flexShrink: 0 }} />
+                                                                    <Typography variant="caption" sx={{ color: isDark ? '#E2E8F0' : '#334155', fontWeight: 600, lineHeight: 1.45 }}>
+                                                                        {hl}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Grid>
+                                                        ))}
+                                                    </Grid>
+                                                </Box>
+
+                                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                                                    <Button
+                                                        component={Link}
+                                                        href={`/blog/${leadGuide.slug}`}
+                                                        variant="contained"
+                                                        endIcon={<ArrowForwardIcon />}
+                                                        sx={{
+                                                            bgcolor: leadGuide.color,
+                                                            color: leadGuide.color === '#F59E0B' ? '#0F172A' : '#FFFFFF',
+                                                            fontWeight: 850,
+                                                            borderRadius: 2.5,
+                                                            px: 3,
+                                                            textTransform: 'none',
+                                                            '&:hover': { bgcolor: leadGuide.color, filter: 'brightness(0.92)' },
+                                                        }}
+                                                    >
+                                                        Read Detailed Guide
+                                                    </Button>
+                                                    <Button
+                                                        component={Link}
+                                                        href={leadGuide.serviceUrl}
+                                                        variant="outlined"
+                                                        sx={{
+                                                            borderRadius: 2.5,
+                                                            fontWeight: 800,
+                                                            px: 2.5,
+                                                            textTransform: 'none',
+                                                            borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1',
+                                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                                        }}
+                                                    >
+                                                        {leadGuide.ctaLabel}
+                                                    </Button>
+                                                </Stack>
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
+                                </Paper>
+                            )}
+
+                            {sideGuides.length > 0 && (
+                                <Grid container spacing={2.5}>
+                                    {sideGuides.map((g) => (
+                                        <Grid key={g.slug} size={{ xs: 12, sm: 6, lg: 4 }}>
+                                            <Card
+                                                elevation={0}
+                                                sx={{
+                                                    height: '100%',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    borderRadius: 3.5,
+                                                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.72)' : '#FFFFFF',
+                                                    border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                                                    overflow: 'hidden',
+                                                    transition: 'transform 0.25s ease, border-color 0.25s ease',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-4px)',
+                                                        borderColor: g.color,
+                                                    },
+                                                }}
+                                            >
+                                                <Box sx={{ position: 'relative', height: 155, bgcolor: '#0F172A' }}>
+                                                    <Box
+                                                        component="img"
+                                                        src={g.image}
+                                                        alt={g.title}
+                                                        loading="lazy"
+                                                        sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                                    />
+                                                    <Chip
+                                                        label={g.serviceLabel}
+                                                        size="small"
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: 10,
+                                                            left: 10,
+                                                            fontWeight: 800,
+                                                            fontSize: '0.72rem',
+                                                            bgcolor: 'rgba(15, 23, 42, 0.85)',
+                                                            color: '#FFFFFF',
+                                                            border: `1px solid ${g.color}80`,
+                                                        }}
+                                                    />
+                                                </Box>
+                                                <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
+                                                    <Box>
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700, display: 'block', mb: 0.6 }}>
+                                                            {g.readTime} • {g.locationScope}
+                                                        </Typography>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1.3, mb: 0.8 }}>
+                                                            {g.title}
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: '0.84rem', lineHeight: 1.55, mb: 1.5 }}>
+                                                            {g.excerpt}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pt: 1.2, borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #F1F5F9' }}>
+                                                        <Button
+                                                            component={Link}
+                                                            href={`/blog/${g.slug}`}
+                                                            size="small"
+                                                            endIcon={<ArrowForwardIcon sx={{ fontSize: 15 }} />}
+                                                            sx={{ fontWeight: 850, color: g.color, textTransform: 'none', px: 0 }}
+                                                        >
+                                                            Read Full Blog
+                                                        </Button>
+                                                        <Typography
+                                                            component={Link}
+                                                            href={g.serviceUrl}
+                                                            variant="caption"
+                                                            sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700, textDecoration: 'none', '&:hover': { color: g.color } }}
+                                                        >
+                                                            Book Service →
+                                                        </Typography>
+                                                    </Stack>
+                                                </CardContent>
+                                            </Card>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            )}
+                        </Box>
+                    );
+                })()}
+
+                {/* =========================================================================
+                    FAQ SECTION (Framed Stage + Segmented Tabs + 2-Column Card Accordions)
+                ========================================================================== */}
+                {(() => {
+                    const faqCategories = [
+                        { id: 'all', label: `All Topics (${faqItems.length})` },
+                        { id: 'rentals', label: 'Bikes & Policies' },
+                        { id: 'services', label: 'Branches & Services' },
+                    ];
+
+                    const visibleFaqs = faqCategory === 'all'
+                        ? faqItems
+                        : faqItems.filter((item) => item.category === faqCategory);
+
+                    const leftFaqs = visibleFaqs.filter((_, idx) => idx % 2 === 0);
+                    const rightFaqs = visibleFaqs.filter((_, idx) => idx % 2 === 1);
+                    const primaryWaPhone = branchList.length > 0
+                        ? getBranchPhone(branchList[0]).replace(/\D/g, '')
+                        : '918660989586';
+
+                    const renderFaqCard = (item) => {
+                        const isOpen = expandedFaq === item.id;
+                        const TopicIcon = item.icon;
+
+                        return (
+                            <Accordion
+                                key={item.id}
+                                expanded={isOpen}
+                                onChange={(_, expanded) => setExpandedFaq(expanded ? item.id : false)}
+                                elevation={0}
+                                disableGutters
+                                sx={{
+                                    bgcolor: isDark
+                                        ? (isOpen ? 'rgba(15, 23, 42, 0.92)' : 'rgba(15, 23, 42, 0.56)')
+                                        : '#FFFFFF',
+                                    borderRadius: '16px !important',
+                                    border: isOpen
+                                        ? `1.5px solid ${item.accent}`
+                                        : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0'),
+                                    boxShadow: isOpen
+                                        ? (isDark ? '0 14px 32px rgba(0, 0, 0, 0.35)' : '0 12px 28px rgba(15, 23, 42, 0.06)')
+                                        : (isDark ? 'none' : '0 2px 8px rgba(15, 23, 42, 0.02)'),
+                                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                                    overflow: 'hidden',
+                                    '&:before': { display: 'none' },
+                                    '&:hover': {
+                                        borderColor: isOpen ? item.accent : (isDark ? 'rgba(255, 255, 255, 0.22)' : '#CBD5E1'),
+                                    },
+                                }}
+                            >
+                                <AccordionSummary
+                                    expandIcon={
+                                        <ExpandMoreIcon
+                                            sx={{
+                                                fontSize: 21,
+                                                color: isOpen ? item.accent : (isDark ? '#94A3B8' : '#64748B'),
+                                            }}
+                                        />
+                                    }
+                                    sx={{
+                                        px: { xs: 2, sm: 2.5 },
+                                        py: 1.35,
+                                        '& .MuiAccordionSummary-content': {
+                                            my: 0.5,
+                                            alignItems: 'center',
+                                            gap: 1.75,
                                         },
                                     }}
                                 >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                        <Stack direction="row" spacing={0.5}>
-                                            {[...Array(rev.rating)].map((_, i) => (
-                                                <StarIcon key={i} sx={{ fontSize: 18, color: '#F59E0B' }} />
-                                            ))}
-                                        </Stack>
-                                        <Chip
-                                            icon={<CheckCircleIcon sx={{ fontSize: 14, color: '#10B981 !important' }} />}
-                                            label="Verified Ride"
-                                            size="small"
+                                    <Box
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            borderRadius: 2.5,
+                                            flexShrink: 0,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: isOpen ? item.accent : `${item.accent}16`,
+                                            color: isOpen ? '#FFFFFF' : item.accent,
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        <TopicIcon sx={{ fontSize: 20 }} />
+                                    </Box>
+
+                                    <Box sx={{ flexGrow: 1, minWidth: 0, pr: 1 }}>
+                                        <Typography
+                                            variant="caption"
                                             sx={{
-                                                bgcolor: 'rgba(16, 185, 129, 0.1)',
-                                                color: '#10B981',
+                                                display: 'block',
                                                 fontWeight: 800,
                                                 fontSize: '0.68rem',
-                                            }}
-                                        />
-                                    </Box>
-
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            color: isDark ? '#E2E8F0' : '#334155',
-                                            lineHeight: 1.7,
-                                            mb: 3,
-                                            flexGrow: 1,
-                                            fontStyle: 'italic',
-                                        }}
-                                    >
-                                        "{rev.review}"
-                                    </Typography>
-
-                                    <Divider sx={{ mb: 2.5, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9' }} />
-
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <Avatar
-                                            sx={{
-                                                bgcolor: '#F59E0B',
-                                                color: '#000000',
-                                                fontWeight: 800,
-                                                fontSize: '0.9rem',
-                                                width: 42,
-                                                height: 42,
+                                                letterSpacing: '0.07em',
+                                                textTransform: 'uppercase',
+                                                color: item.accent,
+                                                mb: 0.25,
                                             }}
                                         >
-                                            {rev.name.charAt(0)}
-                                        </Avatar>
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography variant="subtitle2" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, lineHeight: 1.2 }}>
-                                                {rev.name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', display: 'block' }}>
-                                                {rev.location} • {rev.trip}
-                                            </Typography>
-                                        </Box>
+                                            {item.categoryLabel}
+                                        </Typography>
+                                        <Typography
+                                            variant="subtitle1"
+                                            component="h3"
+                                            sx={{
+                                                fontWeight: isOpen ? 800 : 700,
+                                                fontSize: { xs: '0.95rem', sm: '1.02rem' },
+                                                color: isDark ? '#F8FAFC' : '#0F172A',
+                                                lineHeight: 1.35,
+                                            }}
+                                        >
+                                            {item.question}
+                                        </Typography>
                                     </Box>
-                                </Paper>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+                                </AccordionSummary>
 
-                {/* =========================================================================
-                    8. CONDENSED HONNAVAR HUBS (2-Card Compact Row)
-                ========================================================================== */}
-                <Box id="hubs" sx={{ mb: 8 }}>
-                    <Box sx={{ mb: 3 }}>
-                        <Typography variant="h4" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 0.5 }}>
-                            Honnavar Pickup & Return Hubs
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#64748B' }}>
-                            Two convenient locations for rapid bike pickup and returns
-                        </Typography>
-                    </Box>
-
-                    <Grid container spacing={3}>
-                        {[
-                            {
-                                name: 'Palya Main Rd Hub (Head Office)',
-                                address: 'Palya Main Rd, Honnavar, Karnataka 581334',
-                                hours: 'Open 24 Hours Daily',
-                                mapUrl: 'https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334',
-                            },
-                            {
-                                name: 'Railway Station Hub',
-                                address: 'Station Road (Platform 1 Exit), Honnavar, Karnataka 581334',
-                                hours: 'Open 24 Hours Daily (Train Meet & Greet)',
-                                mapUrl: 'https://www.google.com/maps/dir/?api=1&destination=Honnavar+Railway+Station,+Karnataka',
-                            },
-                        ].map((hub, hIdx) => (
-                            <Grid size={{ xs: 12, md: 6 }} key={hIdx}>
-                                <Paper
-                                    elevation={0}
+                                <AccordionDetails
                                     sx={{
-                                        p: 3,
-                                        height: '100%',
-                                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                        borderRadius: 3,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'space-between',
-                                        gap: 2,
+                                        pt: 0,
+                                        pb: 2.5,
+                                        px: { xs: 2, sm: 2.5 },
                                     }}
                                 >
-                                    <Box>
-                                        <Typography variant="h6" component="h3" sx={{ color: isDark ? '#FFFFFF' : '#0F172A', fontWeight: 800, mb: 1 }}>
-                                            {hub.name}
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
-                                            <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 18, mt: 0.2, flexShrink: 0 }} />
-                                            <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155' }}>
-                                                {hub.address}
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <AccessTimeIcon sx={{ color: '#10B981', fontSize: 18, flexShrink: 0 }} />
-                                            <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', fontWeight: 600 }}>
-                                                {hub.hours}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-
-                                    <Button
-                                        variant="outlined"
-                                        component="a"
-                                        href={hub.mapUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        startIcon={<DirectionsIcon />}
+                                    <Box
                                         sx={{
-                                            alignSelf: 'flex-start',
-                                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
-                                            color: isDark ? '#FFFFFF' : '#0F172A',
-                                            fontWeight: 700,
-                                            textTransform: 'none',
-                                            '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
+                                            pt: 1.5,
+                                            pl: { xs: 0, sm: 7.25 },
+                                            borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #F1F5F9',
                                         }}
                                     >
-                                        Get Directions
-                                    </Button>
-                                </Paper>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: isDark ? '#CBD5E1' : '#475569',
+                                                lineHeight: 1.7,
+                                                fontSize: '0.9rem',
+                                            }}
+                                        >
+                                            {item.answer}
+                                        </Typography>
+                                    </Box>
+                                </AccordionDetails>
+                            </Accordion>
+                        );
+                    };
 
-                {/* =========================================================================
-                    FAQ SECTION (Trimmed to 4 Essential Booking Questions)
-                ========================================================================== */}
-                <Box id="faq" sx={{ mb: 10 }}>
-                    <Box sx={{ textAlign: 'center', mb: 5 }}>
-                        <Chip
-                            label="Got Questions? We Have Answers"
-                            sx={{ bgcolor: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', fontWeight: 700, mb: 1 }}
-                        />
-                        <Typography variant="h3" component="h2" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em', mb: 1 }}>
-                            Frequently Asked Questions
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: isDark ? '#CBD5E1' : '#334155' }}>
-                            Essential answers to help you book your rental bike in Honnavar with total peace of mind.
-                        </Typography>
-                    </Box>
-
-                    <Box sx={{ maxWidth: 860, mx: 'auto' }}>
-                        <Accordion
-                            defaultExpanded
+                    return (
+                        <Box
+                            component="section"
+                            id="faq"
+                            aria-labelledby="faq-title"
                             sx={{
-                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                mb: 2,
-                                borderRadius: '12px !important',
+                                mb: { xs: 7, md: 10 },
+                                p: { xs: 2.5, sm: 4, md: 5.5 },
+                                borderRadius: 5,
+                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC',
                                 border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                '&:before': { display: 'none' },
                             }}
                         >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#F59E0B' }} />}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                    What documents are required to rent a bike?
+                            {/* Centered Header + Segmented Pill Filter Dock */}
+                            <Box sx={{ textAlign: 'center', maxWidth: 680, mx: 'auto', mb: { xs: 3.5, md: 4.5 } }}>
+                                <Typography
+                                    variant="overline"
+                                    sx={{
+                                        display: 'inline-block',
+                                        fontWeight: 800,
+                                        letterSpacing: '0.12em',
+                                        color: isDark ? '#FBBF24' : '#D97706',
+                                        mb: 0.75,
+                                    }}
+                                >
+                                    FREQUENTLY ASKED QUESTIONS
                                 </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails sx={{ pt: 0 }}>
-                                <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', lineHeight: 1.7 }}>
-                                    To rent a two-wheeler, you need: (1) An original, valid Indian Driving License for two-wheelers, and (2) One government ID proof (Aadhaar Card, Voter ID, or Passport). Digital KYC can be completed online in advance or in 3 minutes during the vehicle handover.
-                                </Typography>
-                            </AccordionDetails>
-                        </Accordion>
-
-                        <Accordion
-                            sx={{
-                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                mb: 2,
-                                borderRadius: '12px !important',
-                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                '&:before': { display: 'none' },
-                            }}
-                        >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#F59E0B' }} />}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                    Is a security deposit required for online bike rental bookings?
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails sx={{ pt: 0 }}>
-                                <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', lineHeight: 1.7 }}>
-                                    New online bike rental bookings have no security deposit. You can pay ₹100 in advance or the full quoted rental amount online, with any remaining rental balance due at pickup.
-                                </Typography>
-                            </AccordionDetails>
-                        </Accordion>
-
-                        <Accordion
-                            sx={{
-                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                mb: 2,
-                                borderRadius: '12px !important',
-                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                '&:before': { display: 'none' },
-                            }}
-                        >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#F59E0B' }} />}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                    What is your cancellation and booking rescheduling policy?
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails sx={{ pt: 0 }}>
-                                <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', lineHeight: 1.7 }}>
-                                    We offer completely flexible cancellation. You can cancel your booking up to 12 hours before scheduled pickup for a full refund. Rescheduling dates or changing pickup times is free of charge, subject to fleet availability.
-                                </Typography>
-                            </AccordionDetails>
-                        </Accordion>
-
-                        <Accordion
-                            sx={{
-                                bgcolor: isDark ? '#131D2F' : '#FFFFFF',
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                mb: 2,
-                                borderRadius: '12px !important',
-                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                '&:before': { display: 'none' },
-                            }}
-                        >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#F59E0B' }} />}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                    What happens if the bike breaks down or gets a flat tire?
-                                </Typography>
-                            </AccordionSummary>
-                            <AccordionDetails sx={{ pt: 0 }}>
-                                <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#334155', lineHeight: 1.7 }}>
-                                    All GK WhizWheel bikes undergo rigorous mechanical checkups before every rental. In the rare event of a breakdown or puncture anywhere along the coastal circuit, our 24/7 mobile roadside assistance team will provide on-site repair or dispatch an immediate vehicle replacement.
-                                </Typography>
-                            </AccordionDetails>
-                        </Accordion>
-                    </Box>
-                </Box>
-
-                {/* =========================================================================
-                    9. BOTTOM CTA BANNER (COMPREHENSIVE ALL-SERVICES PORTAL)
-                       Highlighting Bikes, Cabs, Homestays, Boating, Scuba, Guides & Vacation Packages
-                ========================================================================== */}
-                <Box
-                    component="section"
-                    aria-labelledby="cta-heading"
-                    sx={{
-                        p: { xs: 4, md: 7 },
-                        borderRadius: 4.5,
-                        background: isDark
-                            ? 'radial-gradient(120% 120% at 50% 10%, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.98) 100%)'
-                            : 'linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 60%, #F0FDF4 100%)',
-                        border: isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #FDE68A',
-                        textAlign: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        mb: 4,
-                        boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.6)' : '0 15px 35px rgba(245, 158, 11, 0.1)',
-                    }}
-                >
-                    {/* Top Pill Badge */}
-                    <Box
-                        sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 0.8,
-                            px: 2.2,
-                            py: 0.6,
-                            borderRadius: 9999,
-                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
-                            border: '1px solid rgba(245, 158, 11, 0.35)',
-                            color: isDark ? '#FBBF24' : '#B45309',
-                            fontWeight: 800,
-                            fontSize: '0.8rem',
-                            letterSpacing: '0.06em',
-                            textTransform: 'uppercase',
-                            mb: 2.5,
-                        }}
-                    >
-                        <AutoAwesomeIcon sx={{ fontSize: 16 }} />
-                        All-In-One Coastal Karavali Travel Hub
-                    </Box>
-
-                    <Typography
-                        id="cta-heading"
-                        variant="h3"
-                        component="h2"
-                        sx={{
-                            color: isDark ? '#FFFFFF' : '#0F172A',
-                            fontWeight: 950,
-                            mb: 2,
-                            textAlign: 'center',
-                            maxWidth: 860,
-                            mx: 'auto',
-                            fontSize: { xs: '1.9rem', sm: '2.5rem', md: '3rem' },
-                            letterSpacing: '-0.025em',
-                            lineHeight: 1.18,
-                        }}
-                    >
-                        Ready to Explore Honnavar & Along the Coast?
-                    </Typography>
-
-                    <Typography
-                        variant="body1"
-                        sx={{
-                            color: isDark ? '#CBD5E1' : '#334155',
-                            maxWidth: 720,
-                            mx: 'auto',
-                            mb: 3.5,
-                            lineHeight: 1.7,
-                            textAlign: 'center',
-                            fontSize: { xs: '0.98rem', md: '1.1rem' },
-                        }}
-                    >
-                        Whether you need a self-drive scooter for beach hopping, a private AC taxi for station transfers, a riverfront homestay, a mangrove boat cruise, Netrani scuba diving, or a custom all-in-one vacation package — our verified local travel desk handles everything with zero hassle.
-                    </Typography>
-
-                    {/* Quick Interactive Service Pill Shortcuts */}
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'center',
-                            gap: 1.2,
-                            mb: 4,
-                            maxWidth: 900,
-                        }}
-                    >
-                        {[
-                            { name: '🛵 Bike & Scooter Rentals', href: '/services/bikes', color: '#F59E0B' },
-                            { name: '🚖 Coastal Cabs & Transfers', href: '/services/cabs', color: '#0284C7' },
-                            { name: '🏡 Homestays & Coastal Rooms', href: '/services/homestays', color: '#10B981' },
-                            { name: '🚤 Sharavathi Boating', href: '/services/boating', color: '#059669' },
-                            { name: '🤿 Netrani Scuba Diving', href: '/services/scuba', color: '#06B6D4' },
-                            { name: '🗺️ Local Travel Guides', href: '/services/guide', color: '#8B5CF6' },
-                            { name: '🌴 Custom Vacation Combos', href: '/services/tours', color: '#EC4899' },
-                        ].map((srvPill, pIdx) => (
-                            <Button
-                                key={pIdx}
-                                component={Link}
-                                href={srvPill.href}
-                                size="small"
-                                sx={{
-                                    py: 0.6,
-                                    px: 1.8,
-                                    borderRadius: 9999,
-                                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
-                                    color: isDark ? '#F1F5F9' : '#1E293B',
-                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #CBD5E1',
-                                    fontWeight: 700,
-                                    fontSize: '0.8rem',
-                                    textTransform: 'none',
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
-                                        borderColor: srvPill.color,
+                                <Typography
+                                    id="faq-title"
+                                    variant="h3"
+                                    component="h2"
+                                    sx={{
+                                        fontWeight: 950,
+                                        fontSize: { xs: '1.8rem', md: '2.3rem' },
+                                        lineHeight: 1.15,
                                         color: isDark ? '#FFFFFF' : '#0F172A',
-                                        transform: 'translateY(-2px)',
-                                    },
-                                    '&:focus-visible': {
-                                        outline: '3px solid #F59E0B',
-                                        outlineOffset: '2px',
-                                    },
-                                }}
-                            >
-                                {srvPill.name}
-                            </Button>
-                        ))}
-                    </Box>
+                                        letterSpacing: '-0.03em',
+                                        mb: 1.25,
+                                    }}
+                                >
+                                    Quick Answers Before You Book
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#475569', fontSize: '0.96rem', lineHeight: 1.6, mb: 3 }}>
+                                    Transparent rules on KYC documents, zero-deposit holds, 24/7 {branchCitiesLabel} pickups, and multi-service trips.
+                                </Typography>
 
-                    {/* Direct Contact Highlights */}
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: { xs: 2, sm: 3.5 },
-                            p: { xs: 2, sm: 2.5 },
-                            borderRadius: 3,
-                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF',
-                            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
-                            mb: 4.5,
-                            mx: 'auto',
-                            maxWidth: '100%',
-                            boxShadow: isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)',
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <LocationOnIcon sx={{ color: '#F59E0B', fontSize: 20 }} />
-                            <Typography variant="body2" sx={{ color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: 600 }}>
-                                Palya Main Rd & Railway Station, Honnavar 581334
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <PhoneIcon sx={{ color: '#10B981', fontSize: 18 }} />
-                            <Typography
-                                component="a"
-                                href="tel:+918660989586"
-                                variant="body2"
-                                sx={{
-                                    color: isDark ? '#E2E8F0' : '#1E293B',
-                                    fontWeight: 700,
-                                    textDecoration: 'underline',
-                                    '&:hover': { color: '#F59E0B' },
-                                    '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                                }}
-                            >
-                                +91 8660989586
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>•</Typography>
-                            <Typography
-                                component="a"
-                                href="tel:09731699125"
-                                variant="body2"
-                                sx={{
-                                    color: isDark ? '#E2E8F0' : '#1E293B',
-                                    fontWeight: 700,
-                                    textDecoration: 'underline',
-                                    '&:hover': { color: '#F59E0B' },
-                                    '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                                }}
-                            >
-                                097316 99125
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <AccessTimeIcon sx={{ color: '#F59E0B', fontSize: 18 }} />
-                            <Typography variant="body2" sx={{ color: isDark ? '#34D399' : '#047857', fontWeight: 800 }}>
-                                Open 24 Hours Daily
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <EmailIcon sx={{ color: '#38BDF8', fontSize: 18 }} />
-                            <Typography
-                                component="a"
-                                href="mailto:contact@whizwheels.in"
-                                variant="body2"
-                                sx={{
-                                    color: isDark ? '#E2E8F0' : '#1E293B',
-                                    fontWeight: 600,
-                                    textDecoration: 'underline',
-                                    '&:hover': { color: '#F59E0B' },
-                                    '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                                }}
-                            >
-                                contact@whizwheels.in
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <StarIcon sx={{ color: '#FBBF24', fontSize: 18 }} />
-                            <Typography
-                                component="a"
-                                href="https://share.google/GoM4iOgiuUIa7ZfwV"
-                                target="_blank"
-                                rel="noreferrer"
-                                variant="body2"
-                                sx={{
-                                    color: isDark ? '#38BDF8' : '#0284C7',
-                                    fontWeight: 700,
-                                    textDecoration: 'underline',
-                                    '&:hover': { color: '#F59E0B' },
-                                    '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                                }}
-                            >
-                                5.0★ (324 Reviews on Google)
-                            </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                            <DirectionsIcon sx={{ color: '#38BDF8', fontSize: 18 }} />
-                            <Typography
-                                component="a"
-                                href="https://www.google.com/maps/dir/?api=1&destination=Palya+Main+Rd,+Honnavar,+Karnataka+581334"
-                                target="_blank"
-                                rel="noreferrer"
-                                variant="body2"
-                                sx={{
-                                    color: isDark ? '#38BDF8' : '#0284C7',
-                                    fontWeight: 700,
-                                    textDecoration: 'underline',
-                                    '&:hover': { color: '#F59E0B' },
-                                    '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                                }}
-                            >
-                                Get Directions ↗
-                            </Typography>
-                        </Box>
-                    </Box>
+                                <Box
+                                    sx={{
+                                        display: 'inline-flex',
+                                        flexWrap: 'wrap',
+                                        justifyContent: 'center',
+                                        gap: 0.75,
+                                        p: 0.65,
+                                        borderRadius: 9999,
+                                        bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                                    }}
+                                >
+                                    {faqCategories.map((cat) => {
+                                        const active = faqCategory === cat.id;
+                                        return (
+                                            <Button
+                                                key={cat.id}
+                                                size="small"
+                                                onClick={() => {
+                                                    setFaqCategory(cat.id);
+                                                    const firstMatch = cat.id === 'all'
+                                                        ? faqItems[0]
+                                                        : faqItems.find((i) => i.category === cat.id);
+                                                    if (firstMatch) setExpandedFaq(firstMatch.id);
+                                                }}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    borderRadius: 9999,
+                                                    px: 2.1,
+                                                    py: 0.65,
+                                                    fontSize: '0.82rem',
+                                                    fontWeight: active ? 800 : 600,
+                                                    bgcolor: active ? (isDark ? '#F59E0B' : '#0F172A') : 'transparent',
+                                                    color: active ? (isDark ? '#0F172A' : '#FFFFFF') : (isDark ? '#CBD5E1' : '#475569'),
+                                                    '&:hover': {
+                                                        bgcolor: active ? (isDark ? '#F59E0B' : '#0F172A') : 'rgba(245, 158, 11, 0.08)',
+                                                    },
+                                                }}
+                                            >
+                                                {cat.label}
+                                            </Button>
+                                        );
+                                    })}
+                                </Box>
+                            </Box>
 
-                    {/* Primary Multi-Service CTA Action Buttons */}
-                    <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={2}
-                        justifyContent="center"
-                        alignItems="center"
-                        sx={{ mx: 'auto', width: { xs: '100%', sm: 'auto' } }}
-                    >
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            size="large"
-                            component={Link}
-                            href="/services/tours"
-                            endIcon={<ArrowForwardIcon />}
+                            {/* Balanced 2-Column Interactive FAQ Cards */}
+                            <Grid container spacing={2.25} alignItems="flex-start">
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <Stack spacing={2}>
+                                        {leftFaqs.map(renderFaqCard)}
+                                    </Stack>
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                    <Stack spacing={2}>
+                                        {rightFaqs.map(renderFaqCard)}
+                                    </Stack>
+                                </Grid>
+                            </Grid>
+
+                            {/* Integrated 24/7 Branch Concierge Strip */}
+                            <Box
+                                sx={{
+                                    mt: { xs: 3.5, md: 4 },
+                                    px: { xs: 2.25, sm: 3 },
+                                    py: 2,
+                                    borderRadius: 3.5,
+                                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.8)' : '#FFFFFF',
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', lg: 'row' },
+                                    alignItems: { xs: 'flex-start', lg: 'center' },
+                                    justifyContent: 'space-between',
+                                    gap: 2,
+                                }}
+                            >
+                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                                    <Box
+                                        sx={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: '50%',
+                                            bgcolor: '#10B981',
+                                            boxShadow: '0 0 0 4px rgba(16, 185, 129, 0.18)',
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                            Still have questions? Our coastal desks are open 24/7.
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
+                                            Instant help for custom pickup times, station transfers, and multi-day coastal itineraries.
+                                        </Typography>
+                                    </Box>
+                                </Stack>
+
+                                <Stack direction="row" flexWrap="wrap" alignItems="center" gap={1.1}>
+                                    {branchList.map((hub) => {
+                                        const phone = getBranchPhone(hub);
+                                        return (
+                                            <Button
+                                                key={hub.id}
+                                                size="small"
+                                                variant="outlined"
+                                                component="a"
+                                                href={`tel:${phone}`}
+                                                startIcon={<PhoneIcon sx={{ fontSize: 15, color: '#F59E0B' }} />}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    borderRadius: 9999,
+                                                    px: 1.75,
+                                                    py: 0.6,
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 700,
+                                                    borderColor: isDark ? 'rgba(255,255,255,0.16)' : '#CBD5E1',
+                                                    color: isDark ? '#F8FAFC' : '#0F172A',
+                                                    '&:hover': {
+                                                        borderColor: '#F59E0B',
+                                                        bgcolor: 'rgba(245, 158, 11, 0.08)',
+                                                    },
+                                                }}
+                                            >
+                                                {hub.city || hub.name}: {formatBranchPhone(phone)}
+                                            </Button>
+                                        );
+                                    })}
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        component="a"
+                                        href={`https://wa.me/${primaryWaPhone}?text=Hi%20GK%20WhizWheels,%20I%20have%20a%20question%20before%20booking.`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        startIcon={<WhatsAppIcon sx={{ fontSize: 16 }} />}
+                                        sx={{
+                                            textTransform: 'none',
+                                            borderRadius: 9999,
+                                            px: 2.1,
+                                            py: 0.65,
+                                            fontSize: '0.82rem',
+                                            fontWeight: 800,
+                                            bgcolor: '#10B981',
+                                            color: '#06281E',
+                                            boxShadow: 'none',
+                                            '&:hover': { bgcolor: '#34D399', boxShadow: 'none' },
+                                        }}
+                                    >
+                                        WhatsApp 24/7
+                                    </Button>
+                                </Stack>
+                            </Box>
+                        </Box>
+                    );
+                })()}
+
+                {/* =========================================================================
+                    9. BOTTOM CTA BANNER (SUNLIT COASTAL CLOSER + 24/7 HELPLINE DOCK)
+                ========================================================================== */}
+                {(() => {
+                    const ctaWaPhone = branchList.length > 0
+                        ? getBranchPhone(branchList[0]).replace(/\D/g, '')
+                        : '918660989586';
+
+                    const quickServiceLinks = [
+                        { label: 'Bikes', href: '/services/bikes' },
+                        { label: 'AC Cabs', href: '/services/cabs' },
+                        { label: 'Boating', href: '/services/boating' },
+                        { label: 'Scuba Diving', href: '/services/scuba' },
+                        { label: 'Homestays', href: '/services/homestays' },
+                        { label: 'Local Guides', href: '/services/guide' },
+                        { label: 'Custom Tours', href: '/services/tours' },
+                    ];
+
+                    return (
+                        <Box
+                            component="section"
+                            id="cta"
+                            aria-labelledby="cta-heading"
                             sx={{
-                                py: 1.6,
-                                px: 4.5,
-                                fontWeight: 800,
-                                fontSize: '1rem',
-                                borderRadius: 2.5,
-                                boxShadow: '0 8px 20px -3px rgba(245, 158, 11, 0.4)',
-                                width: { xs: '100%', sm: 'auto' },
-                                '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
+                                position: 'relative',
+                                overflow: 'hidden',
+                                borderRadius: 5,
+                                p: { xs: 3, sm: 4.5, md: 6 },
+                                mb: 4,
+                                background: isDark
+                                    ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(23, 37, 61, 0.94) 100%)'
+                                    : 'linear-gradient(135deg, #FFFFFF 0%, #FFFBEB 55%, #F8FAFC 100%)',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                                boxShadow: isDark
+                                    ? '0 20px 50px rgba(0, 0, 0, 0.45)'
+                                    : '0 18px 45px rgba(15, 23, 42, 0.06)',
                             }}
                         >
-                            Plan Custom Vacation Package
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            size="large"
-                            component="a"
-                            href="#service-offerings"
-                            sx={{
-                                py: 1.6,
-                                px: 3.5,
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : '#94A3B8',
-                                fontWeight: 700,
-                                borderRadius: 2.5,
-                                width: { xs: '100%', sm: 'auto' },
-                                '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
-                                '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                            }}
-                        >
-                            Explore All 7 Services ↓
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            size="large"
-                            component="a"
-                            href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20to%20inquire%20about%20your%20Honnavar%20travel%20services%20(Bikes,%20Cabs,%20Stays,%20Boating,%20Scuba,%20Tours)."
-                            target="_blank"
-                            rel="noreferrer"
-                            startIcon={<WhatsAppIcon sx={{ color: '#10B981' }} />}
-                            sx={{
-                                py: 1.6,
-                                px: 3.5,
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : '#94A3B8',
-                                fontWeight: 700,
-                                borderRadius: 2.5,
-                                width: { xs: '100%', sm: 'auto' },
-                                '&:hover': { borderColor: '#10B981', bgcolor: 'rgba(16, 185, 129, 0.08)' },
-                                '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                            }}
-                        >
-                            WhatsApp: +91 8660989586
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            size="large"
-                            component="a"
-                            href="tel:+918660989586"
-                            startIcon={<PhoneIcon sx={{ color: '#F59E0B' }} />}
-                            sx={{
-                                py: 1.6,
-                                px: 3.5,
-                                color: isDark ? '#FFFFFF' : '#0F172A',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : '#94A3B8',
-                                fontWeight: 700,
-                                borderRadius: 2.5,
-                                width: { xs: '100%', sm: 'auto' },
-                                '&:hover': { borderColor: '#F59E0B', bgcolor: 'rgba(245, 158, 11, 0.08)' },
-                                '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
-                            }}
-                        >
-                            Call 24/7 Desk
-                        </Button>
-                    </Stack>
-                </Box>
+                            <Grid container spacing={{ xs: 3.5, lg: 5 }} alignItems="center">
+                                {/* Left Column: Clean Editorial Pitch & Focused CTAs */}
+                                <Grid size={{ xs: 12, lg: 7 }}>
+                                    <Typography
+                                        variant="overline"
+                                        sx={{
+                                            display: 'inline-block',
+                                            fontWeight: 800,
+                                            letterSpacing: '0.12em',
+                                            color: isDark ? '#FBBF24' : '#D97706',
+                                            mb: 1,
+                                        }}
+                                    >
+                                        READY FOR COASTAL KARNATAKA
+                                    </Typography>
+
+                                    <Typography
+                                        id="cta-heading"
+                                        variant="h2"
+                                        component="h2"
+                                        sx={{
+                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                            fontWeight: 950,
+                                            fontSize: { xs: '1.85rem', sm: '2.45rem', md: '2.85rem' },
+                                            letterSpacing: '-0.03em',
+                                            lineHeight: 1.15,
+                                            mb: 1.75,
+                                            maxWidth: 620,
+                                        }}
+                                    >
+                                        Explore{' '}
+                                        <Box component="span" sx={{ color: isDark ? '#FBBF24' : '#D97706' }}>
+                                            {branchCitiesLabel}
+                                        </Box>{' '}
+                                        on Your Schedule.
+                                    </Typography>
+
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            color: isDark ? '#CBD5E1' : '#475569',
+                                            maxWidth: 560,
+                                            mb: 3.25,
+                                            lineHeight: 1.65,
+                                            fontSize: { xs: '0.96rem', md: '1.04rem' },
+                                        }}
+                                    >
+                                        Book two-wheelers, private AC cabs, Sharavathi boating, Netrani scuba diving, homestays, or custom coastal itineraries with transparent tariffs and instant confirmation.
+                                    </Typography>
+
+                                    <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        spacing={1.5}
+                                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                                        sx={{ mb: 3 }}
+                                    >
+                                        <Button
+                                            variant="contained"
+                                            size="large"
+                                            component={Link}
+                                            href="/services/bikes"
+                                            endIcon={<ArrowForwardIcon />}
+                                            sx={{
+                                                py: 1.45,
+                                                px: 3.5,
+                                                borderRadius: 2.5,
+                                                bgcolor: isDark ? '#F59E0B' : '#0F172A',
+                                                color: isDark ? '#0F172A' : '#FFFFFF',
+                                                fontWeight: 800,
+                                                fontSize: '0.95rem',
+                                                textTransform: 'none',
+                                                whiteSpace: 'nowrap',
+                                                boxShadow: 'none',
+                                                '&:hover': {
+                                                    bgcolor: isDark ? '#FBBF24' : '#1E293B',
+                                                    boxShadow: 'none',
+                                                },
+                                            }}
+                                        >
+                                            Book Bikes &amp; Experiences
+                                        </Button>
+
+                                        <Button
+                                            variant="outlined"
+                                            size="large"
+                                            component="a"
+                                            href={`https://wa.me/${ctaWaPhone}?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20to%20plan%20a%20coastal%20trip%20(Bikes,%20Cabs,%20Stays,%20Boating,%20Scuba,%20Tours).`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            startIcon={<WhatsAppIcon sx={{ color: '#10B981' }} />}
+                                            sx={{
+                                                py: 1.45,
+                                                px: 3,
+                                                borderRadius: 2.5,
+                                                borderColor: isDark ? 'rgba(16, 185, 129, 0.45)' : '#10B981',
+                                                bgcolor: isDark ? 'rgba(16, 185, 129, 0.08)' : '#ECFDF5',
+                                                color: isDark ? '#34D399' : '#065F46',
+                                                fontWeight: 800,
+                                                fontSize: '0.94rem',
+                                                textTransform: 'none',
+                                                whiteSpace: 'nowrap',
+                                                '&:hover': {
+                                                    borderColor: '#10B981',
+                                                    bgcolor: isDark ? 'rgba(16, 185, 129, 0.16)' : '#D1FAE5',
+                                                },
+                                            }}
+                                        >
+                                            WhatsApp 24/7 Desk
+                                        </Button>
+                                    </Stack>
+
+                                    <Stack direction="row" flexWrap="wrap" alignItems="center" gap={{ xs: 1.5, sm: 2.5 }}>
+                                        {[
+                                            'Zero deposit online',
+                                            'Free 12h cancellation',
+                                            '5.0★ Google Rated (324+)',
+                                        ].map((perk) => (
+                                            <Stack key={perk} direction="row" alignItems="center" spacing={0.65}>
+                                                <CheckCircleIcon sx={{ fontSize: 16, color: '#10B981' }} />
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: isDark ? '#94A3B8' : '#475569',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.8rem',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {perk}
+                                                </Typography>
+                                            </Stack>
+                                        ))}
+                                    </Stack>
+                                </Grid>
+
+                                {/* Right Column: Structured 24/7 Branch Desk & Quick Services Card */}
+                                <Grid size={{ xs: 12, lg: 5 }}>
+                                    <Box
+                                        sx={{
+                                            p: { xs: 2.5, sm: 3 },
+                                            borderRadius: 4,
+                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                                            boxShadow: isDark ? 'none' : '0 8px 24px rgba(15, 23, 42, 0.04)',
+                                        }}
+                                    >
+                                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                                                24/7 Direct Coastal Desk
+                                            </Typography>
+                                            <Chip
+                                                size="small"
+                                                label="Open 24/7"
+                                                sx={{
+                                                    height: 22,
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 800,
+                                                    bgcolor: isDark ? 'rgba(16, 185, 129, 0.16)' : '#ECFDF5',
+                                                    color: isDark ? '#34D399' : '#047857',
+                                                }}
+                                            />
+                                        </Stack>
+
+                                        <Stack spacing={1.25} sx={{ mb: 2.25 }}>
+                                            {branchList.map((hub) => {
+                                                const phone = getBranchPhone(hub);
+                                                return (
+                                                    <Box
+                                                        key={hub.id}
+                                                        component="a"
+                                                        href={`tel:${phone}`}
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            gap: 1.5,
+                                                            px: 1.75,
+                                                            py: 1.15,
+                                                            borderRadius: 2.5,
+                                                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                            textDecoration: 'none',
+                                                            transition: 'border-color 0.2s ease',
+                                                            '&:hover': { borderColor: '#F59E0B' },
+                                                        }}
+                                                    >
+                                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                                            <PhoneIcon sx={{ fontSize: 16, color: '#F59E0B', flexShrink: 0 }} />
+                                                            <Typography
+                                                                variant="body2"
+                                                                sx={{
+                                                                    fontWeight: 700,
+                                                                    color: isDark ? '#E2E8F0' : '#334155',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                {hub.city || hub.name}
+                                                            </Typography>
+                                                        </Stack>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                fontWeight: 800,
+                                                                color: isDark ? '#FBBF24' : '#0F172A',
+                                                                whiteSpace: 'nowrap',
+                                                            }}
+                                                        >
+                                                            {formatBranchPhone(phone)}
+                                                        </Typography>
+                                                    </Box>
+                                                );
+                                            })}
+                                        </Stack>
+
+                                        <Divider sx={{ borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0', mb: 2 }} />
+
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                display: 'block',
+                                                fontWeight: 800,
+                                                letterSpacing: '0.06em',
+                                                textTransform: 'uppercase',
+                                                color: isDark ? '#94A3B8' : '#64748B',
+                                                mb: 1.15,
+                                            }}
+                                        >
+                                            Browse Services
+                                        </Typography>
+
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.85 }}>
+                                            {quickServiceLinks.map((srv) => (
+                                                <Button
+                                                    key={srv.href}
+                                                    size="small"
+                                                    component={Link}
+                                                    href={srv.href}
+                                                    sx={{
+                                                        minWidth: 'auto',
+                                                        px: 1.5,
+                                                        py: 0.45,
+                                                        borderRadius: 9999,
+                                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F8FAFC',
+                                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                                                        color: isDark ? '#E2E8F0' : '#334155',
+                                                        fontSize: '0.76rem',
+                                                        fontWeight: 700,
+                                                        textTransform: 'none',
+                                                        whiteSpace: 'nowrap',
+                                                        '&:hover': {
+                                                            borderColor: '#F59E0B',
+                                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                                            color: isDark ? '#FFFFFF' : '#0F172A',
+                                                        },
+                                                    }}
+                                                >
+                                                    {srv.label}
+                                                </Button>
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    );
+                })()}
             </Box>
 
             {/* Universal Service Booking & Inquiry Modal */}
             <ServiceBookingModal
+                key={serviceModalId}
                 open={serviceModalOpen}
                 onClose={() => setServiceModalOpen(false)}
                 initialServiceId={serviceModalId}
