@@ -252,13 +252,11 @@ export default function CheckoutModal({
                 booking = holdRes.data;
                 setHeldBooking(booking);
 
-                if (bikeModelId) {
-                    // A model's exact rate may vary between physical vehicles.
-                    // Require an explicit second click to accept the actual total.
-                    setStatusMessage('Bike reserved. Review the exact amount below before continuing to payment.');
-                    setIsSubmitting(false);
-                    return;
-                }
+                // Require review for individual bikes AND model bookings.
+                // Pickup fees, final allocation and tax may change the initial estimate.
+                setStatusMessage('Bike reserved. Review the confirmed total, GST and billing details before payment.');
+                setIsSubmitting(false);
+                return;
             }
             setStatusMessage(`Reservation ${booking.booking_reference}. Creating ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'} payment order...`);
 
@@ -433,7 +431,7 @@ export default function CheckoutModal({
                         variant={!heldBooking ? 'filled' : 'outlined'} />
                     <Chip size="small" label="2. Pricing and GST" color={heldBooking ? 'primary' : 'default'}
                         variant={heldBooking ? 'filled' : 'outlined'} />
-                    <Chip size="small" label="3. Secure payment" variant="outlined" />
+                    <Chip size="small" label="3. Secure payment" color={heldBooking ? 'primary' : 'default'} variant="outlined" />
                 </Stack>
                 <Typography variant="caption" color="text.secondary">
                     {heldBooking
@@ -635,6 +633,40 @@ export default function CheckoutModal({
                     Total location fees: ₹{Number(finalQuote.location_fee_amount || 0).toLocaleString('en-IN')}.
                     These are included in the total above, alongside any applicable inter-branch fee.
                 </Alert>}
+                {/* Capture billing details before gateway initiation; server locks these on first checkout. */}
+                <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
+                        Billing details
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        These details will be saved with your booking and locked when payment starts.
+                        A GST tax invoice is available only after the supplier's GST settings and invoice issuance are configured.
+                    </Typography>
+                    <RadioGroup row value={billingType} onChange={(e) => setBillingType(e.target.value)}>
+                        <FormControlLabel value="personal" control={<Radio />} label="Personal" />
+                        <FormControlLabel value="business" control={<Radio />} label="Business (GSTIN)" />
+                    </RadioGroup>
+                    <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+                        <TextField size="small" required fullWidth label={billingType === 'business' ? 'Registered business name' : 'Billing name'}
+                            value={billingName} onChange={(e) => setBillingName(e.target.value)} inputProps={{ maxLength: 150 }} />
+                        <TextField size="small" required fullWidth multiline minRows={2} label="Full billing address"
+                            value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} inputProps={{ maxLength: 500 }} />
+                        <TextField size="small" required fullWidth label="GST state code (2 digits)" helperText="For example, Karnataka = 29. Used to verify GSTIN state; does not determine place of supply."
+                            value={billingStateCode} onChange={(e) => setBillingStateCode(e.target.value.replace(/\D/g, '').slice(0, 2))} inputProps={{ inputMode: 'numeric', maxLength: 2 }} />
+                        {billingType === 'business' && (
+                            <TextField size="small" required fullWidth label="Business GSTIN" helperText="Format is checked here; registration validity is not verified."
+                                value={billingGstin} onChange={(e) => setBillingGstin(e.target.value.toUpperCase().slice(0, 15))} inputProps={{ maxLength: 15 }} />
+                        )}
+                    </Stack>
+                </Card>
+
+                {!heldBooking && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Continue to hold your bike and confirm the final rental quote. No payment will start until you review it.
+                    </Alert>
+                )}
+                {heldBooking && (
+                    <>
                 {/* No refundable security deposit is required for new online bike bookings. */}
                 <Alert severity="success" sx={{ mb: 2 }}>
                     No security deposit required. Pay ₹100 now to reserve, or pay the full rental amount.
@@ -680,33 +712,6 @@ export default function CheckoutModal({
                             : `Pay ₹${total.toLocaleString('en-IN')} online. Nothing due for the quoted rental at pickup.`}
                     </Alert>
                 )}
-
-                {/* Capture billing details before gateway initiation; server locks these on first checkout. */}
-                <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2 }}>
-                    <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
-                        Billing details
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        These details will be saved with your booking and locked when payment starts.
-                        A GST tax invoice is available only after the supplier's GST settings and invoice issuance are configured.
-                    </Typography>
-                    <RadioGroup row value={billingType} onChange={(e) => setBillingType(e.target.value)}>
-                        <FormControlLabel value="personal" control={<Radio />} label="Personal" />
-                        <FormControlLabel value="business" control={<Radio />} label="Business (GSTIN)" />
-                    </RadioGroup>
-                    <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-                        <TextField size="small" required fullWidth label={billingType === 'business' ? 'Registered business name' : 'Billing name'}
-                            value={billingName} onChange={(e) => setBillingName(e.target.value)} inputProps={{ maxLength: 150 }} />
-                        <TextField size="small" required fullWidth multiline minRows={2} label="Full billing address"
-                            value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} inputProps={{ maxLength: 500 }} />
-                        <TextField size="small" required fullWidth label="GST state code (2 digits)" helperText="For example, Karnataka = 29. Used to verify GSTIN state; does not determine place of supply."
-                            value={billingStateCode} onChange={(e) => setBillingStateCode(e.target.value.replace(/\\D/g, '').slice(0, 2))} inputProps={{ inputMode: 'numeric', maxLength: 2 }} />
-                        {billingType === 'business' && (
-                            <TextField size="small" required fullWidth label="Business GSTIN" helperText="Format is checked here; registration validity is not verified."
-                                value={billingGstin} onChange={(e) => setBillingGstin(e.target.value.toUpperCase().slice(0, 15))} inputProps={{ maxLength: 15 }} />
-                        )}
-                    </Stack>
-                </Card>
 
                 {/* Payment Gateway Selection */}
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#0F172A' }}>
@@ -836,6 +841,8 @@ export default function CheckoutModal({
                         </Typography>
                     </Box>
                 </Box>
+                    </>
+                )}
             </DialogContent>
 
             <DialogActions sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -856,9 +863,9 @@ export default function CheckoutModal({
                     {isSubmitting ? (
                         <CircularProgress size={26} color="inherit" />
                     ) : (
-                        bikeModelId && !heldBooking
-                            ? 'Reserve vehicle & check final price'
-                            : `Pay ₹${Number(payNow || 0).toLocaleString('en-IN')} now`
+                        !heldBooking
+                            ? 'Reserve bike & review final price'
+                            : `Pay ₹${Number(payNow || 0).toLocaleString('en-IN')} securely`
                     )}
                 </Button>
 
