@@ -84,9 +84,17 @@ test('bike confirmation, voucher and printable agreement require booking ownersh
         $this->actingAs($other)->get($url)->assertForbidden();
         auth()->logout();
     }
+    $this->get("/bookings/{$booking->id}/billing-statement")->assertRedirect('/login');
+    $this->actingAs($other)
+        ->get("/bookings/{$booking->id}/billing-statement")
+        ->assertForbidden();
+
     $this->actingAs($owner)
         ->get("/bookings/{$booking->id}/confirmation")
         ->assertOk();
+    $this->get("/bookings/{$booking->id}/billing-statement")
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
 });
 
 test('billing details cannot be replaced after bike payment initiation', function (): void {
