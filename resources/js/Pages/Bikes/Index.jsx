@@ -158,6 +158,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
     });
 
     const bikes = bikesResponse?.data || [];
+    const featuredBike = bikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url) || null;
     const legacyBikes = bikes.filter((bike) => !bike.bike_model_id);
     // Public comparison uses registered inventory and actual configured rates.
     // Never advertise non-existent models, made-up weekend surcharges or deposits.
@@ -514,17 +515,17 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
 
                                     {/* Cinematic Bike Image Showcase */}
                                     <Box sx={{ position: 'relative', height: { xs: 240, sm: 280 } }}>
-                                        <Box
-                                            component="img"
-                                            src="/images/services/two_wheelers.jpg"
-                                            alt="Rental Bikes and Scooters Fleet in Honnavar - GK WhizWheel Two Wheeler Rentals"
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                display: 'block',
-                                            }}
-                                        />
+                                        {featuredBike ? (
+                                            <Box component="img"
+                                                src={featuredBike.primary_image_url || featuredBike.images?.[0]?.image_url}
+                                                alt={`${featuredBike.brand} ${featuredBike.model_name} currently listed for rent`}
+                                                sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                            />
+                                        ) : (
+                                            <Box sx={{ display: 'grid', placeItems: 'center', height: '100%', bgcolor: '#1E293B' }}>
+                                                <TwoWheelerIcon sx={{ fontSize: 92, color: '#94A3B8' }} aria-hidden="true" />
+                                            </Box>
+                                        )}
                                         <Box
                                             sx={{
                                                 position: 'absolute',
@@ -846,7 +847,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                 </Typography>
                             </Box>
                             <Typography variant="caption" sx={{ color: mutedTextColor, fontWeight: 600 }}>
-                                Dual Hubs: Honnavar Railway Station (Platform 1) • Palya Main Road Head Office
+                                {stores.length} active rental location(s)
                             </Typography>
                         </Box>
                     </Paper>
@@ -961,22 +962,19 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         justifyContent: 'center',
                                                     }}
                                                 >
-                                                    <Box
-                                                        component="img"
-                                                        src={imageSrc}
-                                                        alt={`${bike.brand || ''} ${bike.model_name || 'Bike'} rental scooter/motorcycle in Honnavar - GK WhizWheel`}
-                                                        loading="lazy"
-                                                        sx={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'cover',
-                                                            objectPosition: 'center 75%',
-                                                            transition: 'transform 0.4s ease',
-                                                            '&:hover': {
-                                                                transform: 'scale(1.04)',
-                                                            },
-                                                        }}
-                                                    />
+                                                    {imageSrc ? (
+                                                        <Box component="img"
+                                                            src={imageSrc}
+                                                            alt={`${bike.brand || ''} ${bike.model_name || 'Bike'}`}
+                                                            loading="lazy"
+                                                            sx={{
+                                                                width: '100%', height: '100%', objectFit: 'cover',
+                                                                objectPosition: 'center 75%',
+                                                                transition: 'transform 0.4s ease',
+                                                                '&:hover': { transform: 'scale(1.04)' },
+                                                            }}
+                                                        />
+                                                    ) : <TwoWheelerIcon sx={{ fontSize: 82, color: 'text.disabled' }} aria-hidden="true" />}
 
                                                     {/* Fuel / EV Badge */}
                                                     <Chip
@@ -1093,7 +1091,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 Mon – Thu <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekday)</Box>
                                                             </Typography>
                                                             <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekdayPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekdayRate).toLocaleString('en-IN')}{' '}
+                                                                {weekdayRate == null ? 'Rate on request' : `₹${Number(weekdayRate).toLocaleString('en-IN')}`}{' '}
                                                                 <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
                                                                     /day
                                                                 </Typography>
@@ -1105,7 +1103,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                                 Fri – Sun <Box component="span" sx={{ fontSize: '0.72rem', fontWeight: 500 }}>(Weekend)</Box>
                                                             </Typography>
                                                             <Typography variant="h6" component="span" sx={{ fontWeight: 950, color: weekendPriceColor, lineHeight: 1 }}>
-                                                                ₹{Number(weekendRate).toLocaleString('en-IN')}{' '}
+                                                                {weekendRate == null ? 'Rate on request' : `₹${Number(weekendRate).toLocaleString('en-IN')}`}{' '}
                                                                 <Typography component="span" variant="caption" sx={{ color: secondaryTextColor, fontWeight: 600 }}>
                                                                     /day
                                                                 </Typography>
@@ -1132,7 +1130,7 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         color="secondary"
                                                         fullWidth
                                                         endIcon={<ArrowForwardIcon aria-hidden="true" />}
-                                                        aria-label={`Book ${bike.brand} ${bike.model_name} starting at ₹${weekdayRate} per day`}
+                                                        aria-label={`View ${bike.brand} ${bike.model_name} and check available rental rates`}
                                                         sx={{
                                                             mt: 'auto',
                                                             fontWeight: 900,
@@ -1240,10 +1238,10 @@ export default function BikesIndex({ categories = [], stores = [], initialFilter
                                                         {[bike.category?.name, bike.fuel_type, bike.transmission].filter(Boolean).join(' · ')}
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekdayPriceColor }}>
-                                                        ₹{Number(bike.weekday_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
+                                                        {bike.weekday_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekday_rate ?? bike.daily_rate).toLocaleString('en-IN')}`} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 850, color: weekendPriceColor }}>
-                                                        ₹{Number(bike.weekend_rate ?? bike.daily_rate ?? 0).toLocaleString('en-IN')} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
+                                                        {bike.weekend_rate == null && bike.daily_rate == null ? 'Rate on request' : `₹${Number(bike.weekend_rate ?? bike.daily_rate).toLocaleString('en-IN')}`} <Box component="span" sx={{ fontSize: '0.74rem', color: mutedTextColor, fontWeight: 500 }}>/day indicative</Box>
                                                     </TableCell>
                                                     <TableCell sx={{ color: isDark ? '#34D399' : '#059669', fontWeight: 800 }}>
                                                         ₹0 for new online bookings
