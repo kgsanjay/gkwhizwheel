@@ -61,7 +61,7 @@ const BIKE_FAQS = [
     },
     {
         q: 'Can I get rental bikes delivered to Honnavar Railway Station?',
-        a: 'Yes! We have an active Honnavar Railway Station Desk located right on Station Road at the Platform 1 exit. When your Konkan Railway train arrives, our representative meets you with your selected vehicle and helmets for an express 5-minute handover.',
+        a: 'Select an available pickup branch in the bike search. Available pickup services and charges are confirmed in your rental quote before payment.',
     },
     {
         q: 'What documents are required for honnavar bike rent?',
@@ -69,11 +69,11 @@ const BIKE_FAQS = [
     },
     {
         q: 'Are helmets and vehicle documents provided?',
-        a: 'Yes! Every booking includes one sanitized, ISI-certified rider helmet free of charge. A pillion helmet is available for an extra ₹50/day. All vehicles are registered with valid commercial permits, insurance, and PUC certificates.',
+        a: 'Helmet availability, any additional charges, and document requirements are confirmed during booking or at pickup. Refer to the published rental terms and your booking quote.',
     },
     {
         q: 'Can I ride to Gokarna, Murudeshwar, or Jog Falls?',
-        a: 'Yes! All GK WhizWheels bikes have valid Karnataka road tax and permit to travel anywhere along the coastal belt, including Murudeshwar (27 km), Gokarna (48 km), Yana Caves, and Jog Falls (60 km).',
+        a: 'Travel restrictions depend on the selected bike and rental agreement. Check the applicable terms and confirm your planned route with the pickup branch.',
     },
     {
         q: 'Is a security deposit required for online bike rentals?',
