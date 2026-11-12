@@ -193,7 +193,7 @@ class BookingWebController extends Controller
 
         if (preg_match('/^TXN_BK_(\d+)_/', $txnId, $m)) {
             return redirect()->route('bookings.confirmation', (int) $m[1])
-                ->with('success', 'PhonePe payment processed. Review your booking details below.');
+                ->with('status', 'Returned from PhonePe. Your booking will be confirmed after server-side payment verification.');
         }
 
         if (preg_match('/^TXN_SRV_(\d+)_/', $txnId, $m)) {
