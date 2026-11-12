@@ -387,13 +387,6 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
             "latitude": 14.2802,
             "longitude": 74.4437
         },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "5.0",
-            "reviewCount": "324",
-            "bestRating": "5",
-            "worstRating": "1"
-        },
         "openingHoursSpecification": [
             {
                 "@type": "OpeningHoursSpecification",
@@ -675,7 +668,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             }}
                                         >
                                             <StarIcon sx={{ fontSize: 15, color: '#F59E0B' }} />
-                                            5.0 Google Rated (324+)
+                                            {reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} published bike reviews` : 'Explore customer experiences'}
                                         </Box>
                                     </Stack>
 
@@ -1207,7 +1200,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
 
                                 <Chip
                                     icon={<StarIcon sx={{ fontSize: '15px !important', color: '#F59E0B !important' }} />}
-                                    label="5.0 ★ (324+)"
+                                    label={reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} bike reviews` : 'Customer experiences'}
                                     size="small"
                                     component="a"
                                     href="https://share.google/GoM4iOgiuUIa7ZfwV"
@@ -3989,8 +3982,8 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                     <Stack direction="row" flexWrap="wrap" alignItems="center" gap={{ xs: 1.5, sm: 2.5 }}>
                                         {[
                                             'Zero deposit online',
-                                            'Free 12h cancellation',
-                                            '5.0★ Google Rated (324+)',
+                                            'Review cancellation terms before booking',
+                                            reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} bike reviews` : 'Read customer experiences',
                                         ].map((perk) => (
                                             <Stack key={perk} direction="row" alignItems="center" spacing={0.65}>
                                                 <CheckCircleIcon sx={{ fontSize: 16, color: '#10B981' }} />
