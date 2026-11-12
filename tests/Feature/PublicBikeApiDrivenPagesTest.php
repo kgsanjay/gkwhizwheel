@@ -50,6 +50,9 @@ test('bike listing and marketing pages fetch real fleet and customer review APIs
         ->toContain("apiClient.get('/reviews')")
         ->not->toContain("'Activa 6G, Classic 350 & CB350'")
         ->not->toContain('Combo Rate (Save 10%)')
+        ->toContain('item?.description')
+        ->toContain('item?.price_base')
+        ->toContain('item?.features')
         ->not->toContain('5.0 Verified');
 
     expect($catalog)->toContain('displayedFleetNames.slice(0, 4)')
