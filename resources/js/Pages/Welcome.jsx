@@ -211,6 +211,13 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
         queryFn: () => apiClient.get('/bikes'),
         retry: false,
     });
+    const { data: publicReviewResponse } = useQuery({
+        queryKey: ['approved-public-bike-reviews'],
+        queryFn: () => apiClient.get('/reviews'),
+        retry: false,
+    });
+    const publicReviews = publicReviewResponse?.data || [];
+    const reviewMeta = publicReviewResponse?.meta || { total: 0, average_rating: null };
     const apiBikes = bikeCatalogResponse?.data || [];
     const featuredBike = apiBikes.find((bike) => bike.primary_image_url || bike.images?.[0]?.image_url) || null;
     const featuredBikeImage = featuredBike?.primary_image_url || featuredBike?.images?.[0]?.image_url || null;
@@ -2544,86 +2551,22 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                     7. CUSTOMER REVIEWS & EXPERIENCES (3x2 Verified Google Reviews Wall)
                 ========================================================================== */}
                 {(() => {
-                    const allReviews = [
-                        {
-                            id: 'ankit-bike',
-                            category: 'bikes',
-                            serviceLabel: 'Bike Rental • Honnavar',
-                            accent: '#F59E0B',
-                            headline: 'Zero deposit & 3-min station pickup',
-                            name: 'Ankit Sharma',
-                            location: 'Bengaluru',
-                            trip: 'Self-drive bike • Sharavathi & Eco Beach',
-                            timeAgo: 'Verified Booking',
-                            review:
-                                'Requested Honnavar Railway Station pickup and the executive arrived before our train pulled in. Spotless scooters, clean ISI helmets, and transparent 24-hour billing.',
-                        },
-                        {
-                            id: 'meera-scuba',
-                            category: 'water',
-                            serviceLabel: 'Scuba & Boating • Murudeshwar',
-                            accent: '#0EA5E9',
-                            headline: 'Unforgettable Netrani dive & mangrove cruise',
-                            name: 'Meera & Vivek Nair',
-                            location: 'Kochi',
-                            trip: 'Netrani Scuba + Sharavathi Boating',
-                            timeAgo: 'Google Review',
-                            review:
-                                'Coordinated both our Netrani Island scuba morning slot from Murudeshwar and evening boating in Honnavar on one WhatsApp chat. Calm PADI crew and zero wait time at the jetty.',
-                        },
-                        {
-                            id: 'karthik-cab',
-                            category: 'stays_cabs',
-                            serviceLabel: 'AC Cab & Tour • Honnavar',
-                            accent: '#10B981',
-                            headline: 'Punctual AC Innova for our family circuit',
-                            name: 'Karthik Venugopal',
-                            location: 'Mysuru',
-                            trip: 'Apsarakonda Falls, Mirjan Fort & Murudeshwar',
-                            timeAgo: 'Google Review',
-                            review:
-                                'Sanitized AC Innova with a friendly local driver who knew every coastal lookout and food stop. Covered Hanging Bridge, Apsarakonda, and Murudeshwar Temple at an upfront fixed tariff.',
-                        },
-                        {
-                            id: 'sneha-ride',
-                            category: 'bikes',
-                            serviceLabel: 'Bike Rental • Murudeshwar',
-                            accent: '#F59E0B',
-                            headline: 'Coastal bike rental for NH66',
-                            name: 'Dr. Sneha & Rohan K.',
-                            location: 'Mumbai',
-                            trip: 'Bike rental • 4-Day Ride',
-                            timeAgo: 'Verified Booking',
-                            review:
-                                'Great tyres, crisp brakes, and super responsive 24/7 WhatsApp helpline across our Honnavar–Murudeshwar–Gokarna ride. Zero hidden charges at drop-off.',
-                        },
-                        {
-                            id: 'prashanth-boating',
-                            category: 'water',
-                            serviceLabel: 'Backwater Boating • Honnavar',
-                            accent: '#2563EB',
-                            headline: 'Peaceful mangrove trail without crowd rush',
-                            name: 'Prashanth Hegde',
-                            location: 'Pune',
-                            trip: 'Sharavathi Estuary Mangrove Safari',
-                            timeAgo: 'Google Review',
-                            review:
-                                'Booked an early-morning private Shikara cruise through GK WhizWheel. Clean lifejackets, serene island stops, and honest recommendations from local boat captains.',
-                        },
-                        {
-                            id: 'divya-homestay',
-                            category: 'stays_cabs',
-                            serviceLabel: 'Homestay • Honnavar',
-                            accent: '#059669',
-                            headline: 'Riverfront stay bundled with scooters',
-                            name: 'Divya Deshpande',
-                            location: 'Hubballi',
-                            trip: 'Sharavathi Cottage + 2 Scooters',
-                            timeAgo: 'Verified Booking',
-                            review:
-                                'Reserved our cottage stay and two scooters together in one booking. Authentic Karavali breakfast, spotless rooms, and bikes fueled and ready right at check-in.',
-                        },
-                    ];
+                    // Display only approved reviews from the public Reviews API.
+                    const allReviews = publicReviews.map((review) => ({
+                        id: review.id,
+                        category: 'bikes',
+                        serviceLabel: 'Bike Rental',
+                        accent: '#F59E0B',
+                        headline: review.bike_name || 'Customer bike rental experience',
+                        name: review.customer_name || 'Verified customer',
+                        location: 'Customer',
+                        trip: review.bike_name || 'Bike rental',
+                        timeAgo: review.created_at
+                            ? new Date(review.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' })
+                            : 'Review',
+                        review: review.comment,
+                        rating: Number(review.rating) || 0,
+                    }));
 
                     const displayedReviews = reviewFilter === 'all'
                         ? allReviews
@@ -2670,7 +2613,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                 <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z" />
                                             </Box>
                                             <Typography variant="caption" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A' }}>
-                                                5.0
+                                                {reviewMeta.average_rating ?? '—'}
                                             </Typography>
                                             <Stack direction="row" spacing={0.1}>
                                                 {[...Array(5)].map((_, i) => (
@@ -2678,7 +2621,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                 ))}
                                             </Stack>
                                             <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600 }}>
-                                                (324+ reviews)
+                                                ({reviewMeta.total} published bike reviews)
                                             </Typography>
                                         </Box>
                                     </Stack>
@@ -2744,8 +2687,17 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                 </Stack>
                             </Box>
 
-                            {/* 3x2 Authentic Review Grid */}
+                            {/* Approved customer reviews from database */}
                             <Grid container spacing={2.5}>
+                                {displayedReviews.length === 0 && (
+                                    <Grid size={{ xs: 12 }}>
+                                        <Paper variant="outlined" sx={{ p: 4, borderRadius: 3.5, textAlign: 'center' }}>
+                                            <Typography color="text.secondary">
+                                                No published customer reviews in this category yet.
+                                            </Typography>
+                                        </Paper>
+                                    </Grid>
+                                )}
                                 {displayedReviews.map((rev) => (
                                     <Grid size={{ xs: 12, sm: 6, lg: displayedReviews.length <= 2 ? 6 : 4 }} key={rev.id}>
                                         <Box
@@ -2799,7 +2751,10 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
 
                                                     <Stack direction="row" spacing={0.15} sx={{ flexShrink: 0 }}>
                                                         {[...Array(5)].map((_, i) => (
-                                                            <StarIcon key={i} sx={{ fontSize: 15, color: '#F59E0B' }} />
+                                                            <StarIcon key={i} sx={{
+                                                                fontSize: 15,
+                                                                color: i < rev.rating ? '#F59E0B' : '#CBD5E1',
+                                                            }} />
                                                         ))}
                                                     </Stack>
                                                 </Box>
