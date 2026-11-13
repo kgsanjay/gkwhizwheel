@@ -95,3 +95,15 @@ test('customer account, blog and policy headers share approved visual tokens', f
 
     expect($kyc)->toContain('KYC & Identity Verification');
 });
+
+
+test('service booking confirmation keeps its payment and voucher state while using shared surfaces', function (): void {
+    $page = file_get_contents(resource_path('js/Pages/ServiceBookingConfirmation.jsx'));
+
+    expect($page)->toContain('marketingHeroBackground(isDark)')
+        ->toContain('marketingPanelSx(isDark)')
+        ->toContain('isVoucherAvailable')
+        ->toContain('isPayable')
+        ->toContain('setGateway')
+        ->toContain('Download Trip Voucher (PDF)');
+});
