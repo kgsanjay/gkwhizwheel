@@ -3,6 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
+import { marketingHeroBackground } from '../Components/Marketing/MarketingPageHero';
 import BoatingBookingModal from '../Components/BookingModals/BoatingBookingModal';
 import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import {
@@ -155,9 +156,7 @@ export default function BoatingPage({ availableItems = [] }) {
                         pt: { xs: 3.5, sm: 4.5, md: 5.5 },
                         pb: { xs: 5, sm: 6, md: 7 },
                         px: { xs: 2, sm: 3.5, md: 5, lg: 6 },
-                        background: isDark
-                            ? 'radial-gradient(120% 120% at 85% 15%, #1E293B 0%, #0F172A 60%, #080D14 100%)'
-                            : 'linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 50%, #F8FAFC 100%)',
+                        background: marketingHeroBackground(isDark),
                         borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                         overflow: 'hidden',
                     }}
