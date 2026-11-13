@@ -136,3 +136,17 @@ test('branch and login screens retain their actions and share consistent visual 
         ->toContain('{children}')
         ->toContain('sidebar_counts');
 });
+
+
+test('global Material UI tokens keep customer and operational interfaces consistent', function (): void {
+    $theme = file_get_contents(resource_path('js/theme/index.js'));
+
+    expect($theme)
+        ->toContain('borderRadius: 16')
+        ->toContain('borderRadius: 12')
+        ->toContain("'&:focus-visible'")
+        ->toContain('MuiCard')
+        ->toContain('MuiButton')
+        ->toContain('MuiOutlinedInput')
+        ->toContain('MuiPaper');
+});
