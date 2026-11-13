@@ -1086,12 +1086,16 @@ export default function AdminLayout({ children, title, currentStore }) {
                 sx={{
                     width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
                     ml: { md: `${DRAWER_WIDTH}px` },
-                    bgcolor: isDark ? 'rgba(11, 15, 25, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+                    background: isDark
+                        ? 'linear-gradient(120deg, rgba(15,27,46,0.96), rgba(11,17,32,0.96))'
+                        : 'linear-gradient(120deg, rgba(248,250,252,0.97), rgba(255,251,235,0.94))',
                     backdropFilter: 'blur(16px)',
                     color: 'text.primary',
                     borderBottom: '1px solid',
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(226, 232, 240, 0.8)',
-                    boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.02)',
+                    boxShadow: isDark
+                        ? '0 4px 24px -18px rgba(0,0,0,0.7)'
+                        : '0 4px 24px -18px rgba(15,23,42,0.18)',
                     zIndex: (theme) => theme.zIndex.drawer + 1,
                 }}
             >
@@ -1504,6 +1508,9 @@ export default function AdminLayout({ children, title, currentStore }) {
                     overflowX: 'hidden',
                     mt: '58px',
                     minHeight: 'calc(100vh - 58px)',
+                    background: isDark
+                        ? 'radial-gradient(circle at 95% 0%, rgba(56,189,248,0.045), transparent 34%)'
+                        : 'radial-gradient(circle at 95% 0%, rgba(245,158,11,0.035), transparent 34%)',
                 }}
             >
                 {/* Global Flash Alerts */}
