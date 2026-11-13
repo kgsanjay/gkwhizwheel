@@ -22,6 +22,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AppLayout from '../../Layouts/AppLayout';
+import { marketingHeroBackground } from '../../Components/Marketing/MarketingPageHero';
 import PageHead from '../../Components/SEO/PageHead';
 
 const SERVICE_FILTERS = [
@@ -94,9 +95,7 @@ export default function BlogIndex({ articles = [], initialService = 'all' }) {
             {/* Hero Banner */}
             <Box
                 sx={{
-                    background: isDark
-                        ? 'linear-gradient(135deg, #070B14 0%, #0F172A 60%, #111E36 100%)'
-                        : 'linear-gradient(135deg, #0B1120 0%, #162238 100%)',
+                    background: marketingHeroBackground(true),
                     color: '#FFFFFF',
                     pt: { xs: 7, md: 9 },
                     pb: { xs: 6, md: 8 },
