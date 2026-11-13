@@ -42,40 +42,7 @@ jobs:
       - name: Run Laravel Tests
         run: php artisan test --parallel
         env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
-          MAIL_FROM_ADDRESS: "noreply@example.test"
+            DB_CONNECTION: sqlite
+            DB_DATABASE: ":memory:"
+            MAIL_FROM_ADDRESS: "noreply@example.test"
 
-  test-mobile-customer:
-    name: Mobile Customer TS Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install NPM Dependencies & TS Check
-        working-directory: ./mobile-customer
-        run: |
-          npm ci
-          npx tsc --noEmit
-
-  test-mobile-ops:
-    name: Mobile Ops TS Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install NPM Dependencies & TS Check
-        working-directory: ./mobile-ops
-        run: |
-          npm ci
-          npx tsc --noEmit

@@ -1,6 +1,6 @@
 # GK WhizWheel
 
-A unified online and offline bike & multi-service mobility platform designed for coastal multi-store operations with dynamic tiered pricing. The platform seamlessly bridges customer web bookings with on-ground store operations, featuring concurrency-safe reservation holds, one-way rentals, offline-resilient staff handovers, ground pass QR scanning, and a compiled native Android APK.
+A unified online and offline bike & multi-service mobility platform designed for coastal multi-store operations with dynamic tiered pricing. The platform seamlessly bridges customer web bookings with on-ground store operations, featuring concurrency-safe reservation holds, one-way rentals, offline-resilient staff handovers, and ground pass QR scanning.
 
 ---
 
@@ -9,7 +9,6 @@ A unified online and offline bike & multi-service mobility platform designed for
 - **Multi-Service Mobility**: Bike rentals, coastal car rentals, pre-owned vehicle sales marketplace, and motorcycle workshop repair/servicing scheduling.
 - **Ground Pass QR Fast Check-In (`/admin/check-in`)**: High-speed camera scanner that resolves customer QR passes, verifies deposits, and initiates instant handovers.
 - **Digital Handover & Return Inspection Wizards**: Interactive motorcycle damage diagram mapping, odometer & fuel tracking, photo capture, and customer digital signatures.
-- **Native Android APK (`gkwhizwheels.apk`)**: Standalone Android application with hardware camera permissions, GPS store locator, offline PWA cache, and configurable server switcher.
 - **Concurrency-Safe Availability Engine**: Pessimistic database locks (`SELECT ... FOR UPDATE`) preventing double-booking during peak checkout.
 - **Production-Ready & Fully Tested**: 61 automated test suites (385 test cases) with 2,829 passing assertions across RBAC, payments, notifications, and offline sync.
 
@@ -19,7 +18,6 @@ A unified online and offline bike & multi-service mobility platform designed for
 
 - **Backend:** Laravel 12, PHP 8.3, MySQL 8.0 / MariaDB
 - **Web Frontend:** React 18, Inertia.js, Material UI (MUI) & Tailwind CSS
-- **Mobile Android App:** Native Android (Gradle 8.7, Android SDK 34, Java 21) & React Native PWA wrapper
 - **Payment Gateway:** Razorpay with cryptographic webhook verification & idempotency
 - **Communication:** Multi-channel notification pipeline (WhatsApp Cloud API & SMTP Email fallback)
 - **Offline Sync:** IndexedDB local queue with automatic reconciliation upon network reconnect
@@ -33,7 +31,6 @@ A unified online and offline bike & multi-service mobility platform designed for
 - Composer 2.x
 - Node.js 18+ and npm
 - MySQL 8.0+
-- (Optional for Android builds) Java 21 & Android SDK 34
 
 ### Local Installation
 
@@ -91,24 +88,6 @@ A unified online and offline bike & multi-service mobility platform designed for
 
 ---
 
-## Staff Mobile Application (Expo / React Native)
-
-The repository includes a dedicated native app for Staff operations in `/mobile-ops`.
-
-- **Source Code**: [`mobile-ops/`](mobile-ops/)
-
-### Building and Distributing:
-The app uses Expo Application Services (EAS) for internal distribution.
-
-```bash
-cd mobile-ops
-eas build --profile preview --platform android
-```
-
-This will generate an APK URL that can be shared with staff for direct installation. See the [Mobile Ops README](mobile-ops/README.md) for full setup instructions.
-
----
-
 ## Role-Based Access Control (RBAC)
 
 The application provides strictly scoped access control for four user roles:
@@ -126,8 +105,6 @@ The application provides strictly scoped access control for four user roles:
 
 ```
 .
-├── archive/android-webview-legacy/ # Legacy Android WebView app (deprecated)
-├── mobile-ops/           # Native Expo/React Native app for staff operations
 ├── app/                  # Laravel core: Models, Controllers, Services, Enums, Policies
 │   ├── Http/Controllers/ # Web, Admin, and API controllers
 │   ├── Models/           # Eloquent models (Bike, Booking, ServiceBooking, Store, User)
@@ -145,7 +122,6 @@ The application provides strictly scoped access control for four user roles:
 ├── tests/                # 61 Pest feature and unit test suites (385 test cases, 2,829 assertions)
 ├── DETAILED_FEATURE_SPECIFICATION.md # Deep-dive architectural and state machine spec
 ├── FULL_FEATURE_LIST.md  # Comprehensive module matrix and persona breakdown
-├── gkwhizwheels.apk      # Compiled Android debug APK
 └── .env.example          # Baseline environment configuration template
 ```
 
