@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
+import { marketingHeroBackground } from '../../Components/Marketing/MarketingPageHero';
 import {
     Box,
     Typography,
@@ -161,7 +162,7 @@ export default function AccountKyc({ documents = [], user = null }) {
                         mb: 4,
                         p: { xs: 2.5, sm: 4 },
                         borderRadius: { xs: 3, sm: 4 },
-                        bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                        background: marketingHeroBackground(isDark),
                         backdropFilter: 'blur(16px)',
                         border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                         boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.35)' : '0 4px 20px rgba(15, 23, 42, 0.04)',
