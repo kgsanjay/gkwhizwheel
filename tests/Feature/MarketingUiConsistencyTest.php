@@ -35,3 +35,33 @@ test('customer page visual migration reuses shared Home-style surfaces without r
         ->toContain('destinations.map(')
         ->toContain('tourismFaqs');
 });
+
+
+test('existing service page hero styles share Home colors without dropping unique sections', function (): void {
+    $pageSections = [
+        'CabsPage.jsx' => ['FARE ESTIMATOR', 'CAB'],
+        'BoatingPage.jsx' => ['BOAT', 'FAQ'],
+        'ScubaPage.jsx' => ['SCUBA', 'FAQ'],
+        'HomestaysPage.jsx' => ['ROOM', 'FAQ'],
+        'ToursPage.jsx' => ['PACKAGE', 'FAQ'],
+        'GuidePage.jsx' => ['GUIDE', 'FAQ'],
+        'ServiceDetail.jsx' => ['PACKAGES', 'FAQ'],
+    ];
+
+    foreach ($pageSections as $page => $sections) {
+        $content = file_get_contents(resource_path("js/Pages/{$page}"));
+        expect($content)
+            ->toContain('marketingHeroBackground(isDark)')
+            ->toContain('component="section"');
+        foreach ($sections as $section) {
+            expect(strtoupper($content))->toContain($section);
+        }
+    }
+
+    foreach (['About.jsx', 'Contact.jsx', 'HowItWorks.jsx'] as $page) {
+        $content = file_get_contents(resource_path("js/Pages/{$page}"));
+        expect($content)
+            ->toContain('marketingHeroBackground(isDark)')
+            ->toContain('component="section"');
+    }
+});
