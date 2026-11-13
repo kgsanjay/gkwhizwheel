@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Link, router } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -10,8 +11,10 @@ import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import PageHead from '../../Components/SEO/PageHead';
 import AppLayout from '../../Layouts/AppLayout';
 import apiClient from '../../api/client';
+import MarketingPageHero, { marketingPanelSx } from '../../Components/Marketing/MarketingPageHero';
 
 export default function ModelShow({ model, stores = [], initialFilters = {} }) {
+    const isDark = useTheme().palette.mode === 'dark';
     const [pickupId, setPickupId] = useState(String(initialFilters.pickup_store_id || ''));
     const [returnId, setReturnId] = useState(String(initialFilters.return_store_id || initialFilters.pickup_store_id || ''));
     const [startDate, setStartDate] = useState(initialFilters.start_date || '');
@@ -94,10 +97,23 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                 <Button component={Link} href="/services/bikes" startIcon={<ArrowBackIcon />} sx={{ mb: 3 }}>
                     Back to bike rentals
                 </Button>
+                <MarketingPageHero
+                    compact
+                    eyebrow={model.category_name || 'Bike rental'}
+                    title={`${model.brand} ${model.name}`}
+                    description="Review actual vehicle specifications and select your rental dates. Availability and final pricing are confirmed by the booking service."
+                    icon={<TwoWheelerIcon />}
+                />
                 <Grid container spacing={4}>
                     <Grid size={{ xs: 12, md: 7 }}>
-                        <Card variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-                            <Box sx={{ bgcolor: 'action.hover', minHeight: 300, display: 'grid', placeItems: 'center' }}>
+                        <Card variant="outlined" sx={marketingPanelSx(isDark)}>
+                            <Box sx={{
+                                minHeight: { xs: 260, md: 360 },
+                                display: 'grid', placeItems: 'center',
+                                background: isDark
+                                    ? 'linear-gradient(140deg, #1E293B, #0F172A)'
+                                    : 'linear-gradient(140deg, #F1F5F9, #E0F2FE)',
+                            }}>
                                 {model.primary_image_url
                                     ? <Box component="img" alt={`${model.brand} ${model.name} rental bike`}
                                         src={model.primary_image_url} sx={{ width: '100%', maxHeight: 440, objectFit: 'contain' }} />
@@ -105,7 +121,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                             </Box>
                             <CardContent sx={{ p: 3 }}>
                                 <Typography variant="overline" color="text.secondary">{model.category_name || 'Two-wheeler'}</Typography>
-                                <Typography component="h1" variant="h3" fontWeight={850} sx={{ mb: 2 }}>
+                                <Typography component="h2" variant="h4" fontWeight={900} sx={{ mb: 2, letterSpacing: '-0.025em' }}>
                                     {model.brand} {model.name}
                                 </Typography>
                                 <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
@@ -124,9 +140,18 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                         </Card>
                     </Grid>
                     <Grid size={{ xs: 12, md: 5 }}>
-                        <Card variant="outlined" sx={{ borderRadius: 3, position: { md: 'sticky' }, top: { md: 95 } }}>
+                        <Card variant="outlined" sx={{ ...marketingPanelSx(isDark), position: { md: 'sticky' }, top: { md: 95 } }}>
                             <CardContent sx={{ p: 3 }}>
-                                <Typography variant="h5" fontWeight={800} sx={{ mb: 1 }}>Check availability</Typography>
+                                <Box sx={{
+                                    bgcolor: '#102033', color: '#FFFFFF', p: 2.5, mb: 3,
+                                    mx: -3, mt: -3,
+                                    borderBottom: '1px solid rgba(255,255,255,0.12)',
+                                }}>
+                                    <Typography variant="h5" fontWeight={900} sx={{ color: '#FFFFFF' }}>Check availability</Typography>
+                                    <Typography variant="body2" sx={{ color: '#CBD5E1', mt: 0.5 }}>
+                                        Live availability from the bike model API
+                                    </Typography>
+                                </Box>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                                     Choose where to collect and return your bike.
                                 </Typography>
