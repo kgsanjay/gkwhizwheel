@@ -3,6 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link } from '@inertiajs/react';
 import PageHead from '../Components/SEO/PageHead';
 import AppLayout from '../Layouts/AppLayout';
+import { marketingHeroBackground } from '../Components/Marketing/MarketingPageHero';
 import ScubaBookingModal from '../Components/BookingModals/ScubaBookingModal';
 import RelatedGuidesStrip from '../Components/Blog/RelatedGuidesStrip';
 import ServiceGalleryModal, { getServiceItemMedia } from '../Components/ServiceGalleryModal';
@@ -396,9 +397,7 @@ export default function ScubaPage({ availableItems = [] }) {
                         pt: { xs: 3, sm: 4, md: 5 },
                         pb: { xs: 6, md: 9 },
                         overflow: 'hidden',
-                        background: isDark
-                            ? 'radial-gradient(ellipse at top center, #0F172A 0%, #090D16 80%)'
-                            : 'linear-gradient(180deg, #F0F9FF 0%, #EEF2FF 50%, #F8FAFC 100%)',
+                        background: marketingHeroBackground(isDark),
                         borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                     }}
                 >
