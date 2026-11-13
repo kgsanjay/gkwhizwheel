@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Head, Link } from '@inertiajs/react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -12,6 +13,7 @@ import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import AppLayout from '../../Layouts/AppLayout';
 import CheckoutModal from '../../Components/Booking/CheckoutModal';
 import apiClient from '../../api/client';
+import MarketingPageHero, { marketingPanelSx } from '../../Components/Marketing/MarketingPageHero';
 
 /**
  * Dedicated bike checkout page. The hold, account resolution, quote review and
@@ -21,6 +23,7 @@ export default function BikeCheckout({
     bike, bikeModelId = null, pickupStore, returnStore,
     startDate, endDate, couponCode = '', selectedAddons = [], backUrl = '/services/bikes',
 }) {
+    const isDark = useTheme().palette.mode === 'dark';
     const isModel = Boolean(bikeModelId);
     const { data, isLoading, isError, error } = useQuery({
         queryKey: ['bike-full-page-quote', bike.id, startDate, endDate, pickupStore.id, returnStore.id, couponCode, selectedAddons],
@@ -41,7 +44,7 @@ export default function BikeCheckout({
     return (
         <AppLayout>
             <Head title={`Secure Bike Checkout | ${bike.brand} ${bike.model_name} | GK WhizWheel`} />
-            <Box sx={{ bgcolor: '#F8FAFC', minHeight: '85vh', pb: { xs: 5, md: 9 } }}>
+            <Box sx={{ bgcolor: 'background.default', minHeight: '85vh', pb: { xs: 5, md: 9 } }}>
                 <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 4 } }}>
                     <Breadcrumbs sx={{ mb: 2.5 }}>
                         <Link href="/services/bikes" style={{ color: '#475569', textDecoration: 'none' }}>Bike rentals</Link>
@@ -52,16 +55,17 @@ export default function BikeCheckout({
                         sx={{ mb: 2, textTransform: 'none', fontWeight: 700 }}>
                         Edit bike, branches or dates
                     </Button>
-                    <Typography variant="h4" component="h1" sx={{ fontWeight: 900, color: '#0F172A', mb: 1 }}>
-                        Complete your bike rental
-                    </Typography>
-                    <Typography sx={{ color: '#475569', mb: 3 }}>
-                        Review your trip, enter billing details and confirm the exact price before any payment begins.
-                    </Typography>
+                    <MarketingPageHero
+                        eyebrow="SECURE BIKE CHECKOUT"
+                        title="Complete your bike rental"
+                        description="Review your trip, enter billing details and confirm the exact price before any payment begins."
+                        icon={<SecurityIcon />}
+                        compact
+                    />
                     <Grid container spacing={3} alignItems="start">
                         <Grid size={{ xs: 12, md: 8 }}>
                             {isLoading && (
-                                <Paper variant="outlined" sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
+                                <Paper variant="outlined" sx={{ ...marketingPanelSx(isDark), p: 4, textAlign: 'center' }}>
                                     <CircularProgress size={28} sx={{ mb: 2 }} />
                                     <Typography>Checking availability and the latest rental price…</Typography>
                                 </Paper>
@@ -91,8 +95,12 @@ export default function BikeCheckout({
                             )}
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, position: { md: 'sticky' }, top: { md: 90 } }}>
-                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+                            <Paper variant="outlined" sx={{ ...marketingPanelSx(isDark), p: 3, position: { md: 'sticky' }, top: { md: 90 } }}>
+                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{
+                                    mb: 2.5, p: 2, borderRadius: 2.5,
+                                    background: isDark ? 'rgba(245,158,11,0.1)' : '#FFFBEB',
+                                    border: '1px solid rgba(245,158,11,0.25)',
+                                }}>
                                     <TwoWheelerIcon sx={{ color: '#D97706', fontSize: 34 }} />
                                     <Box>
                                         <Typography variant="subtitle1" fontWeight={900}>{bike.brand} {bike.model_name}</Typography>
@@ -101,7 +109,7 @@ export default function BikeCheckout({
                                 </Stack>
                                 <Typography variant="body2" sx={{ mb: 1 }}><strong>Pickup:</strong> {pickupStore.name} · {startDate}</Typography>
                                 <Typography variant="body2" sx={{ mb: 2 }}><strong>Return:</strong> {returnStore.name} · {endDate}</Typography>
-                                <Stack spacing={2} sx={{ borderTop: '1px solid #E2E8F0', pt: 2 }}>
+                                <Stack spacing={2} sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <CheckCircleIcon fontSize="small" color="success" />
                                         <Typography variant="body2">No refundable deposit for online bike reservations</Typography>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+import { marketingHeroBackground } from '../Components/Marketing/MarketingPageHero';
 import PageHead from '../Components/SEO/PageHead';
 import { useColorMode } from '../theme/ColorModeContext';
 import {
@@ -93,9 +94,7 @@ export default function About() {
                     position: 'relative',
                     py: { xs: 6, md: 8 },
                     px: { xs: 2, sm: 4, md: 6, lg: 8 },
-                    background: isDark
-                        ? 'radial-gradient(130% 120% at 90% 10%, #1E293B 0%, #0F172A 60%, #090E17 100%)'
-                        : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #EFF6FF 100%)',
+                    background: marketingHeroBackground(isDark),
                     borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                     boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 10px 30px -10px rgba(15, 23, 42, 0.05)',
                     overflow: 'hidden',

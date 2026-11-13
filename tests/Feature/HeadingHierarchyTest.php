@@ -48,7 +48,18 @@ class HeadingHierarchyTest extends TestCase
                 }
             }
 
-            $effectiveH1Count = $totalH1s + $extraH1s;
+            // The shared marketing hero renders exactly one semantic h1, even
+            // though its markup lives in a reusable component rather than the
+            // individual page source.
+            $sharedHeroCount = substr_count($content, '<MarketingPageHero');
+            if ($sharedHeroCount > 0) {
+                $sharedHero = file_get_contents(
+                    resource_path('js/Components/Marketing/MarketingPageHero.jsx')
+                );
+                $this->assertStringContainsString('component="h1"', $sharedHero);
+            }
+
+            $effectiveH1Count = $totalH1s + $extraH1s + $sharedHeroCount;
 
             $this->assertEquals(
                 1,

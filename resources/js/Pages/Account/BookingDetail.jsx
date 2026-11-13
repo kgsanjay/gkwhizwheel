@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
+import { marketingHeroBackground } from '../../Components/Marketing/MarketingPageHero';
 import apiClient from '../../api/client';
 import {
     Box,
@@ -222,7 +223,7 @@ export default function AccountBookingDetail({ booking }) {
                     sx={{
                         p: { xs: 2.5, sm: 3.5 },
                         mb: 4,
-                        bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                        background: marketingHeroBackground(isDark),
                         backdropFilter: 'blur(16px)',
                         border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                         borderRadius: 3,

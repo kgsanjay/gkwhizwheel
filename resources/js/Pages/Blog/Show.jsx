@@ -26,6 +26,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import AppLayout from '../../Layouts/AppLayout';
+import { marketingHeroBackground } from '../../Components/Marketing/MarketingPageHero';
 import PageHead from '../../Components/SEO/PageHead';
 import RelatedGuidesStrip from '../../Components/Blog/RelatedGuidesStrip';
 
@@ -78,9 +79,7 @@ export default function BlogShow({ article }) {
             {/* Article Hero */}
             <Box
                 sx={{
-                    background: isDark
-                        ? 'linear-gradient(135deg, #070B14 0%, #0F172A 60%, #111C33 100%)'
-                        : 'linear-gradient(135deg, #0B1120 0%, #162238 100%)',
+                    background: marketingHeroBackground(true),
                     color: '#FFFFFF',
                     pt: { xs: 5, md: 7 },
                     pb: { xs: 5, md: 7 },

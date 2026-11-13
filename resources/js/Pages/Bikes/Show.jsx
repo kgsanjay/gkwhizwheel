@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import PageHead from '../../Components/SEO/PageHead';
+import MarketingPageHero, { marketingPanelSx } from '../../Components/Marketing/MarketingPageHero';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
 import DirectionsIcon from '@mui/icons-material/Directions';
@@ -156,12 +157,19 @@ export default function BikeShow({ bike, stores = [] }) {
                     </Button>
                 </Box>
 
+            <MarketingPageHero
+                eyebrow={bike.category?.name || 'Bike rental'}
+                title={`${bike.brand} ${bike.model_name}`}
+                description="Check vehicle details, choose pickup and return dates, and review an exact rental quote before proceeding to payment."
+                icon={<TwoWheelerIcon />}
+                compact
+            />
             {/* Main Details Grid */}
             <Grid container spacing={4}>
                 {/* Left Column: Vehicle Overview, Specifications & Add-ons */}
                 <Grid size={{ xs: 12, md: 7 }}>
                     {/* Vehicle Hero Card */}
-                    <Card sx={{ mb: 4, overflow: 'hidden', bgcolor: isDark ? '#131D2F' : '#FFFFFF', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
+                    <Card sx={{ ...marketingPanelSx(isDark), mb: 4 }}>
                         <Box
                             sx={{
                                 height: { xs: 300, md: 440 },
@@ -228,7 +236,7 @@ export default function BikeShow({ bike, stores = [] }) {
                             <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
                                 {bike.category?.name || 'Two-Wheeler'} • {bike.transmission || 'Automatic'}
                             </Typography>
-                            <Typography variant="h3" component="h1" sx={{ fontWeight: 800, mt: 0.5, mb: 1, color: isDark ? '#FFFFFF' : '#0F172A' }}>
+                            <Typography variant="h4" component="h2" sx={{ fontWeight: 900, mt: 0.5, mb: 1, letterSpacing: '-0.025em', color: isDark ? '#FFFFFF' : '#0F172A' }}>
                                 {bike.brand} {bike.model_name}
                             </Typography>
 
@@ -293,7 +301,7 @@ export default function BikeShow({ bike, stores = [] }) {
                     />
 
                     {/* Rental Policies Card */}
-                    <Paper elevation={0} sx={{ p: 3, border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0', borderRadius: 3, bgcolor: isDark ? '#131D2F' : '#FFFFFF' }}>
+                    <Paper elevation={0} sx={{ ...marketingPanelSx(isDark), p: 3 }}>
                         <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <SecurityIcon color="primary" fontSize="small" />
                             Rental & Compliance Guarantees

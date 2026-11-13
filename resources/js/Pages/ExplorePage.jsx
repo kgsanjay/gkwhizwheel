@@ -20,6 +20,7 @@ import ExploreIcon from '@mui/icons-material/Explore';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import MarketingPageHero, { marketingPanelSx } from '../Components/Marketing/MarketingPageHero';
 
 export default function ExplorePage() {
     const theme = useTheme();
@@ -130,54 +131,13 @@ export default function ExplorePage() {
             </Head>
 
             <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, pt: { xs: 4, md: 6 }, pb: 10 }}>
-                {/* Hero Header */}
-                <Box sx={{ textAlign: 'center', mb: { xs: 5, md: 7 } }}>
-                    <Box
-                        sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 0.8,
-                            px: 2,
-                            py: 0.6,
-                            borderRadius: 9999,
-                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
-                            border: '1px solid rgba(245, 158, 11, 0.35)',
-                            color: isDark ? '#FBBF24' : '#B45309',
-                            fontWeight: 800,
-                            fontSize: '0.8rem',
-                            letterSpacing: '0.06em',
-                            textTransform: 'uppercase',
-                            mb: 2,
-                        }}
-                    >
-                        <ExploreIcon sx={{ fontSize: 17 }} />
-                        Coastal Karnataka Travel Guide
-                    </Box>
-                    <Typography
-                        variant="h2"
-                        component="h1"
-                        sx={{
-                            fontWeight: 950,
-                            color: isDark ? '#FFFFFF' : '#0F172A',
-                            letterSpacing: '-0.02em',
-                            fontSize: { xs: '2.2rem', sm: '2.8rem', md: '3.4rem' },
-                            mb: 2,
-                        }}
-                    >
-                        Explore Honnavar & Scenic Coastal Routes
-                    </Typography>
-                    <Typography
-                        variant="body1"
-                        sx={{
-                            color: isDark ? '#CBD5E1' : '#475569',
-                            maxWidth: 760,
-                            mx: 'auto',
-                            fontSize: { xs: '1rem', md: '1.12rem' },
-                            lineHeight: 1.7,
-                        }}
-                    >
-                        Honnavar is Karnataka’s pristine coastal haven. From cruising mangrove waterways and historic fort trails to breezy coastal highway rides towards Gokarna and Murudeshwar — discover the top places to visit with GK WhizWheels.
-                    </Typography>
+                {/* Original CTA actions and all destination sections remain intact. */}
+                <MarketingPageHero
+                    eyebrow="COASTAL KARNATAKA TRAVEL GUIDE"
+                    title="Explore Honnavar & Scenic Coastal Routes"
+                    description="Discover mangrove backwaters, historic fort trails, coastal beaches and scenic routes to Gokarna and Murudeshwar. Choose the experience and transport that suit your trip."
+                    icon={<ExploreIcon />}
+                    actions={
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center" sx={{ mt: 3.5 }}>
                         <Button
                             variant="contained"
@@ -213,7 +173,8 @@ export default function ExplorePage() {
                             Book Coastal Cabs
                         </Button>
                     </Stack>
-                </Box>
+                    }
+                />
 
                 {/* Destinations Grid */}
                 <Grid container spacing={3.5} sx={{ mb: 10 }}>
@@ -224,12 +185,7 @@ export default function ExplorePage() {
                                     height: '100%',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    borderRadius: 4,
-                                    bgcolor: isDark ? 'rgba(26, 34, 53, 0.85)' : '#FFFFFF',
-                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                                    boxShadow: isDark
-                                        ? '0 10px 30px -10px rgba(0, 0, 0, 0.5)'
-                                        : '0 8px 24px -6px rgba(15, 23, 42, 0.06)',
+                                    ...marketingPanelSx(isDark),
                                     overflow: 'hidden',
                                     transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                                     '&:hover': {

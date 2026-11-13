@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { useColorMode } from '../../theme/ColorModeContext';
+import { marketingHeroBackground, marketingPanelSx } from '../../Components/Marketing/MarketingPageHero';
 import {
     Box,
     Card,
@@ -97,10 +98,7 @@ export default function AdminLogin({ status = null }) {
                 justifyContent: 'center',
                 py: { xs: 3, sm: 5 },
                 px: { xs: 2, sm: 3 },
-                bgcolor: isDark ? '#070D19' : '#F8FAFC',
-                backgroundImage: isDark
-                    ? 'radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.16) 0%, rgba(11, 19, 43, 0.95) 55%, #070D19 100%)'
-                    : 'radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.09) 0%, #FFFFFF 65%, #F1F5F9 100%)',
+                background: marketingHeroBackground(isDark),
                 color: isDark ? '#F8FAFC' : '#0F172A',
                 position: 'relative',
             }}
@@ -170,14 +168,8 @@ export default function AdminLogin({ status = null }) {
                 sx={{
                     width: '100%',
                     maxWidth: { xs: '100%', sm: 480 },
-                    borderRadius: { xs: 3, sm: 4 },
-                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.88)' : '#FFFFFF',
+                    ...marketingPanelSx(isDark),
                     backdropFilter: 'blur(20px)',
-                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
-                    boxShadow: isDark
-                        ? '0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(245, 158, 11, 0.2)'
-                        : '0 20px 45px -10px rgba(15, 23, 42, 0.12)',
-                    overflow: 'hidden',
                 }}
             >
                 <CardContent sx={{ p: { xs: 3, sm: 4 } }}>

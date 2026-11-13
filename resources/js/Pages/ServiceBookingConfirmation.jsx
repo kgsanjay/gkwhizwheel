@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+import { marketingHeroBackground, marketingPanelSx } from '../Components/Marketing/MarketingPageHero';
 import {
     Box,
     Typography,
@@ -33,6 +35,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 
 export default function ServiceBookingConfirmation({ booking = {}, coordinator = {}, razorpayKey = '' }) {
+    const isDark = useTheme().palette.mode === 'dark';
     const [currentBooking, setCurrentBooking] = React.useState(booking);
     const [gateway, setGateway] = React.useState('phonepe');
     const [paying, setPaying] = React.useState(false);
@@ -158,7 +161,11 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
 
             <Box sx={{ py: { xs: 5, md: 8 }, px: { xs: 2, sm: 4 }, maxWidth: 850, mx: 'auto' }}>
                 {/* Success Banner */}
-                <Box sx={{ textAlign: 'center', mb: 4 }}>
+                <Box sx={{
+                    ...marketingPanelSx(isDark),
+                    background: marketingHeroBackground(isDark),
+                    textAlign: 'center', mb: 4, p: { xs: 3, md: 4 },
+                }}>
                     <Box
                         sx={{
                             width: 72,
@@ -323,7 +330,7 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                 </Box>
 
                 {/* Main Confirmation Card */}
-                <Card sx={{ borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.08)', overflow: 'hidden', mb: 4 }}>
+                <Card sx={{ ...marketingPanelSx(isDark), mb: 4 }}>
                     {/* Header Strip */}
                     <Box sx={{ bgcolor: '#070D19', color: '#FFFFFF', p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                         <Box>
@@ -445,7 +452,7 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
 
                         {/* Online Instant Payment Card (When balance is due) */}
                         {!isFullyPaid && isPayable && (
-                            <Paper sx={{ mt: 4, p: 3, borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
+                            <Paper sx={{ ...marketingPanelSx(isDark), mt: 4, p: 3 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                         <Box sx={{ p: 1, borderRadius: 2, bgcolor: '#0F172A', color: '#F59E0B' }}>
@@ -482,7 +489,7 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                                             cursor: 'pointer',
                                             borderRadius: 2,
                                             border: gateway === 'phonepe' ? '2px solid #6739B7' : '1px solid #E2E8F0',
-                                            bgcolor: gateway === 'phonepe' ? 'rgba(103, 57, 183, 0.05)' : '#FFFFFF',
+                                            bgcolor: gateway === 'phonepe' ? 'rgba(103, 57, 183, 0.12)' : 'background.paper',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: 1.5,
@@ -490,7 +497,7 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                                     >
                                         <AccountBalanceWalletIcon sx={{ color: '#6739B7' }} />
                                         <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary' }}>
                                                 PhonePe Payment
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
@@ -508,7 +515,7 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                                             cursor: 'pointer',
                                             borderRadius: 2,
                                             border: gateway === 'razorpay' ? '2px solid #0284C7' : '1px solid #E2E8F0',
-                                            bgcolor: gateway === 'razorpay' ? 'rgba(2, 132, 199, 0.05)' : '#FFFFFF',
+                                            bgcolor: gateway === 'razorpay' ? 'rgba(2, 132, 199, 0.12)' : 'background.paper',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: 1.5,

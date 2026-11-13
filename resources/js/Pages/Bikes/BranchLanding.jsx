@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTheme } from '@mui/material/styles';
 import { Link } from '@inertiajs/react';
 import {
     Box, Grid, Stack, Card, CardContent, Typography, Button, Chip, Divider,
@@ -10,8 +11,10 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import AppLayout from '../../Layouts/AppLayout';
 import PageHead from '../../Components/SEO/PageHead';
+import { marketingHeroBackground, marketingPanelSx } from '../../Components/Marketing/MarketingPageHero';
 
 export default function BranchLanding({ branch, models = [], unlinked_count = 0, otherBranches = [] }) {
+    const isDark = useTheme().palette.mode === 'dark';
     const place = branch.city || branch.name;
     const canonical = `https://whizwheels.in${branch.canonical_path}`;
     const title = `Bike & Scooter Rentals in ${place} | GK WhizWheel`;
@@ -22,7 +25,7 @@ export default function BranchLanding({ branch, models = [], unlinked_count = 0,
         <AppLayout>
             <PageHead
                 title={title} description={description} canonicalUrl={canonical}
-                ogImage="/images/services/two_wheelers.jpg"
+                ogImage={models.find((model) => model.image_url)?.image_url || undefined}
                 structuredData={[
                     {
                         '@context': 'https://schema.org',
@@ -49,7 +52,12 @@ export default function BranchLanding({ branch, models = [], unlinked_count = 0,
                     <Link href="/services/bikes" style={{ color: 'inherit', textDecoration: 'none' }}>Bike Rentals</Link>
                     <Typography color="text.primary">{place}</Typography>
                 </Breadcrumbs>
-                <Grid container spacing={{ xs: 3, md: 5 }} alignItems="center" sx={{ mb: { xs: 5, md: 7 } }}>
+                <Grid container spacing={{ xs: 3, md: 5 }} alignItems="center" sx={{
+                    ...marketingPanelSx(isDark),
+                    background: marketingHeroBackground(isDark),
+                    p: { xs: 3, md: 4.5 },
+                    mb: { xs: 5, md: 7 },
+                }}>
                     <Grid size={{ xs: 12, md: 7 }}>
                         <Chip icon={<LocationOnIcon />} label={`${place}, ${branch.state || 'Karnataka'}`} sx={{ mb: 2 }} />
                         <Typography component="h1" variant="h2" fontWeight={850}
@@ -71,7 +79,7 @@ export default function BranchLanding({ branch, models = [], unlinked_count = 0,
                         </Stack>
                     </Grid>
                     <Grid size={{ xs: 12, md: 5 }}>
-                        <Card variant="outlined" sx={{ borderRadius: 3 }}>
+                        <Card variant="outlined" sx={marketingPanelSx(isDark)}>
                             <CardContent sx={{ p: 3 }}>
                                 <Typography variant="overline" color="text.secondary">Branch details</Typography>
                                 <Typography variant="h5" fontWeight={800} sx={{ mb: 2 }}>{branch.name}</Typography>
@@ -137,8 +145,18 @@ export default function BranchLanding({ branch, models = [], unlinked_count = 0,
                     <Grid container spacing={2.5}>
                         {models.map((model) => (
                             <Grid key={model.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-                                <Card variant="outlined" sx={{ height: '100%', borderRadius: 3, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                                    <Box sx={{ height: 200, bgcolor: 'action.hover', display: 'grid', placeItems: 'center' }}>
+                                <Card variant="outlined" sx={{
+                                ...marketingPanelSx(isDark),
+                                height: '100%', display: 'flex', flexDirection: 'column',
+                                transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                                '&:hover': { transform: 'translateY(-4px)' },
+                            }}>
+                                    <Box sx={{
+                                    height: 200, display: 'grid', placeItems: 'center',
+                                    background: isDark
+                                        ? 'linear-gradient(130deg, #1E293B, #0F172A)'
+                                        : 'linear-gradient(130deg, #F1F5F9, #E0F2FE)',
+                                }}>
                                         {model.image_url
                                             ? <Box component="img" src={model.image_url}
                                                 alt={`${model.brand} ${model.name}`} loading="lazy"

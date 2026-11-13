@@ -107,7 +107,7 @@ export const getTheme = (mode = 'dark') => {
             },
         },
         shape: {
-            borderRadius: 10,
+            borderRadius: 12,
         },
         components: {
             MuiButton: {
@@ -116,8 +116,8 @@ export const getTheme = (mode = 'dark') => {
                 },
                 styleOverrides: {
                     root: {
-                        borderRadius: 8,
-                        padding: '8px 20px',
+                        borderRadius: 12,
+                        padding: '9px 20px',
                         fontWeight: 600,
                         transition: 'all 0.15s ease-in-out',
                         '&:focus-visible': {
@@ -144,7 +144,7 @@ export const getTheme = (mode = 'dark') => {
             MuiCard: {
                 styleOverrides: {
                     root: {
-                        borderRadius: 12,
+                        borderRadius: 16,
                         backgroundColor: isDark ? '#131D2F' : '#FFFFFF',
                         boxShadow: isDark
                             ? '0 4px 20px -2px rgba(0, 0, 0, 0.4)'
@@ -156,7 +156,7 @@ export const getTheme = (mode = 'dark') => {
             MuiPaper: {
                 styleOverrides: {
                     rounded: {
-                        borderRadius: 12,
+                        borderRadius: 16,
                     },
                 },
             },
@@ -170,7 +170,7 @@ export const getTheme = (mode = 'dark') => {
             MuiOutlinedInput: {
                 styleOverrides: {
                     root: {
-                        borderRadius: 8,
+                        borderRadius: 12,
                         '& input[type="date"], & input[type="time"], & input[type="datetime-local"]': {
                             colorScheme: isDark ? 'dark' : 'light',
                         },
