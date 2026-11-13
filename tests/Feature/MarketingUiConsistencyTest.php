@@ -107,3 +107,32 @@ test('service booking confirmation keeps its payment and voucher state while usi
         ->toContain('setGateway')
         ->toContain('Download Trip Voucher (PDF)');
 });
+
+
+test('branch and login screens retain their actions and share consistent visual tokens', function (): void {
+    $branch = file_get_contents(resource_path('js/Pages/Bikes/BranchLanding.jsx'));
+    $customerLogin = file_get_contents(resource_path('js/Pages/Auth/Login.jsx'));
+    $staffLogin = file_get_contents(resource_path('js/Pages/Admin/Login.jsx'));
+    $adminLayout = file_get_contents(resource_path('js/Layouts/AdminLayout.jsx'));
+
+    expect($branch)->toContain('marketingHeroBackground(isDark)')
+        ->toContain('marketingPanelSx(isDark)')
+        ->toContain('models.map(')
+        ->toContain('branch.pickup_points')
+        ->toContain('ogImage={models.find(')
+        ->not->toContain('ogImage="/images/services/two_wheelers.jpg"');
+
+    expect($customerLogin)->toContain('marketingHeroBackground(isDark)')
+        ->toContain('marketingPanelSx(isDark)')
+        ->toContain('loginForm.post')
+        ->toContain('registerForm.post');
+
+    expect($staffLogin)->toContain('marketingHeroBackground(isDark)')
+        ->toContain('marketingPanelSx(isDark)')
+        ->toContain("post('/admin/login')");
+
+    expect($adminLayout)->toContain('linear-gradient(120deg')
+        ->toContain('radial-gradient(circle at 95% 0%')
+        ->toContain('{children}')
+        ->toContain('sidebar_counts');
+});
