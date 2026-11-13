@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
+import { marketingHeroBackground, marketingPanelSx } from '../../Components/Marketing/MarketingPageHero';
 import { useColorMode } from '../../theme/ColorModeContext';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import {
@@ -82,10 +83,8 @@ export default function BookingConfirmation({ booking }) {
                 sx={{
                     p: { xs: 3, md: 4 },
                     mb: 4,
-                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
-                    backdropFilter: 'blur(16px)',
-                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
-                    borderRadius: 4,
+                    ...marketingPanelSx(isDark),
+                    background: marketingHeroBackground(isDark),
                     textAlign: 'center',
                 }}
             >
