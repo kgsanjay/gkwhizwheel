@@ -65,3 +65,33 @@ test('existing service page hero styles share Home colors without dropping uniqu
             ->toContain('component="section"');
     }
 });
+
+
+test('customer account, blog and policy headers share approved visual tokens', function (): void {
+    foreach ([
+        'Account/Bookings.jsx',
+        'Account/BookingDetail.jsx',
+        'Account/Kyc.jsx',
+        'Bookings/Confirmation.jsx',
+        'Blog/Index.jsx',
+        'Blog/Show.jsx',
+        'Privacy.jsx',
+        'Terms.jsx',
+    ] as $page) {
+        $content = file_get_contents(resource_path("js/Pages/{$page}"));
+        expect($content)->toContain('marketingHeroBackground(');
+    }
+
+    $bookings = file_get_contents(resource_path('js/Pages/Account/Bookings.jsx'));
+    $confirmation = file_get_contents(resource_path('js/Pages/Bookings/Confirmation.jsx'));
+    $kyc = file_get_contents(resource_path('js/Pages/Account/Kyc.jsx'));
+
+    expect($bookings)->toContain('getStatusBadge')
+        ->toContain('filteredBookings');
+
+    expect($confirmation)->toContain('isConfirmed')
+        ->toContain('isAwaitingPayment')
+        ->toContain('Booking Confirmed!');
+
+    expect($kyc)->toContain('KYC & Identity Verification');
+});
