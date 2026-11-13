@@ -8,6 +8,10 @@ import { useTheme } from '@mui/material/styles';
  * Content and actions are supplied by each page: this does not replace or
  * rearrange any service-specific section or booking flow.
  */
+export const marketingHeroBackground = (dark) => dark
+    ? 'radial-gradient(125% 115% at 88% 12%, #132238 0%, #09101D 58%, #050912 100%)'
+    : 'linear-gradient(120deg, #F8FAFC 0%, #EFF6FF 68%, #FFF7ED 100%)';
+
 export default function MarketingPageHero({
     eyebrow,
     title,
@@ -32,9 +36,7 @@ export default function MarketingPageHero({
                 px: { xs: 2.5, sm: 4, md: 5 },
                 py: compact ? { xs: 3, md: 4 } : { xs: 4, md: 6 },
                 mb: { xs: 3, md: 4 },
-                background: dark
-                    ? 'radial-gradient(circle at 85% 15%, #26374D 0%, #0F1B2E 46%, #0B1120 100%)'
-                    : 'linear-gradient(120deg, #F8FAFC 0%, #EFF6FF 68%, #FFF7ED 100%)',
+                background: marketingHeroBackground(dark),
                 border: dark
                     ? '1px solid rgba(255,255,255,0.12)'
                     : '1px solid #E2E8F0',
