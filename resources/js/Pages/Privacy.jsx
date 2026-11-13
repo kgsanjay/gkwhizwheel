@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
+import { marketingHeroBackground } from '../Components/Marketing/MarketingPageHero';
 import { useColorMode } from '../theme/ColorModeContext';
 import {
     Box,
@@ -158,7 +159,7 @@ export default function Privacy() {
             {/* Hero Header */}
             <Box
                 sx={{
-                    bgcolor: isDark ? '#0B1120' : '#0F172A',
+                    background: marketingHeroBackground(true),
                     color: '#FFFFFF',
                     pt: { xs: 5, md: 8 },
                     pb: { xs: 6, md: 9 },
