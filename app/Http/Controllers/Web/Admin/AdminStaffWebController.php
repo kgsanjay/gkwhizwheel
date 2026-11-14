@@ -26,8 +26,15 @@ class AdminStaffWebController extends Controller
      */
     public function index(Request $request): Response
     {
+        $staffRoles = [
+            UserRole::ADMIN,
+            UserRole::STORE_MANAGER,
+            UserRole::MANAGER,
+            UserRole::STAFF,
+        ];
+
         $query = User::query()
-            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
+            ->whereIn('role', $staffRoles)
             ->with('stores');
 
         if ($search = $request->query('search')) {
@@ -51,11 +58,11 @@ class AdminStaffWebController extends Controller
 
         $staffMembers = $query->orderBy('name')->get();
 
-        $allStaff = User::whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER]);
+        $allStaff = User::whereIn('role', $staffRoles);
         $stats = [
             'total' => (clone $allStaff)->count(),
-            'managers' => (clone $allStaff)->where('role', UserRole::STORE_MANAGER)->count(),
-            'staff' => (clone $allStaff)->where('role', UserRole::STAFF)->count(),
+            'managers' => (clone $allStaff)->whereIn('role', [UserRole::ADMIN, UserRole::STORE_MANAGER])->count(),
+            'staff' => (clone $allStaff)->whereIn('role', [UserRole::MANAGER, UserRole::STAFF])->count(),
             'active' => (clone $allStaff)->where('status', UserStatus::ACTIVE)->count(),
         ];
 
@@ -94,8 +101,8 @@ class AdminStaffWebController extends Controller
                 'store_id' => $request->query('store_id', ''),
             ],
             'roles' => [
-                ['value' => UserRole::STORE_MANAGER->value, 'label' => 'Store Manager'],
-                ['value' => UserRole::STAFF->value, 'label' => 'Store Staff / Associate'],
+                ['value' => UserRole::STORE_MANAGER->value, 'label' => 'Admin / Store Manager'],
+                ['value' => UserRole::STAFF->value, 'label' => 'Manager / Ground Staff'],
             ],
         ]);
     }

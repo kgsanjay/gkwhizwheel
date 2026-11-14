@@ -112,7 +112,7 @@ export default function BikeCheckout({
                                     </Stack>
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <SecurityIcon fontSize="small" color="primary" />
-                                        <Typography variant="body2">Secure payment via PhonePe or Razorpay</Typography>
+                                        <Typography variant="body2">Secure payment via PhonePe UPI & Cards</Typography>
                                     </Stack>
                                 </Stack>
                                 <Alert severity="info" sx={{ mt: 2 }}>

@@ -15,7 +15,7 @@ class BikePolicy
      */
     public function manage(User $user): bool
     {
-        if (in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER], true)) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             return true;
         }
 
@@ -33,11 +33,11 @@ class BikePolicy
 
     public function view(User $user, Bike $bike): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+        if ($user->isAdmin() || $user->isManager()) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             // Physical branch ownership governs bike-level access. The nominal
@@ -53,13 +53,16 @@ class BikePolicy
         return $this->manage($user);
     }
 
-    public function update(User $user, Bike $bike): bool
+    public function update(User $user, ?Bike $bike = null): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->role === UserRole::STORE_MANAGER) {
+        if ($user->isAdmin()) {
+            if ($bike === null) {
+                return true;
+            }
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             // Physical branch ownership governs bike-level access. The nominal
@@ -70,13 +73,16 @@ class BikePolicy
         return false;
     }
 
-    public function delete(User $user, Bike $bike): bool
+    public function delete(User $user, ?Bike $bike = null): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->role === UserRole::STORE_MANAGER) {
+        if ($user->isAdmin()) {
+            if ($bike === null) {
+                return true;
+            }
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             // Physical branch ownership governs bike-level access. The nominal
@@ -89,11 +95,11 @@ class BikePolicy
 
     public function uploadDocuments(User $user, Bike $bike): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->role === UserRole::STORE_MANAGER) {
+        if ($user->isAdmin()) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             // Physical branch ownership governs bike-level access. The nominal

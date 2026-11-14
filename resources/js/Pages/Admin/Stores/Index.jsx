@@ -60,6 +60,27 @@ export default function StoresIndex({
         router.post(`/admin/stores/${store.id}/toggle`, {}, { preserveScroll: true });
     };
 
+    const ALL_SERVICES = [
+        { slug: 'two_wheelers', label: 'Bike Rental', icon: '🏍️' },
+        { slug: 'taxi', label: 'Cab', icon: '🚕' },
+        { slug: 'homestay', label: 'Homestay', icon: '🏡' },
+        { slug: 'rooms', label: 'Rooms', icon: '🛏️' },
+        { slug: 'boating', label: 'Backwater Boating', icon: '🚤' },
+        { slug: 'scuba', label: 'Scuba', icon: '🤿' },
+        { slug: 'guide', label: 'Guide', icon: '🧭' },
+    ];
+
+    const handleToggleService = (store, serviceSlug) => {
+        const currentServices = store.services || [];
+        const nextServices = currentServices.includes(serviceSlug)
+            ? currentServices.filter((s) => s !== serviceSlug)
+            : [...currentServices, serviceSlug];
+
+        router.post(`/admin/stores/${store.id}/services`, {
+            services: nextServices,
+        }, { preserveScroll: true });
+    };
+
     return (
         <AdminLayout title="Store Hubs & Locations">
             <Head title="Store Hubs - Admin" />
@@ -135,6 +156,61 @@ export default function StoresIndex({
                     </Paper>
                 </Grid>
             </Grid>
+
+            {/* Branch-Service Matrix Toggle Board */}
+            <Paper sx={{ p: 2.5, mb: 4, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                        Branch-Service Matrix Toggle Board
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Control which services are active and discoverable by customers for each branch location.
+                    </Typography>
+                </Box>
+
+                <TableContainer sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <Table size="small">
+                        <TableHead sx={{ bgcolor: 'action.hover' }}>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 800, minWidth: 160 }}>Branch Hub</TableCell>
+                                {ALL_SERVICES.map((srv) => (
+                                    <TableCell key={srv.slug} align="center" sx={{ fontWeight: 800, minWidth: 100 }}>
+                                        {srv.icon} {srv.label}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {stores.map((store) => {
+                                const storeServices = store.services || [];
+                                return (
+                                    <TableRow key={`matrix-${store.id}`} hover>
+                                        <TableCell>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                {store.name}
+                                            </Typography>
+                                            <Chip label={store.city} size="small" sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700 }} />
+                                        </TableCell>
+                                        {ALL_SERVICES.map((srv) => {
+                                            const isEnabled = storeServices.includes(srv.slug);
+                                            return (
+                                                <TableCell key={`${store.id}-${srv.slug}`} align="center">
+                                                    <Switch
+                                                        size="small"
+                                                        checked={isEnabled}
+                                                        onChange={() => handleToggleService(store, srv.slug)}
+                                                        color="warning"
+                                                    />
+                                                </TableCell>
+                                            );
+                                        })}
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
 
             {/* Filters Bar */}
             <Paper component="form" onSubmit={handleSearchSubmit} sx={{ p: 2.5, borderRadius: 3, mb: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>

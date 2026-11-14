@@ -32,6 +32,7 @@ import {
     Alert,
     CircularProgress,
     Tooltip,
+    Checkbox,
 } from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -45,6 +46,8 @@ import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import DownloadIcon from '@mui/icons-material/Download';
 import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -72,6 +75,93 @@ export default function BikesIndex({
     // Delete confirmation state
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [bikeToDelete, setBikeToDelete] = useState(null);
+
+    // Multi-select & Bulk Pricing state
+    const [selectedBikeIds, setSelectedBikeIds] = useState([]);
+    const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
+    const [bulkType, setBulkType] = useState('flat'); // 'flat', 'amount_hike', 'percent_hike'
+    const [bulkApplyTo, setBulkApplyTo] = useState('both'); // 'both', 'weekday_only', 'weekend_only'
+    const [bulkWeekdayAmount, setBulkWeekdayAmount] = useState('');
+    const [bulkWeekendAmount, setBulkWeekendAmount] = useState('');
+    const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+
+    // Inline quick edit state
+    const [inlineEditing, setInlineEditing] = useState(null); // { bikeId, field: 'weekday' | 'weekend', value }
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedBikeIds(bikes.map((b) => b.id));
+        } else {
+            setSelectedBikeIds([]);
+        }
+    };
+
+    const handleToggleSelectBike = (bikeId) => {
+        setSelectedBikeIds((prev) =>
+            prev.includes(bikeId) ? prev.filter((id) => id !== bikeId) : [...prev, bikeId]
+        );
+    };
+
+    const handleOpenBulkPricing = () => {
+        if (selectedBikeIds.length === 0) {
+            setSelectedBikeIds(bikes.map((b) => b.id));
+        }
+        setBulkPricingOpen(true);
+    };
+
+    const handleBulkPricingSubmit = (e) => {
+        e.preventDefault();
+        setIsBulkSubmitting(true);
+        router.post('/admin/bikes/bulk-pricing', {
+            bike_ids: selectedBikeIds,
+            type: bulkType,
+            apply_to: bulkApplyTo,
+            weekday_amount: bulkWeekdayAmount ? Number(bulkWeekdayAmount) : 0,
+            weekend_amount: bulkWeekendAmount ? Number(bulkWeekendAmount) : 0,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setBulkPricingOpen(false);
+                setIsBulkSubmitting(false);
+                setSelectedBikeIds([]);
+            },
+            onError: () => {
+                setIsBulkSubmitting(false);
+            },
+        });
+    };
+
+    const handleSaveQuickPrice = async (bikeId, field, value) => {
+        try {
+            const payload = {};
+            if (field === 'weekday') {
+                payload.weekday_rate = Number(value);
+            } else {
+                payload.weekend_rate = Number(value);
+            }
+            const res = await fetch(`/admin/bikes/${bikeId}/quick-price`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (data.success) {
+                const bike = bikes.find((b) => b.id === bikeId);
+                if (bike) {
+                    if (field === 'weekday') bike.base_daily_rate = data.bike.base_daily_rate;
+                    if (field === 'weekend') bike.weekend_rate = data.bike.weekend_rate;
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setInlineEditing(null);
+        }
+    };
 
     const applyFilters = (newFilters = {}) => {
         const query = {
@@ -210,7 +300,27 @@ export default function BikesIndex({
                     </Typography>
                 </Box>
 
-                <Stack direction="row" spacing={1.5} alignItems="center">
+                <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
+                    <Button
+                        variant={selectedBikeIds.length > 0 ? 'contained' : 'outlined'}
+                        color="warning"
+                        startIcon={<TrendingUpIcon />}
+                        onClick={handleOpenBulkPricing}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            borderRadius: 2,
+                            ...(selectedBikeIds.length > 0 ? {
+                                bgcolor: '#F59E0B',
+                                color: '#0F172A',
+                                '&:hover': { bgcolor: '#D97706' },
+                            } : {}),
+                        }}
+                    >
+                        {selectedBikeIds.length > 0
+                            ? `Bulk Price Update (${selectedBikeIds.length})`
+                            : 'Bulk Pricing Manager'}
+                    </Button>
                     <Button
                         variant="outlined"
                         color="primary"
@@ -427,13 +537,23 @@ export default function BikesIndex({
                 /* Table View */
                 <Paper sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                     <TableContainer sx={{ overflowX: 'auto' }}>
-                        <Table sx={{ minWidth: 860 }} size="medium">
+                        <Table sx={{ minWidth: 980 }} size="medium">
                             <TableHead sx={{ bgcolor: 'background.default' }}>
                                 <TableRow>
+                                    <TableCell padding="checkbox">
+                                        <Checkbox
+                                            indeterminate={selectedBikeIds.length > 0 && selectedBikeIds.length < bikes.length}
+                                            checked={bikes.length > 0 && selectedBikeIds.length === bikes.length}
+                                            onChange={handleSelectAll}
+                                            size="small"
+                                        />
+                                    </TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>VEHICLE</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>REGISTRATION</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>CURRENT HUB</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>SPECS & RATES</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>WEEKDAY RATE</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>WEEKEND RATE</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>SPECS & DEPOSIT</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>DOCUMENTS</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>STATUS</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.78rem' }}>ACTIONS</TableCell>
@@ -442,7 +562,14 @@ export default function BikesIndex({
                             <TableBody>
                                 {bikes.length > 0 ? (
                                     bikes.map((bike) => (
-                                        <TableRow key={bike.id} hover>
+                                        <TableRow key={bike.id} hover selected={selectedBikeIds.includes(bike.id)}>
+                                            <TableCell padding="checkbox">
+                                                <Checkbox
+                                                    checked={selectedBikeIds.includes(bike.id)}
+                                                    onChange={() => handleToggleSelectBike(bike.id)}
+                                                    size="small"
+                                                />
+                                            </TableCell>
                                             <TableCell>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                     {bike.primary_image_url ? (
@@ -479,7 +606,7 @@ export default function BikesIndex({
                                                     {bike.current_store?.name || 'Unassigned'}
                                                 </Typography>
                                                 {bike.is_drifted && (
-                                                    <Chip
+                                                     <Chip
                                                         icon={<WarningAmberIcon sx={{ fontSize: '0.9rem !important' }} />}
                                                         label={`Home: ${bike.home_store?.name || 'Home Hub'}`}
                                                         color="warning"
@@ -488,12 +615,110 @@ export default function BikesIndex({
                                                     />
                                                 )}
                                             </TableCell>
+                                            {/* WEEKDAY RATE CELL (QUICK INLINE EDIT) */}
                                             <TableCell>
-                                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                    ₹{bike.base_daily_rate} / day
+                                                {inlineEditing?.bikeId === bike.id && inlineEditing?.field === 'weekday' ? (
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                        <TextField
+                                                            size="small"
+                                                            type="number"
+                                                            autoFocus
+                                                            value={inlineEditing.value}
+                                                            onChange={(e) => setInlineEditing({ ...inlineEditing, value: e.target.value })}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    handleSaveQuickPrice(bike.id, 'weekday', inlineEditing.value);
+                                                                } else if (e.key === 'Escape') {
+                                                                    setInlineEditing(null);
+                                                                }
+                                                            }}
+                                                            sx={{ width: 85 }}
+                                                            inputProps={{ style: { padding: '4px 8px', fontSize: '0.85rem' } }}
+                                                        />
+                                                        <IconButton
+                                                            size="small"
+                                                            color="primary"
+                                                            onClick={() => handleSaveQuickPrice(bike.id, 'weekday', inlineEditing.value)}
+                                                        >
+                                                            <CheckIcon fontSize="small" />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => setInlineEditing(null)}
+                                                        >
+                                                            <CloseIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Box>
+                                                ) : (
+                                                    <Box
+                                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.75, cursor: 'pointer', '&:hover .edit-rate-icon': { opacity: 1 } }}
+                                                        onClick={() => setInlineEditing({ bikeId: bike.id, field: 'weekday', value: bike.base_daily_rate })}
+                                                    >
+                                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                            ₹{bike.base_daily_rate}
+                                                        </Typography>
+                                                        <EditIcon className="edit-rate-icon" sx={{ fontSize: '0.85rem', color: 'text.secondary', opacity: 0.25, transition: 'opacity 0.2s' }} />
+                                                    </Box>
+                                                )}
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem' }}>
+                                                    / day
+                                                </Typography>
+                                            </TableCell>
+                                            {/* WEEKEND RATE CELL (QUICK INLINE EDIT) */}
+                                            <TableCell>
+                                                {inlineEditing?.bikeId === bike.id && inlineEditing?.field === 'weekend' ? (
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                        <TextField
+                                                            size="small"
+                                                            type="number"
+                                                            autoFocus
+                                                            value={inlineEditing.value}
+                                                            onChange={(e) => setInlineEditing({ ...inlineEditing, value: e.target.value })}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') {
+                                                                    handleSaveQuickPrice(bike.id, 'weekend', inlineEditing.value);
+                                                                } else if (e.key === 'Escape') {
+                                                                    setInlineEditing(null);
+                                                                }
+                                                            }}
+                                                            sx={{ width: 85 }}
+                                                            inputProps={{ style: { padding: '4px 8px', fontSize: '0.85rem' } }}
+                                                        />
+                                                        <IconButton
+                                                            size="small"
+                                                            color="primary"
+                                                            onClick={() => handleSaveQuickPrice(bike.id, 'weekend', inlineEditing.value)}
+                                                        >
+                                                            <CheckIcon fontSize="small" />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => setInlineEditing(null)}
+                                                        >
+                                                            <CloseIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Box>
+                                                ) : (
+                                                    <Box
+                                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.75, cursor: 'pointer', '&:hover .edit-rate-icon': { opacity: 1 } }}
+                                                        onClick={() => setInlineEditing({ bikeId: bike.id, field: 'weekend', value: bike.weekend_rate || bike.base_daily_rate })}
+                                                    >
+                                                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>
+                                                            ₹{bike.weekend_rate || bike.base_daily_rate}
+                                                        </Typography>
+                                                        <EditIcon className="edit-rate-icon" sx={{ fontSize: '0.85rem', color: 'text.secondary', opacity: 0.25, transition: 'opacity 0.2s' }} />
+                                                    </Box>
+                                                )}
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem' }}>
+                                                    / day (Sat-Sun)
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                    Deposit: ₹{bike.deposit_amount}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                                                    Deposit: ₹{bike.deposit_amount} • {bike.odometer_reading} km
+                                                    {bike.odometer_reading} km
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
@@ -528,7 +753,7 @@ export default function BikesIndex({
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                                        <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
                                             <Typography variant="body1" sx={{ color: 'text.secondary' }}>
                                                 No bikes found matching your criteria.
                                             </Typography>
@@ -743,6 +968,154 @@ export default function BikesIndex({
                         {isImporting ? 'Processing Import...' : 'Import Bikes'}
                     </Button>
                 </DialogActions>
+            </Dialog>
+
+            {/* Bulk Pricing Manager Modal */}
+            <Dialog
+                open={bulkPricingOpen}
+                onClose={() => !isBulkSubmitting && setBulkPricingOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <form onSubmit={handleBulkPricingSubmit}>
+                    <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                Bulk Fleet Price Update
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                Updating {selectedBikeIds.length} selected vehicle{selectedBikeIds.length === 1 ? '' : 's'}
+                            </Typography>
+                        </Box>
+                        <IconButton
+                            aria-label="close"
+                            onClick={() => setBulkPricingOpen(false)}
+                            disabled={isBulkSubmitting}
+                            size="small"
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogTitle>
+
+                    <DialogContent dividers sx={{ p: 3 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                                    Pricing Strategy
+                                </Typography>
+                                <ToggleButtonGroup
+                                    value={bulkType}
+                                    exclusive
+                                    onChange={(e, val) => val && setBulkType(val)}
+                                    fullWidth
+                                    size="small"
+                                >
+                                    <ToggleButton value="flat" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                                        Flat Override (₹)
+                                    </ToggleButton>
+                                    <ToggleButton value="amount_hike" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                                        +₹ Flat Hike
+                                    </ToggleButton>
+                                    <ToggleButton value="percent_hike" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                                        +% Percent Hike
+                                    </ToggleButton>
+                                </ToggleButtonGroup>
+                            </Box>
+
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                                    Apply Update To
+                                </Typography>
+                                <ToggleButtonGroup
+                                    value={bulkApplyTo}
+                                    exclusive
+                                    onChange={(e, val) => val && setBulkApplyTo(val)}
+                                    fullWidth
+                                    size="small"
+                                >
+                                    <ToggleButton value="both" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                                        Both Weekday & Weekend
+                                    </ToggleButton>
+                                    <ToggleButton value="weekday_only" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                                        Weekday Only
+                                    </ToggleButton>
+                                    <ToggleButton value="weekend_only" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                                        Weekend Only
+                                    </ToggleButton>
+                                </ToggleButtonGroup>
+                            </Box>
+
+                            <Grid container spacing={2}>
+                                {(bulkApplyTo === 'both' || bulkApplyTo === 'weekday_only') && (
+                                    <Grid size={{ xs: 12, sm: bulkApplyTo === 'both' ? 6 : 12 }}>
+                                        <TextField
+                                            label={bulkType === 'flat' ? 'New Weekday Rate (₹)' : bulkType === 'amount_hike' ? 'Weekday Hike (+₹)' : 'Weekday Hike (+%)'}
+                                            type="number"
+                                            fullWidth
+                                            required
+                                            value={bulkWeekdayAmount}
+                                            onChange={(e) => setBulkWeekdayAmount(e.target.value)}
+                                            slotProps={{
+                                                input: {
+                                                    startAdornment: bulkType !== 'percent_hike' ? <InputAdornment position="start">₹</InputAdornment> : null,
+                                                    endAdornment: bulkType === 'percent_hike' ? <InputAdornment position="end">%</InputAdornment> : null,
+                                                }
+                                            }}
+                                            InputProps={{
+                                                startAdornment: bulkType !== 'percent_hike' ? <InputAdornment position="start">₹</InputAdornment> : null,
+                                                endAdornment: bulkType === 'percent_hike' ? <InputAdornment position="end">%</InputAdornment> : null,
+                                            }}
+                                        />
+                                    </Grid>
+                                )}
+                                {(bulkApplyTo === 'both' || bulkApplyTo === 'weekend_only') && (
+                                    <Grid size={{ xs: 12, sm: bulkApplyTo === 'both' ? 6 : 12 }}>
+                                        <TextField
+                                            label={bulkType === 'flat' ? 'New Weekend Rate (₹)' : bulkType === 'amount_hike' ? 'Weekend Hike (+₹)' : 'Weekend Hike (+%)'}
+                                            type="number"
+                                            fullWidth
+                                            required
+                                            value={bulkWeekendAmount}
+                                            onChange={(e) => setBulkWeekendAmount(e.target.value)}
+                                            slotProps={{
+                                                input: {
+                                                    startAdornment: bulkType !== 'percent_hike' ? <InputAdornment position="start">₹</InputAdornment> : null,
+                                                    endAdornment: bulkType === 'percent_hike' ? <InputAdornment position="end">%</InputAdornment> : null,
+                                                }
+                                            }}
+                                            InputProps={{
+                                                startAdornment: bulkType !== 'percent_hike' ? <InputAdornment position="start">₹</InputAdornment> : null,
+                                                endAdornment: bulkType === 'percent_hike' ? <InputAdornment position="end">%</InputAdornment> : null,
+                                            }}
+                                        />
+                                    </Grid>
+                                )}
+                            </Grid>
+
+                            <Alert severity="info" sx={{ borderRadius: 2 }}>
+                                {bulkType === 'flat' && 'Sets the exact daily rate across all selected vehicles.'}
+                                {bulkType === 'amount_hike' && 'Adds a fixed rupee amount on top of each vehicle’s current daily rate.'}
+                                {bulkType === 'percent_hike' && 'Applies a percentage surge multiplier on each vehicle’s current daily rate.'}
+                            </Alert>
+                        </Box>
+                    </DialogContent>
+
+                    <DialogActions sx={{ p: 2.5 }}>
+                        <Button onClick={() => setBulkPricingOpen(false)} disabled={isBulkSubmitting} sx={{ textTransform: 'none' }}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            disabled={isBulkSubmitting || (!bulkWeekdayAmount && !bulkWeekendAmount)}
+                            startIcon={isBulkSubmitting ? <CircularProgress size={18} color="inherit" /> : <TrendingUpIcon />}
+                            sx={{ textTransform: 'none', fontWeight: 700, px: 3, borderRadius: 2 }}
+                        >
+                            {isBulkSubmitting ? 'Updating Rates...' : `Apply to ${selectedBikeIds.length} Bikes`}
+                        </Button>
+                    </DialogActions>
+                </form>
             </Dialog>
 
             {/* Delete Confirmation Dialog */}

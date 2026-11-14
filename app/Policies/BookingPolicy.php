@@ -15,11 +15,7 @@ class BookingPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [
-            UserRole::SUPER_ADMIN,
-            UserRole::STORE_MANAGER,
-            UserRole::STAFF,
-        ], true);
+        return $user->isStaffOrAdmin();
     }
 
     /**
@@ -27,11 +23,11 @@ class BookingPolicy
      */
     public function view(User $user, Booking $booking): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+        if ($user->isStaffOrAdmin()) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             return in_array($booking->pickup_store_id, $userStoreIds, true)
@@ -46,11 +42,11 @@ class BookingPolicy
      */
     public function update(User $user, Booking $booking): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->role === UserRole::STORE_MANAGER) {
+        if ($user->isAdmin()) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             return in_array($booking->pickup_store_id, $userStoreIds, true)
@@ -65,11 +61,11 @@ class BookingPolicy
      */
     public function processRefund(User $user, Booking $booking): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->role === UserRole::STORE_MANAGER) {
+        if ($user->isAdmin()) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             return in_array($booking->pickup_store_id, $userStoreIds, true)
@@ -84,11 +80,11 @@ class BookingPolicy
      */
     public function handover(User $user, Booking $booking): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+        if ($user->isStaffOrAdmin()) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             // Handover is performed by staff assigned to the pickup branch,
@@ -104,11 +100,11 @@ class BookingPolicy
      */
     public function processReturn(User $user, Booking $booking): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if (in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+        if ($user->isStaffOrAdmin()) {
             $userStoreIds = $user->stores()->pluck('stores.id')->all();
 
             return in_array($booking->pickup_store_id, $userStoreIds, true)

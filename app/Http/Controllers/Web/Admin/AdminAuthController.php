@@ -30,7 +30,7 @@ class AdminAuthController extends Controller
         $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
 
         if ($user !== null) {
-            if (in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+            if ($user->isStaffOrAdmin()) {
                 return redirect()->route('admin.dashboard');
             }
 
@@ -289,7 +289,7 @@ class AdminAuthController extends Controller
             'secretKey' => $secret,
             'isRequired' => $user->requiresTwoFactor(),
             'isConfirmed' => $user->hasTwoFactorEnabled(),
-            'userRole' => $user->role->value,
+            'userRole' => $user->role instanceof UserRole ? $user->role->value : (string) $user->role,
         ]);
     }
 

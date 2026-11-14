@@ -211,6 +211,34 @@ class User extends Authenticatable
         return $this->expo_push_token;
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role instanceof UserRole
+            ? $this->role->isSuperAdmin()
+            : in_array((string) $this->role, ['superadmin', 'super_admin'], true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role instanceof UserRole
+            ? $this->role->isAdmin()
+            : in_array((string) $this->role, ['admin', 'store_manager'], true);
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role instanceof UserRole
+            ? $this->role->isManager()
+            : in_array((string) $this->role, ['manager', 'staff'], true);
+    }
+
+    public function isStaffOrAdmin(): bool
+    {
+        return $this->role instanceof UserRole
+            ? $this->role->isStaffOrAdmin()
+            : in_array((string) $this->role, ['superadmin', 'super_admin', 'admin', 'store_manager', 'manager', 'staff'], true);
+    }
+
     /**
      * Services this staff member or manager is assigned to.
      * Table: service_user (user_id, service_type)
@@ -219,7 +247,7 @@ class User extends Authenticatable
      */
     public function assignedServicesList(): array
     {
-        if ($this->role === UserRole::SUPER_ADMIN) {
+        if ($this->isSuperAdmin()) {
             return ['two_wheelers', 'taxi', 'boating', 'scuba', 'homestay', 'guide', 'tours'];
         }
 
@@ -229,7 +257,7 @@ class User extends Authenticatable
             ->toArray();
 
         // If no services explicitly assigned, fallback to two_wheelers for legacy store staff
-        if (empty($assigned) && in_array($this->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+        if (empty($assigned) && $this->isStaffOrAdmin()) {
             return ['two_wheelers'];
         }
 
@@ -241,11 +269,11 @@ class User extends Authenticatable
      */
     public function canManageService(string $serviceType): bool
     {
-        if ($this->role === UserRole::SUPER_ADMIN) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        if (! in_array($this->role, [UserRole::STORE_MANAGER, UserRole::STAFF], true)) {
+        if (! $this->isStaffOrAdmin()) {
             return false;
         }
 
@@ -286,7 +314,7 @@ class User extends Authenticatable
      */
     public function canAccessAllStores(): bool
     {
-        if ($this->role === UserRole::SUPER_ADMIN) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
@@ -325,8 +353,8 @@ class User extends Authenticatable
      */
     public function tokenAbilities(): array
     {
-        return match ($this->role) {
-            UserRole::SUPER_ADMIN => [
+        if ($this->isSuperAdmin()) {
+            return [
                 'admin:manage',
                 'admin:bikes',
                 'admin:pricing',
@@ -344,8 +372,11 @@ class User extends Authenticatable
                 'customer:bookings',
                 'customer:kyc',
                 'customer:profile',
-            ],
-            UserRole::STORE_MANAGER => [
+            ];
+        }
+
+        if ($this->isAdmin()) {
+            return [
                 'staff:bikes',
                 'staff:bookings',
                 'staff:service-bookings',
@@ -354,21 +385,25 @@ class User extends Authenticatable
                 'store:manage',
                 'reports:view',
                 'customer:profile',
-            ],
-            UserRole::STAFF => [
+            ];
+        }
+
+        if ($this->isManager()) {
+            return [
                 'staff:bikes',
                 'staff:bookings',
                 'staff:service-bookings',
                 'staff:customers',
                 'staff:sync',
                 'customer:profile',
-            ],
-            default => [
-                'customer:bookings',
-                'customer:kyc',
-                'customer:profile',
-            ],
-        };
+            ];
+        }
+
+        return [
+            'customer:bookings',
+            'customer:kyc',
+            'customer:profile',
+        ];
     }
 
     /**
@@ -381,11 +416,11 @@ class User extends Authenticatable
 
     /**
      * Check if two-factor authentication is required for this user's role.
-     * Required at minimum for Super Admin and Store Manager.
+     * Required at minimum for Super Admin and Store Manager / Admin.
      */
     public function requiresTwoFactor(): bool
     {
-        return in_array($this->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER], true);
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 }
 

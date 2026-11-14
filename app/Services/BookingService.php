@@ -12,6 +12,7 @@ use App\Models\BikeConditionLog;
 use App\Models\BikeConditionPhoto;
 use App\Models\Booking;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class BookingService
 {
@@ -66,27 +67,44 @@ class BookingService
                 ]);
             }
 
-            // Alert branch managers and super admin via WhatsApp & Email
+            // Alert SuperAdmin + Assigned Branch (store.whatsapp & store.email) via WhatsApp & Email
             try {
+                // 1. SuperAdmin users
+                $superAdmins = \App\Models\User::query()
+                    ->where('role', \App\Enums\UserRole::SUPER_ADMIN)
+                    ->where('status', \App\Enums\UserStatus::ACTIVE)
+                    ->get();
+
+                foreach ($superAdmins as $admin) {
+                    try {
+                        $admin->notify(new \App\Notifications\BikeManagerBookingAlertNotification($booking));
+                    } catch (\Throwable) {
+                    }
+                }
+
+                // 2. Branch managers assigned to pickup store
                 $managers = \App\Models\User::query()
                     ->where('role', \App\Enums\UserRole::STORE_MANAGER)
                     ->where('status', \App\Enums\UserStatus::ACTIVE)
                     ->whereHas('stores', fn ($q) => $q->where('stores.id', $booking->pickup_store_id))
                     ->get();
 
-                if ($managers->isEmpty()) {
-                    $managers = \App\Models\User::query()
-                        ->where('role', \App\Enums\UserRole::SUPER_ADMIN)
-                        ->where('status', \App\Enums\UserStatus::ACTIVE)
-                        ->get();
-                }
-
                 foreach ($managers as $manager) {
                     try {
                         $manager->notify(new \App\Notifications\BikeManagerBookingAlertNotification($booking));
                     } catch (\Throwable) {
-                        // Transient alert error must not affect committed booking
                     }
+                }
+
+                // 3. Direct assigned branch desk (store.email & store.whatsapp)
+                $store = $booking->pickupStore;
+                if ($store && ($store->email || $store->whatsapp || $store->phone)) {
+                    $deskRoute = Notification::route('mail', $store->email ?: 'contact@whizwheels.in');
+                    $phone = $store->whatsapp ?: $store->phone;
+                    if (! empty($phone)) {
+                        $deskRoute->route('whatsapp', (string) $phone);
+                    }
+                    $deskRoute->notify(new \App\Notifications\BikeManagerBookingAlertNotification($booking));
                 }
             } catch (\Throwable $exception) {
                 \Illuminate\Support\Facades\Log::warning('Bike booking manager alert lookup failed', [

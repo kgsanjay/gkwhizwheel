@@ -70,6 +70,8 @@ import InstallMobileIcon from '@mui/icons-material/InstallMobile';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import AppShortcutIcon from '@mui/icons-material/AppShortcut';
 import Alert from '@mui/material/Alert';
+import PlaceIcon from '@mui/icons-material/Place';
+import TuneIcon from '@mui/icons-material/Tune';
 import { useColorMode } from '../theme/ColorModeContext';
 
 const DRAWER_WIDTH = 268;
@@ -125,7 +127,7 @@ const MENU_SECTIONS = [
                     { label: 'All Fleet Inventory', path: '/admin/bikes', roles: ['super_admin', 'store_manager', 'staff'] },
                     { label: 'Bike Model Catalog', path: '/admin/bike-models', roles: ['super_admin'] },
                     { label: 'Add New Bike', path: '/admin/bikes/create', roles: ['super_admin', 'store_manager'] },
-                    { label: 'Dynamic Tariffs', path: '/admin/pricing', roles: ['super_admin'] },
+                    { label: 'Dynamic Tariffs & Surge', path: '/admin/pricing', roles: ['super_admin', 'store_manager'] },
                     { label: 'Discount Coupons', path: '/admin/coupons', roles: ['super_admin'] },
                 ],
             },
@@ -328,6 +330,12 @@ const MENU_SECTIONS = [
                 roles: ['super_admin'],
             },
             {
+                label: 'Global Site Settings',
+                path: '/admin/settings',
+                icon: <TuneIcon sx={{ fontSize: 20 }} />,
+                roles: ['super_admin'],
+            },
+            {
                 label: 'Service Categories',
                 path: '/admin/services/categories',
                 icon: <CategoryIcon sx={{ fontSize: 20 }} />,
@@ -388,17 +396,40 @@ const getCountForSection = (section, sidebarCounts) => {
 };
 
 export default function AdminLayout({ children, title, currentStore }) {
-    const { auth, sidebar_counts, flash } = usePage().props;
+    const { auth, sidebar_counts, flash, public_branches: publicBranches = [] } = usePage().props;
     const { url = '' } = usePage();
     const { mode, toggleColorMode } = useColorMode();
     const isDark = mode === 'dark';
     const user = auth?.user;
-    const userRole = user?.role || 'staff';
+    const rawRole = user?.role || 'staff';
+    const isSuperAdmin = rawRole === 'superadmin' || rawRole === 'super_admin';
+    const isAdmin = rawRole === 'admin' || rawRole === 'store_manager';
+    const isManager = rawRole === 'manager' || rawRole === 'staff';
+    const userRole = isSuperAdmin ? 'super_admin' : isAdmin ? 'store_manager' : 'staff';
     const assignedServices = user?.assigned_services || [];
+    const assignedStores = user?.assigned_stores || [];
+    const canAccessAllStores = Boolean(user?.can_access_all_stores || isSuperAdmin);
+
+    // Branch context state
+    const [selectedBranchId, setSelectedBranchId] = useState(() => {
+        if (!canAccessAllStores && assignedStores.length > 0) {
+            return String(assignedStores[0].id);
+        }
+        return localStorage.getItem('admin_active_branch_id') || 'all';
+    });
+    const [branchAnchorEl, setBranchAnchorEl] = useState(null);
+
+    const handleSelectBranch = (branchId) => {
+        setSelectedBranchId(branchId);
+        if (canAccessAllStores) {
+            localStorage.setItem('admin_active_branch_id', branchId);
+        }
+        setBranchAnchorEl(null);
+    };
 
     const isSectionAuthorized = (section) => {
         if (!section.roles.includes(userRole)) return false;
-        if (userRole === 'super_admin') return true;
+        if (isSuperAdmin) return true;
         if (section.serviceSlug) {
             return assignedServices.includes(section.serviceSlug);
         }
@@ -509,20 +540,20 @@ export default function AdminLayout({ children, title, currentStore }) {
         router.post('/admin/logout');
     };
 
-    const getRoleBadge = (role) => {
-        switch (role) {
-            case 'super_admin':
-                return { label: 'Super Admin', color: 'secondary' };
-            case 'store_manager':
-                return { label: 'Service Lead', color: 'primary' };
-            case 'staff':
-                return { label: 'Counter Staff', color: 'info' };
-            default:
-                return { label: role, color: 'default' };
+    const getRoleBadge = () => {
+        if (isSuperAdmin) {
+            return { label: 'Super Admin', color: 'secondary' };
         }
+        if (isAdmin) {
+            return { label: 'Admin', color: 'primary' };
+        }
+        if (isManager) {
+            return { label: 'Manager', color: 'info' };
+        }
+        return { label: rawRole || 'Staff', color: 'default' };
     };
 
-    const roleBadge = getRoleBadge(userRole);
+    const roleBadge = getRoleBadge();
 
     // Total actionable bookings across all services
     const totalActiveBookings = (sidebar_counts?.bikes?.total || 0) + (sidebar_counts?.services_total || 0);
@@ -546,6 +577,8 @@ export default function AdminLayout({ children, title, currentStore }) {
             crumbs.push({ label: 'Discount Coupons', path: '/admin/coupons' });
         } else if (url.startsWith('/admin/staff')) {
             crumbs.push({ label: 'Staff Team', path: '/admin/staff' });
+        } else if (url.startsWith('/admin/settings')) {
+            crumbs.push({ label: 'Global Site Settings', path: '/admin/settings' });
         } else if (url.startsWith('/admin/services/')) {
             const parts = url.split('/');
             const serviceSlug = parts[3] || '';
@@ -1147,19 +1180,115 @@ export default function AdminLayout({ children, title, currentStore }) {
                                 })}
                             </Breadcrumbs>
 
-                            <Typography
-                                variant="subtitle1"
-                                noWrap
-                                sx={{
-                                    fontWeight: 800,
-                                    fontSize: { xs: '0.95rem', sm: '1.05rem' },
-                                    lineHeight: 1.1,
-                                    color: 'text.primary',
-                                }}
-                            >
-                                {title || 'Operations Console'}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography
+                                    variant="subtitle1"
+                                    noWrap
+                                    sx={{
+                                        fontWeight: 800,
+                                        fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                                        lineHeight: 1.1,
+                                        color: 'text.primary',
+                                    }}
+                                >
+                                    {title || 'Operations Console'}
+                                </Typography>
+                                <Chip
+                                    size="small"
+                                    label={roleBadge.label}
+                                    color={roleBadge.color}
+                                    sx={{
+                                        height: 20,
+                                        fontSize: '0.66rem',
+                                        fontWeight: 800,
+                                        letterSpacing: '0.04em',
+                                    }}
+                                />
+                            </Box>
                         </Box>
+                    </Box>
+
+                    {/* Branch Context Switcher (SuperAdmin can switch; Admin/Manager scoped) */}
+                    <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+                        {canAccessAllStores ? (
+                            <>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={(e) => setBranchAnchorEl(e.currentTarget)}
+                                    startIcon={<StoreIcon sx={{ fontSize: 16, color: '#F59E0B' }} />}
+                                    endIcon={<ArrowDropDownIcon sx={{ fontSize: 16 }} />}
+                                    sx={{
+                                        borderRadius: 2,
+                                        textTransform: 'none',
+                                        fontWeight: 700,
+                                        fontSize: '0.78rem',
+                                        py: 0.5,
+                                        px: 1.5,
+                                        borderColor: isDark ? 'rgba(245, 158, 11, 0.4)' : '#CBD5E1',
+                                        bgcolor: isDark ? 'rgba(245, 158, 11, 0.08)' : '#FFFBEB',
+                                        color: isDark ? '#FBBF24' : '#B45309',
+                                        '&:hover': {
+                                            borderColor: '#F59E0B',
+                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7',
+                                        },
+                                    }}
+                                >
+                                    {selectedBranchId === 'all'
+                                        ? 'All Branches'
+                                        : publicBranches.find((b) => String(b.id) === String(selectedBranchId))?.name || 'All Branches'}
+                                </Button>
+                                <Menu
+                                    anchorEl={branchAnchorEl}
+                                    open={Boolean(branchAnchorEl)}
+                                    onClose={() => setBranchAnchorEl(null)}
+                                    PaperProps={{
+                                        sx: { minWidth: 260, borderRadius: 2.5, p: 0.5 },
+                                    }}
+                                >
+                                    <MenuItem
+                                        selected={selectedBranchId === 'all'}
+                                        onClick={() => handleSelectBranch('all')}
+                                        sx={{ borderRadius: 1.5, fontSize: '0.82rem', fontWeight: 700, gap: 1 }}
+                                    >
+                                        <ListItemIcon sx={{ minWidth: 26 }}>
+                                            <StoreIcon fontSize="small" sx={{ color: '#F59E0B' }} />
+                                        </ListItemIcon>
+                                        All Branches (Global Overview)
+                                    </MenuItem>
+                                    <Divider sx={{ my: 0.5 }} />
+                                    {publicBranches.map((branch) => (
+                                        <MenuItem
+                                            key={branch.id}
+                                            selected={String(selectedBranchId) === String(branch.id)}
+                                            onClick={() => handleSelectBranch(String(branch.id))}
+                                            sx={{ borderRadius: 1.5, fontSize: '0.82rem', fontWeight: 600, gap: 1 }}
+                                        >
+                                            <ListItemIcon sx={{ minWidth: 26 }}>
+                                                <PlaceIcon fontSize="small" sx={{ color: '#0284C7' }} />
+                                            </ListItemIcon>
+                                            {branch.public_name || branch.name}
+                                        </MenuItem>
+                                    ))}
+                                </Menu>
+                            </>
+                        ) : (
+                            <Tooltip title="Your operations are scoped to your assigned branch">
+                                <Chip
+                                    icon={<PlaceIcon sx={{ fontSize: '15px !important', color: '#0284C7 !important' }} />}
+                                    size="small"
+                                    label={assignedStores[0]?.name || (publicBranches[0]?.name ?? 'Assigned Branch')}
+                                    sx={{
+                                        height: 28,
+                                        fontSize: '0.76rem',
+                                        fontWeight: 700,
+                                        bgcolor: isDark ? 'rgba(2, 132, 199, 0.12)' : '#F0F9FF',
+                                        color: isDark ? '#7DD3FC' : '#0369A1',
+                                        border: '1px solid rgba(2, 132, 199, 0.35)',
+                                    }}
+                                />
+                            </Tooltip>
+                        )}
                     </Box>
 
                     {/* Center: Interactive Search Trigger for Tool Feel */}

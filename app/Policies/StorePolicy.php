@@ -15,7 +15,7 @@ class StorePolicy
      */
     public function manage(User $user): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             return true;
         }
 
@@ -32,7 +32,7 @@ class StorePolicy
      */
     public function create(User $user): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 

@@ -20,6 +20,7 @@ use App\Models\BikeCategory;
 use App\Models\BikeDocument;
 use App\Models\BikeModel;
 use App\Models\Store;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -125,6 +126,11 @@ class AdminBikeWebController extends Controller
                 'base_daily_rate' => $bike->base_daily_rate_override !== null
                     ? (float) $bike->base_daily_rate_override
                     : (float) ($bike->category?->base_daily_rate ?? 0.0),
+                'weekend_rate' => $bike->weekend_daily_rate_override !== null
+                    ? (float) $bike->weekend_daily_rate_override
+                    : (float) ($bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 0.0),
+                'base_daily_rate_override' => $bike->base_daily_rate_override !== null ? (float) $bike->base_daily_rate_override : null,
+                'weekend_daily_rate_override' => $bike->weekend_daily_rate_override !== null ? (float) $bike->weekend_daily_rate_override : null,
                 'deposit_amount' => $bike->deposit_amount_override !== null
                     ? (float) $bike->deposit_amount_override
                     : (float) ($bike->category?->default_deposit_amount ?? 0.0),
@@ -638,5 +644,100 @@ class AdminBikeWebController extends Controller
         };
 
         return response()->streamDownload($callback, 'gkwhizwheel_bikes_sample.csv', $headers);
+    }
+
+    /**
+     * Bulk update pricing (flat override, +₹ hike, +% hike) across selected bikes.
+     */
+    public function bulkPricing(Request $request): RedirectResponse
+    {
+        Gate::authorize('update', Bike::class);
+
+        $validated = $request->validate([
+            'bike_ids' => ['required', 'array', 'min:1'],
+            'bike_ids.*' => ['integer', 'exists:bikes,id'],
+            'type' => ['required', 'string', 'in:flat,amount_hike,percent_hike'],
+            'weekday_amount' => ['nullable', 'numeric'],
+            'weekend_amount' => ['nullable', 'numeric'],
+            'apply_to' => ['required', 'string', 'in:both,weekday_only,weekend_only'],
+        ]);
+
+        $type = $validated['type'];
+        $applyTo = $validated['apply_to'];
+        $weekdayVal = (float) ($validated['weekday_amount'] ?? 0);
+        $weekendVal = (float) ($validated['weekend_amount'] ?? 0);
+
+        $bikes = Bike::whereIn('id', $validated['bike_ids'])->get();
+
+        DB::transaction(function () use ($bikes, $type, $applyTo, $weekdayVal, $weekendVal): void {
+            foreach ($bikes as $bike) {
+                $currentWeekday = (float) ($bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 500);
+                $currentWeekend = (float) ($bike->weekend_daily_rate_override ?? $currentWeekday);
+
+                $newWeekday = $currentWeekday;
+                $newWeekend = $currentWeekend;
+
+                if ($applyTo === 'both' || $applyTo === 'weekday_only') {
+                    if ($type === 'flat') {
+                        $newWeekday = max(0, $weekdayVal);
+                    } elseif ($type === 'amount_hike') {
+                        $newWeekday = max(0, $currentWeekday + $weekdayVal);
+                    } elseif ($type === 'percent_hike') {
+                        $newWeekday = max(0, round($currentWeekday * (1 + $weekdayVal / 100), 2));
+                    }
+                }
+
+                if ($applyTo === 'both' || $applyTo === 'weekend_only') {
+                    if ($type === 'flat') {
+                        $newWeekend = max(0, $weekendVal);
+                    } elseif ($type === 'amount_hike') {
+                        $newWeekend = max(0, $currentWeekend + $weekendVal);
+                    } elseif ($type === 'percent_hike') {
+                        $newWeekend = max(0, round($currentWeekend * (1 + $weekendVal / 100), 2));
+                    }
+                }
+
+                $bike->update([
+                    'base_daily_rate_override' => $newWeekday,
+                    'weekend_daily_rate_override' => $newWeekend,
+                ]);
+            }
+        });
+
+        return redirect()->back()->with('success', "Bulk pricing updated successfully across {$bikes->count()} bikes.");
+    }
+
+    /**
+     * Quick inline rate update for a single bike.
+     */
+    public function quickPrice(int $id, Request $request): JsonResponse
+    {
+        $bike = Bike::findOrFail($id);
+        Gate::authorize('update', $bike);
+
+        $validated = $request->validate([
+            'weekday_rate' => ['nullable', 'numeric', 'min:0'],
+            'weekend_rate' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $updates = [];
+        if (array_key_exists('weekday_rate', $validated)) {
+            $updates['base_daily_rate_override'] = $validated['weekday_rate'];
+        }
+        if (array_key_exists('weekend_rate', $validated)) {
+            $updates['weekend_daily_rate_override'] = $validated['weekend_rate'];
+        }
+
+        $bike->update($updates);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Rates updated for {$bike->registration_number}.",
+            'bike' => [
+                'id' => $bike->id,
+                'base_daily_rate' => (float) ($bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 0),
+                'weekend_rate' => (float) ($bike->weekend_daily_rate_override ?? $bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 0),
+            ],
+        ]);
     }
 }

@@ -768,39 +768,7 @@ export default function CheckoutModal({
                                                 PhonePe Direct Payment
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                                PhonePe UPI, PhonePe Wallet & QR Intent
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                }
-                                sx={{ width: '100%', m: 0 }}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    <Card
-                        variant="outlined"
-                        onClick={() => setGateway('razorpay')}
-                        sx={{
-                            borderRadius: 2,
-                            borderColor: gateway === 'razorpay' ? '#F59E0B' : '#E2E8F0',
-                            bgcolor: gateway === 'razorpay' ? 'rgba(245, 158, 11, 0.04)' : '#FFFFFF',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                            <FormControlLabel
-                                value="razorpay"
-                                control={<Radio color="secondary" />}
-                                label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <PaymentIcon sx={{ color: '#0F172A' }} />
-                                        <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                Razorpay Secure Checkout
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                                UPI (GPay/PhonePe), Credit/Debit Cards, NetBanking
+                                                PhonePe UPI, QR Intent, Credit/Debit Cards &amp; NetBanking
                                             </Typography>
                                         </Box>
                                     </Box>

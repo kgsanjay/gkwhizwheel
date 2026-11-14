@@ -15,12 +15,12 @@ class PricingRulePolicy
      */
     public function manage(User $user): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             return true;
         }
 
         try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin');
+            return $user->hasRole('super_admin') || $user->hasRole('admin') || $user->hasRole('store_manager');
         } catch (\Throwable) {
             return false;
         }

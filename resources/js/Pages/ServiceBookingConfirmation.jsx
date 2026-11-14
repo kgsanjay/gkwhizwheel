@@ -491,36 +491,10 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                                         <AccountBalanceWalletIcon sx={{ color: '#6739B7' }} />
                                         <Box>
                                             <Typography variant="body2" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                                                PhonePe Payment
+                                                PhonePe Payment Gateway
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                                                UPI, PhonePe Wallet & QR
-                                            </Typography>
-                                        </Box>
-                                    </Paper>
-
-                                    <Paper
-                                        variant="outlined"
-                                        onClick={() => setGateway('razorpay')}
-                                        sx={{
-                                            p: 1.5,
-                                            flex: 1,
-                                            cursor: 'pointer',
-                                            borderRadius: 2,
-                                            border: gateway === 'razorpay' ? '2px solid #0284C7' : '1px solid #E2E8F0',
-                                            bgcolor: gateway === 'razorpay' ? 'rgba(2, 132, 199, 0.05)' : '#FFFFFF',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1.5,
-                                        }}
-                                    >
-                                        <CreditCardIcon sx={{ color: '#0284C7' }} />
-                                        <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                                                Razorpay Checkout
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                                                Cards, NetBanking, All UPI
+                                                UPI, QR Intent, Credit/Debit Cards &amp; NetBanking
                                             </Typography>
                                         </Box>
                                     </Paper>
@@ -529,13 +503,13 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                                     <Button
                                         variant="contained"
-                                        color={gateway === 'phonepe' ? 'secondary' : 'primary'}
+                                        color="secondary"
                                         onClick={() => handlePayOnline(balanceDue)}
                                         disabled={paying}
                                         startIcon={paying ? <CircularProgress size={16} color="inherit" /> : <AccountBalanceWalletIcon />}
-                                        sx={{ textTransform: 'none', fontWeight: 800, py: 1.4, px: 3, borderRadius: 2, flexGrow: 1 }}
+                                        sx={{ textTransform: 'none', fontWeight: 800, py: 1.4, px: 3, borderRadius: 2, flexGrow: 1, bgcolor: '#6739B7', '&:hover': { bgcolor: '#512DA8' } }}
                                     >
-                                        {paying ? 'Processing...' : `Pay ₹${balanceDue.toLocaleString('en-IN')} via ${gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'}`}
+                                        {paying ? 'Processing...' : `Pay ₹${balanceDue.toLocaleString('en-IN')} via PhonePe`}
                                     </Button>
 
                                 </Stack>

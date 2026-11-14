@@ -33,5 +33,27 @@ export async function resolveGuestAccount({ name, phone, email }) {
     return res;
 }
 
-export const SUPPORT_WHATSAPP = '918660989586';
-export const SUPPORT_PHONE = '+918660989586';
+export function getSupportContact() {
+    if (typeof window !== 'undefined') {
+        const pageProps = window.__page?.props || window.__PAGE_PROPS__ || {};
+        const siteSettings = pageProps.site_settings || {};
+        const branches = pageProps.public_branches || [];
+        const phone = siteSettings.primary_phone || branches[0]?.phone || '+918660989586';
+        const wa = siteSettings.whatsapp_number || branches[0]?.whatsapp || phone;
+        return {
+            phone,
+            whatsapp: wa.replace(/\D/g, '') || '918660989586',
+        };
+    }
+    return {
+        phone: '+918660989586',
+        whatsapp: '918660989586',
+    };
+}
+
+export const SUPPORT_WHATSAPP = typeof window !== 'undefined' && window.__page?.props?.site_settings?.whatsapp_number
+    ? window.__page.props.site_settings.whatsapp_number.replace(/\D/g, '')
+    : '918660989586';
+export const SUPPORT_PHONE = typeof window !== 'undefined' && window.__page?.props?.site_settings?.primary_phone
+    ? window.__page.props.site_settings.primary_phone
+    : '+918660989586';

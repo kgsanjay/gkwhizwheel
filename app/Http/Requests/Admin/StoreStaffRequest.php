@@ -47,7 +47,12 @@ class StoreStaffRequest extends FormRequest
             'role' => [
                 'required',
                 'string',
-                Rule::in([UserRole::STAFF->value, UserRole::STORE_MANAGER->value]),
+                Rule::in([
+                    UserRole::ADMIN->value,
+                    UserRole::STORE_MANAGER->value,
+                    UserRole::MANAGER->value,
+                    UserRole::STAFF->value,
+                ]),
             ],
             'store_ids' => ['nullable', 'array'],
             'store_ids.*' => ['integer', 'distinct', Rule::exists('stores', 'id')->where('status', StoreStatus::ACTIVE->value)],

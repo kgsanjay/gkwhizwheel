@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
 import { useTheme } from '@mui/material/styles';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import PageHead from '../Components/SEO/PageHead';
 import blogArticles from '../data/blogArticles.json';
@@ -160,13 +160,23 @@ const QUICK_BOOK_SERVICES = [
         href: '/services/homestays',
         icon: <HomeWorkIcon sx={{ fontSize: 18 }} />,
         accent: '#059669',
-        note: 'Sharavathi Riverfront Cottages & Beachside Coastal Stays',
+        note: 'Sharavathi Riverfront Cottages & Beachside Coastal Stays in Honnavar',
+        usesReturnDate: true,
+    },
+    {
+        id: 'rooms',
+        tabKey: 'rooms',
+        label: 'Rooms',
+        href: '/services/homestays',
+        icon: <HomeWorkIcon sx={{ fontSize: 18 }} />,
+        accent: '#059669',
+        note: 'Temple-View Rooms & Coastal Stays in Murudeshwar',
         usesReturnDate: true,
     },
     {
         id: 'boating',
         tabKey: 'boating',
-        label: 'Boating',
+        label: 'Backwater Boating',
         href: '/services/boating',
         icon: <DirectionsBoatIcon sx={{ fontSize: 18 }} />,
         accent: '#2563EB',
@@ -180,7 +190,7 @@ const QUICK_BOOK_SERVICES = [
         href: '/services/scuba',
         icon: <ScubaDivingIcon sx={{ fontSize: 18 }} />,
         accent: '#0D9488',
-        note: 'Netrani Island PADI Guided Dives, Boat Transfer & Underwater Video',
+        note: 'Netrani Island PADI Guided Dives, Boat Transfer & Underwater Video in Murudeshwar',
         usesReturnDate: false,
     },
     {
@@ -206,6 +216,13 @@ const QUICK_BOOK_SERVICES = [
 ];
 
 export default function Welcome({ categories = [], stores = [] , availableItems = [] }) {
+    const { public_branches: publicBranches = [], site_settings: siteSettings = {} } = usePage().props;
+    const dynamicPrimaryPhone = siteSettings.primary_phone || publicBranches[0]?.phone || stores[0]?.phone || '+918660989586';
+    const dynamicPrimaryEmail = siteSettings.support_email || publicBranches[0]?.email || 'contact@whizwheels.in';
+    const dynamicPrimaryWhatsapp = (siteSettings.whatsapp_number || publicBranches[0]?.whatsapp || dynamicPrimaryPhone).replace(/\D/g, '') || '918660989586';
+    const dynamicOperatingHours = siteSettings.operating_hours_label || publicBranches[0]?.operating_hours_label || 'Open 24/7';
+    const dynamicTagline = siteSettings.tagline || 'Coastal Travel Hub • Rides, Stays & Experiences';
+
     const { data: bikeCatalogResponse } = useQuery({
         queryKey: ['public-bikes-home'],
         queryFn: () => apiClient.get('/bikes'),
@@ -265,7 +282,25 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
     const today = new Date().toISOString().split('T')[0];
     const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
 
-    const [searchStore, setSearchStore] = useState('');
+    const publishedBranches = stores.filter((s) => s.publication_status === 'published');
+    const branchList = (publicBranches.length > 0 ? publicBranches : (publishedBranches.length > 0 ? publishedBranches : stores))
+        .slice()
+        .sort((a, b) => a.id - b.id);
+    const branchCities = [...new Set(branchList.map((s) => s.city).filter(Boolean))];
+    const branchCitiesLabel = branchCities.length ? branchCities.join(' & ') : 'Coastal Karnataka';
+    const primaryBranch = branchList[0] || null;
+
+    const [activeBranchId, setActiveBranchId] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('customer_active_branch_id');
+            if (saved && branchList.some((b) => String(b.id) === String(saved))) {
+                return saved;
+            }
+        }
+        return branchList[0]?.id ? String(branchList[0].id) : '';
+    });
+
+    const [searchStore, setSearchStore] = useState(() => activeBranchId);
     const [searchCategory, setSearchCategory] = useState('');
     const [activeBookingTab, setActiveBookingTab] = useState('two_wheelers');
     const [selectedServiceOption, setSelectedServiceOption] = useState('');
@@ -282,6 +317,42 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
     const [faqCategory, setFaqCategory] = useState('all');
     const [expandedFaq, setExpandedFaq] = useState('faq-docs');
     const [activeGuideTab, setActiveGuideTab] = useState('all');
+
+    useEffect(() => {
+        const handleBranchSync = (e) => {
+            if (e.detail?.branchId) {
+                const newId = String(e.detail.branchId);
+                setActiveBranchId(newId);
+                setSearchStore(newId);
+            }
+        };
+        window.addEventListener('customerBranchChanged', handleBranchSync);
+        return () => window.removeEventListener('customerBranchChanged', handleBranchSync);
+    }, []);
+
+    const activeBranch = branchList.find((b) => String(b.id) === String(activeBranchId)) || branchList[0] || null;
+
+    const handleBranchSwitch = (branchId) => {
+        const idStr = String(branchId);
+        setActiveBranchId(idStr);
+        setSearchStore(idStr);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('customer_active_branch_id', idStr);
+            const foundBranch = branchList.find((b) => String(b.id) === idStr);
+            window.dispatchEvent(new CustomEvent('customerBranchChanged', {
+                detail: { branchId: idStr, branch: foundBranch },
+            }));
+        }
+    };
+
+    const activeBranchServices = activeBranch?.services || ['two_wheelers', 'taxi', 'homestay', 'boating', 'guide'];
+    const visibleQuickBookServices = QUICK_BOOK_SERVICES.filter((svc) => activeBranchServices.includes(svc.id));
+
+    useEffect(() => {
+        if (visibleQuickBookServices.length > 0 && !visibleQuickBookServices.some((s) => s.id === activeBookingTab)) {
+            setActiveBookingTab(visibleQuickBookServices[0].id);
+        }
+    }, [activeBranchId, visibleQuickBookServices]);
 
     useEffect(() => {
         if (isPaused) return;
@@ -316,13 +387,6 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                 : 'Check the live bike catalog for current availability and pricing.')
             : heroService?.description || 'Explore published service options and confirm pricing before booking.',
     };
-    const publishedBranches = stores.filter((s) => s.publication_status === 'published');
-    const branchList = (publishedBranches.length > 0 ? publishedBranches : stores)
-        .slice()
-        .sort((a, b) => a.id - b.id);
-    const branchCities = [...new Set(branchList.map((s) => s.city).filter(Boolean))];
-    const branchCitiesLabel = branchCities.length ? branchCities.join(' & ') : 'Coastal Karnataka';
-    const primaryBranch = branchList[0] || null;
     const getBranchMapUrl = (store) => (
         store?.google_maps_url
         || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
@@ -337,12 +401,12 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
             : [store?.address_line, store?.city, store?.state, store?.pincode].filter(Boolean).join(', ') || branchCitiesLabel;
         return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&output=embed`;
     };
-    const getBranchPhone = (store) => store?.phone || '+918660989586';
+    const getBranchPhone = (store) => store?.phone || dynamicPrimaryPhone;
     const formatBranchPhone = (raw) => {
-        const digits = String(raw || '').replace(/\D/g, '');
+        const digits = String(raw || dynamicPrimaryPhone).replace(/\D/g, '');
         return digits.length === 12 && digits.startsWith('91')
             ? `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`
-            : raw;
+            : (raw || dynamicPrimaryPhone);
     };
 
     const handleOpenServiceModal = (id) => {
@@ -367,11 +431,11 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
         "@type": "LocalBusiness",
         "name": "GK WhizWheel - Travel, Rentals & Coastal Experiences",
         "alternateName": ["GK WhizWheels", "G.K. WhizWheel", "Whizwheels Honnavar"],
-        "sameAs": ["https://share.google/GoM4iOgiuUIa7ZfwV"],
+        "sameAs": [siteSettings.google_maps_reviews_url || "https://share.google/GoM4iOgiuUIa7ZfwV"],
         "description": "Travel and rental services across coastal Karnataka, including scooters, motorcycles, cabs, boating, scuba diving, homestays, local guides and tour packages.",
         "image": "https://whizwheels.in/images/logo.png",
         "telephone": "+918660989586",
-        "email": "contact@whizwheels.in",
+        "email": dynamicPrimaryEmail,
         "url": "https://whizwheels.in/",
         "priceRange": "Contact for current rates",
         "address": {
@@ -814,7 +878,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                         {[
                                             { label: 'Zero Security Deposit', sub: 'Book bikes with ₹100 advance', color: '#10B981' },
                                             { label: '7 Travel Services', sub: 'Bikes, Cabs, Stays, Water & Tours', color: '#F59E0B' },
-                                            { label: '24/7 Local Desk', sub: 'Call or WhatsApp +91 8660989586', color: '#38BDF8' },
+                                            { label: `${dynamicOperatingHours} Local Desk`, sub: `Call or WhatsApp ${formatBranchPhone(dynamicPrimaryPhone)}`, color: '#38BDF8' },
                                         ].map((item, i) => (
                                             <Grid key={i} size={{ xs: 12, sm: 4 }}>
                                                 <Box
@@ -1018,14 +1082,14 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                                             : branchCitiesLabel}
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.72rem', display: 'block' }}>
-                                                        24/7 Helpline: +91 8660989586
+                                                        {dynamicOperatingHours} Helpline: {formatBranchPhone(dynamicPrimaryPhone)}
                                                     </Typography>
                                                 </Box>
                                             </Box>
                                             <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
                                                 <Button
                                                     component="a"
-                                                    href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20to%20enquire%20about%20your%20coastal%20travel%20services."
+                                                    href={`https://wa.me/${dynamicPrimaryWhatsapp}?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20to%20enquire%20about%20your%20coastal%20travel%20services.`}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     size="small"
@@ -1073,7 +1137,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                 1.5 ALL-IN-ONE SEARCH & INSTANT BOOKING HUB (Directly Bridging Hero)
             ========================================================================== */}
             {(() => {
-                const activeServiceTab = QUICK_BOOK_SERVICES.find((s) => s.id === activeBookingTab) || QUICK_BOOK_SERVICES[0];
+                const activeServiceTab = visibleQuickBookServices.find((s) => s.id === activeBookingTab) || visibleQuickBookServices[0] || QUICK_BOOK_SERVICES[0];
                 const isBikeTab = activeServiceTab.id === 'two_wheelers';
                 const tabItems = publishedServices.filter((item) => item.service_type === activeServiceTab.id);
 
@@ -1124,7 +1188,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                 }}
                             />
 
-                            {/* Row 1: All 7 Services Selector Tabs */}
+                            {/* Row 1: Branch-Aware Services Selector Tabs */}
                             <Box
                                 sx={{
                                     px: { xs: 1.5, sm: 2.5, md: 3 },
@@ -1151,7 +1215,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                         flex: 1,
                                     }}
                                 >
-                                    {QUICK_BOOK_SERVICES.map((svc) => {
+                                    {visibleQuickBookServices.map((svc) => {
                                         const active = activeServiceTab.id === svc.id;
                                         return (
                                             <Button
@@ -1201,16 +1265,11 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                 </Box>
 
                                 <Chip
-                                    icon={<StarIcon sx={{ fontSize: '15px !important', color: '#F59E0B !important' }} />}
-                                    label={reviewMeta.total > 0 ? `${reviewMeta.average_rating}/5 · ${reviewMeta.total} bike reviews` : 'Customer experiences'}
+                                    icon={<LocationOnIcon sx={{ fontSize: '15px !important', color: '#F59E0B !important' }} />}
+                                    label={`${activeBranch?.city || 'Coastal'} Hub Active`}
                                     size="small"
-                                    component="a"
-                                    href="https://share.google/GoM4iOgiuUIa7ZfwV"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    clickable
                                     sx={{
-                                        display: { xs: 'none', xl: 'inline-flex' },
+                                        display: { xs: 'none', sm: 'inline-flex' },
                                         flexShrink: 0,
                                         fontWeight: 800,
                                         fontSize: '0.75rem',
@@ -1235,10 +1294,12 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             fullWidth
                                             size="small"
                                             label={isBikeTab ? 'Pickup Branch' : 'Location / Hub'}
-                                            value={searchStore}
-                                            onChange={(e) => setSearchStore(e.target.value)}
+                                            value={searchStore || activeBranchId}
+                                            onChange={(e) => {
+                                                setSearchStore(e.target.value);
+                                                if (e.target.value) handleBranchSwitch(e.target.value);
+                                            }}
                                         >
-                                            <MenuItem value="">All Branches ({branchCitiesLabel})</MenuItem>
                                             {branchList.map((store) => (
                                                 <MenuItem key={store.id} value={store.id}>
                                                     {store.public_name || store.name}{store.city ? ` · ${store.city}` : ''}
@@ -1421,11 +1482,11 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             fontSize: '0.74rem',
                                         }}
                                     >
-                                        ● Open 24/7
+                                        ● {dynamicOperatingHours}
                                     </Typography>
                                     <Box
                                         component="a"
-                                        href="tel:+918660989586"
+                                        href={`tel:${dynamicPrimaryPhone}`}
                                         sx={{
                                             display: 'inline-flex',
                                             alignItems: 'center',
@@ -1438,11 +1499,11 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                         }}
                                     >
                                         <PhoneIcon sx={{ fontSize: 13.5 }} />
-                                        +91 8660989586
+                                        {formatBranchPhone(dynamicPrimaryPhone)}
                                     </Box>
                                     <Box
                                         component="a"
-                                        href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20help%20booking%20a%20coastal%20service."
+                                        href={`https://wa.me/${dynamicPrimaryWhatsapp}?text=Hi%20GK%20WhizWheels,%20I%20would%20like%20help%20booking%20a%20coastal%20service.`}
                                         target="_blank"
                                         rel="noreferrer"
                                         sx={{
@@ -1465,6 +1526,149 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                     </Box>
                 );
             })()}
+
+            {/* Live Available Fleet Units Preview (Unit-Level Cards with Registration Badges & Rates) */}
+            {activeBookingTab === 'two_wheelers' && apiBikes.length > 0 && (
+                <Box sx={{ maxWidth: '1440px', width: '100%', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, mb: 7, mt: -2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
+                        <Box>
+                            <Typography variant="h5" component="h3" sx={{ fontWeight: 900, color: isDark ? '#FFFFFF' : '#0F172A', letterSpacing: '-0.02em' }}>
+                                Available {activeBranch?.city || 'Coastal'} Fleet Units
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mt: 0.2 }}>
+                                Verified units ready for immediate booking with zero deposit &amp; transparent tariffs.
+                            </Typography>
+                        </Box>
+                        <Button
+                            component={Link}
+                            href={`/services/bikes?store_id=${searchStore || activeBranchId}&start_date=${startDate}&end_date=${endDate}`}
+                            endIcon={<ArrowForwardIcon />}
+                            sx={{ fontWeight: 700, color: '#F59E0B', textTransform: 'none' }}
+                        >
+                            View All {apiBikes.length} Bikes →
+                        </Button>
+                    </Box>
+
+                    <Grid container spacing={2.5}>
+                        {apiBikes
+                            .filter((b) => !searchStore || String(b.current_store_id) === String(searchStore) || String(b.home_store_id) === String(searchStore) || true)
+                            .slice(0, 4)
+                            .map((bike) => {
+                                const weekday = bike.daily_rate ?? bike.weekday_rate ?? bike.category?.base_daily_rate ?? 500;
+                                const weekend = bike.weekend_rate ?? weekday;
+                                const img = bike.primary_image_url || bike.images?.[0]?.image_url || '/images/services/bike-placeholder.jpg';
+                                const bookHref = `/bikes/${bike.id}?start_date=${startDate}&end_date=${endDate}&pickup_store_id=${searchStore || activeBranchId}`;
+
+                                return (
+                                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={bike.id}>
+                                        <Card
+                                            sx={{
+                                                borderRadius: 3,
+                                                overflow: 'hidden',
+                                                bgcolor: isDark ? '#111827' : '#FFFFFF',
+                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                                transition: 'all 0.2s ease',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                height: '100%',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    borderColor: '#F59E0B',
+                                                    boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
+                                                },
+                                            }}
+                                        >
+                                            <Box sx={{ position: 'relative', height: 160, bgcolor: isDark ? '#1F2937' : '#E2E8F0' }}>
+                                                <Box
+                                                    component="img"
+                                                    src={img}
+                                                    alt={`${bike.brand || ''} ${bike.model_name || 'Bike'}`}
+                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                                {/* Registration Number badge */}
+                                                <Chip
+                                                    label={bike.registration_number || 'KA-47-REG'}
+                                                    size="small"
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        bottom: 8,
+                                                        left: 8,
+                                                        bgcolor: 'rgba(15, 23, 42, 0.92)',
+                                                        backdropFilter: 'blur(6px)',
+                                                        color: '#F8FAFC',
+                                                        fontSize: '0.72rem',
+                                                        fontFamily: 'monospace',
+                                                        fontWeight: 800,
+                                                        letterSpacing: '0.04em',
+                                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                    }}
+                                                />
+                                                <Chip
+                                                    label={bike.fuel_type === 'electric' ? 'EV' : 'Petrol'}
+                                                    size="small"
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        top: 8,
+                                                        right: 8,
+                                                        bgcolor: 'rgba(15, 23, 42, 0.9)',
+                                                        color: bike.fuel_type === 'electric' ? '#F59E0B' : '#FFFFFF',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.68rem',
+                                                    }}
+                                                />
+                                            </Box>
+                                            <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                                <Typography variant="caption" sx={{ color: isDark ? '#38BDF8' : '#0284C7', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                                                    {bike.category?.name || 'Two-Wheeler'}
+                                                </Typography>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', lineHeight: 1.3, mb: 1.5 }}>
+                                                    {bike.brand} {bike.model_name}
+                                                </Typography>
+
+                                                <Box sx={{ mt: 'auto', mb: 2, p: 1.2, borderRadius: 2, bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #E2E8F0' }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700 }}>
+                                                            Mon–Thu:
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 900, color: isDark ? '#F59E0B' : '#B45309' }}>
+                                                            ₹{Number(weekday).toLocaleString('en-IN')}/day
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 700 }}>
+                                                            Fri–Sun:
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 900, color: isDark ? '#38BDF8' : '#0369A1' }}>
+                                                            ₹{Number(weekend).toLocaleString('en-IN')}/day
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+
+                                                <Button
+                                                    component={Link}
+                                                    href={bookHref}
+                                                    variant="contained"
+                                                    fullWidth
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: '#F59E0B',
+                                                        color: '#0F172A',
+                                                        fontWeight: 800,
+                                                        borderRadius: 2,
+                                                        py: 0.9,
+                                                        '&:hover': { bgcolor: '#D97706' },
+                                                    }}
+                                                >
+                                                    Book This Unit
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                );
+                            })}
+                    </Grid>
+                </Box>
+            )}
 
             {/* =========================================================================
                 2. DEDICATED SERVICE OFFERINGS SHOWCASE (7 CURATED SERVICES)
@@ -2228,7 +2432,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             <Button
                                                 variant="outlined"
                                                 component="a"
-                                                href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheel%2C%20I%20want%20to%20plan%20a%20custom%20tour%20package%20across%20Honnavar%20%26%20Murudeshwar"
+                                                href={`https://wa.me/${dynamicPrimaryWhatsapp}?text=Hi%20GK%20WhizWheel%2C%20I%20want%20to%20plan%20a%20custom%20tour%20package%20across%20Honnavar%20%26%20Murudeshwar`}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 size="large"
@@ -2481,7 +2685,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                         <Button
                                             variant="text"
                                             component="a"
-                                            href="https://wa.me/918660989586?text=Hi%20GK%20WhizWheels,%20I%20need%20help%20with%20a%20booking."
+                                            href={`https://wa.me/${dynamicPrimaryWhatsapp}?text=Hi%20GK%20WhizWheels,%20I%20need%20help%20with%20a%20booking.`}
                                             target="_blank"
                                             rel="noreferrer"
                                             startIcon={<WhatsAppIcon sx={{ color: '#10B981' }} />}
@@ -3501,8 +3705,8 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                     const leftFaqs = visibleFaqs.filter((_, idx) => idx % 2 === 0);
                     const rightFaqs = visibleFaqs.filter((_, idx) => idx % 2 === 1);
                     const primaryWaPhone = branchList.length > 0
-                        ? getBranchPhone(branchList[0]).replace(/\D/g, '')
-                        : '918660989586';
+                        ? (getBranchPhone(branchList[0]).replace(/\D/g, '') || dynamicPrimaryWhatsapp)
+                        : dynamicPrimaryWhatsapp;
 
                     const renderFaqCard = (item) => {
                         const isOpen = expandedFaq === item.id;
@@ -3837,8 +4041,8 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                 ========================================================================== */}
                 {(() => {
                     const ctaWaPhone = branchList.length > 0
-                        ? getBranchPhone(branchList[0]).replace(/\D/g, '')
-                        : '918660989586';
+                        ? (getBranchPhone(branchList[0]).replace(/\D/g, '') || dynamicPrimaryWhatsapp)
+                        : dynamicPrimaryWhatsapp;
 
                     const quickServiceLinks = [
                         { label: 'Bikes', href: '/services/bikes' },

@@ -68,6 +68,10 @@ class AdminStoreWebController extends Controller
                 'home_bikes_count' => (int) $store->home_bikes_count,
                 'current_bikes_count' => (int) $store->current_bikes_count,
                 'operating_hours' => $store->operating_hours,
+                'operating_hours_label' => $store->operating_hours_label ?? 'Open 24/7',
+                'services' => $store->services ?? (str_contains(strtolower((string) ($store->city ?: $store->name)), 'honnavar')
+                    ? ['two_wheelers', 'taxi', 'homestay', 'boating', 'guide']
+                    : ['two_wheelers', 'taxi', 'rooms', 'scuba', 'guide']),
                 'created_at' => $store->created_at?->toIso8601String(),
             ]),
             'stats' => $stats,
@@ -167,5 +171,24 @@ class AdminStoreWebController extends Controller
 
         return redirect()->route('admin.stores.index')
             ->with('success', "Store Hub '{$store->name}' {$statusLabel} successfully.");
+    }
+
+    /**
+     * Update active branch services for the Branch-Service Matrix.
+     */
+    public function updateServices(int $id, Request $request): RedirectResponse
+    {
+        $store = Store::findOrFail($id);
+        Gate::authorize('update', $store);
+
+        $validated = $request->validate([
+            'services' => ['required', 'array'],
+            'services.*' => ['string'],
+        ]);
+
+        $store->update(['services' => $validated['services']]);
+
+        return redirect()->back()
+            ->with('success', "Service matrix updated for {$store->name}.");
     }
 }

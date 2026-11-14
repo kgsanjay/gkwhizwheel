@@ -68,6 +68,7 @@ const SITE_CONTAINER_SX = {
 
 const servicesList = [
     {
+        key: 'two_wheelers',
         title: 'Bike & Scooter Rentals',
         shortTitle: 'Bike Rentals',
         desc: 'Browse listed scooters and motorcycles',
@@ -77,6 +78,7 @@ const servicesList = [
         badge: 'Browse Fleet',
     },
     {
+        key: 'taxi',
         title: 'Coastal Cabs & Taxis',
         shortTitle: 'Cabs & Taxis',
         desc: 'Sedan, SUV & tempo for Gokarna, Murudeshwar & airport',
@@ -86,17 +88,29 @@ const servicesList = [
         badge: 'AC Cabs',
     },
     {
+        key: 'homestay',
         title: 'Homestays & Coastal Rooms',
         shortTitle: 'Homestays',
-        desc: 'Verified riverside cottages & beachfront villas',
+        desc: 'Verified riverside cottages & beachfront villas in Honnavar',
         href: '/services/homestays',
         matchPrefixes: ['/services/homestays'],
         icon: <HouseIcon sx={{ color: '#059669', fontSize: 22 }} />,
         badge: 'Verified',
     },
     {
+        key: 'rooms',
+        title: 'Rooms & Coastal Stays',
+        shortTitle: 'Rooms',
+        desc: 'Temple-view rooms and beachfront coastal lodges in Murudeshwar',
+        href: '/services/homestays',
+        matchPrefixes: ['/services/homestays', '/services/rooms'],
+        icon: <HouseIcon sx={{ color: '#059669', fontSize: 22 }} />,
+        badge: 'Temple & Beach',
+    },
+    {
+        key: 'boating',
         title: 'Sharavathi Backwater Boating',
-        shortTitle: 'Boating',
+        shortTitle: 'Backwater Boating',
         desc: 'Island cruises, mangrove safari & sunset rides',
         href: '/services/boating',
         matchPrefixes: ['/services/boating'],
@@ -104,6 +118,7 @@ const servicesList = [
         badge: 'Popular',
     },
     {
+        key: 'scuba',
         title: 'Netrani Island Scuba Diving',
         shortTitle: 'Scuba Diving',
         desc: 'PADI certified guides & clear coral reef diving',
@@ -113,6 +128,7 @@ const servicesList = [
         badge: 'PADI Cert',
     },
     {
+        key: 'guide',
         title: 'Local Travel Guides & Trails',
         shortTitle: 'Local Guides',
         desc: 'Native experts for waterfall treks & temple heritage',
@@ -122,6 +138,7 @@ const servicesList = [
         badge: 'Native Guides',
     },
     {
+        key: 'tours',
         title: 'Custom Tour Packages',
         shortTitle: 'Tour Packages',
         desc: 'All-inclusive Karavali coastal combos & customized itineraries',
@@ -133,21 +150,26 @@ const servicesList = [
 ];
 
 export default function AppLayout({ children, fullWidth = false, noFooterMargin = false }) {
-    const { auth, flash, public_branches: publicBranches = [] } = usePage().props;
+    const { auth, flash, public_branches: publicBranches = [], site_settings: siteSettings = {} } = usePage().props;
     const { url = '/' } = usePage();
     const { mode, toggleColorMode } = useColorMode();
     const isDark = mode === 'dark';
     const activeCities = [...new Set(publicBranches.map((branch) => branch.city).filter(Boolean))];
-    const locationLabel = activeCities.length ? activeCities.join(' & ') : 'Coastal Karnataka';
+    const locationLabel = siteSettings.locations_summary || (activeCities.length ? activeCities.join(' & ') : 'Coastal Karnataka');
+    const primaryPhone = siteSettings.primary_phone || publicBranches[0]?.phone || '+918660989586';
+    const primaryEmail = siteSettings.support_email || publicBranches[0]?.email || 'contact@whizwheels.in';
+    const operatingHours = siteSettings.operating_hours_label || publicBranches[0]?.operating_hours_label || 'Open 24/7';
+    const taglineText = siteSettings.tagline || 'Coastal Travel Hub • Rides, Stays & Experiences';
+
     const formatBranchPhone = (raw) => {
-        const digits = String(raw || '+918660989586').replace(/\D/g, '');
+        const digits = String(raw || primaryPhone).replace(/\D/g, '');
         if (digits.length === 12 && digits.startsWith('91')) {
             return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
         }
-        return raw || '+91 86609 89586';
+        return raw || primaryPhone;
     };
-    const primaryBranchPhone = publicBranches[0]?.phone || '+918660989586';
-    const primaryWhatsappDigits = primaryBranchPhone.replace(/\D/g, '') || '918660989586';
+    const primaryBranchPhone = primaryPhone;
+    const primaryWhatsappDigits = (siteSettings.whatsapp_number || primaryBranchPhone).replace(/\D/g, '') || '918660989586';
     const getBranchDirectionsUrl = (branch) => (
         branch?.google_maps_url
         || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
@@ -162,6 +184,53 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
     const [servicesAnchorEl, setServicesAnchorEl] = useState(null);
     const isServicesOpen = Boolean(servicesAnchorEl);
+
+    const [branchMenuAnchor, setBranchMenuAnchor] = useState(null);
+    const isBranchMenuOpen = Boolean(branchMenuAnchor);
+
+    const [selectedBranchId, setSelectedBranchId] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('customer_active_branch_id');
+            if (saved && publicBranches.some((b) => String(b.id) === String(saved))) {
+                return saved;
+            }
+        }
+        return publicBranches[0]?.id ? String(publicBranches[0].id) : '';
+    });
+
+    useEffect(() => {
+        const handleBranchSync = (e) => {
+            if (e.detail?.branchId) {
+                setSelectedBranchId(String(e.detail.branchId));
+            }
+        };
+        window.addEventListener('customerBranchChanged', handleBranchSync);
+        return () => window.removeEventListener('customerBranchChanged', handleBranchSync);
+    }, []);
+
+    const activeBranch = publicBranches.find((b) => String(b.id) === String(selectedBranchId)) || publicBranches[0] || null;
+
+    const handleOpenBranchMenu = (event) => {
+        setBranchMenuAnchor(event.currentTarget);
+    };
+
+    const handleCloseBranchMenu = () => {
+        setBranchMenuAnchor(null);
+    };
+
+    const handleSelectBranch = (branch) => {
+        setSelectedBranchId(String(branch.id));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('customer_active_branch_id', String(branch.id));
+            window.dispatchEvent(new CustomEvent('customerBranchChanged', {
+                detail: { branchId: branch.id, branch },
+            }));
+        }
+        setBranchMenuAnchor(null);
+    };
+
+    const branchServices = activeBranch?.services || ['two_wheelers', 'taxi', 'homestay', 'boating', 'guide'];
+    const visibleServicesList = servicesList.filter((svc) => branchServices.includes(svc.key));
 
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
@@ -333,11 +402,11 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             }}
                         >
                             <AccessTimeIcon sx={{ fontSize: 13.5, color: '#34D399' }} />
-                            Open 24/7
+                            {operatingHours}
                         </Box>
                         <Box
                             component="a"
-                            href="tel:+918660989586"
+                            href={`tel:${primaryPhone}`}
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -351,11 +420,11 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             }}
                         >
                             <PhoneIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                            +91 8660989586
+                            {formatBranchPhone(primaryPhone)}
                         </Box>
                         <Box
                             component="a"
-                            href="mailto:contact@whizwheels.in"
+                            href={`mailto:${primaryEmail}`}
                             sx={{
                                 display: { xs: 'none', xl: 'flex' },
                                 alignItems: 'center',
@@ -369,7 +438,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             }}
                         >
                             <EmailIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
-                            contact@whizwheels.in
+                            {primaryEmail}
                         </Box>
                         <Box
                             component="a"
@@ -844,7 +913,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 <Stack direction="row" spacing={1.5} alignItems="center">
                                     <Button
                                         component="a"
-                                        href="tel:+918660989586"
+                                        href={`tel:${primaryPhone}`}
                                         size="small"
                                         startIcon={<PhoneIcon />}
                                         sx={{
@@ -948,6 +1017,102 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 '&::-webkit-scrollbar': { display: 'none' },
                             }}
                         >
+                            {/* Branch Selector Dropdown in Service Bar */}
+                            {publicBranches.length > 0 && (
+                                <Box sx={{ display: 'inline-flex', alignItems: 'center', mr: 0.5, flexShrink: 0 }}>
+                                    <Button
+                                        size="small"
+                                        onClick={handleOpenBranchMenu}
+                                        aria-label="Select active branch"
+                                        aria-controls={isBranchMenuOpen ? 'branch-menu-tier3' : undefined}
+                                        aria-haspopup="true"
+                                        aria-expanded={isBranchMenuOpen}
+                                        startIcon={<LocationOnIcon sx={{ color: '#F59E0B !important', fontSize: 17 }} />}
+                                        endIcon={<KeyboardArrowDownIcon sx={{ fontSize: 16 }} />}
+                                        sx={{
+                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                            color: isDark ? '#FBBF24' : '#92400E',
+                                            border: isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #FDE68A',
+                                            fontWeight: 800,
+                                            fontSize: '13px',
+                                            borderRadius: 9999,
+                                            px: 1.5,
+                                            py: '5px',
+                                            whiteSpace: 'nowrap',
+                                            textTransform: 'none',
+                                            flexShrink: 0,
+                                            '&:hover': {
+                                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.24)' : '#FDE68A',
+                                            },
+                                        }}
+                                    >
+                                        {activeBranch?.city || activeBranch?.name || 'Hub'} Hub
+                                    </Button>
+                                    <Menu
+                                        id="branch-menu-tier3"
+                                        anchorEl={branchMenuAnchor}
+                                        open={isBranchMenuOpen}
+                                        onClose={handleCloseBranchMenu}
+                                        PaperProps={{
+                                            sx: {
+                                                mt: 1,
+                                                minWidth: 230,
+                                                borderRadius: 2.5,
+                                                bgcolor: isDark ? '#0F172A' : '#FFFFFF',
+                                                color: isDark ? '#F8FAFC' : '#0F172A',
+                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                                                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                                                p: 0.5,
+                                            },
+                                        }}
+                                    >
+                                        <Box sx={{ px: 2, py: 0.8, borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0' }}>
+                                            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: isDark ? '#94A3B8' : '#64748B' }}>
+                                                Select Operating Hub
+                                            </Typography>
+                                        </Box>
+                                        {publicBranches.map((branch) => {
+                                            const isSelected = String(branch.id) === String(activeBranch?.id);
+                                            return (
+                                                <MenuItem
+                                                    key={branch.id}
+                                                    onClick={() => handleSelectBranch(branch)}
+                                                    selected={isSelected}
+                                                    sx={{
+                                                        borderRadius: 1.5,
+                                                        my: 0.2,
+                                                        py: 0.9,
+                                                        px: 1.5,
+                                                        bgcolor: isSelected ? (isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7') : 'transparent',
+                                                    }}
+                                                >
+                                                    <ListItemIcon sx={{ minWidth: 28 }}>
+                                                        <LocationOnIcon sx={{ fontSize: 17, color: isSelected ? '#F59E0B' : (isDark ? '#64748B' : '#94A3B8') }} />
+                                                    </ListItemIcon>
+                                                    <ListItemText
+                                                        primary={
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <Typography variant="body2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
+                                                                    {branch.city || branch.name}
+                                                                </Typography>
+                                                                {isSelected && (
+                                                                    <Chip label="Active" size="small" sx={{ height: 16, fontSize: '0.62rem', fontWeight: 800, bgcolor: '#F59E0B', color: '#0F172A' }} />
+                                                                )}
+                                                            </Box>
+                                                        }
+                                                        secondary={
+                                                            <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', fontSize: '0.7rem' }}>
+                                                                {branch.name}
+                                                            </Typography>
+                                                        }
+                                                    />
+                                                </MenuItem>
+                                            );
+                                        })}
+                                    </Menu>
+                                </Box>
+                            )}
+
                             <Link
                                 href="/services"
                                 style={{
@@ -972,7 +1137,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 <ExploreIcon sx={{ fontSize: 17 }} />
                                 <span>All Services</span>
                             </Link>
-                            {servicesList.map((svc) => {
+                            {visibleServicesList.map((svc) => {
                                 const active = isServiceLinkActive(svc);
                                 return (
                                     <Link
@@ -1060,7 +1225,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         </Typography>
                     </Box>
                     <Chip
-                        label={`${servicesList.length} Services`}
+                        label={activeBranch ? `${activeBranch.city || activeBranch.name} Hub · ${visibleServicesList.length} Services` : `${visibleServicesList.length} Services`}
                         size="small"
                         sx={{
                             bgcolor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
@@ -1074,7 +1239,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
                 {/* 2-Column Desktop Grid */}
                 <Grid container spacing={1.5}>
-                    {servicesList.map((svc, idx) => (
+                    {visibleServicesList.map((svc, idx) => (
                         <Grid key={idx} size={{ xs: 12, sm: 6 }}>
                             <Box
                                 component={Link}
@@ -1447,6 +1612,43 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         </Paper>
                     )}
 
+                    {/* Branch Switcher in Mobile Drawer */}
+                    {publicBranches.length > 0 && (
+                        <Box sx={{ mb: 2.5, p: 1.5, borderRadius: 2.5, bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#F1F5F9', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0' }}>
+                            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: isDark ? '#94A3B8' : '#64748B', display: 'block', mb: 1 }}>
+                                Operating Hub
+                            </Typography>
+                            <Stack direction="row" spacing={1}>
+                                {publicBranches.map((branch) => {
+                                    const isSelected = String(branch.id) === String(activeBranch?.id);
+                                    return (
+                                        <Button
+                                            key={branch.id}
+                                            fullWidth
+                                            size="small"
+                                            onClick={() => handleSelectBranch(branch)}
+                                            startIcon={<LocationOnIcon sx={{ fontSize: 16 }} />}
+                                            sx={{
+                                                borderRadius: 2,
+                                                fontWeight: isSelected ? 800 : 600,
+                                                fontSize: '0.8rem',
+                                                textTransform: 'none',
+                                                bgcolor: isSelected ? '#F59E0B' : (isDark ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF'),
+                                                color: isSelected ? '#0F172A' : (isDark ? '#E2E8F0' : '#334155'),
+                                                border: `1px solid ${isSelected ? '#F59E0B' : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#CBD5E1')}`,
+                                                '&:hover': {
+                                                    bgcolor: isSelected ? '#D97706' : (isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'),
+                                                },
+                                            }}
+                                        >
+                                            {branch.city || branch.name}
+                                        </Button>
+                                    );
+                                })}
+                            </Stack>
+                        </Box>
+                    )}
+
                     {/* Navigation Menu List */}
                     <Typography
                         variant="caption"
@@ -1565,7 +1767,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     }}
                                 />
                                 <Chip
-                                    label={`${servicesList.length} Services`}
+                                    label={`${visibleServicesList.length} Services`}
                                     size="small"
                                     sx={{
                                         height: 20,
@@ -1587,7 +1789,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             </ListItemButton>
                         </ListItem>
 
-                        {/* Collapsible 7 Services List */}
+                        {/* Collapsible Branch Services List */}
                         <Collapse in={mobileServicesOpen} timeout="auto" unmountOnExit>
                             <Box
                                 sx={{
@@ -1599,7 +1801,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     borderLeft: isDark ? '2px solid rgba(245, 158, 11, 0.3)' : '2px solid rgba(217, 119, 6, 0.3)',
                                 }}
                             >
-                                {servicesList.map((svc, sIdx) => (
+                                {visibleServicesList.map((svc, sIdx) => (
                                     <ListItemButton
                                         key={sIdx}
                                         component={Link}
@@ -1730,7 +1932,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         <Stack spacing={1}>
                             <Button
                                 component="a"
-                                href="tel:+918660989586"
+                                href={`tel:${primaryPhone}`}
                                 variant="contained"
                                 color="warning"
                                 size="small"
@@ -1743,7 +1945,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     '&:hover': { bgcolor: '#D97706' },
                                 }}
                             >
-                                Call +91 8660989586
+                                Call {formatBranchPhone(primaryPhone)}
                             </Button>
                             <Button
                                 component="a"
@@ -2131,18 +2333,13 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
                             <VerifiedUserIcon sx={{ fontSize: 16, color: '#10B981' }} />
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.78rem' }}>
-                                Safe &amp; Encrypted Checkout via <strong>PhonePe</strong> &amp; <strong>Razorpay</strong> • All UPI (PhonePe, GPay, Paytm), Cards &amp; NetBanking
+                                Safe &amp; Encrypted Checkout via <strong>PhonePe</strong> • All UPI (PhonePe, GPay, Paytm), Cards &amp; NetBanking
                             </Typography>
                         </Stack>
                         <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
                             <Box sx={{ px: 1, py: 0.35, borderRadius: 1.5, bgcolor: 'rgba(103, 58, 183, 0.15)', border: '1px solid rgba(103, 58, 183, 0.35)' }}>
                                 <Typography variant="caption" sx={{ color: '#A78BFA', fontWeight: 800, fontSize: '0.72rem' }}>
-                                    PhonePe UPI
-                                </Typography>
-                            </Box>
-                            <Box sx={{ px: 1, py: 0.35, borderRadius: 1.5, bgcolor: 'rgba(2, 132, 199, 0.15)', border: '1px solid rgba(2, 132, 199, 0.35)' }}>
-                                <Typography variant="caption" sx={{ color: '#38BDF8', fontWeight: 800, fontSize: '0.72rem' }}>
-                                    Razorpay
+                                    PhonePe UPI &amp; Cards
                                 </Typography>
                             </Box>
                             <Box sx={{ px: 1, py: 0.35, borderRadius: 1.5, bgcolor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)' }}>

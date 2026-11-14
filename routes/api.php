@@ -55,6 +55,71 @@ Route::prefix('v1')->group(function (): void {
         ]);
     });
 
+    Route::get('/public/bootstrap', function () {
+        $branches = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)->get()->map(function ($store) {
+            $isHonnavar = str_contains(strtolower((string) ($store->city ?: $store->name)), 'honnavar');
+            $defaultServices = $isHonnavar
+                ? ['two_wheelers', 'taxi', 'homestay', 'boating', 'guide']
+                : ['two_wheelers', 'taxi', 'rooms', 'scuba', 'guide'];
+            return [
+                'id' => $store->id,
+                'name' => $store->name,
+                'public_name' => $store->public_name ?? $store->name,
+                'address_line' => $store->address_line,
+                'city' => $store->city,
+                'state' => $store->state,
+                'pincode' => $store->pincode,
+                'phone' => $store->phone,
+                'whatsapp' => $store->whatsapp ?? preg_replace('/\D/', '', (string) $store->phone),
+                'email' => $store->email ?? 'contact@whizwheels.in',
+                'operating_hours_label' => $store->operating_hours_label ?? 'Open 24/7',
+                'google_maps_url' => $store->google_maps_url,
+                'slug' => \Illuminate\Support\Str::slug($store->city ?: $store->name),
+                'services' => $store->services ?? $defaultServices,
+            ];
+        });
+
+        $settings = \App\Models\SiteSetting::getAllSettings();
+
+        return response()->json([
+            'success' => true,
+            'settings' => $settings,
+            'branches' => $branches,
+            'data' => [
+                'settings' => $settings,
+                'branches' => $branches,
+            ],
+        ]);
+    });
+
+    Route::get('/public/branches', function () {
+        return response()->json([
+            'success' => true,
+            'data' => \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)->get()->map(function ($store) {
+                $isHonnavar = str_contains(strtolower((string) ($store->city ?: $store->name)), 'honnavar');
+                $defaultServices = $isHonnavar
+                    ? ['two_wheelers', 'taxi', 'homestay', 'boating', 'guide']
+                    : ['two_wheelers', 'taxi', 'rooms', 'scuba', 'guide'];
+                return [
+                    'id' => $store->id,
+                    'name' => $store->name,
+                    'public_name' => $store->public_name ?? $store->name,
+                    'address_line' => $store->address_line,
+                    'city' => $store->city,
+                    'state' => $store->state,
+                    'pincode' => $store->pincode,
+                    'phone' => $store->phone,
+                    'whatsapp' => $store->whatsapp ?? preg_replace('/\D/', '', (string) $store->phone),
+                    'email' => $store->email ?? 'contact@whizwheels.in',
+                    'operating_hours_label' => $store->operating_hours_label ?? 'Open 24/7',
+                    'google_maps_url' => $store->google_maps_url,
+                    'slug' => \Illuminate\Support\Str::slug($store->city ?: $store->name),
+                    'services' => $store->services ?? $defaultServices,
+                ];
+            }),
+        ]);
+    });
+
     Route::get('/stores', function () {
         return response()->json([
             'success' => true,
@@ -147,6 +212,7 @@ Route::prefix('v1')->group(function (): void {
         // Bikes
         Route::prefix('bikes')->group(function (): void {
             Route::post('/', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'store']);
+            Route::post('/bulk-pricing', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'bulkPricing']);
             Route::post('/bulk-import', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'bulkImport']);
             Route::put('/{id}', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'update']);
             Route::delete('/{id}', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'destroy']);

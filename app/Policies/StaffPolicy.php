@@ -14,7 +14,7 @@ class StaffPolicy
      */
     public function manage(User $user): bool
     {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
             return true;
         }
 

@@ -28,8 +28,12 @@ class Store extends Model
         'latitude',
         'longitude',
         'phone',
+        'email',
+        'whatsapp',
         'google_maps_url',
         'operating_hours',
+        'operating_hours_label',
+        'services',
         'status',
     ];
 
@@ -44,6 +48,7 @@ class Store extends Model
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'operating_hours' => 'array',
+            'services' => 'array',
             'status' => StoreStatus::class,
         ];
     }

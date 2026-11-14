@@ -260,6 +260,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/bike-models/{id}/branch-prices', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'saveBranchPrice'])->name('admin.bike-models.branch-prices');
     Route::post('/bike-models/{id}/bikes/bulk', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'bulkRegister'])->name('admin.bike-models.bulk-register');
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');
+    Route::post('/bikes/bulk-pricing', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'bulkPricing'])->name('admin.bikes.bulk-pricing');
+    Route::post('/bikes/{id}/quick-price', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'quickPrice'])->name('admin.bikes.quick-price');
     Route::get('/bikes/create', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'create'])->name('admin.bikes.create');
     Route::post('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'store'])->name('admin.bikes.store');
     Route::get('/bikes/export-sample-csv', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'exportSampleCsv'])->name('admin.bikes.export-sample-csv');
@@ -323,15 +325,19 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/stores', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'store'])->name('admin.stores.store');
     Route::get('/stores/{id}/edit', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'edit'])->name('admin.stores.edit');
     Route::match(['post', 'put'], '/stores/{id}', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'update'])->name('admin.stores.update');
+    Route::post('/stores/{id}/services', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'updateServices'])->name('admin.stores.services');
     Route::match(['post', 'patch'], '/stores/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'toggle'])->name('admin.stores.toggle');
 
-    // Staff Management (Super Admin only)
+    // Staff Management & Global Platform Settings (Super Admin only)
     Route::middleware('role:super_admin')->group(function (): void {
         Route::get('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'index'])->name('admin.staff.index');
         Route::post('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'store'])->name('admin.staff.store');
         Route::match(['post', 'put'], '/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'update'])->name('admin.staff.update');
         Route::post('/staff/{id}/assign-stores', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'assignStores'])->name('admin.staff.assign-stores');
         Route::delete('/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'destroy'])->name('admin.staff.destroy');
+
+        Route::get('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'index'])->name('admin.settings.index');
+        Route::post('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'update'])->name('admin.settings.update');
     });
 
     // Six non-bike service enquiries are not confirmed or payable bookings.

@@ -14,6 +14,11 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\ServiceBooking;
 use App\Models\ServicePaymentReceipt;
+use App\Models\User;
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
+use App\Notifications\ServiceBookingConfirmedNotification;
+use App\Notifications\ServiceManagerBookingAlertNotification;
 use App\Notifications\ServicePaymentReceivedNotification;
 use App\Services\BookingService;
 use App\Services\BikeBookingPayments;
@@ -281,12 +286,82 @@ class PhonePeWebhookController extends Controller
                     ],
                 ]);
 
-                // Send payment receipt
-                $receiptNotification = new ServicePaymentReceivedNotification($booking, $gatewayTransactionId, $amountPaise);
-                if ($booking->user && filter_var($booking->user->email, FILTER_VALIDATE_EMAIL)) {
-                    $booking->user->notify($receiptNotification);
-                } elseif ($booking->customer_email && filter_var($booking->customer_email, FILTER_VALIDATE_EMAIL)) {
-                    Notification::route('mail', $booking->customer_email)->notify($receiptNotification);
+                // Transition booking status to confirmed if still pending
+                if ($booking->status === 'pending') {
+                    $booking->update(['status' => 'confirmed']);
+                }
+
+                // 1. Send customer confirmation voucher (Email + WhatsApp)
+                try {
+                    $voucherNotification = new ServiceBookingConfirmedNotification($booking);
+                    if ($booking->user) {
+                        $booking->user->notify($voucherNotification);
+                    } elseif ($booking->customer_email || $booking->customer_phone) {
+                        $customerRoute = Notification::route('mail', $booking->customer_email ?: 'contact@whizwheels.in');
+                        if (! empty($booking->customer_phone)) {
+                            $customerRoute->route('whatsapp', (string) $booking->customer_phone);
+                        }
+                        $customerRoute->notify($voucherNotification);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Service booking customer confirmation dispatch failed', [
+                        'booking_id' => $booking->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                // 2. Send customer payment receipt (Email)
+                try {
+                    $receiptNotification = new ServicePaymentReceivedNotification($booking, $gatewayTransactionId, $amountPaise);
+                    if ($booking->user && filter_var($booking->user->email, FILTER_VALIDATE_EMAIL)) {
+                        $booking->user->notify($receiptNotification);
+                    } elseif ($booking->customer_email && filter_var($booking->customer_email, FILTER_VALIDATE_EMAIL)) {
+                        Notification::route('mail', $booking->customer_email)->notify($receiptNotification);
+                    }
+                } catch (\Throwable) {
+                }
+
+                // 3. Alert SuperAdmin + Assigned Branch (store.whatsapp & store.email) immediately upon payment success
+                try {
+                    $superAdmins = User::query()
+                        ->where('role', UserRole::SUPER_ADMIN)
+                        ->where('status', UserStatus::ACTIVE)
+                        ->get();
+
+                    foreach ($superAdmins as $admin) {
+                        try {
+                            $admin->notify(new ServiceManagerBookingAlertNotification($booking));
+                        } catch (\Throwable) {
+                        }
+                    }
+
+                    $managers = User::query()
+                        ->where('role', UserRole::STORE_MANAGER)
+                        ->where('status', UserStatus::ACTIVE)
+                        ->whereHas('stores', fn ($q) => $q->where('stores.id', $booking->store_id))
+                        ->get();
+
+                    foreach ($managers as $manager) {
+                        try {
+                            $manager->notify(new ServiceManagerBookingAlertNotification($booking));
+                        } catch (\Throwable) {
+                        }
+                    }
+
+                    $store = $booking->store;
+                    if ($store && ($store->email || $store->whatsapp || $store->phone)) {
+                        $deskRoute = Notification::route('mail', $store->email ?: 'contact@whizwheels.in');
+                        $phone = $store->whatsapp ?: $store->phone;
+                        if (! empty($phone)) {
+                            $deskRoute->route('whatsapp', (string) $phone);
+                        }
+                        $deskRoute->notify(new ServiceManagerBookingAlertNotification($booking));
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Service booking manager alert lookup failed', [
+                        'booking_id' => $booking->id,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
 
                 return response()->json([
