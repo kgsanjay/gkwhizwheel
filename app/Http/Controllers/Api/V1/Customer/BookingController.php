@@ -20,7 +20,6 @@ use App\Services\BookingService;
 use App\Services\BikeBookingPayments;
 use App\Services\PhonePeService;
 use App\Services\PricingService;
-use App\Services\RazorpayService;
 use App\Services\RefundService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -98,7 +97,6 @@ class BookingController extends Controller
     public function checkout(
         int $id,
         Request $request,
-        RazorpayService $razorpayService,
         BookingService $bookingService,
         ?PhonePeService $phonePeService = null
     ): JsonResponse {
@@ -106,14 +104,14 @@ class BookingController extends Controller
         // and web nodes sharing the same database. Keep the lock through the
         // gateway request so no second request can issue a parallel order.
         return DB::transaction(function () use (
-            $id, $request, $razorpayService, $bookingService, $phonePeService
+            $id, $request, $bookingService, $phonePeService
         ): JsonResponse {
             Booking::where('user_id', $request->user()->id)
                 ->lockForUpdate()
                 ->findOrFail($id);
 
             return $this->checkoutWithLockedBooking(
-                $id, $request, $razorpayService, $bookingService, $phonePeService
+                $id, $request, $bookingService, $phonePeService
             );
         }, 3);
     }
@@ -124,7 +122,6 @@ class BookingController extends Controller
     private function checkoutWithLockedBooking(
         int $id,
         Request $request,
-        RazorpayService $razorpayService,
         BookingService $bookingService,
         ?PhonePeService $phonePeService = null
     ): JsonResponse {
@@ -161,7 +158,7 @@ class BookingController extends Controller
         }
 
         $validated = $request->validate([
-            'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
+            'gateway' => ['nullable', 'string', 'in:phonepe'],
             'payment_option' => ['nullable', 'string', 'in:advance,full'],
             'redirect_url' => ['nullable', 'string', 'max:500'],
             'accept_rental_terms' => ['exclude_without:billing', 'accepted'],
@@ -173,7 +170,7 @@ class BookingController extends Controller
             'billing.gstin' => ['nullable', 'string', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],
         ]);
 
-        $gateway = strtolower((string) ($validated['gateway'] ?? $request->query('gateway', 'razorpay')));
+        $gateway = 'phonepe';
         $option = (string) ($validated['payment_option'] ?? 'full');
         $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
 
@@ -239,42 +236,15 @@ class BookingController extends Controller
         }
         $booking->update(['price_breakdown_json' => $breakdown]);
 
-        if ($gateway === 'phonepe') {
-            // Reuse an already-created payment page for sequential retries.
-            // A fresh gateway attempt should not be issued just because the
-            // customer double-clicked or refreshed the checkout screen.
-            if (! empty($breakdown['phonepe_transaction_id'])) {
-                if (empty($breakdown['phonepe_redirect_url'])) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'payment_option' => 'A PhonePe payment is already in progress. Check its result before attempting another payment.',
-                    ]);
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'booking_id' => $booking->id,
-                        'booking_reference' => $booking->booking_reference,
-                        'gateway' => 'phonepe',
-                        'merchant_transaction_id' => $breakdown['phonepe_transaction_id'],
-                        'redirect_url' => $breakdown['phonepe_redirect_url'],
-                        'amount' => $amount,
-                        'payment_option' => $option,
-                        'balance_due_on_pickup' => $breakdown['balance_due_on_pickup'],
-                        'amount_paise' => (int) round($amount * 100),
-                        'currency' => 'INR',
-                        'status' => $booking->status->value,
-                    ],
-                    'message' => 'Existing PhonePe payment resumed.',
+        // Reuse an already-created payment page for sequential retries.
+        // A fresh gateway attempt should not be issued just because the
+        // customer double-clicked or refreshed the checkout screen.
+        if (! empty($breakdown['phonepe_transaction_id'])) {
+            if (empty($breakdown['phonepe_redirect_url'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'payment_option' => 'A PhonePe payment is already in progress. Check its result before attempting another payment.',
                 ]);
             }
-
-            $paymentData = $phonePeService->createPayment($booking, $validated['redirect_url'] ?? null);
-
-            $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
-            $breakdown['phonepe_transaction_id'] = $paymentData['merchant_transaction_id'];
-            $breakdown['phonepe_redirect_url'] = $paymentData['redirect_url'];
-            $booking->update(['price_breakdown_json' => $breakdown]);
 
             return response()->json([
                 'success' => true,
@@ -282,35 +252,24 @@ class BookingController extends Controller
                     'booking_id' => $booking->id,
                     'booking_reference' => $booking->booking_reference,
                     'gateway' => 'phonepe',
-                    'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
-                    'redirect_url' => $paymentData['redirect_url'],
+                    'merchant_transaction_id' => $breakdown['phonepe_transaction_id'],
+                    'redirect_url' => $breakdown['phonepe_redirect_url'],
                     'amount' => $amount,
                     'payment_option' => $option,
                     'balance_due_on_pickup' => $breakdown['balance_due_on_pickup'],
-                    'amount_paise' => $paymentData['amount_paise'],
+                    'amount_paise' => (int) round($amount * 100),
                     'currency' => 'INR',
                     'status' => $booking->status->value,
                 ],
-                'message' => 'PhonePe checkout order created successfully.',
+                'message' => 'Existing PhonePe payment resumed.',
             ]);
         }
 
-        $order = ! empty($breakdown['razorpay_order_id'])
-            ? [
-                'id' => $breakdown['razorpay_order_id'],
-                'amount' => (int) round($amount * 100),
-                'currency' => 'INR',
-                'key_id' => (string) config('services.razorpay.key_id'),
-                'notes' => [
-                    'booking_id' => (string) $booking->id,
-                    'booking_reference' => (string) $booking->booking_reference,
-                    'user_id' => (string) $booking->user_id,
-                ],
-            ]
-            : $razorpayService->createOrder($booking);
+        $paymentData = $phonePeService->createPayment($booking, $validated['redirect_url'] ?? null);
 
         $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
-        $breakdown['razorpay_order_id'] = $order['id'];
+        $breakdown['phonepe_transaction_id'] = $paymentData['merchant_transaction_id'];
+        $breakdown['phonepe_redirect_url'] = $paymentData['redirect_url'];
         $booking->update(['price_breakdown_json' => $breakdown]);
 
         return response()->json([
@@ -318,18 +277,17 @@ class BookingController extends Controller
             'data' => [
                 'booking_id' => $booking->id,
                 'booking_reference' => $booking->booking_reference,
-                'gateway' => 'razorpay',
-                'order_id' => $order['id'],
+                'gateway' => 'phonepe',
+                'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
+                'redirect_url' => $paymentData['redirect_url'],
                 'amount' => $amount,
                 'payment_option' => $option,
                 'balance_due_on_pickup' => $breakdown['balance_due_on_pickup'],
-                'amount_paise' => (int) ($order['amount'] ?? round($amount * 100)),
-                'currency' => $order['currency'] ?? 'INR',
-                'key_id' => $order['key_id'] ?? (string) config('services.razorpay.key_id'),
+                'amount_paise' => $paymentData['amount_paise'],
+                'currency' => 'INR',
                 'status' => $booking->status->value,
-                'notes' => $order['notes'] ?? [],
             ],
-            'message' => 'Checkout order created successfully.',
+            'message' => 'PhonePe checkout order created successfully.',
         ]);
     }
 
@@ -342,9 +300,7 @@ class BookingController extends Controller
         PhonePeService $phonePeService,
         BookingService $bookingService
     ): JsonResponse {
-        $request->merge(['gateway' => 'phonepe']);
-
-        return $this->checkout($id, $request, app(RazorpayService::class), $bookingService, $phonePeService);
+        return $this->checkout($id, $request, $bookingService, $phonePeService);
     }
 
     /**

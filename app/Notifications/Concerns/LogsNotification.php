@@ -42,13 +42,6 @@ trait LogsNotification
             }
         }
 
-        $pushToken = (method_exists($notifiable, 'routeNotificationFor') ? $notifiable->routeNotificationFor('expo_push', $this) : null)
-            ?? ($notifiable->expo_push_token ?? null);
-
-        if (! empty($pushToken) && method_exists($this, 'toExpoPush')) {
-            $channels[] = \App\Channels\ExpoPushChannel::class;
-        }
-
         return $channels;
     }
 

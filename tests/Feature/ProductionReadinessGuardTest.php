@@ -28,11 +28,7 @@ test('credentialed cors disallows wildcard origin patterns and unauthorized subd
 });
 
 test('payment webhook signature verification fails when secret is unconfigured', function (): void {
-    config()->set('services.razorpay.webhook_secret', null);
     config()->set('services.phonepe.salt_key', null);
-
-    expect(app(\App\Services\RazorpayService::class)
-        ->verifyWebhookSignature('{"event":"payment.captured"}', 'any-signature'))->toBeFalse();
 
     expect(app(\App\Services\PhonePeService::class)
         ->verifyWebhookSignature('encoded', 'any-signature'))->toBeFalse();

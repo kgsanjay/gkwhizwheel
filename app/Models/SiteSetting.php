@@ -24,6 +24,7 @@ class SiteSetting extends Model
     public static function getAllSettings(): array
     {
         $defaults = [
+            'brand_name' => 'G.K. WhizWheel',
             'primary_phone' => '+918660989586',
             'whatsapp_number' => config('whizwheel.whatsapp_enquiry_number', '918660989586'),
             'support_email' => 'contact@whizwheels.in',
@@ -32,6 +33,7 @@ class SiteSetting extends Model
             'explore_label' => 'Explore',
             'locations_summary' => 'Honnavar & Murudeshwar',
             'google_rating_label' => '5.0 Google Rated (324+)',
+            'google_rating_score' => '5.0',
             'google_rating_value' => '5.0',
             'google_reviews_count' => '324+',
             'google_maps_reviews_url' => 'https://maps.app.goo.gl/y94Ap38BbZGWGSDdA',
@@ -72,6 +74,14 @@ class SiteSetting extends Model
             ]
         );
 
+        Cache::forget('site_settings_all');
+    }
+
+    /**
+     * Clear all cached site settings.
+     */
+    public static function clearCache(): void
+    {
         Cache::forget('site_settings_all');
     }
 }

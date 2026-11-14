@@ -42,7 +42,6 @@ use App\Models\PricingRule;
 use App\Models\Refund;
 use App\Models\Review;
 use App\Models\Store;
-use App\Models\SyncQueue;
 use App\Models\User;
 
 test('models cast enums and soft deletes behave correctly', function (): void {
@@ -388,18 +387,4 @@ test('wiring between user, store, bikes, and operational models works end-to-end
         ->and($notification->channel)->toBe(NotificationChannel::WHATSAPP)
         ->and($notification->status)->toBe(NotificationStatus::DELIVERED)
         ->and($booking->notificationLogs)->toHaveCount(1);
-
-    // Sync Queue
-    $syncItem = SyncQueue::create([
-        'device_id' => 'device-tab-01',
-        'user_id' => $staff->id,
-        'action_type' => 'mark_returned',
-        'payload_json' => ['booking_id' => $booking->id, 'odometer' => 12850],
-        'idempotency_key' => 'idemp-sync-001',
-        'status' => SyncStatus::PENDING,
-    ]);
-    expect($syncItem->user->id)->toBe($staff->id)
-        ->and($syncItem->status)->toBe(SyncStatus::PENDING)
-        ->and($syncItem->payload_json)->toBe(['booking_id' => $booking->id, 'odometer' => 12850])
-        ->and($staff->syncQueueItems)->toHaveCount(1);
 });

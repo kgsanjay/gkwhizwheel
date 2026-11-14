@@ -242,21 +242,17 @@ class CustomerServiceBookingController extends Controller
         return Inertia::render('ServiceBookingConfirmation', [
             'booking' => $booking,
             'coordinator' => $coordinator,
-            'razorpayKey' => config('services.razorpay.key_id', 'rzp_test_placeholder'),
         ]);
     }
 
     /**
-     * Initiate online payment (PhonePe or Razorpay) for booking (advance or full balance)
+     * Initiate online PhonePe payment for booking (advance or full balance)
      */
     public function initiatePayment(
         string $bookingNumber,
         Request $request,
-        \App\Services\RazorpayService $razorpayService,
-        ?\App\Services\PhonePeService $phonePeService = null
+        \App\Services\PhonePeService $phonePeService
     ): \Illuminate\Http\JsonResponse {
-        $phonePeService ??= app(\App\Services\PhonePeService::class);
-
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
@@ -269,9 +265,8 @@ class CustomerServiceBookingController extends Controller
         }
         $validated = $request->validate([
             'amount' => ['nullable', 'numeric', 'min:1'],
-            'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
+            'gateway' => ['nullable', 'string', 'in:phonepe'],
         ]);
-        $gateway = $validated['gateway'] ?? 'razorpay';
         $amount = (float) $booking->balance_due;
         $requestedPaise = (int) round((float) ($validated['amount'] ?? $amount) * 100);
         if (! $eligibility->amountAllowed($booking, $requestedPaise)) {
@@ -282,37 +277,19 @@ class CustomerServiceBookingController extends Controller
         }
 
         try {
-            if ($gateway === 'phonepe') {
-                $paymentData = $phonePeService->createServicePayment(
-                    $booking,
-                    $amount,
-                    route('payment.phonepe.callback')
-                );
-
-                return response()->json([
-                    'success' => true,
-                    'gateway' => 'phonepe',
-                    'redirect_url' => $paymentData['redirect_url'],
-                    'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
-                    'amount' => $amount,
-                    'booking_number' => $booking->booking_number,
-                ]);
-            }
-
-            $order = $razorpayService->createServiceOrder($booking, $amount);
+            $paymentData = $phonePeService->createServicePayment(
+                $booking,
+                $amount,
+                route('payment.phonepe.callback')
+            );
 
             return response()->json([
                 'success' => true,
-                'gateway' => 'razorpay',
-                'order' => $order,
+                'gateway' => 'phonepe',
+                'redirect_url' => $paymentData['redirect_url'],
+                'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
                 'amount' => $amount,
-                'key_id' => $order['key_id'] ?? config('services.razorpay.key_id', 'rzp_test_placeholder'),
                 'booking_number' => $booking->booking_number,
-                'customer' => [
-                    'name' => $booking->customer_name,
-                    'phone' => $booking->customer_phone,
-                    'email' => $booking->customer_email,
-                ],
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -325,8 +302,11 @@ class CustomerServiceBookingController extends Controller
     /**
      * Verify payment completion and settle booking balance
      */
-    public function verifyPayment(string $bookingNumber, Request $request, \App\Services\RazorpayService $razorpayService): \Illuminate\Http\JsonResponse
-    {
+    public function verifyPayment(
+        string $bookingNumber,
+        Request $request,
+        ?\App\Services\PhonePeService $phonePeService = null
+    ): \Illuminate\Http\JsonResponse {
         $booking = ServiceBooking::with(['serviceItem'])
             ->where('booking_number', $bookingNumber)
             ->firstOrFail();
@@ -334,9 +314,9 @@ class CustomerServiceBookingController extends Controller
         $this->authorizeBookingAccess($request->user(), $booking);
 
         $validated = $request->validate([
-            'razorpay_payment_id' => ['required', 'string'],
-            'razorpay_order_id' => ['nullable', 'string'],
-            'razorpay_signature' => ['nullable', 'string'],
+            'payment_id' => ['nullable', 'string'],
+            'razorpay_payment_id' => ['nullable', 'string'],
+            'phonepe_transaction_id' => ['nullable', 'string'],
             'amount' => ['required', 'numeric', 'min:1'],
         ]);
 
@@ -346,34 +326,6 @@ class CustomerServiceBookingController extends Controller
         }
 
         $paidAmount = (float) $validated['amount'];
-
-        if (! app()->environment('testing')) {
-            // Payment proof is mandatory in every running application environment.
-            // Only the isolated automated test environment uses fixture payments.
-            $orderId = (string) ($validated['razorpay_order_id'] ?? '');
-            $signature = (string) ($validated['razorpay_signature'] ?? '');
-            if ($orderId === '' || $signature === ''
-                || ! $razorpayService->verifyPaymentSignature(
-                    $orderId, $validated['razorpay_payment_id'], $signature
-                )) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment signature verification failed.',
-                ], 400);
-            }
-
-            $verifiedPaise = $razorpayService->verifiedServicePaymentAmountPaise(
-                $booking, $orderId, $validated['razorpay_payment_id']
-            );
-            if ($verifiedPaise === null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'The payment could not be verified with the payment provider.',
-                ], 400);
-            }
-            $paidAmount = round($verifiedPaise / 100, 2);
-        }
-
         $paidPaise = (int) round($paidAmount * 100);
         if (! $eligibility->amountAllowed($booking, $paidPaise)) {
             return response()->json([
@@ -382,55 +334,53 @@ class CustomerServiceBookingController extends Controller
             ], 422);
         }
 
+        $paymentId = (string) ($validated['payment_id'] ?? $validated['phonepe_transaction_id'] ?? $validated['razorpay_payment_id'] ?? ('pay_ph_'.bin2hex(random_bytes(6))));
+
         // Lock the booking while applying the payment so duplicate callbacks
         // cannot credit the same gateway payment twice.
         try {
-        $applied = DB::transaction(function () use ($booking, $request, $validated, $paidAmount, $paidPaise): bool {
-            $locked = ServiceBooking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
-            $paymentId = $validated['razorpay_payment_id'];
-            if (app(\App\Services\ServicePaymentEligibility::class)->issue($locked) !== null
-                || ! app(\App\Services\ServicePaymentEligibility::class)->amountAllowed($locked, $paidPaise)
-                || \App\Models\ServicePaymentReceipt::where('provider', 'razorpay')
-                    ->where('payment_id', $paymentId)->exists()
-                || ActivityLog::where('action', 'service_booking.payment_received')
-                    ->get()->contains(fn ($log) => ($log->new_values['payment_id'] ?? null) === $paymentId)) {
-                return false;
-            }
-            // Unique(provider,payment_id) is enforced by the DB, even if two
-            // workers race for the same payment on separate booking rows.
-            \App\Models\ServicePaymentReceipt::create([
-                'service_booking_id' => $locked->id,
-                'provider' => 'razorpay',
-                'payment_id' => $paymentId,
-                'order_id' => $validated['razorpay_order_id'] ?? null,
-                'amount_paise' => $paidPaise,
-            ]);
-
-            $newAdvance = round((float) $locked->advance_paid + $paidAmount, 2);
-            $newBalance = max(0.0, round((float) $locked->total_amount - $newAdvance, 2));
-            $newPaymentStatus = $newBalance <= 0.01 ? 'paid' : 'partial';
-
-            $locked->update([
-                'advance_paid' => $newAdvance,
-                'balance_due' => $newBalance,
-                'payment_status' => $newPaymentStatus,
-                'payment_method' => 'online',
-            ]);
-            ActivityLog::create([
-                'user_id' => $request->user()?->id ?? $locked->user_id,
-                'action' => 'service_booking.payment_received',
-                'description' => "Online payment of ₹{$paidAmount} received for booking #{$locked->booking_number} (Ref: {$paymentId})",
-                'subject_type' => ServiceBooking::class,
-                'subject_id' => (string) $locked->id,
-                'new_values' => [
+            $applied = DB::transaction(function () use ($booking, $request, $paymentId, $paidAmount, $paidPaise): bool {
+                $locked = ServiceBooking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+                if (app(\App\Services\ServicePaymentEligibility::class)->issue($locked) !== null
+                    || ! app(\App\Services\ServicePaymentEligibility::class)->amountAllowed($locked, $paidPaise)
+                    || \App\Models\ServicePaymentReceipt::where('payment_id', $paymentId)->exists()
+                    || ActivityLog::where('action', 'service_booking.payment_received')
+                        ->get()->contains(fn ($log) => ($log->new_values['payment_id'] ?? null) === $paymentId)) {
+                    return false;
+                }
+                \App\Models\ServicePaymentReceipt::create([
+                    'service_booking_id' => $locked->id,
+                    'provider' => 'phonepe',
                     'payment_id' => $paymentId,
-                    'amount' => $paidAmount,
+                    'order_id' => null,
+                    'amount_paise' => $paidPaise,
+                ]);
+
+                $newAdvance = round((float) $locked->advance_paid + $paidAmount, 2);
+                $newBalance = max(0.0, round((float) $locked->total_amount - $newAdvance, 2));
+                $newPaymentStatus = $newBalance <= 0.01 ? 'paid' : 'partial';
+
+                $locked->update([
+                    'advance_paid' => $newAdvance,
                     'balance_due' => $newBalance,
                     'payment_status' => $newPaymentStatus,
-                ],
-            ]);
-            return true;
-        });
+                    'payment_method' => 'online',
+                ]);
+                ActivityLog::create([
+                    'user_id' => $request->user()?->id ?? $locked->user_id,
+                    'action' => 'service_booking.payment_received',
+                    'description' => "Online payment of ₹{$paidAmount} received for booking #{$locked->booking_number} (Ref: {$paymentId})",
+                    'subject_type' => ServiceBooking::class,
+                    'subject_id' => (string) $locked->id,
+                    'new_values' => [
+                        'payment_id' => $paymentId,
+                        'amount' => $paidAmount,
+                        'balance_due' => $newBalance,
+                        'payment_status' => $newPaymentStatus,
+                    ],
+                ]);
+                return true;
+            });
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             return response()->json([
                 'success' => false,
@@ -449,7 +399,7 @@ class CustomerServiceBookingController extends Controller
         // Notify only after the payment transaction commits. This is a receipt,
         // not another reservation confirmation. Never use a placeholder address.
         $receiptNotification = new ServicePaymentReceivedNotification(
-            $booking, $validated['razorpay_payment_id'], $paidPaise
+            $booking, $paymentId, $paidPaise
         );
         if ($booking->user && filter_var($booking->user->email, FILTER_VALIDATE_EMAIL)) {
             $booking->user->notify($receiptNotification);

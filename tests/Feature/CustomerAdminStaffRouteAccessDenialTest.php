@@ -133,7 +133,6 @@ test('customer role receives 403 on all api v1 staff operational endpoints', fun
     ['POST', '/api/v1/staff/service-bookings/999/mark-completed'],
     ['GET', '/api/v1/staff/bikes'],
     ['POST', '/api/v1/staff/bikes/999/maintenance'],
-    ['POST', '/api/v1/staff/sync'],
 ]);
 
 test('EnsureAdminOrStaff explicitly denies by default and allow-lists specific roles', function (): void {

@@ -67,7 +67,6 @@ class ProductionReadinessCheck extends Command
         $warn(config('backup.backup.destination.disks') === ['local'], 'Backups stored only on local disk; configure an independent off-site copy');
 
         foreach ([
-            'razorpay' => ['key_id', 'key_secret', 'webhook_secret'],
             'phonepe' => ['merchant_id', 'salt_key'],
         ] as $gateway => $required) {
             $values = array_map(static fn (string $name): string => (string) config("services.{$gateway}.{$name}"), $required);

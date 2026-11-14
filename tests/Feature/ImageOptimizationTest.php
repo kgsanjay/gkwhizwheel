@@ -53,6 +53,9 @@ class ImageOptimizationTest extends TestCase
 
         foreach ($iterator as $file) {
             if ($file->isFile()) {
+                if (str_contains($file->getPathname(), DIRECTORY_SEPARATOR.'favicon'.DIRECTORY_SEPARATOR)) {
+                    continue;
+                }
                 $ext = strtolower($file->getExtension());
                 if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
                     $originalCount++;

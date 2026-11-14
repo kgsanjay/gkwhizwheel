@@ -27,10 +27,6 @@ use Illuminate\Support\Facades\Log;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    config()->set('services.razorpay.key_id', 'rzp_test_testkey123');
-    config()->set('services.razorpay.key_secret', 'test_secret_abc123');
-    config()->set('services.razorpay.webhook_secret', 'test_webhook_secret_xyz');
-
     config()->set('services.phonepe.merchant_id', 'TEST_MERCHANT_ID');
     config()->set('services.phonepe.salt_key', 'test_phonepe_salt_key_123');
     config()->set('services.phonepe.salt_index', 1);
@@ -98,7 +94,7 @@ test('payments table enforces unique constraint on gateway_reference', function 
         'booking_id' => $booking->id,
         'type' => PaymentType::ADVANCE,
         'amount' => 3800.00,
-        'method' => PaymentMethod::RAZORPAY,
+        'method' => PaymentMethod::PHONEPE,
         'gateway_reference' => 'pay_duplicate_test_ref_123',
         'status' => PaymentStatus::SUCCESS,
     ]);
@@ -108,90 +104,10 @@ test('payments table enforces unique constraint on gateway_reference', function 
         'booking_id' => $booking->id,
         'type' => PaymentType::ADVANCE,
         'amount' => 3800.00,
-        'method' => PaymentMethod::RAZORPAY,
+        'method' => PaymentMethod::PHONEPE,
         'gateway_reference' => 'pay_duplicate_test_ref_123',
         'status' => PaymentStatus::SUCCESS,
     ]))->toThrow(UniqueConstraintViolationException::class);
-});
-
-test('Razorpay duplicate webhook delivery returns 200 and prevents duplicate Payment rows', function (): void {
-    $booking = Booking::create([
-        'booking_reference' => 'BK-RZP-RACE-01',
-        'bike_id' => $this->bike->id,
-        'user_id' => $this->customer->id,
-        'pickup_store_id' => $this->store->id,
-        'return_store_id' => $this->store->id,
-        'channel' => BookingChannel::ONLINE,
-        'status' => BookingStatus::PENDING_PAYMENT,
-        'start_date' => '2026-10-15',
-        'end_date' => '2026-10-17',
-        'base_amount' => 1800.00,
-        'deposit_amount' => 2000.00,
-        'total_amount' => 3800.00,
-        'price_breakdown_json' => ['razorpay_order_id' => 'order_test_race_01'],
-        'idempotency_key' => 'idemp-rzp-race-01',
-    ]);
-
-    $payloadArray = [
-        'event' => 'payment.captured',
-        'payload' => [
-            'payment' => [
-                'entity' => [
-                    'id' => 'pay_rzp_race_condition_ref_001',
-                    'order_id' => 'order_test_race_01',
-                    'amount' => 380000,
-                    'currency' => 'INR',
-                    'notes' => [
-                        'booking_id' => (string) $booking->id,
-                        'booking_reference' => $booking->booking_reference,
-                    ],
-                ],
-            ],
-        ],
-    ];
-
-    $payload = json_encode($payloadArray, JSON_THROW_ON_ERROR);
-    $signature = hash_hmac('sha256', $payload, 'test_webhook_secret_xyz');
-
-    // First delivery: processes payment
-    $response1 = $this->call(
-        'POST',
-        '/webhooks/razorpay',
-        [],
-        [],
-        [],
-        [
-            'HTTP_X-Razorpay-Signature' => $signature,
-            'CONTENT_TYPE' => 'application/json',
-        ],
-        $payload
-    );
-
-    $response1->assertOk()
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('data.status', 'confirmed');
-
-    expect(Payment::where('gateway_reference', 'pay_rzp_race_condition_ref_001')->count())->toBe(1);
-
-    // Second concurrent delivery: should return 200 without creating a duplicate row
-    $response2 = $this->call(
-        'POST',
-        '/webhooks/razorpay',
-        [],
-        [],
-        [],
-        [
-            'HTTP_X-Razorpay-Signature' => $signature,
-            'CONTENT_TYPE' => 'application/json',
-        ],
-        $payload
-    );
-
-    $response2->assertOk()
-        ->assertJsonPath('success', true);
-
-    // Still exactly 1 payment record
-    expect(Payment::where('gateway_reference', 'pay_rzp_race_condition_ref_001')->count())->toBe(1);
 });
 
 test('PhonePe duplicate webhook delivery returns 200 and prevents duplicate Payment rows', function (): void {
@@ -254,87 +170,6 @@ test('PhonePe duplicate webhook delivery returns 200 and prevents duplicate Paym
 
     // Still exactly 1 payment record
     expect(Payment::where('gateway_reference', 'T2409051800000000001')->count())->toBe(1);
-});
-
-test('Razorpay webhook logs warning and returns 200 when UniqueConstraintViolationException occurs', function (): void {
-    Log::shouldReceive('warning')
-        ->once()
-        ->withArgs(function ($message, $context) {
-            return str_contains((string) $message, 'Razorpay webhook duplicate delivery caught by unique constraint')
-                && $context['gateway_reference'] === 'pay_simulated_unique_clash';
-        });
-
-    $booking = Booking::create([
-        'booking_reference' => 'BK-RZP-CLASH-01',
-        'bike_id' => $this->bike->id,
-        'user_id' => $this->customer->id,
-        'pickup_store_id' => $this->store->id,
-        'return_store_id' => $this->store->id,
-        'channel' => BookingChannel::ONLINE,
-        'status' => BookingStatus::PENDING_PAYMENT,
-        'start_date' => '2026-10-15',
-        'end_date' => '2026-10-17',
-        'base_amount' => 1800.00,
-        'deposit_amount' => 2000.00,
-        'total_amount' => 3800.00,
-        'price_breakdown_json' => ['razorpay_order_id' => 'order_test_clash_01'],
-        'idempotency_key' => 'idemp-rzp-clash-01',
-    ]);
-
-    $payloadArray = [
-        'event' => 'payment.captured',
-        'payload' => [
-            'payment' => [
-                'entity' => [
-                    'id' => 'pay_simulated_unique_clash',
-                    'order_id' => 'order_test_clash_01',
-                    'amount' => 380000,
-                    'currency' => 'INR',
-                    'notes' => [
-                        'booking_id' => (string) $booking->id,
-                        'booking_reference' => $booking->booking_reference,
-                    ],
-                ],
-            ],
-        ],
-    ];
-
-    $payload = json_encode($payloadArray, JSON_THROW_ON_ERROR);
-    $signature = hash_hmac('sha256', $payload, 'test_webhook_secret_xyz');
-
-    // Simulate another concurrent process inserting right between the lookup and the insert
-    Payment::creating(function ($p) use ($booking): void {
-        if ($p->gateway_reference === 'pay_simulated_unique_clash') {
-            \Illuminate\Support\Facades\DB::table('payments')->insert([
-                'booking_id' => $booking->id,
-                'type' => PaymentType::ADVANCE->value,
-                'amount' => 3800.00,
-                'method' => PaymentMethod::RAZORPAY->value,
-                'gateway_reference' => 'pay_simulated_unique_clash',
-                'status' => PaymentStatus::SUCCESS->value,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-    });
-
-    // Dispatch webhook
-    $response = $this->call(
-        'POST',
-        '/webhooks/razorpay',
-        [],
-        [],
-        [],
-        [
-            'HTTP_X-Razorpay-Signature' => $signature,
-            'CONTENT_TYPE' => 'application/json',
-        ],
-        $payload
-    );
-
-    $response->assertOk()
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('message', 'Duplicate webhook delivery acknowledged.');
 });
 
 test('PhonePe webhook logs warning and returns 200 when UniqueConstraintViolationException occurs', function (): void {

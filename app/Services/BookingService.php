@@ -129,7 +129,9 @@ class BookingService
         ?string $signaturePath = null,
         ?string $notes = null,
         array $photoPaths = [],
-        ?int $staffId = null
+        ?int $staffId = null,
+        bool $complianceOverride = false,
+        ?string $overrideReason = null
     ): Booking {
         $this->ensureCurrentStatus($booking, [BookingStatus::CONFIRMED], BookingStatus::HANDED_OVER);
 
@@ -139,7 +141,9 @@ class BookingService
             $signaturePath,
             $notes,
             $photoPaths,
-            $staffId
+            $staffId,
+            $complianceOverride,
+            $overrideReason
         ): Booking {
             // Lock the booking as well as its bike. A stale Eloquent instance
             // must not authorize a duplicate inspection after first handover.
@@ -156,7 +160,24 @@ class BookingService
             }
 
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
-            app(BikeComplianceGate::class)->assertReadyForHandover($bike);
+
+            if (! $complianceOverride) {
+                app(BikeComplianceGate::class)->assertReadyForHandover($bike);
+            } else {
+                \App\Models\ActivityLog::create([
+                    'user_id' => $staffId,
+                    'store_id' => $booking->pickup_store_id,
+                    'action' => 'handover.compliance_override',
+                    'subject_type' => Booking::class,
+                    'subject_id' => $booking->id,
+                    'new_values' => [
+                        'bike_id' => $bike->id,
+                        'registration_number' => $bike->registration_number,
+                        'override_reason' => $overrideReason,
+                        'compliance_issues' => app(BikeComplianceGate::class)->problems($bike),
+                    ],
+                ]);
+            }
 
             if ($odometerReading < (int) $bike->odometer_reading) {
                 throw \Illuminate\Validation\ValidationException::withMessages([

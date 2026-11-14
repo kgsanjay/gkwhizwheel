@@ -194,44 +194,6 @@ test('holding booking requires Idempotency-Key header', function (): void {
         ->assertJsonValidationErrors(['idempotency_key']);
 });
 
-test('customer can create Razorpay checkout order for held booking', function (): void {
-    Sanctum::actingAs($this->customer, ['*']);
-
-    $uuidKey = (string) Str::uuid();
-    $booking = Booking::create([
-        'booking_reference' => 'BK-FLOW-01',
-        'bike_id' => $this->bike->id,
-        'user_id' => $this->customer->id,
-        'pickup_store_id' => $this->store1->id,
-        'return_store_id' => $this->store1->id,
-        'channel' => BookingChannel::ONLINE,
-        'status' => BookingStatus::HELD,
-        'start_date' => '2026-11-01',
-        'end_date' => '2026-11-03',
-        'base_amount' => 2550.00,
-        'deposit_amount' => 2000.00,
-        'total_amount' => 4550.00,
-        'price_breakdown_json' => [],
-        'idempotency_key' => $uuidKey,
-    ]);
-
-    $response = $this->postJson("/api/v1/bookings/{$booking->id}/checkout", [
-        'gateway' => 'razorpay',
-    ]);
-
-    $response->assertStatus(200)
-        ->assertJson([
-            'success' => true,
-            'data' => [
-                'booking_id' => $booking->id,
-                'gateway' => 'razorpay',
-                'amount' => 4550.00,
-                'amount_paise' => 455000,
-                'status' => 'pending_payment',
-            ],
-        ]);
-});
-
 test('customer can create PhonePe checkout order for held booking', function (): void {
     Sanctum::actingAs($this->customer, ['*']);
 
@@ -289,7 +251,7 @@ test('dev test payment simulation confirms booking and creates payment record', 
     ]);
 
     $response = $this->postJson("/dev/bookings/{$booking->id}/simulate-payment", [
-        'gateway' => 'razorpay',
+        'gateway' => 'phonepe',
     ]);
 
     $response->assertStatus(200)

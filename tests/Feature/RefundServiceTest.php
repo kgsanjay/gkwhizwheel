@@ -107,8 +107,8 @@ beforeEach(function (): void {
         'booking_id' => $this->booking->id,
         'type' => PaymentType::ADVANCE,
         'amount' => 5000.00,
-        'method' => PaymentMethod::RAZORPAY,
-        'gateway_reference' => 'pay_rzp_orig_001',
+        'method' => PaymentMethod::PHONEPE,
+        'gateway_reference' => 'T_PHONEPE_ORIG_001',
         'status' => PaymentStatus::SUCCESS,
         'collected_by' => $this->staff->id,
     ]);
@@ -240,48 +240,7 @@ test('manual refund against cash payment sets pending status with cash reference
         ->and((float) $refund->amount)->toBe(500.00);
 });
 
-test('razorpay webhook transitions pending refund to completed', function (): void {
-    $refund = $this->refundService->processCancellationRefund(
-        booking: $this->booking,
-        reason: 'Customer cancelled trip',
-        processedBy: $this->customer->id,
-        paymentId: $this->payment->id,
-        cancellationTime: '2026-10-08 00:00:00'
-    );
 
-    expect($refund->status)->toBe(RefundStatus::PENDING);
-
-    // Simulate incoming Razorpay refund.processed webhook
-    $secret = 'test_webhook_secret';
-    config()->set('services.razorpay.webhook_secret', $secret);
-
-    $payload = [
-        'event' => 'refund.processed',
-        'payload' => [
-            'refund' => [
-                'entity' => [
-                    'id' => $refund->gateway_reference,
-                    'payment_id' => $this->payment->gateway_reference,
-                    'amount' => 500000,
-                    'status' => 'processed',
-                ],
-            ],
-        ],
-    ];
-
-    $rawContent = (string) json_encode($payload);
-    $signature = hash_hmac('sha256', $rawContent, $secret);
-
-    $response = $this->withHeaders([
-        'X-Razorpay-Signature' => $signature,
-        'Content-Type' => 'application/json',
-    ])->postJson('/webhooks/razorpay', $payload);
-
-    $response->assertOk()
-        ->assertJsonPath('success', true);
-
-    expect($refund->fresh()->status)->toBe(RefundStatus::COMPLETED);
-});
 
 
 test('cancellation rejects a negative full-refund threshold', function (): void {

@@ -55,9 +55,9 @@ class FullUserJourneysTest extends TestCase
         Storage::fake('local');
         Storage::fake('public');
 
-        config()->set('services.razorpay.key_id', 'rzp_test_testkey123');
-        config()->set('services.razorpay.key_secret', 'test_secret_abc123');
-        config()->set('services.razorpay.webhook_secret', 'test_webhook_secret_xyz');
+        config()->set('services.phonepe.merchant_id', 'PGTESTPAYUAT');
+        config()->set('services.phonepe.salt_key', 'test_phonepe_salt_key_123');
+        config()->set('services.phonepe.salt_index', '1');
 
         $this->storeA = Store::create([
             'name' => 'Koramangala Hub',
@@ -179,56 +179,42 @@ class FullUserJourneysTest extends TestCase
         $bookingId = $holdResponse->json('data.id');
         $this->assertNotNull($bookingId);
 
-        // 4. Customer initiates checkout (Razorpay)
+        // 4. Customer initiates checkout (PhonePe)
         $checkoutResponse = $this->postJson("/api/v1/bookings/{$bookingId}/checkout", [
-            'gateway' => 'razorpay',
+            'gateway' => 'phonepe',
         ]);
         $checkoutResponse->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.gateway', 'razorpay')
-            ->assertJsonStructure(['data' => ['order_id', 'amount', 'key_id']]);
+            ->assertJsonPath('data.gateway', 'phonepe')
+            ->assertJsonStructure(['data' => ['redirect_url', 'merchant_transaction_id']]);
 
         // Booking status is now pending_payment
         $booking = Booking::findOrFail($bookingId);
         $this->assertEquals(BookingStatus::PENDING_PAYMENT, $booking->status);
 
-        // 5. Razorpay webhook confirms payment
-        $booking = Booking::findOrFail($bookingId);
-        $orderId = $checkoutResponse->json('data.order_id');
-        $razorpayPaymentId = 'pay_journey_test_9988';
-        $webhookPayload = [
-            'event' => 'payment.captured',
-            'payload' => [
-                'payment' => [
-                    'entity' => [
-                        'id' => $razorpayPaymentId,
-                        'order_id' => $orderId,
-                        'amount' => (int) ($booking->total_amount * 100),
-                        'currency' => 'INR',
-                        'notes' => [
-                            'booking_id' => (string) $booking->id,
-                            'booking_reference' => $booking->booking_reference,
-                        ],
-                    ],
-                ],
+        // 5. PhonePe webhook confirms payment
+        $merchantTxnId = $checkoutResponse->json('data.merchant_transaction_id');
+        $responsePayload = [
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'message' => 'Payment successful',
+            'data' => [
+                'merchantId' => 'PGTESTPAYUAT',
+                'merchantTransactionId' => $merchantTxnId,
+                'transactionId' => 'T21009988776',
+                'amount' => (int) ($booking->total_amount * 100),
+                'state' => 'COMPLETED',
             ],
         ];
 
-        $payloadJson = json_encode($webhookPayload, JSON_THROW_ON_ERROR);
-        $signature = hash_hmac('sha256', $payloadJson, 'test_webhook_secret_xyz');
+        $base64Response = base64_encode((string) json_encode($responsePayload, JSON_THROW_ON_ERROR));
+        $checksum = hash('sha256', $base64Response.'test_phonepe_salt_key_123').'###1';
 
-        $webhookResponse = $this->call(
-            'POST',
-            '/webhooks/razorpay',
-            [],
-            [],
-            [],
-            [
-                'HTTP_X-Razorpay-Signature' => $signature,
-                'CONTENT_TYPE' => 'application/json',
-            ],
-            $payloadJson
-        );
+        $webhookResponse = $this->postJson('/webhooks/phonepe', [
+            'response' => $base64Response,
+        ], [
+            'X-VERIFY' => $checksum,
+        ]);
 
         $webhookResponse->assertOk()
             ->assertJsonPath('success', true);

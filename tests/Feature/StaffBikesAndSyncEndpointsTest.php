@@ -6,7 +6,6 @@ use App\Enums\BikeStatus;
 use App\Enums\BookingChannel;
 use App\Enums\BookingStatus;
 use App\Enums\FuelType;
-use App\Enums\SyncStatus;
 use App\Enums\Transmission;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
@@ -15,7 +14,6 @@ use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\Booking;
 use App\Models\Store;
-use App\Models\SyncQueue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -112,26 +110,16 @@ beforeEach(function (): void {
     $this->storeManager->stores()->attach([$this->store1->id, $this->store2->id]);
 });
 
-test('unauthenticated users cannot access staff bikes or sync endpoints', function (): void {
+test('unauthenticated users cannot access staff bikes endpoints', function (): void {
     $this->getJson('/api/v1/staff/bikes')->assertStatus(401);
     $this->postJson('/api/v1/staff/bikes/'.$this->bike1->id.'/maintenance', [])->assertStatus(401);
-    $this->postJson('/api/v1/staff/sync', [])->assertStatus(401);
 });
 
-test('customers receive 403 forbidden on staff bikes and sync endpoints', function (): void {
+test('customers receive 403 forbidden on staff bikes endpoints', function (): void {
     Sanctum::actingAs($this->customer);
 
     $this->getJson('/api/v1/staff/bikes')->assertStatus(403);
     $this->postJson('/api/v1/staff/bikes/'.$this->bike1->id.'/maintenance', [])->assertStatus(403);
-    $this->postJson('/api/v1/staff/sync', [
-        'actions' => [
-            [
-                'idempotency_key' => 'idem_cust_test',
-                'action_type' => 'maintenance',
-                'payload' => ['bike_id' => $this->bike1->id],
-            ],
-        ],
-    ])->assertStatus(403);
 });
 
 test('staff can list bikes at a specific store with live status', function (): void {
@@ -192,102 +180,4 @@ test('staff can toggle bike maintenance status and audit log is recorded', funct
 
     $this->bike1->refresh();
     expect($this->bike1->status)->toBe(BikeStatus::AVAILABLE);
-});
-
-test('staff can sync batch offline actions with per-item status and idempotency', function (): void {
-    Sanctum::actingAs($this->staff);
-
-    // Seed an existing booking to collect payment for in batch
-    $existingBooking = Booking::create([
-        'booking_reference' => 'BK-SYNC-TEST-01',
-        'bike_id' => $this->bike2->id,
-        'user_id' => $this->customer->id,
-        'pickup_store_id' => $this->store1->id,
-        'return_store_id' => $this->store1->id,
-        'channel' => BookingChannel::OFFLINE,
-        'status' => BookingStatus::HELD,
-        'idempotency_key' => 'idem_sync_preseeded',
-        'start_date' => now()->addDays(1)->toDateString(),
-        'end_date' => now()->addDays(3)->toDateString(),
-        'base_amount' => 900.00,
-        'deposit_amount' => 1500.00,
-        'total_amount' => 2400.00,
-        'price_breakdown_json' => [],
-    ]);
-
-    $batchPayload = [
-        'device_id' => 'tab_store_whitefield_01',
-        'actions' => [
-            // Action 1: Create offline booking hold
-            [
-                'idempotency_key' => 'sync_act_hold_01',
-                'action_type' => 'hold_booking',
-                'payload' => [
-                    'customer_id' => $this->customer->id,
-                    'bike_id' => $this->bike1->id,
-                    'pickup_store_id' => $this->store1->id,
-                    'return_store_id' => $this->store1->id,
-                    'start_date' => now()->addDays(5)->toDateString(),
-                    'end_date' => now()->addDays(7)->toDateString(),
-                ],
-            ],
-            // Action 2: Collect payment for existing booking
-            [
-                'idempotency_key' => 'sync_act_pay_02',
-                'action_type' => 'collect_payment',
-                'payload' => [
-                    'booking_id' => $existingBooking->id,
-                    'payment_method' => 'cash',
-                    'amount' => 2400.00,
-                ],
-            ],
-            // Action 3: Put bike into maintenance
-            [
-                'idempotency_key' => 'sync_act_maint_03',
-                'action_type' => 'maintenance',
-                'payload' => [
-                    'bike_id' => $this->bike1->id,
-                    'status' => 'maintenance',
-                ],
-            ],
-            // Action 4: Intentional failure test (invalid booking id)
-            [
-                'idempotency_key' => 'sync_act_fail_04',
-                'action_type' => 'collect_payment',
-                'payload' => [
-                    'booking_id' => 9999999,
-                    'payment_method' => 'cash',
-                ],
-            ],
-        ],
-    ];
-
-    $response = $this->postJson('/api/v1/staff/sync', $batchPayload);
-
-    $response->assertStatus(200)
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('data.total', 4)
-        ->assertJsonPath('data.synced_count', 3)
-        ->assertJsonPath('data.failed_count', 1);
-
-    // Verify sync_queue DB rows
-    expect(SyncQueue::count())->toBe(4);
-
-    $successQueue = SyncQueue::where('idempotency_key', 'sync_act_hold_01')->first();
-    expect($successQueue)->not->toBeNull()
-        ->and($successQueue->status)->toBe(SyncStatus::SYNCED)
-        ->and($successQueue->device_id)->toBe('tab_store_whitefield_01');
-
-    $failedQueue = SyncQueue::where('idempotency_key', 'sync_act_fail_04')->first();
-    expect($failedQueue)->not->toBeNull()
-        ->and($failedQueue->status)->toBe(SyncStatus::FAILED);
-
-    // Verify existingBooking was marked confirmed
-    $existingBooking->refresh();
-    expect($existingBooking->status)->toBe(BookingStatus::CONFIRMED);
-
-    // Idempotency: resubmit identical batch
-    $resubmitResponse = $this->postJson('/api/v1/staff/sync', $batchPayload);
-    $resubmitResponse->assertStatus(200)
-        ->assertJsonPath('success', true);
 });

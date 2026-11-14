@@ -615,7 +615,23 @@ class AdminBookingWebController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
             'helmets_issued' => ['nullable', 'integer', 'min:1', 'max:2'],
             'fuel_level' => ['nullable', 'string', 'max:20'],
+            'compliance_override' => ['nullable', 'boolean'],
+            'override_reason' => ['nullable', 'string', 'max:500'],
         ]);
+
+        $complianceOverride = false;
+        $overrideReason = null;
+
+        if ($request->boolean('compliance_override')) {
+            abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403, 'Only SuperAdmin can authorize an emergency compliance override.');
+            if (empty(trim((string) ($validated['override_reason'] ?? '')))) {
+                throw ValidationException::withMessages([
+                    'override_reason' => ['An override reason is strictly required when bypassing bike document compliance.'],
+                ]);
+            }
+            $complianceOverride = true;
+            $overrideReason = trim((string) $validated['override_reason']);
+        }
 
         $photoPaths = [];
         if ($request->hasFile('condition_photos')) {
@@ -656,7 +672,9 @@ class AdminBookingWebController extends Controller
             signaturePath: $signaturePath,
             notes: $inspectionNotes !== '' ? $inspectionNotes : null,
             photoPaths: $photoPaths,
-            staffId: $request->user()->id
+            staffId: $request->user()->id,
+            complianceOverride: $complianceOverride,
+            overrideReason: $overrideReason
         );
 
         ActivityLog::create([

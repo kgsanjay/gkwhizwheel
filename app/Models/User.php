@@ -188,14 +188,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Offline sync queue actions queued by this user.
-     */
-    public function syncQueueItems(): HasMany
-    {
-        return $this->hasMany(SyncQueue::class, 'user_id');
-    }
-
-    /**
      * Route notifications for the WhatsApp channel.
      */
     public function routeNotificationForWhatsapp(): ?string

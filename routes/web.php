@@ -338,6 +338,11 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
 
         Route::get('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'index'])->name('admin.settings.index');
         Route::post('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'update'])->name('admin.settings.update');
+        Route::post('/settings/maintenance', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'maintenanceAction'])->name('admin.settings.maintenance');
+
+        // System Logs & Alerts Viewer
+        Route::get('/logs', [\App\Http\Controllers\Web\Admin\AdminLogWebController::class, 'index'])->name('admin.logs.index');
+        Route::post('/logs/notifications/{id}/resend', [\App\Http\Controllers\Web\Admin\AdminLogWebController::class, 'resendNotification'])->name('admin.logs.notifications.resend');
     });
 
     // Six non-bike service enquiries are not confirmed or payable bookings.
@@ -395,9 +400,6 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     // Reports & Analytics Dashboards
     Route::get('/reports', [\App\Http\Controllers\Web\Admin\AdminReportWebController::class, 'index'])->name('admin.reports.index');
 });
-
-Route::post('/webhooks/razorpay', [\App\Http\Controllers\Api\V1\Webhooks\RazorpayWebhookController::class, 'handle'])
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 
 Route::post('/webhooks/phonepe', [\App\Http\Controllers\Api\V1\Webhooks\PhonePeWebhookController::class, 'handle'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);

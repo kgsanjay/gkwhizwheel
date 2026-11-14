@@ -196,15 +196,11 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/{id}/documents', [\App\Http\Controllers\Api\V1\Customer\BookingController::class, 'documents']);
     });
 
-    // Customer KYC Documents & Push Tokens
+    // Customer KYC Documents
     Route::middleware(['auth:sanctum', 'throttle:uploads'])->prefix('customer')->group(function (): void {
         Route::get('/kyc-documents', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'index']);
         Route::post('/kyc-documents', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'store']);
         Route::get('/kyc-documents/{id}/download', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'download'])->name('customer.kyc-documents.download');
-
-        // Native Expo Push Token Registration
-        Route::post('/push-token', [\App\Http\Controllers\Api\V1\Customer\PushTokenController::class, 'store']);
-        Route::delete('/push-token', [\App\Http\Controllers\Api\V1\Customer\PushTokenController::class, 'destroy']);
     });
 
     // Admin Routes
@@ -326,15 +322,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\V1\Staff\BikeController::class, 'index']);
             Route::post('/{id}/maintenance', [\App\Http\Controllers\Api\V1\Staff\BikeController::class, 'maintenance']);
         });
-
-        Route::post('/sync', [\App\Http\Controllers\Api\V1\Staff\SyncController::class, 'sync']);
     });
-
-    // Mobile App Version & Deprecation Check (Block F & Block G)
-    Route::get('/staff/app-version', [\App\Http\Controllers\Api\V1\Staff\AppVersionController::class, 'show'])
-        ->middleware('throttle:mobile-api');
-    Route::get('/customer/app-version', [\App\Http\Controllers\Api\V1\Staff\AppVersionController::class, 'customer'])
-        ->middleware('throttle:mobile-api');
 
     // Signed Bike Document Download
     Route::get('/bike-documents/{id}', \App\Http\Controllers\Api\V1\Public\BikeDocumentDownloadController::class)
@@ -347,13 +335,11 @@ Route::prefix('v1')->group(function (): void {
         ->middleware('signed');
 
     // Webhooks
-    Route::post('/webhooks/razorpay', [\App\Http\Controllers\Api\V1\Webhooks\RazorpayWebhookController::class, 'handle']);
     Route::post('/webhooks/phonepe', [\App\Http\Controllers\Api\V1\Webhooks\PhonePeWebhookController::class, 'handle']);
     Route::get('/webhooks/whatsapp', [\App\Http\Controllers\Api\V1\Webhooks\WhatsAppWebhookController::class, 'verify']);
     Route::post('/webhooks/whatsapp', [\App\Http\Controllers\Api\V1\Webhooks\WhatsAppWebhookController::class, 'handle']);
 });
 
-Route::post('/webhooks/razorpay', [\App\Http\Controllers\Api\V1\Webhooks\RazorpayWebhookController::class, 'handle']);
 Route::post('/webhooks/phonepe', [\App\Http\Controllers\Api\V1\Webhooks\PhonePeWebhookController::class, 'handle']);
 Route::get('/webhooks/whatsapp', [\App\Http\Controllers\Api\V1\Webhooks\WhatsAppWebhookController::class, 'verify']);
 Route::post('/webhooks/whatsapp', [\App\Http\Controllers\Api\V1\Webhooks\WhatsAppWebhookController::class, 'handle']);

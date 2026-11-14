@@ -72,6 +72,7 @@ import AppShortcutIcon from '@mui/icons-material/AppShortcut';
 import Alert from '@mui/material/Alert';
 import PlaceIcon from '@mui/icons-material/Place';
 import TuneIcon from '@mui/icons-material/Tune';
+import HistoryEduIcon from '@mui/icons-material/HistoryEdu';
 import { useColorMode } from '../theme/ColorModeContext';
 
 const DRAWER_WIDTH = 268;
@@ -336,6 +337,12 @@ const MENU_SECTIONS = [
                 roles: ['super_admin'],
             },
             {
+                label: 'System Logs & Alerts',
+                path: '/admin/logs',
+                icon: <HistoryEduIcon sx={{ fontSize: 20 }} />,
+                roles: ['super_admin'],
+            },
+            {
                 label: 'Service Categories',
                 path: '/admin/services/categories',
                 icon: <CategoryIcon sx={{ fontSize: 20 }} />,
@@ -579,6 +586,8 @@ export default function AdminLayout({ children, title, currentStore }) {
             crumbs.push({ label: 'Staff Team', path: '/admin/staff' });
         } else if (url.startsWith('/admin/settings')) {
             crumbs.push({ label: 'Global Site Settings', path: '/admin/settings' });
+        } else if (url.startsWith('/admin/logs')) {
+            crumbs.push({ label: 'System Logs & Alerts', path: '/admin/logs' });
         } else if (url.startsWith('/admin/services/')) {
             const parts = url.split('/');
             const serviceSlug = parts[3] || '';

@@ -187,7 +187,7 @@ class PhonePeService
         $cbUrl = $callbackUrl ?? (string) config('services.phonepe.callback_url', url('/webhooks/phonepe'));
 
         $amountPaise = (int) round($amount * 100);
-        $merchantRefundTxnId = 'RFND_'.strtoupper(Str::random(12));
+        $merchantRefundTxnId = 'rfnd_'.strtolower(Str::random(12));
 
         $requestData = [
             'merchantId' => $merchantId,

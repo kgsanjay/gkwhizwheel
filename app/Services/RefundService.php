@@ -19,7 +19,6 @@ use Illuminate\Support\Str;
 class RefundService
 {
     public function __construct(
-        protected RazorpayService $razorpayService,
         protected PhonePeService $phonePeService
     ) {}
 
@@ -308,37 +307,6 @@ class RefundService
         }
 
         $method = $payment->method;
-
-        if ($method === PaymentMethod::RAZORPAY) {
-            $gatewayPaymentId = (string) $payment->gateway_reference;
-            $res = $this->razorpayService->createRefund($gatewayPaymentId, $amount, [
-                'booking_id' => (string) $booking->id,
-                'booking_reference' => (string) $booking->booking_reference,
-                'reason' => $reason,
-            ]);
-
-            if (! $res['success']) {
-                Log::error('Razorpay refund failed', [
-                    'booking_id' => $booking->id,
-                    'payment_id' => $payment->id,
-                    'amount' => $amount,
-                    'error' => $res['error'] ?? 'Unknown error',
-                ]);
-            }
-
-            $status = match ($res['status']) {
-                'completed' => RefundStatus::COMPLETED,
-                'failed' => RefundStatus::FAILED,
-                default => RefundStatus::PENDING,
-            };
-
-            return [
-                'success' => $res['success'],
-                'refund_id' => $res['refund_id'],
-                'status' => $status,
-                'error' => $res['error'],
-            ];
-        }
 
         if ($method === PaymentMethod::PHONEPE) {
             $originalTxnId = (string) $payment->gateway_reference;

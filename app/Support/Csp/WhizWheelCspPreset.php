@@ -24,7 +24,6 @@ class WhizWheelCspPreset implements Preset
             // Scripts: self and strict nonce-based inline execution
             ->add(Directive::SCRIPT, [
                 Keyword::SELF,
-                'https://checkout.razorpay.com',
                 'https://*.googleapis.com',
                 'https://*.gstatic.com',
             ])
@@ -60,8 +59,6 @@ class WhizWheelCspPreset implements Preset
             // Network connections: self, PhonePe APIs, and map tiles
             ->add(Directive::CONNECT, [
                 Keyword::SELF,
-                'https://lumberjack.razorpay.com',
-                'https://api.razorpay.com',
                 'https://api.phonepe.com',
                 'https://mercury.phonepe.com',
                 'https://mercury-tst.phonepe.com',
@@ -72,8 +69,6 @@ class WhizWheelCspPreset implements Preset
             // Frames & iframes: self, PhonePe checkout, Google
             ->add(Directive::FRAME, [
                 Keyword::SELF,
-                'https://api.razorpay.com',
-                'https://checkout.razorpay.com',
                 'https://mercury.phonepe.com',
                 'https://mercury-tst.phonepe.com',
                 '*.google.com',
@@ -82,7 +77,6 @@ class WhizWheelCspPreset implements Preset
             // Form actions: self, PhonePe gateway
             ->add(Directive::FORM_ACTION, [
                 Keyword::SELF,
-                'https://api.razorpay.com',
                 'https://mercury.phonepe.com',
                 'https://mercury-tst.phonepe.com',
             ]);

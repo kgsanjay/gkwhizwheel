@@ -82,11 +82,11 @@ class BookingWebController extends Controller
         }
 
         $validated = $request->validate([
-            'gateway' => ['nullable', 'string', 'in:razorpay,phonepe'],
+            'gateway' => ['nullable', 'string', 'in:phonepe'],
         ]);
 
-        $gateway = $validated['gateway'] ?? 'razorpay';
-        $paymentMethod = $gateway === 'phonepe' ? PaymentMethod::PHONEPE : PaymentMethod::RAZORPAY;
+        $gateway = $validated['gateway'] ?? 'phonepe';
+        $paymentMethod = PaymentMethod::PHONEPE;
         $gatewayRef = 'pay_sim_'.bin2hex(random_bytes(6));
 
         DB::transaction(function () use ($booking, $paymentMethod, $gatewayRef): void {

@@ -185,19 +185,15 @@ test('accepted quote must still match full booking interval and context before p
     $this->postJson($url, ['amount' => 1000])->assertUnprocessable();
 });
 
-test('locked payment verification rechecks allocation after provider verification', function (): void {
+test('locked payment verification rechecks allocation before applying payment', function (): void {
     $booking = payment51Booking($this, 'READINESS-PROVIDER-RACE');
-    $this->app->instance('env', 'production');
-    $provider = \Mockery::mock(\App\Services\RazorpayService::class);
-    $provider->shouldReceive('verifyPaymentSignature')->once()->andReturn(true);
-    $provider->shouldReceive('verifiedServicePaymentAmountPaise')->once()->andReturnUsing(function () use ($booking): int {
-        \App\Models\ServiceResourceAllocation::where('service_booking_id', $booking->id)->update(['status' => 'released']);
-        return 100000;
-    });
-    $this->app->instance(\App\Services\RazorpayService::class, $provider);
+    \App\Models\ServiceResourceAllocation::where('service_booking_id', $booking->id)->update(['status' => 'released']);
+
     $this->withSession(['_token' => 'readiness-test-csrf'])->actingAs($this->paymentCustomer)->postJson('/services/bookings/'.$booking->booking_number.'/verify-payment', [
-        'razorpay_payment_id' => 'pay_readiness_race', 'razorpay_order_id' => 'order_readiness_race',
-        'razorpay_signature' => 'verified_test_signature', 'amount' => 1000, '_token' => 'readiness-test-csrf',
+        'payment_id' => 'pay_readiness_race',
+        'amount' => 1000,
+        '_token' => 'readiness-test-csrf',
     ])->assertUnprocessable();
+
     expect(ServicePaymentReceipt::count())->toBe(0)->and((float) $booking->fresh()->advance_paid)->toBe(0.0);
 });

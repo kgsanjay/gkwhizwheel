@@ -51,9 +51,8 @@ class ContentSecurityPolicyTest extends TestCase
 
         $scriptSrc = $matches[1];
 
-        // Must allow self and Razorpay checkout SDK
+        // Must allow self
         $this->assertStringContainsString("'self'", $scriptSrc);
-        $this->assertStringContainsString('https://checkout.razorpay.com', $scriptSrc);
 
         // Must include a cryptographic nonce for inline scripts
         $this->assertMatchesRegularExpression("/'nonce-[a-zA-Z0-9+\/=]+'/", $scriptSrc);
@@ -112,8 +111,6 @@ class ContentSecurityPolicyTest extends TestCase
         $this->assertNotEmpty($connectMatches);
         $connectSrc = $connectMatches[1];
         $this->assertStringContainsString("'self'", $connectSrc);
-        $this->assertStringContainsString('https://lumberjack.razorpay.com', $connectSrc);
-        $this->assertStringContainsString('https://api.razorpay.com', $connectSrc);
         $this->assertStringContainsString('https://api.phonepe.com', $connectSrc);
         $this->assertStringContainsString('https://mercury.phonepe.com', $connectSrc);
 
@@ -122,8 +119,6 @@ class ContentSecurityPolicyTest extends TestCase
         $this->assertNotEmpty($frameMatches);
         $frameSrc = $frameMatches[1];
         $this->assertStringContainsString("'self'", $frameSrc);
-        $this->assertStringContainsString('https://api.razorpay.com', $frameSrc);
-        $this->assertStringContainsString('https://checkout.razorpay.com', $frameSrc);
         $this->assertStringContainsString('https://mercury.phonepe.com', $frameSrc);
 
         // form-action
@@ -131,7 +126,6 @@ class ContentSecurityPolicyTest extends TestCase
         $this->assertNotEmpty($formMatches);
         $formSrc = $formMatches[1];
         $this->assertStringContainsString("'self'", $formSrc);
-        $this->assertStringContainsString('https://api.razorpay.com', $formSrc);
         $this->assertStringContainsString('https://mercury.phonepe.com', $formSrc);
     }
 }

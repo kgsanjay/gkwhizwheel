@@ -6,7 +6,6 @@ use App\Enums\BikeStatus;
 use App\Enums\BookingChannel;
 use App\Enums\BookingStatus;
 use App\Enums\FuelType;
-use App\Enums\SyncStatus;
 use App\Enums\Transmission;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
@@ -16,7 +15,6 @@ use App\Models\BikeCategory;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\Store;
-use App\Models\SyncQueue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -276,84 +274,6 @@ test('active bookings query scopes to assigned stores and rejects querying unass
     // Filter for assigned storeA succeeds
     $resAssigned = $this->getJson('/api/v1/staff/bookings/active?store_id='.$this->storeA->id);
     $resAssigned->assertStatus(200);
-});
-
-test('sync endpoint enforces store scoping and rejects out-of-store actions', function (): void {
-    Sanctum::actingAs($this->staffA);
-
-    $bookingB = Booking::create([
-        'booking_reference' => 'BK-SYNC-BETA',
-        'bike_id' => $this->bikeB->id,
-        'user_id' => $this->customer->id,
-        'pickup_store_id' => $this->storeB->id,
-        'return_store_id' => $this->storeB->id,
-        'channel' => BookingChannel::OFFLINE,
-        'status' => BookingStatus::HELD,
-        'idempotency_key' => 'idem_sync_beta_held',
-        'start_date' => now()->addDays(1)->toDateString(),
-        'end_date' => now()->addDays(2)->toDateString(),
-        'base_amount' => 500.00,
-        'deposit_amount' => 1000.00,
-        'total_amount' => 1500.00,
-        'price_breakdown_json' => [],
-    ]);
-
-    $batchPayload = [
-        'device_id' => 'device_store_a',
-        'actions' => [
-            // Action 1: Create booking at Store Beta (should fail)
-            [
-                'idempotency_key' => 'sync_unauth_hold',
-                'action_type' => 'hold_booking',
-                'payload' => [
-                    'customer_id' => $this->customer->id,
-                    'bike_id' => $this->bikeB->id,
-                    'pickup_store_id' => $this->storeB->id,
-                    'return_store_id' => $this->storeB->id,
-                    'start_date' => now()->addDays(3)->toDateString(),
-                    'end_date' => now()->addDays(5)->toDateString(),
-                ],
-            ],
-            // Action 2: Collect payment for Store Beta booking (should fail)
-            [
-                'idempotency_key' => 'sync_unauth_pay',
-                'action_type' => 'collect_payment',
-                'payload' => [
-                    'booking_id' => $bookingB->id,
-                    'payment_method' => 'cash',
-                    'amount' => 1500.00,
-                ],
-            ],
-            // Action 3: Collect payment exceeding outstanding balance on Store Alpha booking (should fail)
-            [
-                'idempotency_key' => 'sync_overpay',
-                'action_type' => 'collect_payment',
-                'payload' => [
-                    'booking_id' => $bookingB->id,
-                    'payment_method' => 'cash',
-                    'amount' => 99999.00,
-                ],
-            ],
-            // Action 4: Put bike B into maintenance (should fail because bike B belongs to Store Beta)
-            [
-                'idempotency_key' => 'sync_unauth_maint',
-                'action_type' => 'maintenance',
-                'payload' => [
-                    'bike_id' => $this->bikeB->id,
-                    'status' => 'maintenance',
-                ],
-            ],
-        ],
-    ];
-
-    $response = $this->postJson('/api/v1/staff/sync', $batchPayload);
-
-    $response->assertStatus(200)
-        ->assertJsonPath('data.total', 4)
-        ->assertJsonPath('data.synced_count', 0)
-        ->assertJsonPath('data.failed_count', 4);
-
-    expect(SyncQueue::where('status', SyncStatus::FAILED)->count())->toBe(4);
 });
 
 test('user with bookings.cross_store permission or super_admin can perform cross-store actions and activity is audited', function (): void {

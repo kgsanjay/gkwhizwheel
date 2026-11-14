@@ -74,31 +74,6 @@ beforeEach(function (): void {
     ]);
 });
 
-test('checkout razorpay charges database total amount and ignores client supplied amount payload', function (): void {
-    Sanctum::actingAs($this->customer);
-
-    // Malicious client attempts to pass amount = 1.00 (or 100 paise) in request payload
-    $response = $this->postJson("/api/v1/bookings/{$this->booking->id}/checkout", [
-        'gateway' => 'razorpay',
-        'amount' => 1.00,
-        'amount_paise' => 100,
-        'total_amount' => 1.00,
-    ]);
-
-    $response->assertOk()
-        ->assertJson([
-            'success' => true,
-            'data' => [
-                'gateway' => 'razorpay',
-                'amount' => 4500,
-                'amount_paise' => 450000,
-            ],
-        ]);
-
-    expect((float) $response->json('data.amount'))->toBe(4500.00)
-        ->and($response->json('data.amount_paise'))->toBe(450000);
-});
-
 test('checkout phonepe charges database total amount and ignores client supplied amount payload', function (): void {
     Sanctum::actingAs($this->customer);
 

@@ -362,7 +362,7 @@ test('customer can initiate and verify online payment for service booking', func
         'service_booking_id' => $booking->id,
     ]);
 
-    // 1. Initiate online payment
+    // 1. Initiate online payment (PhonePe)
     $initResponse = $this->actingAs($customer)
         ->postJson("/services/bookings/{$booking->booking_number}/initiate-payment", [
             'amount' => 1500.00,
@@ -371,19 +371,18 @@ test('customer can initiate and verify online payment for service booking', func
     $initResponse->assertOk()
         ->assertJson([
             'success' => true,
+            'gateway' => 'phonepe',
             'amount' => 1500.00,
             'booking_number' => $booking->booking_number,
         ]);
 
-    $orderData = $initResponse->json('order');
-    expect($orderData['id'])->toStartWith('order_');
+    $txnId = $initResponse->json('merchant_transaction_id');
+    expect($txnId)->not->toBeNull();
 
     // 2. Verify payment callback
     $verifyResponse = $this->actingAs($customer)
         ->postJson("/services/bookings/{$booking->booking_number}/verify-payment", [
-            'razorpay_order_id' => $orderData['id'],
-            'razorpay_payment_id' => 'pay_test_'.\Illuminate\Support\Str::random(10),
-            'razorpay_signature' => 'test_sig',
+            'phonepe_transaction_id' => $txnId,
             'amount' => 1500.00,
         ]);
 
