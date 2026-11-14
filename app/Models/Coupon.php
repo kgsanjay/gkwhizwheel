@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\DiscountType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Coupon extends Model
@@ -20,6 +21,7 @@ class Coupon extends Model
      */
     protected $fillable = [
         'code',
+        'store_id',
         'discount_type',
         'value',
         'max_uses_total',
@@ -45,6 +47,14 @@ class Coupon extends Model
             'valid_until' => 'date',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Store this coupon is scoped to (null = platform-wide).
+     */
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class, 'store_id');
     }
 
     /**

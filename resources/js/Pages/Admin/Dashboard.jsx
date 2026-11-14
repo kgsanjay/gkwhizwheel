@@ -64,6 +64,7 @@ export default function AdminDashboard({
     pending_relocations = [],
     current_store = null,
     stores = [],
+    branch_comparison = [],
 }) {
     const { auth } = usePage().props;
     const theme = useTheme();
@@ -350,6 +351,153 @@ export default function AdminDashboard({
                 </Stack>
             </Box>
 
+            {/* Ground Manager Action Queue (Front-and-Center for Staff / Ground Manager) */}
+            {userRole === 'staff' && (
+                <Card
+                    sx={{
+                        mb: 3.5,
+                        borderRadius: 3,
+                        border: '2px solid',
+                        borderColor: isDark ? 'rgba(16, 185, 129, 0.4)' : '#6EE7B7',
+                        bgcolor: isDark ? 'rgba(16, 185, 129, 0.04)' : '#F0FDF4',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)',
+                    }}
+                >
+                    <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box sx={{ p: 1, borderRadius: 2, bgcolor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#DCFCE7', color: isDark ? '#34D399' : '#059669', display: 'flex' }}>
+                                    <QrCodeScannerIcon sx={{ fontSize: 22 }} />
+                                </Box>
+                                <Box>
+                                    <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: 'text.primary', letterSpacing: '-0.01em' }}>
+                                        Ground Operations Action Queue
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                                        Live on-ground tasks for {current_store?.name || 'Assigned Branch Hub'}.
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Button
+                                component={Link}
+                                href="/admin/check-in"
+                                variant="contained"
+                                size="small"
+                                startIcon={<QrCodeScannerIcon />}
+                                sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 800,
+                                    fontSize: '0.82rem',
+                                    borderRadius: 2,
+                                    px: 2,
+                                    py: 0.8,
+                                    bgcolor: isDark ? '#10B981' : '#059669',
+                                    color: '#FFFFFF',
+                                    '&:hover': { bgcolor: isDark ? '#059669' : '#047857' },
+                                }}
+                            >
+                                Launch Ground Scanner
+                            </Button>
+                        </Box>
+
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
+                                <Box
+                                    component={Link}
+                                    href="/admin/bookings?status=confirmed"
+                                    sx={{
+                                        display: 'block',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: 'background.paper',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        textDecoration: 'none',
+                                        transition: 'all 0.15s ease',
+                                        '&:hover': { borderColor: isDark ? '#FBBF24' : '#D97706', transform: 'translateY(-1px)' },
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>
+                                            Today&apos;s Pickups
+                                        </Typography>
+                                        <Chip label="Awaiting Handover" size="small" sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700, bgcolor: isDark ? 'rgba(245,158,11,0.18)' : '#FFFBEB', color: isDark ? '#FBBF24' : '#D97706' }} />
+                                    </Box>
+                                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                        {metrics.pending_handovers ?? 0}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: isDark ? '#FBBF24' : '#D97706', fontWeight: 600, mt: 0.5 }}>
+                                        Inspect documents & handover keys
+                                    </Typography>
+                                </Box>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, sm: 4 }}>
+                                <Box
+                                    component={Link}
+                                    href="/admin/bookings?status=handed_over"
+                                    sx={{
+                                        display: 'block',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: 'background.paper',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        textDecoration: 'none',
+                                        transition: 'all 0.15s ease',
+                                        '&:hover': { borderColor: isDark ? '#34D399' : '#059669', transform: 'translateY(-1px)' },
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>
+                                            Returns Due Today
+                                        </Typography>
+                                        <Chip label="Check-In" size="small" sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700, bgcolor: isDark ? 'rgba(16,185,129,0.18)' : '#ECFDF5', color: isDark ? '#34D399' : '#059669' }} />
+                                    </Box>
+                                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                        {metrics.expected_returns ?? 0}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: isDark ? '#34D399' : '#059669', fontWeight: 600, mt: 0.5 }}>
+                                        Inspect fuel, damages & close booking
+                                    </Typography>
+                                </Box>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, sm: 4 }}>
+                                <Box
+                                    component={Link}
+                                    href="/admin/check-in"
+                                    sx={{
+                                        display: 'block',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: 'background.paper',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        textDecoration: 'none',
+                                        transition: 'all 0.15s ease',
+                                        '&:hover': { borderColor: isDark ? '#60A5FA' : '#2563EB', transform: 'translateY(-1px)' },
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>
+                                            Quick Check-In / Out
+                                        </Typography>
+                                        <Chip label="Scan QR" size="small" sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700, bgcolor: isDark ? 'rgba(59,130,246,0.18)' : '#EFF6FF', color: isDark ? '#60A5FA' : '#2563EB' }} />
+                                    </Box>
+                                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                                        Scanner
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '0.75rem', color: isDark ? '#60A5FA' : '#2563EB', fontWeight: 600, mt: 0.5 }}>
+                                        Instant lookup by booking ref or QR
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* High-Density KPI Metrics Deck */}
             <Grid container spacing={2} sx={{ mb: 3.5 }}>
                 {/* 1. Active Rentals / Trips */}
@@ -544,6 +692,137 @@ export default function AdminDashboard({
                     </Grid>
                 )}
             </Grid>
+
+            {/* SuperAdmin Branch Comparison Matrix (Honnavar vs Murudeshwar) */}
+            {isSuperAdmin && branch_comparison.length > 0 && (
+                <Card
+                    sx={{
+                        mb: 3.5,
+                        borderRadius: 3,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                        overflow: 'hidden',
+                    }}
+                >
+                    <Box sx={{ p: 2.5, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                        <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <StoreIcon sx={{ color: isDark ? '#60A5FA' : '#2563EB', fontSize: 20 }} />
+                                <Typography sx={{ fontSize: '0.95rem', fontWeight: 800, color: 'text.primary', letterSpacing: '-0.01em' }}>
+                                    SuperAdmin Coastal Hubs Comparison Matrix
+                                </Typography>
+                                <Chip
+                                    label={`${branch_comparison.length} Branches Live`}
+                                    size="small"
+                                    sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700, bgcolor: isDark ? 'rgba(59,130,246,0.18)' : '#EFF6FF', color: isDark ? '#60A5FA' : '#2563EB' }}
+                                />
+                            </Box>
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem', mt: 0.3 }}>
+                                Side-by-side operational capacity, fleet utilization, today&apos;s active trips, monthly gross, enquiries, and compliance status.
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <TableContainer>
+                        <Table size="small">
+                            <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC' }}>
+                                <TableRow>
+                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', py: 1.5 }}>Branch Hub</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Total Fleet</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Available Bikes</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Active Today</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Month Revenue</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Pending Enquiries</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Compliance Alerts</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.75rem', pr: 2.5 }}>Action</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {branch_comparison.map((bc) => (
+                                    <TableRow key={bc.store_id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
+                                        <TableCell sx={{ py: 1.8 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                                                <Box>
+                                                    <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: 'text.primary' }}>
+                                                        {bc.store_name}
+                                                    </Typography>
+                                                    <Typography sx={{ fontSize: '0.72rem', color: 'text.secondary' }}>
+                                                        {bc.city} Hub
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem' }}>{bc.total_fleet}</Typography>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Chip
+                                                label={`${bc.available_bikes} Avail`}
+                                                size="small"
+                                                sx={{
+                                                    height: 22,
+                                                    fontWeight: 700,
+                                                    fontSize: '0.72rem',
+                                                    bgcolor: bc.available_bikes > 0 ? (isDark ? 'rgba(16,185,129,0.18)' : '#ECFDF5') : (isDark ? 'rgba(239,68,68,0.18)' : '#FEF2F2'),
+                                                    color: bc.available_bikes > 0 ? (isDark ? '#34D399' : '#059669') : (isDark ? '#F87171' : '#DC2626'),
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: isDark ? '#60A5FA' : '#2563EB' }}>
+                                                {bc.active_bookings_today}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <Typography sx={{ fontWeight: 800, fontSize: '0.88rem', color: isDark ? '#34D399' : '#059669' }}>
+                                                ₹{Number(bc.month_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Chip
+                                                label={bc.pending_enquiries}
+                                                size="small"
+                                                sx={{
+                                                    height: 22,
+                                                    fontWeight: 700,
+                                                    fontSize: '0.72rem',
+                                                    bgcolor: bc.pending_enquiries > 0 ? (isDark ? 'rgba(245,158,11,0.18)' : '#FFFBEB') : (isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9'),
+                                                    color: bc.pending_enquiries > 0 ? (isDark ? '#FBBF24' : '#D97706') : 'text.secondary',
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="center">
+                                            <Chip
+                                                label={bc.expiring_documents > 0 ? `${bc.expiring_documents} expiring` : 'All valid'}
+                                                size="small"
+                                                sx={{
+                                                    height: 22,
+                                                    fontWeight: 700,
+                                                    fontSize: '0.72rem',
+                                                    bgcolor: bc.expiring_documents > 0 ? (isDark ? 'rgba(239,68,68,0.18)' : '#FEF2F2') : (isDark ? 'rgba(16,185,129,0.18)' : '#ECFDF5'),
+                                                    color: bc.expiring_documents > 0 ? (isDark ? '#F87171' : '#DC2626') : (isDark ? '#34D399' : '#059669'),
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="right" sx={{ pr: 2.5 }}>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                onClick={() => router.get('/admin/dashboard', { store_id: bc.store_id })}
+                                                sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.72rem', borderRadius: 1.5, py: 0.3, px: 1.2 }}
+                                            >
+                                                Filter Console
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Card>
+            )}
 
             {/* 7 Multi-Service Summary & Operations Deck */}
             {service_metrics.length > 0 && (

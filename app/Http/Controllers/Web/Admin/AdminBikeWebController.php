@@ -669,6 +669,17 @@ class AdminBikeWebController extends Controller
 
         $bikes = Bike::whereIn('id', $validated['bike_ids'])->get();
 
+        $user = $request->user();
+        if ($user && ! $user->isSuperAdmin()) {
+            $accessibleStores = $user->accessibleStoreIds();
+            foreach ($bikes as $bike) {
+                if (! in_array((int) $bike->current_store_id, $accessibleStores, true)
+                    && ! in_array((int) $bike->home_store_id, $accessibleStores, true)) {
+                    abort(403, 'Branch Admin cannot bulk-price bikes from another branch.');
+                }
+            }
+        }
+
         DB::transaction(function () use ($bikes, $type, $applyTo, $weekdayVal, $weekendVal): void {
             foreach ($bikes as $bike) {
                 $currentWeekday = (float) ($bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 500);

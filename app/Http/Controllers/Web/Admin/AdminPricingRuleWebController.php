@@ -30,7 +30,19 @@ class AdminPricingRuleWebController extends Controller
     {
         Gate::authorize('viewAny', PricingRule::class);
 
+        $user = $request->user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $accessible = $user?->accessibleStoreIds() ?? [];
+
         $query = PricingRule::query()->with(['bike', 'category', 'fromStore', 'toStore', 'serviceItem']);
+
+        if (! $isSuperAdmin) {
+            $query->where(function ($q) use ($accessible): void {
+                $q->whereNull('from_store_id')
+                    ->orWhereIn('from_store_id', $accessible)
+                    ->orWhereIn('store_id', $accessible);
+            });
+        }
 
         if ($type = $request->query('rule_type')) {
             $query->where('rule_type', $type);

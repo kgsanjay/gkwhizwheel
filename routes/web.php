@@ -328,31 +328,34 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/stores/{id}/services', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'updateServices'])->name('admin.stores.services');
     Route::match(['post', 'patch'], '/stores/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'toggle'])->name('admin.stores.toggle');
 
-    // Staff Management & Global Platform Settings (Super Admin only)
-    Route::middleware('role:super_admin')->group(function (): void {
+    // Staff Management & System Logs (Super Admin and Branch Admin)
+    Route::middleware('role:super_admin,store_manager,admin')->group(function (): void {
         Route::get('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'index'])->name('admin.staff.index');
         Route::post('/staff', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'store'])->name('admin.staff.store');
         Route::match(['post', 'put'], '/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'update'])->name('admin.staff.update');
         Route::post('/staff/{id}/assign-stores', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'assignStores'])->name('admin.staff.assign-stores');
         Route::delete('/staff/{id}', [\App\Http\Controllers\Web\Admin\AdminStaffWebController::class, 'destroy'])->name('admin.staff.destroy');
 
-        Route::get('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'index'])->name('admin.settings.index');
-        Route::post('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'update'])->name('admin.settings.update');
-        Route::post('/settings/maintenance', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'maintenanceAction'])->name('admin.settings.maintenance');
-
         // System Logs & Alerts Viewer
         Route::get('/logs', [\App\Http\Controllers\Web\Admin\AdminLogWebController::class, 'index'])->name('admin.logs.index');
         Route::post('/logs/notifications/{id}/resend', [\App\Http\Controllers\Web\Admin\AdminLogWebController::class, 'resendNotification'])->name('admin.logs.notifications.resend');
     });
 
+    // Global Platform Settings (Super Admin only)
+    Route::middleware('role:super_admin')->group(function (): void {
+        Route::get('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'index'])->name('admin.settings.index');
+        Route::post('/settings', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'update'])->name('admin.settings.update');
+        Route::post('/settings/maintenance', [\App\Http\Controllers\Web\Admin\AdminSettingsWebController::class, 'maintenanceAction'])->name('admin.settings.maintenance');
+    });
+
     // Six non-bike service enquiries are not confirmed or payable bookings.
     Route::get('/service-enquiries', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'index'])
-        ->middleware('role:super_admin')->name('admin.service-enquiries.index');
+        ->middleware('role:super_admin,store_manager,admin')->name('admin.service-enquiries.index');
 
     Route::post('/service-enquiries/{id}/proposal', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'createProposal'])
-        ->middleware('role:super_admin')->name('admin.service-enquiries.proposal');
+        ->middleware('role:super_admin,store_manager,admin')->name('admin.service-enquiries.proposal');
     Route::post('/service-enquiries/{id}/status', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'updateStatus'])
-        ->middleware('role:super_admin')->name('admin.service-enquiries.status');
+        ->middleware('role:super_admin,store_manager,admin')->name('admin.service-enquiries.status');
 
     // Unified Bookings Calendar & Management
     Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'index'])->name('admin.bookings.index');

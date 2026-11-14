@@ -20,7 +20,6 @@ use App\Enums\PricingRateType;
 use App\Enums\PricingRuleType;
 use App\Enums\RefundStatus;
 use App\Enums\StoreStatus;
-use App\Enums\SyncStatus;
 use App\Enums\Transmission;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;

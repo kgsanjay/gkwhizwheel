@@ -21,15 +21,32 @@ class StoreStaffRequest extends FormRequest
             return false;
         }
 
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin');
-        } catch (\Throwable) {
-            return false;
+        if ($user->isAdmin()) {
+            $targetRole = (string) $this->input('role');
+            if (in_array(strtolower($targetRole), ['super_admin', 'superadmin', 'admin', 'store_manager'], true)) {
+                abort(403, 'Branch Admin is forbidden from creating Admin or SuperAdmin accounts.');
+            }
+
+            $storeIds = (array) $this->input('store_ids', []);
+            if (empty($storeIds)) {
+                abort(403, 'Branch Admin must assign staff to an owned branch.');
+            }
+
+            $accessible = $user->accessibleStoreIds();
+            foreach ($storeIds as $sid) {
+                if (! in_array((int) $sid, $accessible, true)) {
+                    abort(403, 'Branch Admin cannot assign staff to an unassigned branch.');
+                }
+            }
+
+            return true;
         }
+
+        return false;
     }
 
     /**

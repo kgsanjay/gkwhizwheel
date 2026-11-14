@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Enums\NotificationChannel;
 use App\Enums\NotificationStatus;
-use App\Enums\SyncStatus;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -134,7 +133,7 @@ test('can insert records into activity_logs, notification_logs, and sync_queue',
         'action_type' => 'mark_returned',
         'payload_json' => json_encode(['booking_id' => 1, 'odometer' => 15200]),
         'idempotency_key' => 'idemp-sync-uuid-999',
-        'status' => SyncStatus::PENDING->value,
+        'status' => 'pending',
         'synced_at' => null,
         'created_at' => now(),
     ]);

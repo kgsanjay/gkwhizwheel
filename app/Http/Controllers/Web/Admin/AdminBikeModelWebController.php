@@ -26,7 +26,10 @@ class AdminBikeModelWebController extends Controller
 {
     public function index(Request $request): Response
     {
-        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
 
         $models = BikeModel::query()
             ->with(['category:id,name', 'branchPrices'])
@@ -38,7 +41,9 @@ class AdminBikeModelWebController extends Controller
             ->whereNotNull('bike_model_id')
             ->get(['id', 'bike_model_id', 'registration_number', 'status', 'current_store_id', 'home_store_id']);
         $byModel = $allBikes->groupBy('bike_model_id');
-        $stores = Store::query()->orderBy('name')->get(['id', 'name', 'city']);
+        $stores = Store::query()
+            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $accessible))
+            ->orderBy('name')->get(['id', 'name', 'city']);
 
         return Inertia::render('Admin/BikeModels/Index', [
             'models' => $models->map(function (BikeModel $model) use ($byModel, $stores): array {
@@ -93,13 +98,18 @@ class AdminBikeModelWebController extends Controller
      */
     public function saveBranchPrice(int $id, Request $request): RedirectResponse
     {
-        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
 
         $data = $request->validate([
             'store_id' => ['required', 'integer', 'exists:stores,id'],
             'weekday_rate' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'weekend_rate' => ['required', 'numeric', 'min:0', 'max:999999.99'],
         ]);
+
+        if (! $user->isSuperAdmin()) {
+            abort_unless(in_array((int) $data['store_id'], $user->accessibleStoreIds(), true), 403, 'Cannot set branch price for an unassigned branch.');
+        }
 
         $model = BikeModel::findOrFail($id);
         $store = Store::findOrFail($data['store_id']);

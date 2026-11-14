@@ -4,26 +4,17 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\PricingRule;
 use App\Models\User;
 
 class PricingRulePolicy
 {
     /**
-     * Determine whether the user can manage pricing rules (admin only).
+     * Determine whether the user can manage pricing rules in general.
      */
     public function manage(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return true;
-        }
-
-        try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin') || $user->hasRole('store_manager');
-        } catch (\Throwable) {
-            return false;
-        }
+        return $user->isSuperAdmin() || $user->isAdmin();
     }
 
     public function viewAny(User $user): bool
@@ -33,7 +24,20 @@ class PricingRulePolicy
 
     public function view(User $user, PricingRule $pricingRule): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            $storeId = $pricingRule->store_id ?? $pricingRule->from_store_id;
+            if ($storeId === null) {
+                return true; // Can view global rules
+            }
+
+            return in_array((int) $storeId, $user->accessibleStoreIds(), true);
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
@@ -43,11 +47,24 @@ class PricingRulePolicy
 
     public function update(User $user, PricingRule $pricingRule): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            $storeId = $pricingRule->store_id ?? $pricingRule->from_store_id;
+            if ($storeId === null) {
+                return false; // Cannot edit global rules
+            }
+
+            return in_array((int) $storeId, $user->accessibleStoreIds(), true);
+        }
+
+        return false;
     }
 
     public function delete(User $user, PricingRule $pricingRule): bool
     {
-        return $this->manage($user);
+        return $this->update($user, $pricingRule);
     }
 }

@@ -54,11 +54,14 @@ class AdminReportWebController extends Controller
         $this->authorizeReportAccess($request);
 
         $user = $request->user();
-        $isSuperAdmin = $user->role === UserRole::SUPER_ADMIN;
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
 
         $storeId = $request->query('store_id') ? (int) $request->query('store_id') : null;
-        if (! $isSuperAdmin && $storeId === null) {
-            $storeId = $user->stores()->value('stores.id');
+        if (! $isSuperAdmin) {
+            if ($storeId === null || ! in_array($storeId, $accessible, true)) {
+                $storeId = $accessible[0] ?? null;
+            }
         }
 
         // Determine date range from timeframe parameter
@@ -334,7 +337,9 @@ class AdminReportWebController extends Controller
             ->values()
             ->take(10);
 
-        $allStores = Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']);
+        $allStores = Store::where('status', StoreStatus::ACTIVE)
+            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $accessible))
+            ->orderBy('name')->get(['id', 'name', 'city']);
 
         return Inertia::render('Admin/Reports/Index', [
             'revenue_stats' => [

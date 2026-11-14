@@ -4,26 +4,17 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Coupon;
 use App\Models\User;
 
 class CouponPolicy
 {
     /**
-     * Determine whether the user can manage coupons (admin only).
+     * Determine whether the user can manage coupons in general.
      */
     public function manage(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return true;
-        }
-
-        try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin');
-        } catch (\Throwable) {
-            return false;
-        }
+        return $user->isSuperAdmin() || $user->isAdmin();
     }
 
     public function viewAny(User $user): bool
@@ -33,7 +24,19 @@ class CouponPolicy
 
     public function view(User $user, Coupon $coupon): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            if ($coupon->store_id === null) {
+                return true; // Can view global coupons
+            }
+
+            return in_array((int) $coupon->store_id, $user->accessibleStoreIds(), true);
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
@@ -43,11 +46,23 @@ class CouponPolicy
 
     public function update(User $user, Coupon $coupon): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            if ($coupon->store_id === null) {
+                return false; // Cannot edit global coupons
+            }
+
+            return in_array((int) $coupon->store_id, $user->accessibleStoreIds(), true);
+        }
+
+        return false;
     }
 
     public function delete(User $user, Coupon $coupon): bool
     {
-        return $this->manage($user);
+        return $this->update($user, $coupon);
     }
 }

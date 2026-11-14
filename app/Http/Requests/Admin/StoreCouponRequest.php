@@ -15,7 +15,29 @@ class StoreCouponRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('create', \App\Models\Coupon::class) ?? false;
+        $user = $this->user();
+        if ($user === null) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            $storeId = $this->input('store_id');
+            if ($storeId === null) {
+                abort(403, 'Branch Admin cannot create global coupons. Please specify your assigned branch.');
+            }
+
+            if (! in_array((int) $storeId, $user->accessibleStoreIds(), true)) {
+                abort(403, 'Branch Admin cannot create coupons for an unassigned branch.');
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -39,6 +61,7 @@ class StoreCouponRequest extends FormRequest
     {
         return [
             'code' => ['required', 'string', 'max:50', 'unique:coupons,code'],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'discount_type' => ['required', new Enum(DiscountType::class)],
             'value' => ['required', 'numeric', 'min:0'],
             'max_uses_total' => ['nullable', 'integer', 'min:1'],

@@ -92,7 +92,7 @@ const MENU_SECTIONS = [
                 label: 'Service Enquiries',
                 path: '/admin/service-enquiries',
                 icon: <ReceiptLongIcon sx={{ fontSize: 20 }} />,
-                roles: ['super_admin'],
+                roles: ['super_admin', 'store_manager', 'admin'],
             },
             {
                 label: 'Ground Pass Scanner',
@@ -126,10 +126,10 @@ const MENU_SECTIONS = [
                 basePath: '/admin/bikes',
                 children: [
                     { label: 'All Fleet Inventory', path: '/admin/bikes', roles: ['super_admin', 'store_manager', 'staff'] },
-                    { label: 'Bike Model Catalog', path: '/admin/bike-models', roles: ['super_admin'] },
+                    { label: 'Bike Model Catalog', path: '/admin/bike-models', roles: ['super_admin', 'store_manager', 'admin'] },
                     { label: 'Add New Bike', path: '/admin/bikes/create', roles: ['super_admin', 'store_manager'] },
                     { label: 'Dynamic Tariffs & Surge', path: '/admin/pricing', roles: ['super_admin', 'store_manager'] },
-                    { label: 'Discount Coupons', path: '/admin/coupons', roles: ['super_admin'] },
+                    { label: 'Discount Coupons', path: '/admin/coupons', roles: ['super_admin', 'store_manager', 'admin'] },
                 ],
             },
             {
@@ -316,11 +316,11 @@ const MENU_SECTIONS = [
             {
                 label: 'Stores & Hubs',
                 icon: <StorefrontIcon sx={{ fontSize: 20 }} />,
-                roles: ['super_admin'],
+                roles: ['super_admin', 'store_manager', 'admin'],
                 basePath: '/admin/stores',
                 children: [
-                    { label: 'All Hub Locations', path: '/admin/stores', roles: ['super_admin'] },
-                    { label: 'Pickup & Return Points', path: '/admin/pickup-points', roles: ['super_admin'] },
+                    { label: 'All Hub Locations', path: '/admin/stores', roles: ['super_admin', 'store_manager', 'admin'] },
+                    { label: 'Pickup & Return Points', path: '/admin/pickup-points', roles: ['super_admin', 'store_manager', 'admin'] },
                     { label: 'Add New Hub', path: '/admin/stores/create', roles: ['super_admin'] },
                 ],
             },
@@ -328,7 +328,7 @@ const MENU_SECTIONS = [
                 label: 'Staff Management',
                 path: '/admin/staff',
                 icon: <BadgeIcon sx={{ fontSize: 20 }} />,
-                roles: ['super_admin'],
+                roles: ['super_admin', 'store_manager', 'admin'],
             },
             {
                 label: 'Global Site Settings',
@@ -340,7 +340,7 @@ const MENU_SECTIONS = [
                 label: 'System Logs & Alerts',
                 path: '/admin/logs',
                 icon: <HistoryEduIcon sx={{ fontSize: 20 }} />,
-                roles: ['super_admin'],
+                roles: ['super_admin', 'store_manager', 'admin'],
             },
             {
                 label: 'Service Categories',

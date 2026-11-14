@@ -26,6 +26,11 @@ class AdminStaffWebController extends Controller
      */
     public function index(Request $request): Response
     {
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessibleStores = $user->accessibleStoreIds();
+
         $staffRoles = [
             UserRole::ADMIN,
             UserRole::STORE_MANAGER,
@@ -36,6 +41,12 @@ class AdminStaffWebController extends Controller
         $query = User::query()
             ->whereIn('role', $staffRoles)
             ->with('stores');
+
+        if (! $isSuperAdmin) {
+            $query->whereHas('stores', function ($q) use ($accessibleStores): void {
+                $q->whereIn('stores.id', $accessibleStores);
+            });
+        }
 
         if ($search = $request->query('search')) {
             $term = '%'.trim($search).'%';
@@ -59,6 +70,10 @@ class AdminStaffWebController extends Controller
         $staffMembers = $query->orderBy('name')->get();
 
         $allStaff = User::whereIn('role', $staffRoles);
+        if (! $isSuperAdmin) {
+            $allStaff->whereHas('stores', fn ($q) => $q->whereIn('stores.id', $accessibleStores));
+        }
+
         $stats = [
             'total' => (clone $allStaff)->count(),
             'managers' => (clone $allStaff)->whereIn('role', [UserRole::ADMIN, UserRole::STORE_MANAGER])->count(),
@@ -66,23 +81,26 @@ class AdminStaffWebController extends Controller
             'active' => (clone $allStaff)->where('status', UserStatus::ACTIVE)->count(),
         ];
 
-        $stores = Store::where('status', StoreStatus::ACTIVE)->orderBy('name')->get(['id', 'name', 'city']);
+        $stores = Store::where('status', StoreStatus::ACTIVE)
+            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $accessibleStores))
+            ->orderBy('name')
+            ->get(['id', 'name', 'city']);
 
         return Inertia::render('Admin/Staff/Index', [
-            'staff' => $staffMembers->map(fn (User $user): array => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->role instanceof UserRole ? $user->role->value : (string) $user->role,
-                'status' => $user->status instanceof UserStatus ? $user->status->value : (string) $user->status,
-                'stores' => $user->stores->map(fn (Store $s): array => [
+            'staff' => $staffMembers->map(fn (User $u): array => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'phone' => $u->phone,
+                'role' => $u->role instanceof UserRole ? $u->role->value : (string) $u->role,
+                'status' => $u->status instanceof UserStatus ? $u->status->value : (string) $u->status,
+                'stores' => $u->stores->map(fn (Store $s): array => [
                     'id' => $s->id,
                     'name' => $s->name,
                     'city' => $s->city,
                 ]),
-                'services' => $user->assignedServicesList(),
-                'created_at' => $user->created_at?->toIso8601String(),
+                'services' => $u->assignedServicesList(),
+                'created_at' => $u->created_at?->toIso8601String(),
             ]),
             'stores' => $stores,
             'stats' => $stats,
@@ -100,10 +118,14 @@ class AdminStaffWebController extends Controller
                 'role' => $request->query('role', ''),
                 'store_id' => $request->query('store_id', ''),
             ],
-            'roles' => [
-                ['value' => UserRole::STORE_MANAGER->value, 'label' => 'Admin / Store Manager'],
-                ['value' => UserRole::STAFF->value, 'label' => 'Manager / Ground Staff'],
-            ],
+            'roles' => $isSuperAdmin
+                ? [
+                    ['value' => UserRole::STORE_MANAGER->value, 'label' => 'Admin / Store Manager'],
+                    ['value' => UserRole::STAFF->value, 'label' => 'Manager / Ground Staff'],
+                ]
+                : [
+                    ['value' => UserRole::STAFF->value, 'label' => 'Manager / Ground Staff'],
+                ],
         ]);
     }
 
@@ -146,13 +168,39 @@ class AdminStaffWebController extends Controller
      */
     public function update(int $id, Request $request): RedirectResponse
     {
-        $staff = User::whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])->findOrFail($id);
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
+
+        $staff = User::findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            // Branch admin cannot modify superadmin or other admin accounts
+            if ($staff->isSuperAdmin() || ($staff->isAdmin() && $staff->id !== $user->id)) {
+                abort(403, 'Branch Admin cannot modify SuperAdmin or other Admin accounts.');
+            }
+            // Must belong to an owned store
+            if (! $staff->stores()->whereIn('stores.id', $accessible)->exists() && $staff->id !== $user->id) {
+                abort(403, 'Branch Admin cannot edit staff from another branch.');
+            }
+            if ($request->has('role') && in_array(strtolower((string) $request->input('role')), ['super_admin', 'superadmin', 'admin', 'store_manager'], true)) {
+                abort(403, 'Branch Admin cannot promote staff to Admin or SuperAdmin.');
+            }
+            if ($request->has('store_ids')) {
+                foreach ((array) $request->input('store_ids', []) as $sid) {
+                    if (! in_array((int) $sid, $accessible, true)) {
+                        abort(403, 'Branch Admin cannot assign staff to an unassigned branch.');
+                    }
+                }
+            }
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff->id)],
             'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($staff->id)],
-            'role' => ['required', 'string', Rule::in([UserRole::STAFF->value, UserRole::STORE_MANAGER->value])],
+            'role' => ['required', 'string', Rule::in([UserRole::STAFF->value, UserRole::STORE_MANAGER->value, UserRole::MANAGER->value, UserRole::ADMIN->value, UserRole::SUPER_ADMIN->value])],
             'password' => ['nullable', 'string', 'min:8'],
             'status' => ['nullable', 'string', Rule::in([UserStatus::ACTIVE->value, UserStatus::BLACKLISTED->value])],
             'store_ids' => ['nullable', 'array'],
@@ -201,7 +249,21 @@ class AdminStaffWebController extends Controller
      */
     public function assignStores(int $id, AssignStaffStoresRequest $request): RedirectResponse
     {
-        $staff = User::whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])->findOrFail($id);
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
+
+        $staff = User::findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            if ($staff->isSuperAdmin() || $staff->isAdmin()) {
+                abort(403, 'Branch Admin cannot modify store assignments for Admin or SuperAdmin.');
+            }
+            if (! $staff->stores()->whereIn('stores.id', $accessible)->exists()) {
+                abort(403, 'Branch Admin cannot manage staff from another branch.');
+            }
+        }
 
         $storeIds = $request->validated('store_ids') ?? [];
         $staff->stores()->sync($storeIds);
@@ -215,7 +277,22 @@ class AdminStaffWebController extends Controller
      */
     public function destroy(int $id, Request $request): RedirectResponse
     {
-        $staff = User::whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])->findOrFail($id);
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
+
+        $staff = User::findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            if ($staff->isSuperAdmin() || $staff->isAdmin()) {
+                abort(403, 'Branch Admin cannot delete Admin or SuperAdmin accounts.');
+            }
+            if (! $staff->stores()->whereIn('stores.id', $accessible)->exists()) {
+                abort(403, 'Branch Admin cannot delete staff from another branch.');
+            }
+        }
+
         $name = $staff->name;
         $staff->delete();
 

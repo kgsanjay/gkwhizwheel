@@ -10,7 +10,7 @@ use App\Models\User;
 class StaffPolicy
 {
     /**
-     * Determine whether the user can manage staff accounts and store assignments.
+     * Determine whether the user can manage staff accounts and store assignments in general.
      */
     public function manage(User $user): bool
     {
@@ -19,7 +19,7 @@ class StaffPolicy
         }
 
         try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin');
+            return $user->hasRole('super_admin') || $user->hasRole('admin') || $user->hasRole('store_manager');
         } catch (\Throwable) {
             return false;
         }
@@ -32,7 +32,23 @@ class StaffPolicy
 
     public function view(User $user, User $staff): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            if ($staff->isSuperAdmin()) {
+                return false;
+            }
+            if ($staff->isAdmin() && $staff->id !== $user->id) {
+                return false;
+            }
+
+            return $staff->stores()->whereIn('stores.id', $user->accessibleStoreIds())->exists()
+                || $staff->id === $user->id;
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
@@ -42,21 +58,47 @@ class StaffPolicy
 
     public function update(User $user, User $staff): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            // Branch admin cannot modify superadmin or other admin accounts
+            if ($staff->isSuperAdmin() || ($staff->isAdmin() && $staff->id !== $user->id)) {
+                return false;
+            }
+
+            return $staff->stores()->whereIn('stores.id', $user->accessibleStoreIds())->exists();
+        }
+
+        return false;
     }
 
     public function delete(User $user, User $staff): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            // Branch admin cannot delete superadmin or admin accounts
+            if ($staff->isSuperAdmin() || $staff->isAdmin()) {
+                return false;
+            }
+
+            return $staff->stores()->whereIn('stores.id', $user->accessibleStoreIds())->exists();
+        }
+
+        return false;
     }
 
     public function assignStores(User $user, User $staff): bool
     {
-        return $this->manage($user);
+        return $this->update($user, $staff);
     }
 
     public function unassignStores(User $user, User $staff): bool
     {
-        return $this->manage($user);
+        return $this->update($user, $staff);
     }
 }

@@ -25,7 +25,14 @@ class AdminStoreWebController extends Controller
     {
         Gate::authorize('viewAny', Store::class);
 
+        $user = $request->user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $accessible = $user?->accessibleStoreIds() ?? [];
+
         $query = Store::query()->withCount(['staff', 'homeBikes', 'currentBikes']);
+        if (! $isSuperAdmin) {
+            $query->whereIn('id', $accessible);
+        }
 
         if ($search = $request->query('search')) {
             $term = '%'.trim($search).'%';
@@ -44,11 +51,14 @@ class AdminStoreWebController extends Controller
         $stores = $query->orderBy('name')->get();
 
         $allStores = Store::query();
+        if (! $isSuperAdmin) {
+            $allStores->whereIn('id', $accessible);
+        }
         $stats = [
             'total' => (clone $allStores)->count(),
             'active' => (clone $allStores)->where('status', StoreStatus::ACTIVE)->count(),
             'inactive' => (clone $allStores)->where('status', StoreStatus::INACTIVE)->count(),
-            'total_bikes' => Bike::count(),
+            'total_bikes' => $isSuperAdmin ? Bike::count() : Bike::whereIn('current_store_id', $accessible)->count(),
         ];
 
         return Inertia::render('Admin/Stores/Index', [
@@ -179,7 +189,7 @@ class AdminStoreWebController extends Controller
     public function updateServices(int $id, Request $request): RedirectResponse
     {
         $store = Store::findOrFail($id);
-        Gate::authorize('update', $store);
+        Gate::authorize('updateServices', $store);
 
         $validated = $request->validate([
             'services' => ['required', 'array'],

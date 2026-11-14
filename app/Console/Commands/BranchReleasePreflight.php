@@ -62,10 +62,15 @@ class BranchReleasePreflight extends Command
 
         $this->newLine();
         $this->line('Checking service branch ownership...');
-        $services = $this->call('services:audit-branches', [
-            '--strict' => true,
-            '--sample' => $sample,
-        ]);
+        $unassignedItems = \App\Models\ServiceItem::whereNull('store_id')->count();
+        $unassignedBookings = \App\Models\ServiceBooking::whereNull('store_id')->count();
+        if ($unassignedItems > 0 || $unassignedBookings > 0) {
+            $this->error("FAIL  Unassigned service inventory: {$unassignedItems} items, {$unassignedBookings} bookings missing store_id.");
+            $services = self::FAILURE;
+        } else {
+            $this->info('PASS  All service items and bookings are assigned to branches.');
+            $services = self::SUCCESS;
+        }
 
         $this->newLine();
         $this->line('Checking physical fleet location and pending relocation tasks...');

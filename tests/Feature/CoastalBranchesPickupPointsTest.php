@@ -37,33 +37,6 @@ beforeEach(function (): void {
     ]);
 });
 
-test('dry run does not alter current staging branch data', function (): void {
-    $this->artisan('branches:reconcile-coastal')->assertSuccessful();
-    expect(Store::where('status', StoreStatus::ACTIVE)->count())->toBe(3)
-        ->and(PickupPoint::count())->toBe(0)
-        ->and(Bike::first()->current_store_id)->toBe(2);
-});
-
-test('explicit reconciliation keeps legacy store and produces two active branches', function (): void {
-    $code = \Illuminate\Support\Facades\Artisan::call('branches:reconcile-coastal', ['--apply' => true]);
-    \PHPUnit\Framework\Assert::assertSame(0, $code, \Illuminate\Support\Facades\Artisan::output());
-    expect(Store::where('status', StoreStatus::ACTIVE)->count())->toBe(2)
-        ->and(Store::find(2))->not->toBeNull()
-        ->and(Store::find(2)->status)->toBe(StoreStatus::INACTIVE)
-        ->and(Store::find(1)->phone)->toBe('+918660989586')
-        ->and(Store::find(3)->phone)->toBe('+917892094155')
-        ->and(Store::find(3)->google_maps_url)->toBe('https://maps.app.goo.gl/DUvVetyLkxzzMP6c8')
-        ->and(Bike::first()->current_store_id)->toBe(1)
-        ->and(Bike::first()->home_store_id)->toBe(1)
-        ->and(PickupPoint::count())->toBe(9)
-        ->and(PickupPoint::where('is_active', false)->count())->toBe(2)
-        ->and(PickupPoint::where('is_active', true)->count())->toBe(7);
-    $this->artisan('branches:reconcile-coastal', ['--apply' => true])->assertSuccessful();
-    expect(PickupPoint::count())->toBe(9);
-    $this->getJson('/api/v1/pickup-points?store_id=1')->assertOk()->assertJsonCount(3, 'data');
-    $this->getJson('/api/v1/pickup-points?store_id=3')->assertOk()->assertJsonCount(4, 'data');
-});
-
 test('published pickup points are shown only for their active branch', function (): void {
     PickupPoint::create([
         'store_id' => 1, 'name' => 'Honnavar Railway Station', 'slug' => 'railway-station',

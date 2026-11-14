@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Web\Admin;
 
 use App\Enums\NotificationChannel;
 use App\Enums\NotificationStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\NotificationLog;
@@ -20,11 +19,14 @@ use Inertia\Response;
 class AdminLogWebController extends Controller
 {
     /**
-     * Display the unified system logs and alerts viewer (SuperAdmin only).
+     * Display the unified system logs and alerts viewer (SuperAdmin & Branch Admin).
      */
     public function index(Request $request): Response
     {
-        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403, 'Unauthorized.');
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403, 'Unauthorized.');
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
 
         $activeTab = $request->input('tab', 'notifications');
 
@@ -34,6 +36,10 @@ class AdminLogWebController extends Controller
         if ($activeTab === 'activity') {
             $activityQuery = ActivityLog::with(['user', 'store'])
                 ->latest('id');
+
+            if (! $isSuperAdmin) {
+                $activityQuery->whereIn('store_id', $accessible);
+            }
 
             if ($search = $request->input('search')) {
                 $activityQuery->where(function ($q) use ($search): void {
@@ -53,6 +59,13 @@ class AdminLogWebController extends Controller
         } else {
             $notifQuery = NotificationLog::with(['user', 'booking', 'serviceBooking'])
                 ->latest('id');
+
+            if (! $isSuperAdmin) {
+                $notifQuery->where(function ($q) use ($accessible): void {
+                    $q->whereHas('booking', fn ($bq) => $bq->whereIn('pickup_store_id', $accessible))
+                      ->orWhereHas('serviceBooking', fn ($sbq) => $sbq->whereIn('store_id', $accessible));
+                });
+            }
 
             if ($search = $request->input('search')) {
                 $notifQuery->where(function ($q) use ($search): void {
@@ -102,9 +115,18 @@ class AdminLogWebController extends Controller
      */
     public function resendNotification(int $id, Request $request): RedirectResponse
     {
-        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403, 'Unauthorized.');
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403, 'Unauthorized.');
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
 
         $log = NotificationLog::with(['user', 'booking', 'serviceBooking'])->findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            $allowed = ($log->booking && in_array((int) $log->booking->pickup_store_id, $accessible, true))
+                || ($log->serviceBooking && in_array((int) $log->serviceBooking->store_id, $accessible, true));
+            abort_unless($allowed, 403, 'Cannot resend alert for a booking from another branch.');
+        }
 
         try {
             if ($log->booking !== null && $log->booking->user !== null) {
@@ -142,4 +164,3 @@ class AdminLogWebController extends Controller
         }
     }
 }
-

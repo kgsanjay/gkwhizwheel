@@ -253,6 +253,61 @@ class AdminDashboardController extends Controller
                 'status' => $task->status,
             ])->values()->all();
 
+        // Branch Comparison Matrix for SuperAdmin across active branches
+        $branchComparison = [];
+        if ($isSuperAdmin && $storeId === null) {
+            foreach ($stores as $branch) {
+                $bBikes = Bike::where('current_store_id', $branch->id);
+                $bTotalFleet = (clone $bBikes)->count();
+                $bAvailableBikes = (clone $bBikes)->where('status', BikeStatus::AVAILABLE)->count();
+
+                $bActiveBookingsToday = Booking::where(function ($q) use ($branch): void {
+                    $q->where('pickup_store_id', $branch->id)
+                        ->orWhere('return_store_id', $branch->id);
+                })
+                    ->whereIn('status', [BookingStatus::CONFIRMED, BookingStatus::HANDED_OVER])
+                    ->whereDate('start_date', '<=', $today)
+                    ->whereDate('end_date', '>=', $today)
+                    ->count();
+
+                $bMonthRevenue = (float) Payment::where('status', PaymentStatus::SUCCESS)
+                    ->where('created_at', '>=', $monthStart)
+                    ->whereHas('booking', fn ($q) => $q->where('pickup_store_id', $branch->id))
+                    ->sum('amount');
+
+                $bPendingEnquiries = \App\Models\ServiceEnquiry::where('status', 'requested')
+                    ->where(function ($q) use ($branch): void {
+                        $q->where('pickup_location', 'like', "%{$branch->city}%")
+                            ->orWhere('pickup_location', 'like', "%{$branch->name}%")
+                            ->orWhereHas('proposal', fn ($pq) => $pq->where('store_id', $branch->id));
+                    })
+                    ->count();
+
+                $bExpiringDocs = \App\Models\BikeDocument::whereHas('bike', fn ($q) => $q->where('current_store_id', $branch->id))
+                    ->where(function ($q): void {
+                        $q->where('expiry_date', '<=', now()->addDays(30))
+                            ->orWhere('status', 'expired');
+                    })
+                    ->count();
+
+                $branchComparison[] = [
+                    'store_id' => $branch->id,
+                    'store_name' => $branch->name,
+                    'city' => $branch->city,
+                    'total_fleet' => $bTotalFleet,
+                    'available_bikes' => $bAvailableBikes,
+                    'active_bookings_today' => $bActiveBookingsToday,
+                    'month_revenue' => $bMonthRevenue,
+                    'pending_enquiries' => $bPendingEnquiries,
+                    'expiring_documents' => $bExpiringDocs,
+                ];
+            }
+        }
+
+        $activePricingRulesCount = \App\Models\PricingRule::where('is_active', true)
+            ->when(! $isSuperAdmin, fn ($q) => $q->where(fn ($sub) => $sub->whereNull('from_store_id')->orWhereIn('from_store_id', $authorizedStoreIds ?? [])))
+            ->count();
+
         return Inertia::render('Admin/Dashboard', [
             'metrics' => [
                 'active_rentals' => $activeRentalsCount,
@@ -264,7 +319,9 @@ class AdminDashboardController extends Controller
                 'fleet_maintenance' => $fleetMaintenanceCount,
                 'unverified_kyc' => $unverifiedKycCount,
                 'month_revenue' => $monthRevenue,
+                'active_pricing_rules' => $activePricingRulesCount,
             ],
+            'branch_comparison' => $branchComparison,
             'service_metrics' => array_values($serviceMetrics),
             'pending_relocations' => $pendingRelocations,
             'recent_service_bookings' => $recentServiceBookings,

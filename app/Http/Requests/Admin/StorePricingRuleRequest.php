@@ -16,7 +16,41 @@ class StorePricingRuleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('create', \App\Models\PricingRule::class) ?? false;
+        $user = $this->user();
+        if ($user === null) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            $storeId = $this->input('store_id') ?? $this->input('from_store_id');
+            if ($storeId === null) {
+                abort(403, 'Branch Admin cannot create global pricing rules. Please specify your assigned branch.');
+            }
+
+            if (! in_array((int) $storeId, $user->accessibleStoreIds(), true)) {
+                abort(403, 'Branch Admin cannot create pricing rules for an unassigned branch.');
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('store_id') && ! $this->has('from_store_id')) {
+            $this->merge(['from_store_id' => $this->input('store_id')]);
+        } elseif ($this->has('from_store_id') && ! $this->has('store_id')) {
+            $this->merge(['store_id' => $this->input('from_store_id')]);
+        }
     }
 
     /**
@@ -32,6 +66,7 @@ class StorePricingRuleRequest extends FormRequest
             'service_item_id' => ['nullable', 'integer', 'exists:service_items,id'],
             'bike_id' => ['nullable', 'integer', 'exists:bikes,id'],
             'category_id' => ['nullable', 'integer', 'exists:bike_categories,id'],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'rule_type' => ['required', new Enum(PricingRuleType::class)],
             'day_of_week' => ['nullable', 'integer', 'min:0', 'max:7', 'required_if:rule_type,weekend'],
             'date_start' => ['nullable', 'date', 'required_if:rule_type,holiday,seasonal'],

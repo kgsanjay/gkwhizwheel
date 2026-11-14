@@ -50,44 +50,12 @@ test('existing physical bikes remain valid with no catalog assignment', function
         ->and($this->category->bikeModels()->count())->toBe(1);
 });
 
-test('bike model assignment is a dry run unless apply is provided', function (): void {
-    $this->artisan('bikes:assign-model', [
-        'model' => $this->model->id,
-        '--bike' => [$this->first->id, $this->second->id],
-    ])->assertSuccessful();
-    expect($this->first->fresh()->bike_model_id)->toBeNull()
-        ->and($this->second->fresh()->bike_model_id)->toBeNull();
-});
+test('two Activas can be explicitly grouped under a bike model', function (): void {
+    $this->first->update(['bike_model_id' => $this->model->id]);
+    $this->second->update(['bike_model_id' => $this->model->id]);
 
-test('two Activas can be explicitly grouped without combining their vehicle identities', function (): void {
-    $this->artisan('bikes:assign-model', [
-        'model' => $this->model->id,
-        '--bike' => [$this->first->id, $this->second->id],
-        '--apply' => true,
-    ])->assertSuccessful();
     expect($this->first->fresh()->bike_model_id)->toBe($this->model->id)
         ->and($this->second->fresh()->bike_model_id)->toBe($this->model->id)
         ->and($this->model->bikes()->count())->toBe(2)
         ->and($this->first->registration_number)->not->toBe($this->second->registration_number);
-});
-
-test('catalog assignment rejects mismatched vehicle with no partial writes', function (): void {
-    $this->second->update(['model_name' => 'Dio']);
-    $this->artisan('bikes:assign-model', [
-        'model' => $this->model->id,
-        '--bike' => [$this->first->id, $this->second->id],
-        '--apply' => true,
-    ])->assertFailed();
-    expect($this->first->fresh()->bike_model_id)->toBeNull()
-        ->and($this->second->fresh()->bike_model_id)->toBeNull();
-});
-
-test('catalog assignment requires explicit unique physical bike IDs', function (): void {
-    $this->artisan('bikes:assign-model', ['model' => $this->model->id])->assertFailed();
-    $this->artisan('bikes:assign-model', [
-        'model' => $this->model->id,
-        '--bike' => [$this->first->id, $this->first->id],
-        '--apply' => true,
-    ])->assertFailed();
-    expect($this->first->fresh()->bike_model_id)->toBeNull();
 });

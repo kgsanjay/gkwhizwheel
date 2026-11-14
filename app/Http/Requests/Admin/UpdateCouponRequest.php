@@ -16,7 +16,27 @@ class UpdateCouponRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('manage', \App\Models\Coupon::class) ?? false;
+        $user = $this->user();
+        if ($user === null) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            if ($this->has('store_id')) {
+                $storeId = $this->input('store_id');
+                if ($storeId !== null && ! in_array((int) $storeId, $user->accessibleStoreIds(), true)) {
+                    abort(403, 'Branch Admin cannot reassign coupon to an unassigned branch.');
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -47,6 +67,7 @@ class UpdateCouponRequest extends FormRequest
                 'max:50',
                 Rule::unique('coupons', 'code')->ignore($couponId),
             ],
+            'store_id' => ['nullable', 'integer', 'exists:stores,id'],
             'discount_type' => ['sometimes', new Enum(DiscountType::class)],
             'value' => ['sometimes', 'numeric', 'min:0'],
             'max_uses_total' => ['nullable', 'integer', 'min:1'],

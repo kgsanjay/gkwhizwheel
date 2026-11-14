@@ -21,15 +21,23 @@ class AssignStaffStoresRequest extends FormRequest
             return false;
         }
 
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin');
-        } catch (\Throwable) {
-            return false;
+        if ($user->isAdmin()) {
+            $storeIds = (array) $this->input('store_ids', []);
+            $accessible = $user->accessibleStoreIds();
+            foreach ($storeIds as $sid) {
+                if (! in_array((int) $sid, $accessible, true)) {
+                    abort(403, 'Branch Admin cannot assign staff to an unassigned branch.');
+                }
+            }
+
+            return true;
         }
+
+        return false;
     }
 
     /**

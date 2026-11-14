@@ -339,6 +339,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get IDs of all stores accessible to this user.
+     * Returns all store IDs for SuperAdmin, or assigned store IDs for Admin/Manager.
+     *
+     * @return list<int>
+     */
+    public function accessibleStoreIds(): array
+    {
+        if ($this->canAccessAllStores()) {
+            return Store::pluck('id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        return $this->stores()
+            ->pluck('stores.id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
      * Get the Sanctum token abilities for this user based on their role.
      *
      * @return list<string>

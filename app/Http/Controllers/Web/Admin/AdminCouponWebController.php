@@ -27,7 +27,17 @@ class AdminCouponWebController extends Controller
     {
         Gate::authorize('viewAny', Coupon::class);
 
+        $user = $request->user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $accessible = $user?->accessibleStoreIds() ?? [];
+
         $query = Coupon::query()->withCount('usages');
+
+        if (! $isSuperAdmin) {
+            $query->where(function ($q) use ($accessible): void {
+                $q->whereNull('store_id')->orWhereIn('store_id', $accessible);
+            });
+        }
 
         if ($code = $request->query('code')) {
             $query->where('code', 'like', '%'.strtoupper(trim($code)).'%');

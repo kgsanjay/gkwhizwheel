@@ -22,9 +22,19 @@ class StaffController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $accessible = $user?->accessibleStoreIds() ?? [];
+
         $query = User::query()
-            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
+            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER, UserRole::MANAGER, UserRole::ADMIN])
             ->with('stores');
+
+        if (! $isSuperAdmin) {
+            $query->whereHas('stores', function ($q) use ($accessible): void {
+                $q->whereIn('stores.id', $accessible);
+            });
+        }
 
         if ($request->filled('role')) {
             $query->where('role', $request->query('role'));
@@ -87,10 +97,23 @@ class StaffController extends Controller
      */
     public function show(int $id, Request $request): JsonResponse
     {
+        $user = $request->user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $accessible = $user?->accessibleStoreIds() ?? [];
+
         $staff = User::query()
-            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
+            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER, UserRole::MANAGER, UserRole::ADMIN])
             ->with('stores')
             ->findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            if ($staff->isSuperAdmin() || ($staff->isAdmin() && $staff->id !== $user->id)) {
+                abort(403, 'Unauthorized.');
+            }
+            if (! $staff->stores()->whereIn('stores.id', $accessible)->exists() && $staff->id !== $user->id) {
+                abort(403, 'Unauthorized.');
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -104,9 +127,22 @@ class StaffController extends Controller
      */
     public function assignStores(int $id, AssignStaffStoresRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $accessible = $user?->accessibleStoreIds() ?? [];
+
         $staff = User::query()
-            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
+            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER, UserRole::MANAGER, UserRole::ADMIN])
             ->findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            if ($staff->isSuperAdmin() || $staff->isAdmin()) {
+                abort(403, 'Unauthorized.');
+            }
+            if (! $staff->stores()->whereIn('stores.id', $accessible)->exists()) {
+                abort(403, 'Unauthorized.');
+            }
+        }
 
         $storeIds = $request->validated('store_ids');
         $staff->stores()->syncWithoutDetaching($storeIds);
@@ -124,9 +160,25 @@ class StaffController extends Controller
      */
     public function unassignStore(int $id, int $storeId, Request $request): JsonResponse
     {
+        $user = $request->user();
+        $isSuperAdmin = $user?->isSuperAdmin() ?? false;
+        $accessible = $user?->accessibleStoreIds() ?? [];
+
         $staff = User::query()
-            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER])
+            ->whereIn('role', [UserRole::STAFF, UserRole::STORE_MANAGER, UserRole::MANAGER, UserRole::ADMIN])
             ->findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            if ($staff->isSuperAdmin() || $staff->isAdmin()) {
+                abort(403, 'Unauthorized.');
+            }
+            if (! $staff->stores()->whereIn('stores.id', $accessible)->exists()) {
+                abort(403, 'Unauthorized.');
+            }
+            if (! in_array($storeId, $accessible, true)) {
+                abort(403, 'Unauthorized.');
+            }
+        }
 
         $staff->stores()->detach($storeId);
 

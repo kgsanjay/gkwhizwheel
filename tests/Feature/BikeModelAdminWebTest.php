@@ -40,7 +40,7 @@ beforeEach(function (): void {
     $this->manager = User::create([
         'name' => 'Manager', 'email' => 'model.web.manager@example.test',
         'phone' => '9888809204', 'password' => 'Password123!',
-        'role' => UserRole::STORE_MANAGER, 'status' => UserStatus::ACTIVE,
+        'role' => UserRole::STAFF, 'status' => UserStatus::ACTIVE,
     ]);
     $this->manager->stores()->attach($this->honnavar->id);
     $this->model = BikeModel::create([

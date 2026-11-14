@@ -25,6 +25,7 @@ class PricingRule extends Model
         'service_item_id',
         'bike_id',
         'category_id',
+        'store_id',
         'rule_type',
         'day_of_week',
         'date_start',
@@ -36,6 +37,22 @@ class PricingRule extends Model
         'priority',
         'is_active',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $rule): void {
+            if ($rule->store_id !== null && $rule->from_store_id === null) {
+                $rule->from_store_id = $rule->store_id;
+            } elseif ($rule->from_store_id !== null && $rule->store_id === null) {
+                $rule->store_id = $rule->from_store_id;
+            }
+        });
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class, 'store_id');
+    }
 
     /**
      * Get the attributes that should be cast.

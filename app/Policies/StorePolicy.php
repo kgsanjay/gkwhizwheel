@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Store;
 use App\Models\User;
 
@@ -15,32 +14,15 @@ class StorePolicy
      */
     public function manage(User $user): bool
     {
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return true;
-        }
-
-        try {
-            return $user->hasRole('super_admin') || $user->hasRole('admin');
-        } catch (\Throwable) {
-            return false;
-        }
+        return $user->isSuperAdmin() || $user->isAdmin();
     }
 
     /**
-     * Store creation is strictly restricted to the super_admin role.
-     * Per 01-REQUIREMENTS-AND-FEATURES.md Section 6.
+     * Store creation is strictly restricted to the SuperAdmin role.
      */
     public function create(User $user): bool
     {
-        if ($user->isSuperAdmin()) {
-            return true;
-        }
-
-        try {
-            return $user->hasRole('super_admin');
-        } catch (\Throwable) {
-            return false;
-        }
+        return $user->isSuperAdmin();
     }
 
     public function viewAny(User $user): bool
@@ -50,24 +32,43 @@ class StorePolicy
 
     public function view(User $user, Store $store): bool
     {
-        return $this->manage($user);
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin()) {
+            return in_array($store->id, $user->accessibleStoreIds(), true);
+        }
+
+        return false;
     }
 
     public function update(User $user, Store $store): bool
     {
-        return $this->manage($user);
-    }
-
-    public function delete(User $user, Store $store): bool
-    {
-        if ($user->role === UserRole::SUPER_ADMIN) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        try {
-            return $user->hasRole('super_admin');
-        } catch (\Throwable) {
-            return false;
+        if ($user->isAdmin()) {
+            return in_array($store->id, $user->accessibleStoreIds(), true);
         }
+
+        return false;
+    }
+
+    /**
+     * Toggling the Branch-Service Matrix is strictly restricted to SuperAdmin.
+     */
+    public function updateServices(User $user, Store $store): bool
+    {
+        return $user->isSuperAdmin();
+    }
+
+    /**
+     * Store deletion is strictly restricted to SuperAdmin.
+     */
+    public function delete(User $user, Store $store): bool
+    {
+        return $user->isSuperAdmin();
     }
 }
