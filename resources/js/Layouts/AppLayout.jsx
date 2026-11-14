@@ -1113,30 +1113,6 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 </Box>
                             )}
 
-                            <Link
-                                href="/services"
-                                style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '6px 12px',
-                                    borderRadius: '9999px',
-                                    fontSize: '13px',
-                                    fontWeight: url === '/services' ? 800 : 600,
-                                    whiteSpace: 'nowrap',
-                                    flexShrink: 0,
-                                    textDecoration: 'none',
-                                    color: url === '/services' ? '#D97706' : (isDark ? '#E2E8F0' : '#334155'),
-                                    backgroundColor: url === '/services'
-                                        ? (isDark ? 'rgba(217, 119, 6, 0.16)' : '#FEF3C7')
-                                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF'),
-                                    border: `1px solid ${url === '/services' ? 'rgba(217, 119, 6, 0.45)' : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0')}`,
-                                    transition: 'all 0.2s ease',
-                                }}
-                            >
-                                <ExploreIcon sx={{ fontSize: 17 }} />
-                                <span>All Services</span>
-                            </Link>
                             {visibleServicesList.map((svc) => {
                                 const active = isServiceLinkActive(svc);
                                 return (
