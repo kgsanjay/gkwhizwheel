@@ -44,10 +44,10 @@ bootstrap/cache/*.php
 /.phpunit.cache/
 .phpunit.result.cache
 
-# Frontend Web Build Artifacts
-/public/build/
+# Frontend Web Build Artifacts (public/build tracked for cPanel zero-node deployment)
 /public/hot
-build/
+/build/
+!/public/build/
 
 # Android Build Artifacts & Intermediate Outputs
 .gradle/
