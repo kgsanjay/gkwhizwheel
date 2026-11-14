@@ -54,6 +54,17 @@ final class BikeCheckoutWebController extends Controller
         $return = Store::query()->where('status', StoreStatus::ACTIVE)
             ->findOrFail((int) $params['return_store_id']);
 
+        if (! empty($params['coupon_code'])) {
+            $coupon = \App\Models\Coupon::where('code', strtoupper(trim($params['coupon_code'])))
+                ->where('is_active', true)
+                ->first();
+            if ($coupon && $coupon->store_id !== null && (int) $coupon->store_id !== (int) $pickup->id) {
+                throw ValidationException::withMessages([
+                    'coupon_code' => 'This coupon is not valid for the selected pickup branch.',
+                ]);
+            }
+        }
+
         $bikeModelId = $params['bike_model_id'] ?? null;
         if ($bikeModelId !== null) {
             $model = BikeModel::query()->where('is_active', true)

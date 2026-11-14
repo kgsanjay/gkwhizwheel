@@ -1212,7 +1212,7 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                     </Typography>
                                                 )}
                                                 <Stack direction="row" spacing={0.8} justifyContent={{ xs: 'flex-start', sm: 'flex-end' }} flexWrap="wrap">
-                                                    {parseFloat(sb.balance_due || 0) > 0 && ['confirmed', 'in_progress'].includes(sb.status) ? (
+                                                    {parseFloat(sb.balance_due || 0) > 0 && (sb.is_payment_eligible || ['confirmed', 'in_progress'].includes(sb.status)) ? (
                                                         <Button
                                                             component={Link}
                                                             href={`/services/bookings/${sb.booking_number}/confirmation`}
@@ -1222,13 +1222,13 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                                 fontWeight: 800,
                                                                 borderRadius: 2,
                                                                 textTransform: 'none',
-                                                                fontSize: '0.72rem',
-                                                                bgcolor: '#F59E0B',
-                                                                color: '#0F172A',
-                                                                '&:hover': { bgcolor: '#D97706' },
+                                                                fontSize: '0.75rem',
+                                                                bgcolor: '#10B981',
+                                                                color: '#FFFFFF',
+                                                                '&:hover': { bgcolor: '#059669' },
                                                             }}
                                                         >
-                                                            Pay Balance
+                                                            Pay Now
                                                         </Button>
                                                     ) : (
                                                         <Button
@@ -1274,6 +1274,138 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                         PDF Pass
                                                     </Button>
                                                 </Stack>
+                                            </Grid>
+                                        </Grid>
+                                    </Card>
+                                );
+                            })}
+                        </Stack>
+                    </Box>
+                )}
+
+                {/* Service & Cab Enquiries Section */}
+                {serviceEnquiries && serviceEnquiries.length > 0 && (
+                    <Box sx={{ mt: 5 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+                            <Box>
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        fontWeight: 900,
+                                        color: isDark ? '#F8FAFC' : '#0F172A',
+                                        fontSize: '1.25rem',
+                                    }}
+                                >
+                                    My Service & Cab Enquiries ({serviceEnquiries.length})
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+                                    Custom requests awaiting review or itinerary proposal by our coastal operations desk
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        <Stack spacing={2}>
+                            {serviceEnquiries.map((enq) => {
+                                const svc = getServiceDetails(enq.service_type);
+                                return (
+                                    <Card
+                                        key={enq.id}
+                                        elevation={0}
+                                        sx={{
+                                            p: { xs: 2, sm: 2.5 },
+                                            borderRadius: 3,
+                                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                            boxShadow: isDark ? '0 4px 14px rgba(0,0,0,0.2)' : '0 2px 8px rgba(15, 23, 42, 0.03)',
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                borderColor: svc.color,
+                                            },
+                                        }}
+                                    >
+                                        <Grid container spacing={2} alignItems="center">
+                                            <Grid size={{ xs: 12, md: 5 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                                                    <Chip
+                                                        icon={svc.icon}
+                                                        label={svc.label}
+                                                        size="small"
+                                                        sx={{
+                                                            fontWeight: 800,
+                                                            fontSize: '0.72rem',
+                                                            bgcolor: `${svc.color}22`,
+                                                            color: svc.color,
+                                                        }}
+                                                    />
+                                                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                                                        {enq.reference}
+                                                    </Typography>
+                                                </Box>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A', mb: 0.5 }}>
+                                                    {svc.label} Enquiry
+                                                </Typography>
+                                                {enq.pickup_location && (
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                        <LocationOnIcon sx={{ fontSize: 16, color: '#F59E0B' }} />
+                                                        {enq.pickup_location} {enq.drop_location ? `→ ${enq.drop_location}` : ''}
+                                                    </Typography>
+                                                )}
+                                            </Grid>
+
+                                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                    Preferred Date & Schedule
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#0F172A', mb: 0.5 }}>
+                                                    {enq.start_datetime ? new Date(enq.start_datetime).toLocaleDateString('en-IN', {
+                                                        weekday: 'short',
+                                                        day: 'numeric',
+                                                        month: 'short',
+                                                        year: 'numeric',
+                                                    }) : 'Flexible Date'}
+                                                </Typography>
+                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Chip
+                                                        label={enq.status ? enq.status.toUpperCase() : 'REQUESTED'}
+                                                        size="small"
+                                                        sx={{
+                                                            height: 20,
+                                                            fontSize: '0.68rem',
+                                                            fontWeight: 800,
+                                                            bgcolor: enq.status === 'confirmed' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                                            color: enq.status === 'confirmed' ? '#10B981' : '#F59E0B',
+                                                        }}
+                                                    />
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                        {enq.quantity > 1 ? `${enq.quantity} Guests / Units` : '1 Unit'}
+                                                    </Typography>
+                                                </Stack>
+                                            </Grid>
+
+                                            <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    startIcon={<WhatsAppIcon sx={{ fontSize: '14px !important', color: '#22C55E' }} />}
+                                                    component="a"
+                                                    href={`https://wa.me/918660989586?text=${encodeURIComponent(`Hi GK WhizWheel Desk, I am following up on my service enquiry ${enq.reference} for ${svc.label}.`)}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    sx={{
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 700,
+                                                        textTransform: 'none',
+                                                        borderRadius: 2,
+                                                        borderColor: '#22C55E',
+                                                        color: '#22C55E',
+                                                        '&:hover': {
+                                                            borderColor: '#16A34A',
+                                                            bgcolor: 'rgba(34, 197, 94, 0.08)',
+                                                        },
+                                                    }}
+                                                >
+                                                    Track on WhatsApp
+                                                </Button>
                                             </Grid>
                                         </Grid>
                                     </Card>

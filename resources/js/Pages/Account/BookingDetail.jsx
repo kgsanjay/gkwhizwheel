@@ -26,6 +26,7 @@ import {
     CircularProgress,
     IconButton,
     Container,
+    Rating,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
@@ -41,6 +42,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PrintIcon from '@mui/icons-material/Print';
 import DownloadIcon from '@mui/icons-material/Download';
+import StarIcon from '@mui/icons-material/Star';
 import { useColorMode } from '../../theme/ColorModeContext';
 
 export default function AccountBookingDetail({ booking }) {
@@ -63,6 +65,13 @@ export default function AccountBookingDetail({ booking }) {
     const [extendLoading, setExtendLoading] = useState(false);
     const [extendError, setExtendError] = useState('');
 
+    // Review modal state
+    const [reviewModalOpen, setReviewModalOpen] = useState(false);
+    const [rating, setRating] = useState(5);
+    const [comment, setComment] = useState('');
+    const [reviewLoading, setReviewLoading] = useState(false);
+    const [reviewError, setReviewError] = useState('');
+
     const bike = booking.bike || {};
     const pickupStore = booking.pickup_store || {};
     const returnStore = booking.return_store || {};
@@ -75,6 +84,8 @@ export default function AccountBookingDetail({ booking }) {
     const isActive = activeStatuses.includes(booking.status);
     const canCancel = ['held', 'pending_payment', 'confirmed'].includes(booking.status);
     const canExtend = ['confirmed', 'handed_over'].includes(booking.status);
+    const isCompleted = ['returned', 'completed'].includes(booking.status);
+    const hasReview = Boolean(booking.review);
 
     // Fetch legal bike documents per Section 5
     useEffect(() => {
@@ -94,41 +105,67 @@ export default function AccountBookingDetail({ booking }) {
     }, [booking.id, booking.status]);
 
     // Handle cancel submission
-    const handleCancelSubmit = async (e) => {
+    const handleCancelSubmit = (e) => {
         e.preventDefault();
         setCancelLoading(true);
         setCancelError('');
 
-        try {
-            await apiClient.post(`/bookings/${booking.id}/cancel`, {
-                reason: cancelReason || 'Customer requested cancellation from account portal',
-            });
-            setCancelModalOpen(false);
-            router.reload();
-        } catch (err) {
-            setCancelError(err.message || 'Cancellation failed. Please contact support.');
-        } finally {
-            setCancelLoading(false);
-        }
+        router.post(`/account/bookings/${booking.id}/cancel`, {
+            reason: cancelReason || 'Customer requested cancellation from account portal',
+        }, {
+            onSuccess: () => {
+                setCancelModalOpen(false);
+            },
+            onError: (errors) => {
+                setCancelError(errors?.booking || Object.values(errors || {})[0] || 'Cancellation failed. Please contact support.');
+            },
+            onFinish: () => {
+                setCancelLoading(false);
+            },
+        });
     };
 
     // Handle extension submission
-    const handleExtendSubmit = async (e) => {
+    const handleExtendSubmit = (e) => {
         e.preventDefault();
         setExtendLoading(true);
         setExtendError('');
 
-        try {
-            await apiClient.post(`/bookings/${booking.id}/extend`, {
-                new_end_date: newEndDate,
-            });
-            setExtendModalOpen(false);
-            router.reload();
-        } catch (err) {
-            setExtendError(err.message || 'Unable to extend booking. The bike might be booked on the requested dates.');
-        } finally {
-            setExtendLoading(false);
-        }
+        router.post(`/account/bookings/${booking.id}/extend`, {
+            new_end_date: newEndDate,
+        }, {
+            onSuccess: () => {
+                setExtendModalOpen(false);
+            },
+            onError: (errors) => {
+                setExtendError(errors?.new_end_date || Object.values(errors || {})[0] || 'Unable to extend booking. The bike might be booked on the requested dates.');
+            },
+            onFinish: () => {
+                setExtendLoading(false);
+            },
+        });
+    };
+
+    // Handle review submission
+    const handleReviewSubmit = (e) => {
+        e.preventDefault();
+        setReviewLoading(true);
+        setReviewError('');
+
+        router.post(`/account/bookings/${booking.id}/review`, {
+            rating,
+            comment,
+        }, {
+            onSuccess: () => {
+                setReviewModalOpen(false);
+            },
+            onError: (errors) => {
+                setReviewError(errors?.rating || Object.values(errors || {})[0] || 'Review submission failed.');
+            },
+            onFinish: () => {
+                setReviewLoading(false);
+            },
+        });
     };
 
     return (
@@ -212,6 +249,36 @@ export default function AccountBookingDetail({ booking }) {
                             >
                                 Cancel Booking
                             </Button>
+                        )}
+                        {isCompleted && !hasReview && (
+                            <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<StarIcon sx={{ color: '#F59E0B' }} />}
+                                onClick={() => setReviewModalOpen(true)}
+                                sx={{
+                                    fontWeight: 800,
+                                    textTransform: 'none',
+                                    borderRadius: 2,
+                                    bgcolor: '#F59E0B',
+                                    color: '#0F172A',
+                                    '&:hover': { bgcolor: '#D97706' },
+                                }}
+                            >
+                                Rate & Review Trip
+                            </Button>
+                        )}
+                        {isCompleted && hasReview && (
+                            <Chip
+                                icon={<StarIcon sx={{ color: '#F59E0B !important', fontSize: 16 }} />}
+                                label={`Trip Rated ${booking.review.rating}/5`}
+                                sx={{
+                                    fontWeight: 800,
+                                    bgcolor: 'rgba(245, 158, 11, 0.15)',
+                                    color: '#F59E0B',
+                                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                                }}
+                            />
                         )}
                     </Stack>
                 </Box>
@@ -748,6 +815,67 @@ export default function AccountBookingDetail({ booking }) {
                         </Button>
                         <Button type="submit" variant="contained" color="secondary" disabled={extendLoading} sx={{ fontWeight: 700 }}>
                             {extendLoading ? <CircularProgress size={22} color="inherit" /> : 'Check Availability & Extend'}
+                        </Button>
+                    </DialogActions>
+                </Box>
+            </Dialog>
+
+            {/* Rate & Review Trip Modal */}
+            <Dialog
+                open={reviewModalOpen}
+                onClose={() => setReviewModalOpen(false)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: isDark ? '#0F172A' : '#FFFFFF',
+                        color: isDark ? '#F8FAFC' : '#0F172A',
+                        borderRadius: 3,
+                        border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                    },
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                        Rate & Review Your Trip
+                    </Typography>
+                    <IconButton size="small" onClick={() => setReviewModalOpen(false)} sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <Box component="form" onSubmit={handleReviewSubmit}>
+                    <DialogContent dividers sx={{ borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }}>
+                        {reviewError && <Alert severity="error" sx={{ mb: 2 }}>{reviewError}</Alert>}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2.5 }}>
+                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mb: 1, textAlign: 'center' }}>
+                                How was your ride on the <strong>{bike.brand} {bike.model_name}</strong>?
+                            </Typography>
+                            <Rating
+                                name="customer-rating"
+                                value={rating}
+                                onChange={(event, newValue) => {
+                                    if (newValue) setRating(newValue);
+                                }}
+                                size="large"
+                                sx={{ color: '#F59E0B' }}
+                            />
+                        </Box>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="Your Experience & Review"
+                            placeholder="Share your thoughts about bike condition, handover experience, or coastal roads explored..."
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                        />
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setReviewModalOpen(false)} disabled={reviewLoading} sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" variant="contained" disabled={reviewLoading} sx={{ fontWeight: 800, bgcolor: '#F59E0B', color: '#0F172A', '&:hover': { bgcolor: '#D97706' } }}>
+                            {reviewLoading ? <CircularProgress size={22} color="inherit" /> : 'Submit Review'}
                         </Button>
                     </DialogActions>
                 </Box>

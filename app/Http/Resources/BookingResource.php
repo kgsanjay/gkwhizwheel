@@ -116,6 +116,12 @@ class BookingResource extends JsonResource
                 ]) : [],
                 'created_at' => $log->created_at?->toIso8601String(),
             ])),
+            'review' => $this->whenLoaded('review', fn () => $this->review ? [
+                'id' => $this->review->id,
+                'rating' => (int) $this->review->rating,
+                'comment' => $this->review->comment,
+                'created_at' => $this->review->created_at?->toIso8601String(),
+            ] : null),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

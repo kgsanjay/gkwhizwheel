@@ -209,7 +209,12 @@ Route::match(['get', 'post'], '/payment/phonepe/callback', [\App\Http\Controller
     ->name('payment.phonepe.callback');
 
 Route::get('/account', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'index'])->name('account.index');
+Route::get('/account/bookings', fn () => redirect()->route('account.index'))->name('account.bookings.index');
 Route::get('/account/bookings/{id}', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'show'])->name('account.bookings.show');
+Route::post('/account/bookings/{id}/cancel', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'cancelBooking'])->middleware('auth')->name('account.bookings.cancel');
+Route::post('/account/bookings/{id}/extend', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'extendBooking'])->middleware('auth')->name('account.bookings.extend');
+Route::post('/account/bookings/{id}/review', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'reviewBooking'])->middleware('auth')->name('account.bookings.review');
+Route::post('/account/profile', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'updateProfile'])->middleware('auth')->name('account.profile.update');
 Route::get('/account/kyc', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'kyc'])->name('account.kyc');
 Route::post('/account/kyc/upload', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'store'])->middleware(['auth', 'throttle:uploads'])->name('account.kyc.upload');
 Route::get('/account/kyc/{id}/download', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'download'])->middleware('auth')->name('account.kyc.download');

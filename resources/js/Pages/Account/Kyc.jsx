@@ -413,6 +413,8 @@ export default function AccountKyc({ documents = [], user = null }) {
                     {DOCUMENT_TYPES.map((type) => {
                         const existingDoc = docMap[type.key];
                         const isVerified = existingDoc?.verified;
+                        const isRejected = existingDoc && !existingDoc.verified && Boolean(existingDoc.verified_at);
+                        const isPending = existingDoc && !existingDoc.verified && !existingDoc.verified_at;
                         const isUploaded = Boolean(existingDoc);
 
                         return (
@@ -429,7 +431,9 @@ export default function AccountKyc({ documents = [], user = null }) {
                                         border: '1px solid',
                                         borderColor: isVerified
                                             ? '#10B981'
-                                            : isUploaded
+                                            : isRejected
+                                            ? '#EF4444'
+                                            : isPending
                                             ? '#3B82F6'
                                             : isDark
                                             ? 'rgba(255, 255, 255, 0.1)'
@@ -443,7 +447,7 @@ export default function AccountKyc({ documents = [], user = null }) {
                                             boxShadow: isDark
                                                 ? '0 14px 36px rgba(0,0,0,0.6)'
                                                 : '0 10px 30px rgba(15, 23, 42, 0.1)',
-                                            borderColor: isVerified ? '#10B981' : '#F59E0B',
+                                            borderColor: isVerified ? '#10B981' : isRejected ? '#EF4444' : '#F59E0B',
                                         },
                                     }}
                                 >
@@ -475,10 +479,23 @@ export default function AccountKyc({ documents = [], user = null }) {
                                                         fontSize: '0.72rem',
                                                     }}
                                                 />
-                                            ) : isUploaded ? (
+                                            ) : isRejected ? (
+                                                <Chip
+                                                    icon={<WarningAmberIcon sx={{ fontSize: '14px !important', color: '#EF4444 !important' }} />}
+                                                    label="Rejected - Re-upload"
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2',
+                                                        color: isDark ? '#F87171' : '#B91C1C',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        fontWeight: 800,
+                                                        fontSize: '0.72rem',
+                                                    }}
+                                                />
+                                            ) : isPending ? (
                                                 <Chip
                                                     icon={<PendingActionsIcon sx={{ fontSize: '14px !important', color: '#3B82F6 !important' }} />}
-                                                    label="Under Verification"
+                                                    label="Pending Verification"
                                                     size="small"
                                                     sx={{
                                                         bgcolor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE',
@@ -576,7 +593,7 @@ export default function AccountKyc({ documents = [], user = null }) {
                                                       }),
                                             }}
                                         >
-                                            {isUploaded ? 'Re-upload Document' : 'Upload Document'}
+                                            {isRejected ? 'Re-upload (Replace Rejected)' : isUploaded ? 'Re-upload Document' : 'Upload Document'}
                                         </Button>
                                     </CardContent>
                                 </Card>

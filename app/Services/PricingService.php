@@ -79,8 +79,12 @@ class PricingService
         $baseDailyRate = $branchRates['weekday_rate'];
         $depositAmount = (float) ($bikeModel->deposit_amount_override ?? $bikeModel->category->default_deposit_amount);
 
-        // 2. Fetch candidate pricing rules for this bike and its category
+        // 2. Fetch candidate pricing rules for this bike and its category (scoped to branch or global)
         $candidateRules = PricingRule::where('is_active', true)
+            ->where(function ($query) use ($pickupStoreModel) {
+                $query->whereNull('store_id')
+                    ->orWhere('store_id', $pickupStoreModel->id);
+            })
             ->where(function ($query) use ($bikeModel) {
                 $query->where('bike_id', $bikeModel->id)
                     ->orWhere(function ($q) use ($bikeModel) {
@@ -260,6 +264,13 @@ class PricingService
                 ->first();
 
             if ($coupon !== null) {
+                // Reject coupon if scoped to another branch
+                if ($coupon->store_id !== null && (int) $coupon->store_id !== (int) $pickupStoreModel->id) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => 'This coupon is not valid for the selected pickup branch.',
+                    ]);
+                }
+
                 $canApply = true;
 
                 if ($coupon->max_uses_total !== null && $coupon->usages()->count() >= $coupon->max_uses_total) {
@@ -377,6 +388,12 @@ class PricingService
 
         // Fetch candidate rules matching this service_type or specific service_item_id
         $candidateRules = PricingRule::where('is_active', true)
+            ->when($serviceItem?->store_id !== null, function ($q) use ($serviceItem) {
+                $q->where(function ($sq) use ($serviceItem) {
+                    $sq->whereNull('store_id')
+                        ->orWhere('store_id', $serviceItem->store_id);
+                });
+            })
             ->where(function ($query) use ($serviceType, $serviceItem) {
                 if ($serviceItem !== null) {
                     $query->where('service_item_id', $serviceItem->id)
@@ -467,18 +484,34 @@ class PricingService
         if (! empty($couponCode)) {
             $coupon = Coupon::where('code', strtoupper(trim($couponCode)))
                 ->where('is_active', true)
-                ->where('start_date', '<=', Carbon::now())
-                ->where('end_date', '>=', Carbon::now())
+                ->where(function ($q) {
+                    $q->whereDate('valid_from', '<=', now()->toDateString())
+                        ->orWhereDate('start_date', '<=', now()->toDateString());
+                })
+                ->where(function ($q) {
+                    $q->whereDate('valid_until', '>=', now()->toDateString())
+                        ->orWhereDate('end_date', '>=', now()->toDateString());
+                })
                 ->first();
 
-            if ($coupon && ($coupon->min_booking_amount === null || $subtotal >= (float) $coupon->min_booking_amount)) {
-                if ($coupon->discount_type === DiscountType::PERCENTAGE) {
-                    $calc = round(($subtotal * ((float) $coupon->discount_value / 100)), 2);
-                    $discountAmount = $coupon->max_discount_amount !== null
-                        ? min($calc, (float) $coupon->max_discount_amount)
-                        : $calc;
-                } else {
-                    $discountAmount = min($subtotal, (float) $coupon->discount_value);
+            if ($coupon !== null) {
+                if ($serviceItem?->store_id !== null && $coupon->store_id !== null && (int) $coupon->store_id !== (int) $serviceItem->store_id) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'coupon_code' => 'This coupon is not valid for the selected branch.',
+                    ]);
+                }
+
+                if ($coupon->min_booking_amount === null || $subtotal >= (float) $coupon->min_booking_amount) {
+                    if ($coupon->discount_type === DiscountType::PERCENTAGE) {
+                        $pct = (float) ($coupon->value ?? $coupon->discount_value ?? 0);
+                        $calc = round(($subtotal * ($pct / 100)), 2);
+                        $discountAmount = $coupon->max_discount_amount !== null
+                            ? min($calc, (float) $coupon->max_discount_amount)
+                            : $calc;
+                    } else {
+                        $val = (float) ($coupon->value ?? $coupon->discount_value ?? 0);
+                        $discountAmount = min($subtotal, $val);
+                    }
                 }
             }
         }

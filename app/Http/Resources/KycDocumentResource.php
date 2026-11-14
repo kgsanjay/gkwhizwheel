@@ -43,6 +43,7 @@ class KycDocumentResource extends JsonResource
                     ['id' => $this->id]
                 )
                 : null,
+            'status' => $this->verified ? 'verified' : ($this->verified_at ? 'rejected' : 'pending'),
             'verified' => (bool) $this->verified,
             'verified_by' => $this->verified_by,
             'verified_at' => $this->verified_at?->toIso8601String(),
