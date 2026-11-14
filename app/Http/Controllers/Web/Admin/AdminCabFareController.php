@@ -44,6 +44,8 @@ final class AdminCabFareController extends Controller
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()?->canManageService('taxi'), 403);
+        abort_if($request->user()?->isManager(), 403, 'Managers cannot create cab fare rules.');
+        abort_unless($request->user()?->isSuperAdmin() || $request->user()?->isAdmin(), 403);
         $validated = $request->validate([
             'store_id' => ['required', 'integer', 'exists:stores,id'],
             'service_item_id' => ['required', 'integer', 'exists:service_items,id'],

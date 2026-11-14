@@ -38,7 +38,7 @@ enum UserRole: string
 
     public function isManager(): bool
     {
-        return in_array($this, [self::STAFF, self::STORE_MANAGER], true);
+        return $this === self::STAFF;
     }
 
     public function isStaffOrAdmin(): bool

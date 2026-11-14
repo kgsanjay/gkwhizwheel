@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BulkImportBikesRequest;
 use App\Http\Requests\Admin\StoreBikeRequest;
 use App\Http\Requests\Admin\UpdateBikeRequest;
+use App\Http\Requests\Admin\UploadBikeDocumentRequest;
 use App\Models\ActivityLog;
 use App\Models\Bike;
 use App\Models\BikeCategory;
@@ -50,7 +51,7 @@ class AdminBikeWebController extends Controller
 
         // Scope to user's assigned stores if not super admin
         if (! $isSuperAdmin && $user !== null) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+            $userStoreIds = $user->accessibleStoreIds();
             $query->whereIn('current_store_id', $userStoreIds);
         }
 
@@ -88,7 +89,7 @@ class AdminBikeWebController extends Controller
         // Calculate fleet overview statistics
         $allBikes = Bike::query();
         if (! $isSuperAdmin && $user !== null) {
-            $ids = $user->getAuthorizedStoreIds() ?? [];
+            $ids = $user->accessibleStoreIds();
             $allBikes->whereIn('current_store_id', $ids);
         }
         $totalCount = (clone $allBikes)->count();
@@ -99,7 +100,7 @@ class AdminBikeWebController extends Controller
 
         $categories = BikeCategory::orderBy('name')->get();
         $stores = Store::where('status', StoreStatus::ACTIVE)
-            ->when(! $isSuperAdmin && $user !== null, fn ($q) => $q->whereIn('id', $user->getAuthorizedStoreIds() ?? []))
+            ->when(! $isSuperAdmin && $user !== null, fn ($q) => $q->whereIn('id', $user->accessibleStoreIds()))
             ->orderBy('name')->get();
 
         // Format bikes for frontend with document compliance metadata
@@ -670,6 +671,10 @@ class AdminBikeWebController extends Controller
         $bikes = Bike::whereIn('id', $validated['bike_ids'])->get();
 
         $user = $request->user();
+        if ($user && ($user->isManager() || (! $user->isSuperAdmin() && ! $user->isAdmin()))) {
+            abort(403, 'Managers cannot perform bulk price updates.');
+        }
+
         if ($user && ! $user->isSuperAdmin()) {
             $accessibleStores = $user->accessibleStoreIds();
             foreach ($bikes as $bike) {
@@ -723,6 +728,11 @@ class AdminBikeWebController extends Controller
      */
     public function quickPrice(int $id, Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user && ($user->isManager() || (! $user->isSuperAdmin() && ! $user->isAdmin()))) {
+            abort(403, 'Managers cannot update pricing.');
+        }
+
         $bike = Bike::findOrFail($id);
         Gate::authorize('update', $bike);
 
@@ -750,5 +760,75 @@ class AdminBikeWebController extends Controller
                 'weekend_rate' => (float) ($bike->weekend_daily_rate_override ?? $bike->base_daily_rate_override ?? $bike->category?->base_daily_rate ?? 0),
             ],
         ]);
+    }
+
+    /**
+     * Toggle maintenance status of a bike.
+     */
+    public function toggleMaintenance(int $id, Request $request): RedirectResponse
+    {
+        $bike = Bike::findOrFail($id);
+        Gate::authorize('toggleMaintenance', $bike);
+
+        if ($bike->status === BikeStatus::ON_RENT) {
+            return back()->withErrors(['status' => 'Cannot toggle maintenance while the bike is on rent.']);
+        }
+
+        $oldStatus = $bike->status;
+        $newStatus = $bike->status === BikeStatus::MAINTENANCE ? BikeStatus::AVAILABLE : BikeStatus::MAINTENANCE;
+
+        $bike->update(['status' => $newStatus]);
+
+        ActivityLog::create([
+            'user_id' => $request->user()?->id,
+            'store_id' => $bike->current_store_id,
+            'action' => 'bike_maintenance_toggled',
+            'subject_type' => Bike::class,
+            'subject_id' => $bike->id,
+            'old_values' => ['status' => $oldStatus->value],
+            'new_values' => ['status' => $newStatus->value],
+        ]);
+
+        return back()->with('success', "Bike {$bike->registration_number} status changed to {$newStatus->value}.");
+    }
+
+    /**
+     * Upload compliance document for a bike.
+     */
+    public function uploadDocument(int $id, UploadBikeDocumentRequest $request): RedirectResponse
+    {
+        $bike = Bike::findOrFail($id);
+        Gate::authorize('uploadDocuments', $bike);
+
+        $filePath = $request->file('file')->store('documents/bikes');
+
+        $document = BikeDocument::updateOrCreate(
+            [
+                'bike_id' => $bike->id,
+                'document_type' => $request->validated('document_type'),
+            ],
+            [
+                'file_path' => $filePath,
+                'issue_date' => $request->validated('issue_date'),
+                'expiry_date' => $request->validated('expiry_date'),
+                'uploaded_by' => $request->user()->id,
+                'verified' => $request->boolean('verified', true),
+            ]
+        );
+
+        ActivityLog::create([
+            'user_id' => $request->user()?->id,
+            'store_id' => $bike->current_store_id,
+            'action' => 'bike_document_uploaded',
+            'subject_type' => Bike::class,
+            'subject_id' => $bike->id,
+            'new_values' => [
+                'document_id' => $document->id,
+                'document_type' => $document->document_type instanceof BikeDocumentType ? $document->document_type->value : (string) $document->document_type,
+                'verified' => (bool) $document->verified,
+            ],
+        ]);
+
+        return back()->with('success', "Compliance document for {$bike->registration_number} uploaded successfully.");
     }
 }

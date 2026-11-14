@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
 import {
     Box,
@@ -51,6 +51,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 
 export default function BikesIndex({
     bikes = [],
@@ -59,6 +60,9 @@ export default function BikesIndex({
     filters = {},
     stats = {},
 }) {
+    const { auth } = usePage().props;
+    const isManager = auth?.user?.role === 'staff';
+
     const [viewMode, setViewMode] = useState('list');
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || '');
@@ -84,6 +88,14 @@ export default function BikesIndex({
     const [bulkWeekdayAmount, setBulkWeekdayAmount] = useState('');
     const [bulkWeekendAmount, setBulkWeekendAmount] = useState('');
     const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+
+    // Quick Document Upload state
+    const [uploadDocModalOpen, setUploadDocModalOpen] = useState(false);
+    const [selectedBikeForDoc, setSelectedBikeForDoc] = useState(null);
+    const [docType, setDocType] = useState('rc');
+    const [docFile, setDocFile] = useState(null);
+    const [docExpiryDate, setDocExpiryDate] = useState('');
+    const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
     // Inline quick edit state
     const [inlineEditing, setInlineEditing] = useState(null); // { bikeId, field: 'weekday' | 'weekend', value }
@@ -128,6 +140,29 @@ export default function BikesIndex({
             onError: () => {
                 setIsBulkSubmitting(false);
             },
+        });
+    };
+
+    const handleUploadDocSubmit = (e) => {
+        e.preventDefault();
+        if (!selectedBikeForDoc || !docFile) return;
+        setIsUploadingDoc(true);
+        const formData = new FormData();
+        formData.append('document_type', docType);
+        formData.append('file', docFile);
+        if (docExpiryDate) formData.append('expiry_date', docExpiryDate);
+        formData.append('verified', '1');
+
+        router.post(`/admin/bikes/${selectedBikeForDoc.id}/upload-document`, formData, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsUploadingDoc(false);
+                setUploadDocModalOpen(false);
+                setSelectedBikeForDoc(null);
+                setDocFile(null);
+                setDocExpiryDate('');
+            },
+            onError: () => setIsUploadingDoc(false),
         });
     };
 
@@ -300,47 +335,49 @@ export default function BikesIndex({
                     </Typography>
                 </Box>
 
-                <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
-                    <Button
-                        variant={selectedBikeIds.length > 0 ? 'contained' : 'outlined'}
-                        color="warning"
-                        startIcon={<TrendingUpIcon />}
-                        onClick={handleOpenBulkPricing}
-                        sx={{
-                            textTransform: 'none',
-                            fontWeight: 700,
-                            borderRadius: 2,
-                            ...(selectedBikeIds.length > 0 ? {
-                                bgcolor: '#F59E0B',
-                                color: '#0F172A',
-                                '&:hover': { bgcolor: '#D97706' },
-                            } : {}),
-                        }}
-                    >
-                        {selectedBikeIds.length > 0
-                            ? `Bulk Price Update (${selectedBikeIds.length})`
-                            : 'Bulk Pricing Manager'}
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<UploadFileIcon />}
-                        onClick={() => setImportModalOpen(true)}
-                        sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
-                    >
-                        Bulk CSV Import
-                    </Button>
-                    <Button
-                        component={Link}
-                        href="/admin/bikes/create"
-                        variant="contained"
-                        color="secondary"
-                        startIcon={<AddIcon />}
-                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-                    >
-                        Add New Bike
-                    </Button>
-                </Stack>
+                {!isManager && (
+                    <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
+                        <Button
+                            variant={selectedBikeIds.length > 0 ? 'contained' : 'outlined'}
+                            color="warning"
+                            startIcon={<TrendingUpIcon />}
+                            onClick={handleOpenBulkPricing}
+                            sx={{
+                                textTransform: 'none',
+                                fontWeight: 700,
+                                borderRadius: 2,
+                                ...(selectedBikeIds.length > 0 ? {
+                                    bgcolor: '#F59E0B',
+                                    color: '#0F172A',
+                                    '&:hover': { bgcolor: '#D97706' },
+                                } : {}),
+                            }}
+                        >
+                            {selectedBikeIds.length > 0
+                                ? `Bulk Price Update (${selectedBikeIds.length})`
+                                : 'Bulk Pricing Manager'}
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            startIcon={<UploadFileIcon />}
+                            onClick={() => setImportModalOpen(true)}
+                            sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
+                        >
+                            Bulk CSV Import
+                        </Button>
+                        <Button
+                            component={Link}
+                            href="/admin/bikes/create"
+                            variant="contained"
+                            color="secondary"
+                            startIcon={<AddIcon />}
+                            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+                        >
+                            Add New Bike
+                        </Button>
+                    </Stack>
+                )}
             </Box>
 
             {/* Fleet Statistics Bar */}
@@ -541,12 +578,14 @@ export default function BikesIndex({
                             <TableHead sx={{ bgcolor: 'background.default' }}>
                                 <TableRow>
                                     <TableCell padding="checkbox">
-                                        <Checkbox
-                                            indeterminate={selectedBikeIds.length > 0 && selectedBikeIds.length < bikes.length}
-                                            checked={bikes.length > 0 && selectedBikeIds.length === bikes.length}
-                                            onChange={handleSelectAll}
-                                            size="small"
-                                        />
+                                        {!isManager && (
+                                            <Checkbox
+                                                indeterminate={selectedBikeIds.length > 0 && selectedBikeIds.length < bikes.length}
+                                                checked={bikes.length > 0 && selectedBikeIds.length === bikes.length}
+                                                onChange={handleSelectAll}
+                                                size="small"
+                                            />
+                                        )}
                                     </TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>VEHICLE</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem' }}>REGISTRATION</TableCell>
@@ -564,11 +603,13 @@ export default function BikesIndex({
                                     bikes.map((bike) => (
                                         <TableRow key={bike.id} hover selected={selectedBikeIds.includes(bike.id)}>
                                             <TableCell padding="checkbox">
-                                                <Checkbox
-                                                    checked={selectedBikeIds.includes(bike.id)}
-                                                    onChange={() => handleToggleSelectBike(bike.id)}
-                                                    size="small"
-                                                />
+                                                {!isManager && (
+                                                    <Checkbox
+                                                        checked={selectedBikeIds.includes(bike.id)}
+                                                        onChange={() => handleToggleSelectBike(bike.id)}
+                                                        size="small"
+                                                    />
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -615,9 +656,9 @@ export default function BikesIndex({
                                                     />
                                                 )}
                                             </TableCell>
-                                            {/* WEEKDAY RATE CELL (QUICK INLINE EDIT) */}
+                                            {/* WEEKDAY RATE CELL (QUICK INLINE EDIT FOR ADMINS) */}
                                             <TableCell>
-                                                {inlineEditing?.bikeId === bike.id && inlineEditing?.field === 'weekday' ? (
+                                                {!isManager && inlineEditing?.bikeId === bike.id && inlineEditing?.field === 'weekday' ? (
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                         <TextField
                                                             size="small"
@@ -651,22 +692,29 @@ export default function BikesIndex({
                                                     </Box>
                                                 ) : (
                                                     <Box
-                                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.75, cursor: 'pointer', '&:hover .edit-rate-icon': { opacity: 1 } }}
-                                                        onClick={() => setInlineEditing({ bikeId: bike.id, field: 'weekday', value: bike.base_daily_rate })}
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 0.75,
+                                                            ...(!isManager ? { cursor: 'pointer', '&:hover .edit-rate-icon': { opacity: 1 } } : {}),
+                                                        }}
+                                                        onClick={() => !isManager && setInlineEditing({ bikeId: bike.id, field: 'weekday', value: bike.base_daily_rate })}
                                                     >
                                                         <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                                             ₹{bike.base_daily_rate}
                                                         </Typography>
-                                                        <EditIcon className="edit-rate-icon" sx={{ fontSize: '0.85rem', color: 'text.secondary', opacity: 0.25, transition: 'opacity 0.2s' }} />
+                                                        {!isManager && (
+                                                            <EditIcon className="edit-rate-icon" sx={{ fontSize: '0.85rem', color: 'text.secondary', opacity: 0.25, transition: 'opacity 0.2s' }} />
+                                                        )}
                                                     </Box>
                                                 )}
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem' }}>
                                                     / day
                                                 </Typography>
                                             </TableCell>
-                                            {/* WEEKEND RATE CELL (QUICK INLINE EDIT) */}
+                                            {/* WEEKEND RATE CELL (QUICK INLINE EDIT FOR ADMINS) */}
                                             <TableCell>
-                                                {inlineEditing?.bikeId === bike.id && inlineEditing?.field === 'weekend' ? (
+                                                {!isManager && inlineEditing?.bikeId === bike.id && inlineEditing?.field === 'weekend' ? (
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                         <TextField
                                                             size="small"
@@ -700,13 +748,20 @@ export default function BikesIndex({
                                                     </Box>
                                                 ) : (
                                                     <Box
-                                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.75, cursor: 'pointer', '&:hover .edit-rate-icon': { opacity: 1 } }}
-                                                        onClick={() => setInlineEditing({ bikeId: bike.id, field: 'weekend', value: bike.weekend_rate || bike.base_daily_rate })}
+                                                        sx={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 0.75,
+                                                            ...(!isManager ? { cursor: 'pointer', '&:hover .edit-rate-icon': { opacity: 1 } } : {}),
+                                                        }}
+                                                        onClick={() => !isManager && setInlineEditing({ bikeId: bike.id, field: 'weekend', value: bike.weekend_rate || bike.base_daily_rate })}
                                                     >
                                                         <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main' }}>
                                                             ₹{bike.weekend_rate || bike.base_daily_rate}
                                                         </Typography>
-                                                        <EditIcon className="edit-rate-icon" sx={{ fontSize: '0.85rem', color: 'text.secondary', opacity: 0.25, transition: 'opacity 0.2s' }} />
+                                                        {!isManager && (
+                                                            <EditIcon className="edit-rate-icon" sx={{ fontSize: '0.85rem', color: 'text.secondary', opacity: 0.25, transition: 'opacity 0.2s' }} />
+                                                        )}
                                                     </Box>
                                                 )}
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem' }}>
@@ -728,25 +783,55 @@ export default function BikesIndex({
                                                 {getStatusChip(bike.status)}
                                             </TableCell>
                                             <TableCell align="right">
-                                                <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                                    <IconButton
-                                                        component={Link}
-                                                        href={`/admin/bikes/${bike.id}/edit`}
-                                                        size="small"
-                                                        color="primary"
-                                                    >
-                                                        <EditIcon fontSize="small" />
-                                                    </IconButton>
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => {
-                                                            setBikeToDelete(bike);
-                                                            setDeleteModalOpen(true);
-                                                        }}
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
+                                                <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                                    {bike.status !== 'rented' && (
+                                                        <Tooltip title={bike.status === 'in_service' || bike.status === 'maintenance' ? 'Set as Available' : 'Set as In Service'}>
+                                                            <IconButton
+                                                                size="small"
+                                                                color={bike.status === 'in_service' || bike.status === 'maintenance' ? 'success' : 'warning'}
+                                                                onClick={() => router.post(`/admin/bikes/${bike.id}/toggle-maintenance`, {}, { preserveScroll: true })}
+                                                            >
+                                                                <BuildCircleIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
+                                                    <Tooltip title="Upload Compliance Document">
+                                                        <IconButton
+                                                            size="small"
+                                                            color="info"
+                                                            onClick={() => {
+                                                                setSelectedBikeForDoc(bike);
+                                                                setDocType('rc');
+                                                                setDocFile(null);
+                                                                setDocExpiryDate('');
+                                                                setUploadDocModalOpen(true);
+                                                            }}
+                                                        >
+                                                            <CloudUploadIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    {!isManager && (
+                                                        <>
+                                                            <IconButton
+                                                                component={Link}
+                                                                href={`/admin/bikes/${bike.id}/edit`}
+                                                                size="small"
+                                                                color="primary"
+                                                            >
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                onClick={() => {
+                                                                    setBikeToDelete(bike);
+                                                                    setDeleteModalOpen(true);
+                                                                }}
+                                                            >
+                                                                <DeleteIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </>
+                                                    )}
                                                 </Stack>
                                             </TableCell>
                                         </TableRow>
@@ -827,28 +912,61 @@ export default function BikesIndex({
                                             {renderDocumentStatus(bike.documents)}
                                         </Box>
 
-                                        <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                                        <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap" gap={0.5}>
+                                            {bike.status !== 'rented' && (
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    color={bike.status === 'in_service' || bike.status === 'maintenance' ? 'success' : 'warning'}
+                                                    fullWidth={isManager}
+                                                    startIcon={<BuildCircleIcon />}
+                                                    onClick={() => router.post(`/admin/bikes/${bike.id}/toggle-maintenance`, {}, { preserveScroll: true })}
+                                                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, flex: 1 }}
+                                                >
+                                                    {bike.status === 'in_service' || bike.status === 'maintenance' ? 'Set Available' : 'Maintenance'}
+                                                </Button>
+                                            )}
                                             <Button
-                                                component={Link}
-                                                href={`/admin/bikes/${bike.id}/edit`}
                                                 variant="outlined"
                                                 size="small"
-                                                fullWidth
-                                                startIcon={<EditIcon />}
-                                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-                                            >
-                                                Edit
-                                            </Button>
-                                            <IconButton
-                                                size="small"
-                                                color="error"
+                                                color="info"
+                                                fullWidth={isManager && bike.status === 'rented'}
+                                                startIcon={<CloudUploadIcon />}
                                                 onClick={() => {
-                                                    setBikeToDelete(bike);
-                                                    setDeleteModalOpen(true);
+                                                    setSelectedBikeForDoc(bike);
+                                                    setDocType('rc');
+                                                    setDocFile(null);
+                                                    setDocExpiryDate('');
+                                                    setUploadDocModalOpen(true);
                                                 }}
+                                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, flex: 1 }}
                                             >
-                                                <DeleteOutlineIcon fontSize="small" />
-                                            </IconButton>
+                                                Upload Doc
+                                            </Button>
+                                            {!isManager && (
+                                                <>
+                                                    <Button
+                                                        component={Link}
+                                                        href={`/admin/bikes/${bike.id}/edit`}
+                                                        variant="outlined"
+                                                        size="small"
+                                                        startIcon={<EditIcon />}
+                                                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => {
+                                                            setBikeToDelete(bike);
+                                                            setDeleteModalOpen(true);
+                                                        }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </>
+                                            )}
                                         </Stack>
                                     </CardContent>
                                 </Card>
@@ -1139,6 +1257,83 @@ export default function BikesIndex({
                         Confirm Delete
                     </Button>
                 </DialogActions>
+            </Dialog>
+            {/* Quick Document Upload Modal */}
+            <Dialog
+                open={uploadDocModalOpen}
+                onClose={() => !isUploadingDoc && setUploadDocModalOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <form onSubmit={handleUploadDocSubmit}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                            Upload Compliance Doc
+                        </Typography>
+                        <IconButton size="small" onClick={() => setUploadDocModalOpen(false)}>
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent dividers sx={{ p: 2.5 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 2 }}>
+                            Vehicle: <strong>{selectedBikeForDoc?.registration_number}</strong> ({selectedBikeForDoc?.brand} {selectedBikeForDoc?.model_name})
+                        </Typography>
+                        <Stack spacing={2}>
+                            <TextField
+                                select
+                                label="Document Type"
+                                value={docType}
+                                onChange={(e) => setDocType(e.target.value)}
+                                size="small"
+                                fullWidth
+                                required
+                            >
+                                <MenuItem value="rc">Registration Certificate (RC)</MenuItem>
+                                <MenuItem value="insurance">Insurance Policy</MenuItem>
+                                <MenuItem value="emission">Emission Certificate (PUC)</MenuItem>
+                            </TextField>
+                            <TextField
+                                type="date"
+                                label="Expiry Date"
+                                value={docExpiryDate}
+                                onChange={(e) => setDocExpiryDate(e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                                size="small"
+                                fullWidth
+                                required
+                            />
+                            <Button
+                                variant="outlined"
+                                component="label"
+                                startIcon={<CloudUploadIcon />}
+                                fullWidth
+                                sx={{ py: 1.2, borderRadius: 2, textTransform: 'none' }}
+                            >
+                                {docFile ? docFile.name : 'Select File (PDF, PNG, JPG)'}
+                                <input
+                                    type="file"
+                                    hidden
+                                    accept=".pdf,.png,.jpg,.jpeg"
+                                    onChange={(e) => setDocFile(e.target.files[0] || null)}
+                                    required
+                                />
+                            </Button>
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setUploadDocModalOpen(false)} disabled={isUploadingDoc} sx={{ textTransform: 'none' }}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={!docFile || isUploadingDoc}
+                            sx={{ textTransform: 'none', fontWeight: 700 }}
+                        >
+                            {isUploadingDoc ? <CircularProgress size={20} color="inherit" /> : 'Upload & Verify'}
+                        </Button>
+                    </DialogActions>
+                </form>
             </Dialog>
         </AdminLayout>
     );

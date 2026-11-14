@@ -59,35 +59,12 @@ test('notification_logs table has exact columns per schema', function () {
         ->and(Schema::hasColumn('notification_logs', 'updated_at'))->toBeFalse();
 });
 
-test('sync_queue table has exact columns and unique idempotency key', function () {
-    expect(Schema::hasTable('sync_queue'))->toBeTrue();
-
-    $columns = [
-        'id',
-        'device_id',
-        'user_id',
-        'action_type',
-        'payload_json',
-        'idempotency_key',
-        'status',
-        'synced_at',
-        'created_at',
-    ];
-
-    foreach ($columns as $column) {
-        expect(Schema::hasColumn('sync_queue', $column))->toBeTrue("Missing sync_queue.{$column}");
-    }
-
-    expect(Schema::hasColumn('sync_queue', 'updated_at'))->toBeFalse();
-
-    $indexes = Schema::getIndexes('sync_queue');
-    $hasUniqueIdempotency = collect($indexes)->filter(fn ($idx) => $idx['unique'])
-        ->contains(fn ($idx) => in_array('idempotency_key', $idx['columns'], true));
-
-    expect($hasUniqueIdempotency)->toBeTrue();
+test('legacy sync_queue table and expo_push_token column are dropped', function () {
+    expect(Schema::hasTable('sync_queue'))->toBeFalse()
+        ->and(Schema::hasColumn('users', 'expo_push_token'))->toBeFalse();
 });
 
-test('can insert records into activity_logs, notification_logs, and sync_queue', function () {
+test('can insert records into activity_logs and notification_logs', function () {
     $user = User::factory()->create();
 
     $storeId = DB::table('stores')->insertGetId([
@@ -126,19 +103,6 @@ test('can insert records into activity_logs, notification_logs, and sync_queue',
         'sent_at' => now(),
     ]);
 
-    // sync_queue
-    $syncId = DB::table('sync_queue')->insertGetId([
-        'device_id' => 'device-android-imei-12345',
-        'user_id' => $user->id,
-        'action_type' => 'mark_returned',
-        'payload_json' => json_encode(['booking_id' => 1, 'odometer' => 15200]),
-        'idempotency_key' => 'idemp-sync-uuid-999',
-        'status' => 'pending',
-        'synced_at' => null,
-        'created_at' => now(),
-    ]);
-
     expect(DB::table('activity_logs')->where('id', $logId)->value('action'))->toBe('pricing_rule.updated')
-        ->and(DB::table('notification_logs')->where('id', $notifId)->value('channel'))->toBe('whatsapp')
-        ->and(DB::table('sync_queue')->where('id', $syncId)->value('status'))->toBe('pending');
+        ->and(DB::table('notification_logs')->where('id', $notifId)->value('channel'))->toBe('whatsapp');
 });

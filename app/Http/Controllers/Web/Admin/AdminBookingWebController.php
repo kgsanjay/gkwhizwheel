@@ -16,6 +16,7 @@ use App\Http\Requests\Admin\UpdateBookingAdminRequest;
 use App\Models\ActivityLog;
 use App\Models\Bike;
 use App\Models\Booking;
+use App\Models\KycDocument;
 use App\Models\Store;
 use App\Services\BookingService;
 use App\Services\RefundService;
@@ -822,6 +823,74 @@ class AdminBookingWebController extends Controller
         }
 
         return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Verify a customer KYC document.
+     */
+    public function verifyKyc(int $id, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isManager()), 403);
+
+        if (! $user->isSuperAdmin()) {
+            abort_if(count($user->accessibleStoreIds()) === 0, 403, 'Unassigned staff cannot verify KYC documents.');
+        }
+
+        $document = KycDocument::findOrFail($id);
+        $document->update([
+            'verified' => true,
+            'verified_by' => $user->id,
+            'verified_at' => now(),
+        ]);
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => 'customer_kyc_verified',
+            'subject_type' => KycDocument::class,
+            'subject_id' => $document->id,
+            'new_values' => [
+                'customer_id' => $document->user_id,
+                'document_type' => $document->document_type?->value ?? (string) $document->document_type,
+                'verified' => true,
+            ],
+        ]);
+
+        return back()->with('success', 'Customer KYC document verified.');
+    }
+
+    /**
+     * Reject a customer KYC document.
+     */
+    public function rejectKyc(int $id, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isManager()), 403);
+
+        if (! $user->isSuperAdmin()) {
+            abort_if(count($user->accessibleStoreIds()) === 0, 403, 'Unassigned staff cannot reject KYC documents.');
+        }
+
+        $document = KycDocument::findOrFail($id);
+        $document->update([
+            'verified' => false,
+            'verified_by' => $user->id,
+            'verified_at' => now(),
+        ]);
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => 'customer_kyc_rejected',
+            'subject_type' => KycDocument::class,
+            'subject_id' => $document->id,
+            'new_values' => [
+                'customer_id' => $document->user_id,
+                'document_type' => $document->document_type?->value ?? (string) $document->document_type,
+                'verified' => false,
+            ],
+        ]);
+
+        return back()->with('success', 'Customer KYC document rejected.');
     }
 }
 

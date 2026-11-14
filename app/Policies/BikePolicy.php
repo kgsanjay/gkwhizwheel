@@ -28,7 +28,12 @@ class BikePolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->manage($user);
+        if ($this->manage($user)) {
+            return true;
+        }
+
+        // Branch Managers with assigned stores can view bikes in their fleet
+        return $user->isManager() && count($user->accessibleStoreIds()) > 0;
     }
 
     public function view(User $user, Bike $bike): bool
@@ -38,11 +43,11 @@ class BikePolicy
         }
 
         if ($user->isAdmin() || $user->isManager()) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+            $userStoreIds = $user->accessibleStoreIds();
 
             // Physical branch ownership governs bike-level access. The nominal
             // home branch cannot edit a bike currently assigned elsewhere.
-            return in_array($bike->current_store_id, $userStoreIds, true);
+            return in_array((int) $bike->current_store_id, $userStoreIds, true);
         }
 
         return false;
@@ -99,12 +104,27 @@ class BikePolicy
             return true;
         }
 
-        if ($user->isAdmin()) {
-            $userStoreIds = $user->stores()->pluck('stores.id')->all();
+        if ($user->isAdmin() || $user->isManager()) {
+            $userStoreIds = $user->accessibleStoreIds();
 
             // Physical branch ownership governs bike-level access. The nominal
             // home branch cannot edit a bike currently assigned elsewhere.
-            return in_array($bike->current_store_id, $userStoreIds, true);
+            return in_array((int) $bike->current_store_id, $userStoreIds, true);
+        }
+
+        return false;
+    }
+
+    public function toggleMaintenance(User $user, Bike $bike): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin() || $user->isManager()) {
+            $userStoreIds = $user->accessibleStoreIds();
+
+            return in_array((int) $bike->current_store_id, $userStoreIds, true);
         }
 
         return false;

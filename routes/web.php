@@ -244,6 +244,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
         ->middleware('role:super_admin')->name('admin.relocations.confirm-receipt');
     Route::post('/relocations/{id}/dismiss', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'dismiss'])
         ->middleware('role:super_admin')->name('admin.relocations.dismiss');
+    Route::post('/relocations/{id}/status', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'updateStatus'])
+        ->name('admin.relocations.update-status');
     Route::get('/dispatch', [\App\Http\Controllers\Web\Admin\AdminDispatchWebController::class, 'index'])->name('admin.dispatch.index');
     Route::get('/operations', fn () => redirect()->route('admin.bookings.index', ['status' => 'confirmed']))->name('admin.operations');
     Route::get('/customers', fn () => redirect()->route('admin.bookings.index'))->name('admin.customers');
@@ -262,6 +264,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');
     Route::post('/bikes/bulk-pricing', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'bulkPricing'])->name('admin.bikes.bulk-pricing');
     Route::post('/bikes/{id}/quick-price', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'quickPrice'])->name('admin.bikes.quick-price');
+    Route::post('/bikes/{id}/toggle-maintenance', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'toggleMaintenance'])->name('admin.bikes.toggle-maintenance');
+    Route::post('/bikes/{id}/upload-document', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'uploadDocument'])->name('admin.bikes.upload-document');
     Route::get('/bikes/create', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'create'])->name('admin.bikes.create');
     Route::post('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'store'])->name('admin.bikes.store');
     Route::get('/bikes/export-sample-csv', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'exportSampleCsv'])->name('admin.bikes.export-sample-csv');
@@ -298,35 +302,43 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/cab-dispatches/{id}/reschedule-requests', [\App\Http\Controllers\Web\Admin\AdminCabRescheduleController::class, 'store'])->name('admin.cab-dispatches.reschedule-requests.store');
     Route::post('/cab-dispatches/{id}/cancel', [\App\Http\Controllers\Web\Admin\AdminCabDispatchController::class, 'cancel'])->name('admin.cab-dispatches.cancel');
 
-    // Dynamic Pricing Rules
-    Route::get('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'index'])->name('admin.pricing.index');
-    Route::post('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'store'])->name('admin.pricing.store');
-    Route::post('/pricing/simulate-quote', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'simulateQuote'])->name('admin.pricing.simulate-quote');
-    Route::match(['post', 'put'], '/pricing/{id}', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'update'])->name('admin.pricing.update');
-    Route::post('/pricing/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'toggle'])->name('admin.pricing.toggle');
-    Route::delete('/pricing/{id}', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'destroy'])->name('admin.pricing.destroy');
+    // Pricing, Coupons, Stores & Reports (Super Admin and Branch Admin only)
+    Route::middleware('role:super_admin,store_manager,admin')->group(function (): void {
+        // Dynamic Pricing Rules
+        Route::get('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'index'])->name('admin.pricing.index');
+        Route::post('/pricing', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'store'])->name('admin.pricing.store');
+        Route::post('/pricing/simulate-quote', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'simulateQuote'])->name('admin.pricing.simulate-quote');
+        Route::match(['post', 'put'], '/pricing/{id}', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'update'])->name('admin.pricing.update');
+        Route::post('/pricing/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'toggle'])->name('admin.pricing.toggle');
+        Route::delete('/pricing/{id}', [\App\Http\Controllers\Web\Admin\AdminPricingRuleWebController::class, 'destroy'])->name('admin.pricing.destroy');
 
-    // Discount Coupons
-    Route::get('/coupons', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'index'])->name('admin.coupons.index');
-    Route::post('/coupons', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'store'])->name('admin.coupons.store');
-    Route::match(['post', 'put'], '/coupons/{id}', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'update'])->name('admin.coupons.update');
-    Route::post('/coupons/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'toggle'])->name('admin.coupons.toggle');
-    Route::delete('/coupons/{id}', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'destroy'])->name('admin.coupons.destroy');
+        // Discount Coupons
+        Route::get('/coupons', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'index'])->name('admin.coupons.index');
+        Route::post('/coupons', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'store'])->name('admin.coupons.store');
+        Route::match(['post', 'put'], '/coupons/{id}', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'update'])->name('admin.coupons.update');
+        Route::post('/coupons/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'toggle'])->name('admin.coupons.toggle');
+        Route::delete('/coupons/{id}', [\App\Http\Controllers\Web\Admin\AdminCouponWebController::class, 'destroy'])->name('admin.coupons.destroy');
 
-    // Pickup/return points belong to a branch, not an additional store.
-    Route::get('/pickup-points', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'index'])->name('admin.pickup-points.index');
-    Route::post('/pickup-points', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'store'])->name('admin.pickup-points.store');
-    Route::post('/pickup-points/{id}', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'update'])->name('admin.pickup-points.update');
-    Route::post('/pickup-points/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'toggle'])->name('admin.pickup-points.toggle');
+        // Stores & Hubs
+        Route::get('/stores', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'index'])->name('admin.stores.index');
+        Route::get('/stores/create', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'create'])->name('admin.stores.create');
+        Route::post('/stores', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'store'])->name('admin.stores.store');
+        Route::get('/stores/{id}/edit', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'edit'])->name('admin.stores.edit');
+        Route::match(['post', 'put'], '/stores/{id}', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'update'])->name('admin.stores.update');
+        Route::post('/stores/{id}/services', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'updateServices'])->name('admin.stores.services');
+        Route::match(['post', 'patch'], '/stores/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'toggle'])->name('admin.stores.toggle');
 
-    // Stores & Hubs
-    Route::get('/stores', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'index'])->name('admin.stores.index');
-    Route::get('/stores/create', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'create'])->name('admin.stores.create');
-    Route::post('/stores', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'store'])->name('admin.stores.store');
-    Route::get('/stores/{id}/edit', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'edit'])->name('admin.stores.edit');
-    Route::match(['post', 'put'], '/stores/{id}', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'update'])->name('admin.stores.update');
-    Route::post('/stores/{id}/services', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'updateServices'])->name('admin.stores.services');
-    Route::match(['post', 'patch'], '/stores/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'toggle'])->name('admin.stores.toggle');
+        // Pickup/return points belong to a branch, not an additional store.
+        Route::get('/pickup-points', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'index'])->name('admin.pickup-points.index');
+        Route::post('/pickup-points', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'store'])->name('admin.pickup-points.store');
+        Route::post('/pickup-points/{id}', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'update'])->name('admin.pickup-points.update');
+        Route::post('/pickup-points/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'toggle'])->name('admin.pickup-points.toggle');
+        Route::delete('/pickup-points/{id}', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'destroy'])->name('admin.pickup-points.destroy');
+
+        // Reports & Analytics Dashboards
+        Route::get('/reports', [\App\Http\Controllers\Web\Admin\AdminReportWebController::class, 'index'])->name('admin.reports.index');
+        Route::get('/compliance-audit', fn () => redirect()->route('admin.logs.index', ['action' => 'handover.compliance_override']))->name('admin.compliance-audit.index');
+    });
 
     // Staff Management & System Logs (Super Admin and Branch Admin)
     Route::middleware('role:super_admin,store_manager,admin')->group(function (): void {
@@ -350,12 +362,16 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
 
     // Six non-bike service enquiries are not confirmed or payable bookings.
     Route::get('/service-enquiries', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'index'])
-        ->middleware('role:super_admin,store_manager,admin')->name('admin.service-enquiries.index');
+        ->middleware('role:super_admin,store_manager,admin,staff')->name('admin.service-enquiries.index');
 
     Route::post('/service-enquiries/{id}/proposal', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'createProposal'])
         ->middleware('role:super_admin,store_manager,admin')->name('admin.service-enquiries.proposal');
     Route::post('/service-enquiries/{id}/status', [\App\Http\Controllers\Web\Admin\AdminServiceEnquiryWebController::class, 'updateStatus'])
-        ->middleware('role:super_admin,store_manager,admin')->name('admin.service-enquiries.status');
+        ->middleware('role:super_admin,store_manager,admin,staff')->name('admin.service-enquiries.status');
+
+    // Customer KYC verification and rejection
+    Route::post('/kyc-documents/{id}/verify', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'verifyKyc'])->name('admin.kyc-documents.verify');
+    Route::post('/kyc-documents/{id}/reject', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'rejectKyc'])->name('admin.kyc-documents.reject');
 
     // Unified Bookings Calendar & Management
     Route::get('/bookings', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'index'])->name('admin.bookings.index');
@@ -399,9 +415,6 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
         Route::post('/bookings/{id}/payment', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'recordPayment'])->name('admin.services.bookings.record-payment');
         Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\Admin\AdminServiceWebController::class, 'downloadVoucher'])->name('admin.services.bookings.voucher');
     });
-
-    // Reports & Analytics Dashboards
-    Route::get('/reports', [\App\Http\Controllers\Web\Admin\AdminReportWebController::class, 'index'])->name('admin.reports.index');
 });
 
 Route::post('/webhooks/phonepe', [\App\Http\Controllers\Api\V1\Webhooks\PhonePeWebhookController::class, 'handle'])

@@ -44,7 +44,7 @@ beforeEach(function (): void {
     $this->staff = User::create([
         'name' => 'Honnavar Cab Staff', 'email' => 'cabfare53-staff@example.test',
         'phone' => '9000005352', 'password' => 'Password123!',
-        'role' => UserRole::STAFF, 'status' => UserStatus::ACTIVE,
+        'role' => UserRole::STORE_MANAGER, 'status' => UserStatus::ACTIVE,
     ]);
     $this->staff->stores()->attach($this->honn->id);
     $this->staff->syncAssignedServices(['taxi']);

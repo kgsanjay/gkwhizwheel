@@ -22,6 +22,8 @@ final class AdminCabRefundReviewController extends Controller
     public function store(Request $request, int $bookingId): JsonResponse
     {
         abort_unless($request->user()?->canManageService('taxi'), 403);
+        abort_if($request->user()?->isManager(), 403, 'Managers cannot review cab refunds.');
+        abort_unless($request->user()?->isSuperAdmin() || $request->user()?->isAdmin(), 403);
         $data = $request->validate([
             'reason' => ['required', 'string', 'min:5', 'max:1000', 'not_regex:/^\\s*$/'],
         ]);

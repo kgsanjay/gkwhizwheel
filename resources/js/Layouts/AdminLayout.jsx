@@ -92,7 +92,7 @@ const MENU_SECTIONS = [
                 label: 'Service Enquiries',
                 path: '/admin/service-enquiries',
                 icon: <ReceiptLongIcon sx={{ fontSize: 20 }} />,
-                roles: ['super_admin', 'store_manager', 'admin'],
+                roles: ['super_admin', 'store_manager', 'admin', 'staff'],
             },
             {
                 label: 'Ground Pass Scanner',
@@ -168,6 +168,7 @@ const MENU_SECTIONS = [
                 basePath: '/admin/services/taxi/bookings',
                 children: [
                     { label: 'All Taxi Bookings', path: '/admin/services/taxi/bookings', roles: ['super_admin', 'store_manager', 'staff'] },
+                    { label: 'Cab Dispatches', path: '/admin/cab-dispatches', roles: ['super_admin', 'store_manager', 'staff'] },
                     { label: 'Cab Operations Desk', path: '/admin/cab-operations', roles: ['super_admin', 'store_manager', 'staff'] },
                     { label: '+ New Offline Booking', path: '/admin/services/taxi/bookings/create', roles: ['super_admin', 'store_manager', 'staff'] },
                 ],

@@ -30,16 +30,23 @@ class BikeRelocationController extends Controller
         abort_unless(in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true), 403);
 
         $query = BikeRelocationTask::query()->with(['bike', 'affectedBooking'])
-            ->where('status', 'open');
+            ->whereIn('status', ['open', 'in_transit']);
         if ($user->role !== UserRole::SUPER_ADMIN) {
-            $query->whereIn('required_store_id', $user->getAuthorizedStoreIds() ?? []);
+            $accessibleStores = $user->accessibleStoreIds();
+            $query->where(function ($q) use ($accessibleStores) {
+                $q->whereIn('required_store_id', $accessibleStores)
+                  ->orWhereIn('from_store_id', $accessibleStores);
+            });
         }
         if ($request->filled('store_id')) {
             $requestedStore = $request->integer('store_id');
             if ($user->role !== UserRole::SUPER_ADMIN) {
-                abort_unless(in_array($requestedStore, $user->getAuthorizedStoreIds() ?? [], true), 403);
+                abort_unless(in_array($requestedStore, $user->accessibleStoreIds(), true), 403);
             }
-            $query->where('required_store_id', $requestedStore);
+            $query->where(function ($q) use ($requestedStore) {
+                $q->where('required_store_id', $requestedStore)
+                  ->orWhere('from_store_id', $requestedStore);
+            });
         }
 
         $tasks = $query->orderBy('id')->paginate(20);
@@ -58,7 +65,7 @@ class BikeRelocationController extends Controller
         if (! $request->expectsJson()) {
             $stores = Store::where('status', StoreStatus::ACTIVE)
                 ->when($user->role !== UserRole::SUPER_ADMIN,
-                    fn ($query) => $query->whereIn('id', $user->getAuthorizedStoreIds() ?? []))
+                    fn ($query) => $query->whereIn('id', $user->accessibleStoreIds()))
                 ->orderBy('name')->get(['id', 'name', 'city']);
             return Inertia::render('Admin/Relocations/Index', [
                 'tasks' => [
@@ -222,4 +229,70 @@ class BikeRelocationController extends Controller
         });
     }
 
+    /**
+     * Floor Manager/Staff updates relocation task status (in_transit or completed/resolved).
+     */
+    public function updateStatus(int $id, Request $request): JsonResponse|RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true), 403);
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:in_transit,completed,resolved'],
+        ]);
+
+        $targetStatus = $validated['status'];
+        if ($targetStatus === 'completed') {
+            $targetStatus = 'resolved';
+        }
+
+        return DB::transaction(function () use ($id, $user, $targetStatus, $request): JsonResponse|RedirectResponse {
+            $task = BikeRelocationTask::whereKey($id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($task->status, ['open', 'in_transit'], true)) {
+                throw ValidationException::withMessages(['task' => 'This relocation task has already been concluded.']);
+            }
+
+            if ($user->role !== UserRole::SUPER_ADMIN) {
+                $accessible = $user->accessibleStoreIds();
+                if (! in_array((int) $task->from_store_id, $accessible, true) && ! in_array((int) $task->required_store_id, $accessible, true)) {
+                    abort(403, 'Unauthorized store relocation task.');
+                }
+            }
+
+            $oldStatus = $task->status;
+            $task->update(['status' => $targetStatus]);
+
+            if ($targetStatus === 'resolved') {
+                $bike = Bike::whereKey($task->bike_id)->lockForUpdate()->first();
+                if ($bike) {
+                    $bike->update(['current_store_id' => $task->required_store_id]);
+                }
+            }
+
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'store_id' => $task->required_store_id,
+                'action' => 'bike_relocation_status_updated',
+                'subject_type' => BikeRelocationTask::class,
+                'subject_id' => (string) $task->id,
+                'old_values' => ['status' => $oldStatus],
+                'new_values' => ['status' => $targetStatus, 'bike_id' => $task->bike_id],
+            ]);
+
+            if (! $request->expectsJson()) {
+                return redirect()->route('admin.relocations.index')
+                    ->with('success', "Relocation task updated to {$targetStatus}.");
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'task_id' => $task->id,
+                    'status' => $task->status,
+                    'bike_id' => $task->bike_id,
+                ],
+            ]);
+        });
+    }
 }

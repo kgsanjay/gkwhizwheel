@@ -108,6 +108,7 @@ export default function RelocationsIndex({
                                 <TableCell>Required branch</TableCell>
                                 <TableCell>Upcoming booking</TableCell>
                                 <TableCell>Pickup date</TableCell>
+                                <TableCell>Status</TableCell>
                                 <TableCell align="right">Action</TableCell>
                             </TableRow>
                         </TableHead>
@@ -122,20 +123,51 @@ export default function RelocationsIndex({
                                     <TableCell><Chip size="small" color="warning" variant="outlined" label={storeName(task.required_store_id)} /></TableCell>
                                     <TableCell>{task.affected_booking_reference || `#${task.affected_booking_id}`}</TableCell>
                                     <TableCell>{task.pickup_date || '—'}</TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            size="small"
+                                            color={task.status === 'in_transit' ? 'primary' : 'default'}
+                                            variant={task.status === 'in_transit' ? 'filled' : 'outlined'}
+                                            label={task.status === 'in_transit' ? 'In Transit' : 'Pending'}
+                                            sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700 }}
+                                        />
+                                    </TableCell>
                                     <TableCell align="right">
-                                        {can_confirm ? (
-                                            <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                                <Button variant="outlined" size="small" onClick={() => { setSelected(task); setConfirmed(false); setError(''); }}>Confirm receipt</Button>
-                                                <Button size="small" color="inherit" onClick={() => { setDismissTask(task); setDismissReason(''); setError(''); }}>Dismiss obsolete</Button>
-                                            </Stack>
-                                        ) : (
-                                            <Typography color="text.secondary" variant="caption">Superadmin review</Typography>
-                                        )}
+                                        <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                                            {task.status === 'open' && (
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    color="info"
+                                                    onClick={() => router.post(`/admin/relocations/${task.id}/status`, { status: 'in_transit' }, { preserveScroll: true })}
+                                                    sx={{ textTransform: 'none', fontWeight: 600, py: 0.2 }}
+                                                >
+                                                    Start Transit
+                                                </Button>
+                                            )}
+                                            {task.status === 'in_transit' && (
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    color="success"
+                                                    onClick={() => router.post(`/admin/relocations/${task.id}/status`, { status: 'completed' }, { preserveScroll: true })}
+                                                    sx={{ textTransform: 'none', fontWeight: 600, py: 0.2 }}
+                                                >
+                                                    Complete Receipt
+                                                </Button>
+                                            )}
+                                            {can_confirm && (
+                                                <>
+                                                    <Button variant="outlined" size="small" onClick={() => { setSelected(task); setConfirmed(false); setError(''); }}>Confirm receipt</Button>
+                                                    <Button size="small" color="inherit" onClick={() => { setDismissTask(task); setDismissReason(''); setError(''); }}>Dismiss obsolete</Button>
+                                                </>
+                                            )}
+                                        </Stack>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {(!tasks.data || tasks.data.length === 0) && (
-                                <TableRow><TableCell colSpan={6}>
+                                <TableRow><TableCell colSpan={7}>
                                     <Box py={5} textAlign="center">
                                         <CheckCircleIcon color="success" sx={{ fontSize: 32, mb: 1 }} />
                                         <Typography fontWeight={700}>No pending relocations</Typography>

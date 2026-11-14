@@ -264,6 +264,10 @@ class AdminServiceWebController extends Controller
      */
     public function storeItem(Request $request, string $serviceType): RedirectResponse
     {
+        if ($request->user()?->isManager()) {
+            abort(403, 'Managers cannot register new service items.');
+        }
+
         $config = $this->getServiceConfig($serviceType);
 
         $validated = $request->validate([
@@ -441,6 +445,10 @@ class AdminServiceWebController extends Controller
             'delete_document_ids' => ['nullable', 'array'],
             'delete_document_ids.*' => ['integer'],
         ]);
+
+        if ($request->user()?->isManager() && isset($validated['price_base']) && round((float) $validated['price_base'], 2) !== round((float) $item->price_base, 2)) {
+            abort(403, 'Managers cannot alter service base price.');
+        }
 
         $itemData = collect($validated)->except([
             'primary_image', 'images', 'primary_image_id', 'primary_image_index',

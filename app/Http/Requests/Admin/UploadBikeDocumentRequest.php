@@ -15,7 +15,28 @@ class UploadBikeDocumentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('manage', \App\Models\Bike::class) ?? false;
+        $user = $this->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin() || $user->isAdmin()) {
+            return true;
+        }
+
+        if ($user->isManager()) {
+            $bikeId = $this->route('id') ?? $this->route('bike');
+            if ($bikeId) {
+                $bike = $bikeId instanceof \App\Models\Bike ? $bikeId : \App\Models\Bike::find($bikeId);
+                if ($bike) {
+                    return $user->can('uploadDocuments', $bike);
+                }
+            }
+
+            return count($user->accessibleStoreIds()) > 0;
+        }
+
+        return false;
     }
 
     /**

@@ -87,7 +87,19 @@ test('branch manager can list assigned relocation tasks but cannot confirm physi
         'destination_store_id' => $this->destination->id,
     ])->assertForbidden();
     expect($this->bike->fresh()->current_store_id)->toBe($this->source->id);
+    // Origin store manager can also view the relocation task
     $this->manager->stores()->sync([$this->source->id]);
+    $this->actingAs($this->manager)->getJson('/admin/relocations')->assertOk()
+        ->assertJsonPath('meta.total', 1)
+        ->assertJsonPath('data.0.from_store_id', $this->source->id);
+
+    // Unrelated store manager sees 0 tasks
+    $unrelatedStore = Store::create([
+        'name' => 'Goa Hub', 'address_line' => 'Panaji', 'city' => 'Panaji',
+        'state' => 'Goa', 'pincode' => '403001', 'latitude' => 15.49,
+        'longitude' => 73.82, 'phone' => '9888821099', 'status' => StoreStatus::ACTIVE,
+    ]);
+    $this->manager->stores()->sync([$unrelatedStore->id]);
     $this->actingAs($this->manager)->getJson('/admin/relocations')->assertOk()
         ->assertJsonPath('meta.total', 0);
 });
