@@ -17,6 +17,15 @@
         <!-- Google Fonts: Inter & Roboto (Optimized: removed unused weight 300) -->
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
+        <!-- Favicon & App Icons -->
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-touch-icon.png">
+        <link rel="manifest" href="/images/favicon/site.webmanifest">
+        <meta name="msapplication-TileColor" content="#0B0F19">
+        <meta name="msapplication-config" content="/images/favicon/browserconfig.xml">
+
         <!-- PWA & Mobile App Support -->
         <link rel="manifest" href="/manifest.json">
         <meta name="theme-color" content="#0B0F19">
