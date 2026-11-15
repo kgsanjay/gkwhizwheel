@@ -820,7 +820,7 @@ export default function StaffIndex({
                                                             }}
                                                         />
                                                     ) : user.stores && user.stores.length > 0 ? (
-                                                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ gap: 0.5, maxWidth: 240 }}>
+                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 240 }}>
                                                             {user.stores.map((s) => (
                                                                 <Chip
                                                                     key={s.id}
@@ -836,7 +836,7 @@ export default function StaffIndex({
                                                                     }}
                                                                 />
                                                             ))}
-                                                        </Stack>
+                                                        </Box>
                                                     ) : (
                                                         <Chip label="Unassigned" size="small" sx={{ fontStyle: 'italic', fontSize: '0.72rem', height: 22 }} />
                                                     )}
@@ -858,7 +858,7 @@ export default function StaffIndex({
                                                             }}
                                                         />
                                                     ) : user.services && user.services.length > 0 ? (
-                                                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ gap: 0.5, maxWidth: 220 }}>
+                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 220 }}>
                                                             {user.services.map((slug) => {
                                                                 const srv = SERVICE_OPTIONS.find((s) => s.slug === slug);
                                                                 return (
@@ -878,7 +878,7 @@ export default function StaffIndex({
                                                                     />
                                                                 );
                                                             })}
-                                                        </Stack>
+                                                        </Box>
                                                     ) : (
                                                         <Chip label="Two-Wheelers (Default)" size="small" variant="outlined" sx={{ fontStyle: 'italic', fontSize: '0.7rem', height: 20 }} />
                                                     )}
@@ -1070,11 +1070,11 @@ export default function StaffIndex({
                                             {user.can_access_all_stores ? (
                                                 <Chip label="All Branches (Global Access)" size="small" color="success" sx={{ height: 22, fontSize: '0.72rem', fontWeight: 700 }} />
                                             ) : user.stores && user.stores.length > 0 ? (
-                                                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ gap: 0.5 }}>
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                     {user.stores.map((s) => (
                                                         <Chip key={s.id} icon={<StoreIcon sx={{ fontSize: '13px !important' }} />} label={`${s.name} (${s.city})`} size="small" variant="outlined" sx={{ height: 22, fontSize: '0.72rem' }} />
                                                     ))}
-                                                </Stack>
+                                                </Box>
                                             ) : (
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>Unassigned to store hub</Typography>
                                             )}
@@ -1088,7 +1088,7 @@ export default function StaffIndex({
                                             {user.services && user.services.length === SERVICE_OPTIONS.length ? (
                                                 <Chip label="All 7 Services (Full Ops)" size="small" color="primary" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
                                             ) : user.services && user.services.length > 0 ? (
-                                                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ gap: 0.5 }}>
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                     {user.services.map((slug) => {
                                                         const srv = SERVICE_OPTIONS.find((s) => s.slug === slug);
                                                         return (
@@ -1101,7 +1101,7 @@ export default function StaffIndex({
                                                             />
                                                         );
                                                     })}
-                                                </Stack>
+                                                </Box>
                                             ) : (
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>Two-Wheelers only</Typography>
                                             )}
@@ -1164,6 +1164,7 @@ export default function StaffIndex({
                     sx: {
                         borderRadius: 3,
                         boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.8)' : '0 10px 40px rgba(0,0,0,0.12)',
+                        overflowX: 'hidden',
                     },
                 }}
             >
@@ -1181,14 +1182,14 @@ export default function StaffIndex({
                     <input type="text" name="prevent_autofill_user" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
                     <input type="password" name="prevent_autofill_pass" style={{ display: 'none' }} tabIndex={-1} autoComplete="new-password" />
 
-                    <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+                    <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, overflowX: 'hidden' }}>
                         {Object.keys(createForm.errors).length > 0 && (
                             <Alert severity="error" sx={{ mb: 2.5 }}>
                                 Please review and correct the errors below before saving.
                             </Alert>
                         )}
 
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} disableEqualOverflow>
                             {/* Personal & Contact Details */}
                             <Grid size={{ xs: 12 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.2 }}>
@@ -1392,7 +1393,7 @@ export default function StaffIndex({
                                         </Stack>
                                     </Box>
 
-                                    <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap sx={{ gap: 0.8 }}>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                         {SERVICE_OPTIONS.map((srv) => {
                                             const isSelected = (createForm.data.services || []).includes(srv.slug);
                                             return (
@@ -1411,15 +1412,15 @@ export default function StaffIndex({
                                                     variant={isSelected ? 'filled' : 'outlined'}
                                                     sx={{
                                                         fontWeight: isSelected ? 800 : 600,
-                                                        fontSize: '0.76rem',
+                                                        fontSize: '0.78rem',
                                                         cursor: 'pointer',
                                                         borderRadius: 2,
-                                                        py: 1.8,
+                                                        py: 0.5,
                                                     }}
                                                 />
                                             );
                                         })}
-                                    </Stack>
+                                    </Box>
                                     {createForm.errors.services && (
                                         <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                                             {createForm.errors.services}
@@ -1463,6 +1464,7 @@ export default function StaffIndex({
                     sx: {
                         borderRadius: 3,
                         boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.8)' : '0 10px 40px rgba(0,0,0,0.12)',
+                        overflowX: 'hidden',
                     },
                 }}
             >
@@ -1480,14 +1482,14 @@ export default function StaffIndex({
                     <input type="text" name="prevent_autofill_user_edit" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
                     <input type="password" name="prevent_autofill_pass_edit" style={{ display: 'none' }} tabIndex={-1} autoComplete="new-password" />
 
-                    <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+                    <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, overflowX: 'hidden' }}>
                         {Object.keys(editForm.errors).length > 0 && (
                             <Alert severity="error" sx={{ mb: 2.5 }}>
                                 Please review and correct the errors below before saving.
                             </Alert>
                         )}
 
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} disableEqualOverflow>
                             <Grid size={{ xs: 12 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.2 }}>
                                     1. Identity & Contact Information
@@ -1695,7 +1697,7 @@ export default function StaffIndex({
                                         </Stack>
                                     </Box>
 
-                                    <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap sx={{ gap: 0.8 }}>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                         {SERVICE_OPTIONS.map((srv) => {
                                             const isSelected = (editForm.data.services || []).includes(srv.slug);
                                             return (
@@ -1714,15 +1716,15 @@ export default function StaffIndex({
                                                     variant={isSelected ? 'filled' : 'outlined'}
                                                     sx={{
                                                         fontWeight: isSelected ? 800 : 600,
-                                                        fontSize: '0.76rem',
+                                                        fontSize: '0.78rem',
                                                         cursor: 'pointer',
                                                         borderRadius: 2,
-                                                        py: 1.8,
+                                                        py: 0.5,
                                                     }}
                                                 />
                                             );
                                         })}
-                                    </Stack>
+                                    </Box>
                                     {editForm.errors.services && (
                                         <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                                             {editForm.errors.services}
