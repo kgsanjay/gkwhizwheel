@@ -1,0 +1,25 @@
+# Community 275
+
+> 1 nodes
+
+## Key Concepts
+
+- **services.php** (0 connections) — `config/services.php`
+
+## Relationships
+
+- No strong cross-community connections detected
+
+## Source Files
+
+- `config/services.php`
+
+## Audit Trail
+
+- EXTRACTED: 0 (0%)
+- INFERRED: 0 (0%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [index](index.md) to navigate.*
