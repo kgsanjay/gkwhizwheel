@@ -954,19 +954,30 @@ export default function PricingIndex({
             )}
 
             {/* Create / Edit Rule Dialog */}
-            <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
+            <Dialog
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        overflowX: 'hidden',
+                    },
+                }}
+            >
                 <DialogTitle sx={{ fontWeight: 800 }}>
                     {editingRule ? 'Edit Dynamic Pricing Rule' : 'Create Dynamic Pricing & Surge Rule'}
                 </DialogTitle>
                 <Box component="form" onSubmit={handleSubmit} noValidate>
-                    <DialogContent dividers sx={{ p: 3 }}>
+                    <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, overflowX: 'hidden' }}>
                         {Object.keys(errors).length > 0 && (
                             <Alert severity="error" sx={{ mb: 2.5 }}>
                                 Please check the form errors below.
                             </Alert>
                         )}
 
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} disableEqualOverflow>
                             {/* Rule Name */}
                             <Grid size={{ xs: 12 }}>
                                 <TextField
@@ -1300,9 +1311,18 @@ export default function PricingIndex({
             </Dialog>
 
             {/* Deletion Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        overflowX: 'hidden',
+                    },
+                }}
+            >
                 <DialogTitle sx={{ fontWeight: 800 }}>Confirm Rule Deletion</DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ overflowX: 'hidden' }}>
                     <Typography variant="body2" color="text.secondary">
                         Are you sure you want to remove this dynamic pricing rule? This will immediately stop applying this surcharge or relocation fee during checkout quotes.
                     </Typography>

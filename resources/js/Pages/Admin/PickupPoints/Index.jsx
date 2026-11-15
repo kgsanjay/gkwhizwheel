@@ -552,7 +552,7 @@ export default function PickupPointsIndex({ stores = [], points = [] }) {
                 maxWidth="lg"
                 fullWidth
                 PaperProps={{
-                    sx: { borderRadius: 3, p: { xs: 1, sm: 2 } },
+                    sx: { borderRadius: 3, p: { xs: 1, sm: 2 }, overflowX: 'hidden' },
                 }}
             >
                 <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
@@ -572,8 +572,8 @@ export default function PickupPointsIndex({ stores = [], points = [] }) {
                 <Divider />
 
                 <Box component="form" onSubmit={handleSave}>
-                    <DialogContent sx={{ pt: 2.5 }}>
-                        <Grid container spacing={3}>
+                    <DialogContent sx={{ pt: 2.5, overflowX: 'hidden' }}>
+                        <Grid container spacing={3} disableEqualOverflow>
                             {/* Left Column: Point Fields & Tariffs */}
                             <Grid size={{ xs: 12, md: 6 }}>
                                 <Stack spacing={2.5}>
@@ -777,9 +777,16 @@ export default function PickupPointsIndex({ stores = [], points = [] }) {
             </Dialog>
 
             {/* Confirm Delete Dialog */}
-            <Dialog open={Boolean(deleteConfirmId)} onClose={() => setDeleteConfirmId(null)} maxWidth="xs">
+            <Dialog
+                open={Boolean(deleteConfirmId)}
+                onClose={() => setDeleteConfirmId(null)}
+                maxWidth="xs"
+                PaperProps={{
+                    sx: { borderRadius: 3, overflowX: 'hidden' },
+                }}
+            >
                 <DialogTitle sx={{ fontWeight: 800 }}>Delete Pickup Point?</DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ overflowX: 'hidden' }}>
                     <Typography variant="body2">
                         Are you sure you want to permanently remove this pickup point? Customers will no longer be able to select it during checkout.
                     </Typography>

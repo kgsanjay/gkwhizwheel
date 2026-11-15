@@ -400,7 +400,7 @@ export default function AdminDashboard({
                             </Button>
                         </Box>
 
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} disableEqualOverflow>
                             <Grid size={{ xs: 12, sm: 4 }}>
                                 <Box
                                     component={Link}
@@ -499,7 +499,7 @@ export default function AdminDashboard({
             )}
 
             {/* High-Density KPI Metrics Deck */}
-            <Grid container spacing={2} sx={{ mb: 3.5 }}>
+            <Grid container spacing={2} disableEqualOverflow sx={{ mb: 3.5 }}>
                 {/* 1. Active Rentals / Trips */}
                 <Grid size={{ xs: 12, sm: 6, md: isSuperAdmin || isStoreManager ? 2.4 : 3 }}>
                     <Card
@@ -849,7 +849,7 @@ export default function AdminDashboard({
                         </Button>
                     </Box>
 
-                    <Grid container spacing={2}>
+                    <Grid container spacing={2} disableEqualOverflow>
                         {service_metrics.map((sm) => {
                             const meta = getServiceMeta(sm.type);
                             const isTwoWheeler = sm.type === 'two_wheelers';
@@ -917,7 +917,7 @@ export default function AdminDashboard({
                                             </Box>
 
                                             {/* 3 Core Summary Stats: Available Items, Active Bookings, Today's Check-ins */}
-                                            <Grid container spacing={1} sx={{ mb: 1.5 }}>
+                                            <Grid container spacing={1} disableEqualOverflow sx={{ mb: 1.5 }}>
                                                 {/* 1. Available Items */}
                                                 <Grid size={{ xs: 4 }}>
                                                     <Box

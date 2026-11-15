@@ -184,7 +184,7 @@ export default function LogsIndex({ activeTab = 'notifications', notifications =
                     <Box>
                         <TableContainer>
                             <Table sx={{ minWidth: 800 }}>
-                                <TableHead sx={{ bgcolor: 'grey.50' }}>
+                                <TableHead sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'grey.50' }}>
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700, width: 140 }}>Sent At</TableCell>
                                         <TableCell sx={{ fontWeight: 700, width: 110 }}>Channel</TableCell>
@@ -277,7 +277,7 @@ export default function LogsIndex({ activeTab = 'notifications', notifications =
                     <Box>
                         <TableContainer>
                             <Table sx={{ minWidth: 800 }}>
-                                <TableHead sx={{ bgcolor: 'grey.50' }}>
+                                <TableHead sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'grey.50' }}>
                                     <TableRow>
                                         <TableCell sx={{ fontWeight: 700, width: 160 }}>Timestamp</TableCell>
                                         <TableCell sx={{ fontWeight: 700, width: 180 }}>User</TableCell>
@@ -331,7 +331,7 @@ export default function LogsIndex({ activeTab = 'notifications', notifications =
                                                         />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Box sx={{ maxHeight: 120, overflowY: 'auto', fontSize: '0.8rem', bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
+                                                        <Box sx={{ maxHeight: 120, overflowY: 'auto', fontSize: '0.8rem', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.35)' : 'grey.50', p: 1, borderRadius: 1 }}>
                                                             {act.new_values ? (
                                                                 <pre style={{ margin: 0, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                                                                     {JSON.stringify(act.new_values, null, 2)}

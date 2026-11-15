@@ -185,9 +185,17 @@ export default function RelocationsIndex({
                 )}
             </Card>
 
-            <Dialog open={Boolean(selected)} onClose={close} maxWidth="sm" fullWidth>
-                <DialogTitle>Confirm physical bike receipt</DialogTitle>
-                <DialogContent dividers>
+            <Dialog
+                open={Boolean(selected)}
+                onClose={close}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: { borderRadius: 3, overflowX: 'hidden' },
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800 }}>Confirm physical bike receipt</DialogTitle>
+                <DialogContent dividers sx={{ overflowX: 'hidden' }}>
                     <Stack spacing={2}>
                         <Alert severity="warning">Confirm only after the bike is physically present at the receiving branch. This action updates its operational location.</Alert>
                         <Typography variant="body2">Bike: <strong>{selected?.bike_registration || `#${selected?.bike_id}`}</strong></Typography>
@@ -205,9 +213,17 @@ export default function RelocationsIndex({
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={Boolean(dismissTask)} onClose={() => { if (!submitting) { setDismissTask(null); setError(''); } }} maxWidth="sm" fullWidth>
-                <DialogTitle>Dismiss an obsolete relocation alert</DialogTitle>
-                <DialogContent dividers>
+            <Dialog
+                open={Boolean(dismissTask)}
+                onClose={() => { if (!submitting) { setDismissTask(null); setError(''); } }}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: { borderRadius: 3, overflowX: 'hidden' },
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800 }}>Dismiss an obsolete relocation alert</DialogTitle>
+                <DialogContent dividers sx={{ overflowX: 'hidden' }}>
                     <Stack spacing={2}>
                         <Alert severity="info">Only an alert whose affected booking is no longer active can be dismissed. This does not move the bike.</Alert>
                         <Typography variant="body2">Task #{dismissTask?.id}: {dismissTask?.affected_booking_reference}</Typography>

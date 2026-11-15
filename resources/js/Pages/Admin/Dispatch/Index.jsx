@@ -293,7 +293,7 @@ export default function DispatchIndex({
             </Box>
 
             {/* KPI Telemetry Cards */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid container spacing={2} disableEqualOverflow sx={{ mb: 3 }}>
                 <Grid size={{ xs: 6, md: 3 }}>
                     <Card sx={{ borderRadius: 2.5, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
                         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
@@ -637,7 +637,7 @@ export default function DispatchIndex({
                 {/* MONTH CALENDAR GRID VIEW */}
                 {viewMode === 'month' && (
                     <Box sx={{ p: 2.5 }}>
-                        <Grid container spacing={1.5}>
+                        <Grid container spacing={1.5} disableEqualOverflow>
                             {Array.from({ length: 30 }).map((_, idx) => {
                                 const dayNum = idx + 1;
                                 const dateStr = `${current_window.month}-${String(dayNum).padStart(2, '0')}`;

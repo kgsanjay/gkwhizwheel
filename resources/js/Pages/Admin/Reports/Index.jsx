@@ -160,7 +160,7 @@ export default function ReportsIndex({
             {tabIndex === 0 && (
                 <Stack spacing={3}>
                     {/* Financial KPI Cards */}
-                    <Grid container spacing={2}>
+                    <Grid container spacing={2} disableEqualOverflow>
                         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                             <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>
@@ -262,7 +262,7 @@ export default function ReportsIndex({
                     </Card>
 
                     {/* Breakdown Charts Grid */}
-                    <Grid container spacing={3}>
+                    <Grid container spacing={3} disableEqualOverflow>
                         {/* Revenue by Bike Category */}
                         <Grid size={{ xs: 12, md: 4 }}>
                             <Card sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', height: '100%', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
@@ -342,7 +342,7 @@ export default function ReportsIndex({
             {tabIndex === 1 && (
                 <Stack spacing={3}>
                     {/* Utilization KPI Cards */}
-                    <Grid container spacing={2}>
+                    <Grid container spacing={2} disableEqualOverflow>
                         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                             <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
                                 <CardContent sx={{ py: 2 }}>

@@ -114,7 +114,7 @@ export default function SettingsIndex({ settings = {} }) {
                             Execute instant maintenance jobs without waiting for cron schedules or terminal SSH access.
                         </Typography>
 
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} disableEqualOverflow>
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <Paper sx={{ p: 2, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                     <Box>
@@ -195,7 +195,7 @@ export default function SettingsIndex({ settings = {} }) {
             )}
 
             <form onSubmit={handleSubmit}>
-                <Grid container spacing={3}>
+                <Grid container spacing={3} disableEqualOverflow>
                     {/* Communication & Helpline Desk */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', height: '100%' }}>
@@ -349,7 +349,7 @@ export default function SettingsIndex({ settings = {} }) {
                                 Customer review metrics displayed in the header trust badge, search dock, and schema markup.
                             </Typography>
 
-                            <Grid container spacing={2.5}>
+                            <Grid container spacing={2.5} disableEqualOverflow>
                                 <Grid size={{ xs: 12, sm: 3 }}>
                                     <TextField
                                         label="Review Badge Label"

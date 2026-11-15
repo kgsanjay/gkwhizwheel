@@ -529,19 +529,30 @@ export default function CouponsIndex({
             )}
 
             {/* Create / Edit Coupon Dialog */}
-            <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
+            <Dialog
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        overflowX: 'hidden',
+                    },
+                }}
+            >
                 <DialogTitle sx={{ fontWeight: 800 }}>
                     {editingCoupon ? `Edit Coupon: ${editingCoupon.code}` : 'Create Discount Coupon'}
                 </DialogTitle>
                 <Box component="form" onSubmit={handleSubmit} noValidate>
-                    <DialogContent dividers sx={{ p: 3 }}>
+                    <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, overflowX: 'hidden' }}>
                         {Object.keys(errors).length > 0 && (
                             <Alert severity="error" sx={{ mb: 2.5 }}>
                                 Please review the errors below before submitting.
                             </Alert>
                         )}
 
-                        <Grid container spacing={2}>
+                        <Grid container spacing={2} disableEqualOverflow>
                             {/* Code */}
                             <Grid size={{ xs: 12 }}>
                                 <TextField
@@ -680,9 +691,18 @@ export default function CouponsIndex({
             </Dialog>
 
             {/* Deletion Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        overflowX: 'hidden',
+                    },
+                }}
+            >
                 <DialogTitle sx={{ fontWeight: 800 }}>Confirm Coupon Deletion</DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ overflowX: 'hidden' }}>
                     <Typography variant="body2" color="text.secondary">
                         Are you sure you want to delete coupon code <strong>{deletingCoupon?.code}</strong>? This action cannot be undone and will prevent customers from redeeming it.
                     </Typography>

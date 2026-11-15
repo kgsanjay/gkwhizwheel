@@ -1126,12 +1126,12 @@ export default function CheckInIndex({ initialCode = '', initialBooking = null, 
                 onClose={() => setActionDialogOpen(false)}
                 fullWidth
                 maxWidth="xs"
-                PaperProps={{ sx: { borderRadius: 3 } }}
+                PaperProps={{ sx: { borderRadius: 3, overflowX: 'hidden' } }}
             >
                 <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
                     {actionType === 'collect_balance' ? 'Collect Balance & Board' : 'Confirm Passenger Boarding'}
                 </DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ overflowX: 'hidden' }}>
                     {booking && (
                         <Box sx={{ my: 1 }}>
                             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
@@ -1211,7 +1211,7 @@ export default function CheckInIndex({ initialCode = '', initialBooking = null, 
                 onClose={() => setQueueModalOpen(false)}
                 fullWidth
                 maxWidth="sm"
-                PaperProps={{ sx: { borderRadius: 3 } }}
+                PaperProps={{ sx: { borderRadius: 3, overflowX: 'hidden' } }}
             >
                 <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1225,7 +1225,7 @@ export default function CheckInIndex({ initialCode = '', initialBooking = null, 
                         sx={{ fontWeight: 800 }}
                     />
                 </DialogTitle>
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ overflowX: 'hidden' }}>
                     <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
                         These ground passes were verified and queued locally in browser IndexedDB while operating at remote jetties with intermittent connectivity (e.g. Mavinkurve). They will auto-sync when online.
                     </Typography>
