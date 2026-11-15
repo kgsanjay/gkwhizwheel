@@ -14,9 +14,6 @@ import {
     CircularProgress,
     InputAdornment,
     IconButton,
-    Chip,
-    Stack,
-    Divider,
     Tooltip,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
@@ -27,11 +24,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import ShieldIcon from '@mui/icons-material/Shield';
-import KeyIcon from '@mui/icons-material/Key';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import StoreIcon from '@mui/icons-material/Store';
-import BadgeIcon from '@mui/icons-material/Badge';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LockPersonIcon from '@mui/icons-material/LockPerson';
 
 export default function AdminLogin({ status = null }) {
     const { mode, toggleColorMode } = useColorMode();
@@ -49,44 +42,6 @@ export default function AdminLogin({ status = null }) {
         post('/admin/login');
     };
 
-    const handleQuickFill = (roleEmail) => {
-        setData({
-            ...data,
-            login: roleEmail,
-            password: 'Admin@12345',
-        });
-    };
-
-    const demoAccounts = [
-        {
-            role: 'Super Admin',
-            email: 'admin@whizwheel.com',
-            desc: 'Full console access & system config',
-            badgeBg: isDark ? 'rgba(168, 85, 247, 0.2)' : '#EDE9FE',
-            badgeColor: isDark ? '#D8B4FE' : '#6B21A8',
-            borderColor: isDark ? 'rgba(168, 85, 247, 0.45)' : '#C4B5FD',
-            icon: <AdminPanelSettingsIcon sx={{ fontSize: 14 }} />,
-        },
-        {
-            role: 'Store Manager',
-            email: 'ops@whizwheel.com',
-            desc: 'Fleet, bookings & station ops',
-            badgeBg: isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE',
-            badgeColor: isDark ? '#93C5FD' : '#1E40AF',
-            borderColor: isDark ? 'rgba(59, 130, 246, 0.45)' : '#93C5FD',
-            icon: <StoreIcon sx={{ fontSize: 14 }} />,
-        },
-        {
-            role: 'Hub Staff',
-            email: 'rajesh@whizwheel.com',
-            desc: 'Check-in, checkout & bike inspection',
-            badgeBg: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7',
-            badgeColor: isDark ? '#86EFAC' : '#166534',
-            borderColor: isDark ? 'rgba(34, 197, 94, 0.45)' : '#86EFAC',
-            icon: <BadgeIcon sx={{ fontSize: 14 }} />,
-        },
-    ];
-
     return (
         <Box
             sx={{
@@ -95,23 +50,23 @@ export default function AdminLogin({ status = null }) {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                py: { xs: 3, sm: 5 },
-                px: { xs: 2, sm: 3 },
+                py: { xs: 4, sm: 6 },
+                px: { xs: 2.5, sm: 3 },
                 bgcolor: isDark ? '#070D19' : '#F8FAFC',
                 backgroundImage: isDark
-                    ? 'radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.16) 0%, rgba(11, 19, 43, 0.95) 55%, #070D19 100%)'
-                    : 'radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.09) 0%, #FFFFFF 65%, #F1F5F9 100%)',
+                    ? 'radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.12) 0%, rgba(11, 19, 43, 0.95) 55%, #070D19 100%)'
+                    : 'radial-gradient(circle at 50% 10%, rgba(245, 158, 11, 0.08) 0%, #FFFFFF 65%, #F1F5F9 100%)',
                 color: isDark ? '#F8FAFC' : '#0F172A',
                 position: 'relative',
             }}
         >
             <Head title="Staff & Admin Portal Login - GkWhizWheel Console" />
 
-            {/* Standalone Top Bar */}
+            {/* Top Bar Navigation */}
             <Box
                 sx={{
                     width: '100%',
-                    maxWidth: { xs: '100%', sm: 480 },
+                    maxWidth: 440,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -128,7 +83,7 @@ export default function AdminLogin({ status = null }) {
                         textTransform: 'none',
                         fontWeight: 600,
                         fontSize: '0.85rem',
-                        borderRadius: 2.5,
+                        borderRadius: 2,
                         px: 1.75,
                         py: 0.6,
                         bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.9)',
@@ -164,41 +119,57 @@ export default function AdminLogin({ status = null }) {
                 </Tooltip>
             </Box>
 
-            {/* Admin Card */}
+            {/* Admin Login Card */}
             <Card
-                elevation={isDark ? 0 : 4}
+                elevation={0}
                 sx={{
                     width: '100%',
-                    maxWidth: { xs: '100%', sm: 480 },
-                    borderRadius: { xs: 3, sm: 4 },
-                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.88)' : '#FFFFFF',
+                    maxWidth: 440,
+                    borderRadius: 3,
+                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.92)' : '#FFFFFF',
                     backdropFilter: 'blur(20px)',
                     border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
                     boxShadow: isDark
-                        ? '0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(245, 158, 11, 0.2)'
-                        : '0 20px 45px -10px rgba(15, 23, 42, 0.12)',
+                        ? '0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(245, 158, 11, 0.15)'
+                        : '0 20px 45px -10px rgba(15, 23, 42, 0.08), 0 0 0 1px #E2E8F0',
                     overflow: 'hidden',
                 }}
             >
                 <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-                    {/* Brand Text & Headline */}
-                    <Box sx={{ textAlign: 'center', mb: 3 }}>
+                    {/* Header */}
+                    <Box sx={{ textAlign: 'center', mb: 3.5 }}>
+                        <Box
+                            sx={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: '50%',
+                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
+                                border: isDark ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid #FDE68A',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                mb: 1.5,
+                                color: '#F59E0B',
+                            }}
+                        >
+                            <LockPersonIcon sx={{ fontSize: 26 }} />
+                        </Box>
                         <Box
                             component={Link}
                             href="/"
                             sx={{
-                                display: 'inline-block',
-                                mb: 1,
+                                display: 'block',
+                                mb: 0.5,
                                 textDecoration: 'none',
-                                transition: 'transform 0.2s ease',
-                                '&:hover': { transform: 'scale(1.02)' },
+                                transition: 'opacity 0.2s',
+                                '&:hover': { opacity: 0.9 },
                             }}
                         >
                             <Typography
                                 component="div"
                                 sx={{
                                     fontWeight: 900,
-                                    fontSize: { xs: '1.85rem', sm: '2.2rem' },
+                                    fontSize: { xs: '1.75rem', sm: '2rem' },
                                     letterSpacing: '-0.03em',
                                     lineHeight: 1.1,
                                     color: isDark ? '#FFFFFF' : '#0F172A',
@@ -207,11 +178,27 @@ export default function AdminLogin({ status = null }) {
                                 GK <Box component="span" sx={{ color: '#F59E0B' }}>WhizWheel</Box>
                             </Typography>
                         </Box>
-                        <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A', letterSpacing: '-0.02em', fontSize: '1.15rem' }}>
-                            Staff & HQ Console
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                fontWeight: 800,
+                                color: isDark ? '#F8FAFC' : '#0F172A',
+                                letterSpacing: '-0.02em',
+                                fontSize: '1.05rem',
+                                mt: 0.5,
+                            }}
+                        >
+                            Operations & Management Console
                         </Typography>
-                        <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mt: 0.5 }}>
-                            Store Manager, Hub Staff & Super Admin Access
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: isDark ? '#94A3B8' : '#64748B',
+                                fontSize: '0.82rem',
+                                mt: 0.5,
+                            }}
+                        >
+                            Authorized Staff, Store Managers & HQ Administrators
                         </Typography>
                     </Box>
 
@@ -236,39 +223,35 @@ export default function AdminLogin({ status = null }) {
                             fullWidth
                             id="login"
                             label="Email or Mobile Number"
-                            placeholder="admin@whizwheel.com or +919999900001"
+                            placeholder="Enter your registered email or phone"
                             name="login"
                             autoComplete="username"
                             autoFocus
                             value={data.login}
                             onChange={(e) => setData('login', e.target.value)}
                             error={Boolean(errors.login)}
-                            InputLabelProps={{ sx: { color: isDark ? '#94A3B8' : '#64748B' } }}
                             slotProps={{
                                 inputLabel: { sx: { color: isDark ? '#94A3B8' : '#64748B' } },
                                 input: {
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                            <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8', fontSize: 20 }} />
                                         </InputAdornment>
                                     ),
                                     sx: {
-                                        borderRadius: 2.5,
+                                        borderRadius: 2,
                                         bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
                                         color: isDark ? '#F8FAFC' : '#0F172A',
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#CBD5E1',
+                                        },
+                                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: '#F59E0B',
+                                        },
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: '#F59E0B',
+                                        },
                                     },
-                                },
-                            }}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                    </InputAdornment>
-                                ),
-                                sx: {
-                                    borderRadius: 2.5,
-                                    bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                    color: isDark ? '#F8FAFC' : '#0F172A',
                                 },
                             }}
                         />
@@ -282,17 +265,17 @@ export default function AdminLogin({ status = null }) {
                             type={showPassword ? 'text' : 'password'}
                             id="password"
                             autoComplete="current-password"
+                            placeholder="••••••••••••"
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             error={Boolean(errors.password)}
                             helperText={errors.password}
-                            InputLabelProps={{ sx: { color: isDark ? '#94A3B8' : '#64748B' } }}
                             slotProps={{
                                 inputLabel: { sx: { color: isDark ? '#94A3B8' : '#64748B' } },
                                 input: {
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                            <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8', fontSize: 20 }} />
                                         </InputAdornment>
                                     ),
                                     endAdornment: (
@@ -301,58 +284,49 @@ export default function AdminLogin({ status = null }) {
                                                 aria-label="toggle password visibility"
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 edge="end"
+                                                size="small"
                                                 sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
                                             >
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
                                             </IconButton>
                                         </InputAdornment>
                                     ),
                                     sx: {
-                                        borderRadius: 2.5,
+                                        borderRadius: 2,
                                         bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
                                         color: isDark ? '#F8FAFC' : '#0F172A',
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#CBD5E1',
+                                        },
+                                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: '#F59E0B',
+                                        },
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: '#F59E0B',
+                                        },
                                     },
-                                },
-                            }}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                    </InputAdornment>
-                                ),
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton
-                                            aria-label="toggle password visibility"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            edge="end"
-                                            sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
-                                        >
-                                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                                sx: {
-                                    borderRadius: 2.5,
-                                    bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
-                                    color: isDark ? '#F8FAFC' : '#0F172A',
                                 },
                             }}
                         />
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1, mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1, mb: 2.5 }}>
                             <FormControlLabel
                                 control={
                                     <Checkbox
                                         checked={data.remember}
                                         onChange={(e) => setData('remember', e.target.checked)}
+                                        size="small"
                                         sx={{
                                             color: isDark ? '#475569' : '#CBD5E1',
                                             '&.Mui-checked': { color: '#F59E0B' },
                                         }}
                                     />
                                 }
-                                label={<Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>Remember workstation</Typography>}
+                                label={
+                                    <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.85rem' }}>
+                                        Remember workstation
+                                    </Typography>
+                                }
                             />
                         </Box>
 
@@ -361,19 +335,19 @@ export default function AdminLogin({ status = null }) {
                             fullWidth
                             variant="contained"
                             disabled={processing}
-                            startIcon={processing ? <CircularProgress size={18} color="inherit" /> : <ShieldIcon />}
+                            startIcon={processing ? <CircularProgress size={18} color="inherit" /> : <ShieldIcon sx={{ fontSize: 18 }} />}
                             sx={{
                                 py: 1.4,
-                                borderRadius: 2.5,
+                                borderRadius: 2,
                                 fontWeight: 800,
                                 fontSize: '0.95rem',
                                 textTransform: 'none',
                                 bgcolor: '#F59E0B',
                                 color: '#0F172A',
-                                boxShadow: '0 6px 18px rgba(245, 158, 11, 0.35)',
+                                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
                                 '&:hover': {
                                     bgcolor: '#D97706',
-                                    boxShadow: '0 8px 24px rgba(245, 158, 11, 0.45)',
+                                    boxShadow: '0 6px 18px rgba(245, 158, 11, 0.4)',
                                 },
                             }}
                         >
@@ -381,193 +355,49 @@ export default function AdminLogin({ status = null }) {
                         </Button>
                     </Box>
 
-                    {/* Demo Quick-Fill Credentials */}
-                    <Divider sx={{ my: 3, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0' }}>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: isDark ? '#94A3B8' : '#64748B',
-                                fontWeight: 700,
-                                letterSpacing: '0.08em',
-                                fontSize: '0.72rem',
-                            }}
-                        >
-                            DEMO CONSOLE ACCOUNTS
-                        </Typography>
-                    </Divider>
-
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-                        {demoAccounts.map((account) => {
-                            const isSelected = data.login === account.email;
-                            return (
-                                <Box
-                                    key={account.email}
-                                    onClick={() => handleQuickFill(account.email)}
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        p: 1.25,
-                                        borderRadius: 2.5,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        bgcolor: isSelected
-                                            ? (isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7')
-                                            : (isDark ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'),
-                                        border: '1px solid',
-                                        borderColor: isSelected
-                                            ? '#F59E0B'
-                                            : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'),
-                                        boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.03)',
-                                        '&:hover': {
-                                            borderColor: '#F59E0B',
-                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FFFBEB',
-                                            transform: 'translateY(-1px)',
-                                        },
-                                    }}
-                                >
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flex: 1 }}>
-                                        <Box
-                                            sx={{
-                                                px: 1,
-                                                py: 0.35,
-                                                borderRadius: 1.5,
-                                                bgcolor: account.badgeBg,
-                                                color: account.badgeColor,
-                                                border: `1px solid ${account.borderColor}`,
-                                                fontSize: '0.72rem',
-                                                fontWeight: 700,
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: 0.5,
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            {account.icon}
-                                            {account.role}
-                                        </Box>
-                                        <Box sx={{ minWidth: 0, flex: 1, pr: 0.5 }}>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    fontFamily: 'monospace',
-                                                    fontSize: '0.8rem',
-                                                    fontWeight: 600,
-                                                    color: isDark ? '#F8FAFC' : '#0F172A',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                            >
-                                                {account.email}
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    display: 'block',
-                                                    fontSize: '0.68rem',
-                                                    color: isDark ? '#94A3B8' : '#64748B',
-                                                    lineHeight: 1.2,
-                                                }}
-                                            >
-                                                {account.desc}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-
-                                    <Button
-                                        size="small"
-                                        variant={isSelected ? 'contained' : 'outlined'}
-                                        color={isSelected ? 'warning' : 'inherit'}
-                                        startIcon={isSelected ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : null}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleQuickFill(account.email);
-                                        }}
-                                        sx={{
-                                            ml: 1,
-                                            flexShrink: 0,
-                                            fontSize: '0.7rem',
-                                            py: 0.3,
-                                            px: 1,
-                                            minWidth: 54,
-                                            textTransform: 'none',
-                                            fontWeight: 700,
-                                            borderRadius: 1.5,
-                                            ...(isSelected
-                                                ? {
-                                                    bgcolor: '#F59E0B',
-                                                    color: '#000000',
-                                                    '&:hover': { bgcolor: '#D97706' },
-                                                }
-                                                : {
-                                                    color: isDark ? '#94A3B8' : '#475569',
-                                                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : '#CBD5E1',
-                                                    '&:hover': {
-                                                        borderColor: '#F59E0B',
-                                                        color: '#F59E0B',
-                                                    },
-                                                }),
-                                        }}
-                                    >
-                                        {isSelected ? 'Filled' : 'Use'}
-                                    </Button>
-                                </Box>
-                            );
-                        })}
-                    </Box>
-
-                    {/* Shared Password Callout */}
+                    {/* Security Notice */}
                     <Box
                         sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7',
-                            border: '1px solid',
-                            borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A',
+                            mt: 3.5,
+                            p: 2,
                             borderRadius: 2,
-                            px: 1.5,
-                            py: 0.85,
-                            mt: 1.75,
+                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#F1F5F9',
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
+                            textAlign: 'center',
                         }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <KeyIcon sx={{ fontSize: 16, color: '#D97706' }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75, mb: 0.5 }}>
+                            <ShieldIcon sx={{ fontSize: 15, color: isDark ? '#94A3B8' : '#64748B' }} />
                             <Typography
                                 variant="caption"
                                 sx={{
                                     fontWeight: 700,
-                                    fontSize: '0.75rem',
-                                    color: isDark ? '#FDE68A' : '#92400E',
+                                    fontSize: '0.72rem',
+                                    color: isDark ? '#94A3B8' : '#475569',
+                                    letterSpacing: '0.04em',
+                                    textTransform: 'uppercase',
                                 }}
                             >
-                                Demo Password:
+                                Secure Operational Environment
                             </Typography>
                         </Box>
                         <Typography
-                            component="code"
+                            variant="caption"
                             sx={{
-                                fontFamily: 'monospace',
-                                fontWeight: 800,
-                                fontSize: '0.82rem',
-                                color: isDark ? '#FBBF24' : '#B45309',
-                                bgcolor: isDark ? 'rgba(0, 0, 0, 0.35)' : '#FFFFFF',
-                                px: 1,
-                                py: 0.25,
-                                borderRadius: 1,
-                                border: isDark ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid #FCD34D',
-                                letterSpacing: '0.04em',
+                                display: 'block',
+                                color: isDark ? '#64748B' : '#64748B',
+                                fontSize: '0.72rem',
+                                lineHeight: 1.4,
                             }}
                         >
-                            Admin@12345
+                            Access is restricted to authorized personnel. All sign-in attempts, administrative actions, and IP addresses are audited for security.
                         </Typography>
                     </Box>
 
                     {/* Link to Customer Sign In */}
                     <Box sx={{ textAlign: 'center', mt: 3 }}>
-                        <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
-                            Looking for customer bike rentals?{' '}
+                        <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.85rem' }}>
+                            Looking for customer rentals?{' '}
                             <Box
                                 component={Link}
                                 href="/login"
