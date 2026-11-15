@@ -21,11 +21,13 @@ class WhizWheelCspPreset implements Preset
             ->add(Directive::MEDIA, Keyword::SELF)
             ->add(Directive::FRAME_ANCESTORS, Keyword::SELF)
 
-            // Scripts: self and strict nonce-based inline execution
+            // Scripts: self, strict nonce-based inline execution, and verified CDNs (Google, Cloudflare Turnstile & Insights)
             ->add(Directive::SCRIPT, [
                 Keyword::SELF,
                 'https://*.googleapis.com',
                 'https://*.gstatic.com',
+                'https://challenges.cloudflare.com',
+                'https://static.cloudflareinsights.com',
             ])
             ->addNonce(Directive::SCRIPT)
 
@@ -56,7 +58,7 @@ class WhizWheelCspPreset implements Preset
                 '*.google.com',
             ])
 
-            // Network connections: self, PhonePe APIs, and map tiles
+            // Network connections: self, PhonePe APIs, map tiles, and Cloudflare telemetry/Turnstile
             ->add(Directive::CONNECT, [
                 Keyword::SELF,
                 'https://api.phonepe.com',
@@ -64,13 +66,16 @@ class WhizWheelCspPreset implements Preset
                 'https://mercury-tst.phonepe.com',
                 'https://*.tile.openstreetmap.org',
                 'https://*.googleapis.com',
+                'https://challenges.cloudflare.com',
+                'https://cloudflareinsights.com',
             ])
 
-            // Frames & iframes: self, PhonePe checkout, Google
+            // Frames & iframes: self, PhonePe checkout, Google, and Cloudflare Turnstile CAPTCHA challenge
             ->add(Directive::FRAME, [
                 Keyword::SELF,
                 'https://mercury.phonepe.com',
                 'https://mercury-tst.phonepe.com',
+                'https://challenges.cloudflare.com',
                 '*.google.com',
             ])
 
