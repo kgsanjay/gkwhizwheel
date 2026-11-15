@@ -66,6 +66,7 @@ Rate limited by `throttle:auth` (10 requests/minute per IP/account).
 | `GET` | `/bikes/{id}/availability` | `[PLANNED & BUILT]` | Public | Query param `month=YYYY-MM`. Returns list of unavailable start/end date ranges. |
 | `GET`/`POST` | `/bikes/{id}/price-quote` | `[PLANNED & BUILT]` | Public | Query/body: `start_date`, `end_date`, `pickup_store_id`, `return_store_id`, `coupon_code` (optional). Returns itemized pricing breakdown. |
 | `GET` | `/stores` | `[BUILT - ADDED]` | Public | Returns active stores for website/app store pickers and location finders. |
+| `GET` | `/pickup-points` | `[BUILT - ADDED]` | Public | Requires `store_id={id}` (active store). Returns landmark pickup/return points for the branch with directional relocation fees (`pickup_fee`, `return_fee`) and availability flags. |
 | `GET` | `/bike-categories` | `[BUILT - ADDED]` | Public | Returns bike categories for catalog filtering and rate references. |
 
 ---
@@ -203,6 +204,55 @@ Registered at both `/api/v1/webhooks/*` and root `/webhooks/*` for payment gatew
 | `POST` | `/admin/check-in/lookup` | `[BUILT - ADDED]` | Look up customer booking via decoded QR pass token or phone number. |
 | `POST` | `/admin/check-in/{type}/{id}/process` | `[BUILT - ADDED]` | Verify deposit and execute one-tap vehicle handover release. |
 | `POST` | `/admin/check-in/sync` | `[BUILT - ADDED]` | Sync batch offline check-in inspections recorded in IndexedDB queue. |
+
+#### Offline IndexedDB Sync Contract (`POST /admin/check-in/sync`)
+When ground staff inspect or board passengers in offline zones (e.g., jetties, coastal waters), operations are buffered locally in browser IndexedDB (`GKWhizWheelOfflineDB`, store: `checkin_queue`, keyPath: `client_id`).
+
+* **Request Payload (`application/json`):**
+```json
+{
+  "items": [
+    {
+      "client_id": "offline-1731671234567-abc123",
+      "type": "service",
+      "id": 14,
+      "action": "board",
+      "payment_method": "cash",
+      "amount_collected": 1500,
+      "ground_notes": "Queued at Mavinkurve jetty offline",
+      "queued_at": "10 Sep 02:30"
+    },
+    {
+      "client_id": "offline-1731671234568-xyz890",
+      "type": "bike",
+      "id": 92,
+      "action": "check_in",
+      "queued_at": "10 Sep 02:35"
+    }
+  ]
+}
+```
+* **Payload Fields:**
+  * `client_id` (string): Client-side unique UUID/timestamp keyPath. Returned in `synced_ids` so the frontend can delete successfully processed items from IndexedDB.
+  * `type` (string): `service` (multi-vertical activities) or `bike` (two-wheeler rental).
+  * `id` (integer/string): Target booking ID.
+  * `action` (string): `check_in`, `board`, `collect_balance`, or `complete`.
+  * `payment_method` (string, optional): `cash`, `upi`, or `card`.
+  * `amount_collected` (numeric, optional): Offline collected balance amount.
+  * `ground_notes` (string, optional): Operational context from ground staff.
+  * `queued_at` (string, optional): Device local timestamp when offline inspection occurred (e.g. `"10 Sep 02:30"` or ISO format). Recorded in `admin_notes` and logged with `'is_offline_sync' => true` in `ActivityLog`.
+* **Success Response Schema (`HTTP 200`):**
+```json
+{
+  "success": true,
+  "synced_count": 2,
+  "synced_ids": ["offline-1731671234567-abc123", "offline-1731671234568-xyz890"],
+  "errors": [],
+  "message": "Synced 2 offline check-in successfully."
+}
+```
+* **Client Synchronization Flow:**
+  On response, the frontend iterates `synced_ids` and deletes those entries from `checkin_queue` in IndexedDB. Any failed items remain in storage, avoiding duplicate processing while preventing data loss.
 
 ### Multi-Service Bookings (`/admin/services`)
 | Method | Endpoint | Status | Purpose |
