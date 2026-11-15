@@ -330,7 +330,7 @@ export default function StaffIndex({
 
                 {/* Operations KPI Metrics Strip */}
                 <Grid container spacing={2} sx={{ mb: 3 }}>
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Paper
                             elevation={0}
                             sx={{
@@ -356,7 +356,7 @@ export default function StaffIndex({
                         </Paper>
                     </Grid>
 
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Paper
                             elevation={0}
                             sx={{
@@ -382,7 +382,7 @@ export default function StaffIndex({
                         </Paper>
                     </Grid>
 
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Paper
                             elevation={0}
                             sx={{
@@ -408,7 +408,7 @@ export default function StaffIndex({
                         </Paper>
                     </Grid>
 
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Paper
                             elevation={0}
                             sx={{
@@ -448,7 +448,7 @@ export default function StaffIndex({
                     }}
                 >
                     <Grid container spacing={1.5} alignItems="center">
-                        <Grid item xs={12} md={4.5}>
+                        <Grid size={{ xs: 12, md: 4.5 }}>
                             <TextField
                                 fullWidth
                                 size="small"
@@ -478,7 +478,7 @@ export default function StaffIndex({
                             />
                         </Grid>
 
-                        <Grid item xs={12} sm={4} md={2.5}>
+                        <Grid size={{ xs: 12, sm: 4, md: 2.5 }}>
                             <TextField
                                 select
                                 fullWidth
@@ -499,7 +499,7 @@ export default function StaffIndex({
                             </TextField>
                         </Grid>
 
-                        <Grid item xs={12} sm={4} md={2.5}>
+                        <Grid size={{ xs: 12, sm: 4, md: 2.5 }}>
                             <TextField
                                 select
                                 fullWidth
@@ -523,7 +523,7 @@ export default function StaffIndex({
                             </TextField>
                         </Grid>
 
-                        <Grid item xs={12} sm={4} md={1.5}>
+                        <Grid size={{ xs: 12, sm: 4, md: 1.5 }}>
                             <TextField
                                 select
                                 fullWidth
@@ -544,7 +544,7 @@ export default function StaffIndex({
                             </TextField>
                         </Grid>
 
-                        <Grid item xs={12} md={1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Grid size={{ xs: 12, md: 1 }} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                             {hasActiveFilters && (
                                 <Button
                                     size="small"
@@ -1155,7 +1155,18 @@ export default function StaffIndex({
             </Box>
 
             {/* Create Staff Dialog */}
-            <Dialog open={createModalOpen} onClose={() => setCreateModalOpen(false)} maxWidth="md" fullWidth>
+            <Dialog
+                open={createModalOpen}
+                onClose={() => setCreateModalOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.8)' : '0 10px 40px rgba(0,0,0,0.12)',
+                    },
+                }}
+            >
                 <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <PersonIcon sx={{ color: 'warning.main' }} />
@@ -1165,7 +1176,11 @@ export default function StaffIndex({
                         <CloseIcon sx={{ fontSize: 18 }} />
                     </IconButton>
                 </DialogTitle>
-                <Box component="form" onSubmit={handleCreateSubmit} noValidate>
+                <Box component="form" onSubmit={handleCreateSubmit} noValidate autoComplete="off">
+                    {/* Dummy hidden inputs to stop aggressive browser autofill of admin credentials */}
+                    <input type="text" name="prevent_autofill_user" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+                    <input type="password" name="prevent_autofill_pass" style={{ display: 'none' }} tabIndex={-1} autoComplete="new-password" />
+
                     <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
                         {Object.keys(createForm.errors).length > 0 && (
                             <Alert severity="error" sx={{ mb: 2.5 }}>
@@ -1173,10 +1188,10 @@ export default function StaffIndex({
                             </Alert>
                         )}
 
-                        <Grid container spacing={2.5}>
+                        <Grid container spacing={2}>
                             {/* Personal & Contact Details */}
-                            <Grid item xs={12}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5 }}>
+                            <Grid size={{ xs: 12 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.2 }}>
                                     1. Identity & Contact Information
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -1184,7 +1199,7 @@ export default function StaffIndex({
                                 </Typography>
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -1195,25 +1210,11 @@ export default function StaffIndex({
                                     onChange={(e) => createForm.setData('name', e.target.value)}
                                     error={Boolean(createForm.errors.name)}
                                     helperText={createForm.errors.name}
+                                    inputProps={{ autoComplete: 'off' }}
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    size="small"
-                                    type="email"
-                                    label="Email Address"
-                                    placeholder="ramesh@gkwhizwheel.com"
-                                    value={createForm.data.email}
-                                    onChange={(e) => createForm.setData('email', e.target.value)}
-                                    error={Boolean(createForm.errors.email)}
-                                    helperText={createForm.errors.email}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -1227,42 +1228,27 @@ export default function StaffIndex({
                                     InputProps={{
                                         startAdornment: <InputAdornment position="start">+91</InputAdornment>,
                                     }}
+                                    inputProps={{ autoComplete: 'off' }}
                                 />
                             </Grid>
 
-                            {/* Credentials & Role */}
-                            <Grid item xs={12}>
-                                <Divider sx={{ my: 1 }} />
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5 }}>
-                                    2. Security & Role Permissions
-                                </Typography>
-                            </Grid>
-
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
                                     size="small"
-                                    type={showCreatePassword ? 'text' : 'password'}
-                                    label="Login Password"
-                                    placeholder="Minimum 8 characters"
-                                    value={createForm.data.password}
-                                    onChange={(e) => createForm.setData('password', e.target.value)}
-                                    error={Boolean(createForm.errors.password)}
-                                    helperText={createForm.errors.password}
-                                    InputProps={{
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <IconButton size="small" onClick={() => setShowCreatePassword((p) => !p)} edge="end">
-                                                    {showCreatePassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                                                </IconButton>
-                                            </InputAdornment>
-                                        ),
-                                    }}
+                                    type="email"
+                                    label="Email Address"
+                                    placeholder="ramesh@gkwhizwheel.com"
+                                    value={createForm.data.email}
+                                    onChange={(e) => createForm.setData('email', e.target.value)}
+                                    error={Boolean(createForm.errors.email)}
+                                    helperText={createForm.errors.email}
+                                    inputProps={{ autoComplete: 'new-email' }}
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     select
                                     fullWidth
@@ -1281,8 +1267,44 @@ export default function StaffIndex({
                                 </TextField>
                             </Grid>
 
+                            {/* Credentials & Role */}
+                            <Grid size={{ xs: 12 }}>
+                                <Divider sx={{ my: 0.5 }} />
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.2 }}>
+                                    2. Security & Login Credentials
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    Set an initial password for this staff member (minimum 8 characters).
+                                </Typography>
+                            </Grid>
+
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    required
+                                    fullWidth
+                                    size="small"
+                                    type={showCreatePassword ? 'text' : 'password'}
+                                    label="Login Password"
+                                    placeholder="Minimum 8 characters"
+                                    value={createForm.data.password}
+                                    onChange={(e) => createForm.setData('password', e.target.value)}
+                                    error={Boolean(createForm.errors.password)}
+                                    helperText={createForm.errors.password || 'Staff can use this password to sign into the portal'}
+                                    inputProps={{ autoComplete: 'new-password' }}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton size="small" onClick={() => setShowCreatePassword((p) => !p)} edge="end">
+                                                    {showCreatePassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Grid>
+
                             {/* Multi-Store Assignment Selector */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : '#F8FAFC' }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.8 }}>
@@ -1338,7 +1360,7 @@ export default function StaffIndex({
                             </Grid>
 
                             {/* Managed Services Selector */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : '#F8FAFC' }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
                                         <Box>
@@ -1432,7 +1454,18 @@ export default function StaffIndex({
             </Dialog>
 
             {/* Edit Staff Dialog */}
-            <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="md" fullWidth>
+            <Dialog
+                open={editModalOpen}
+                onClose={() => setEditModalOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.8)' : '0 10px 40px rgba(0,0,0,0.12)',
+                    },
+                }}
+            >
                 <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Stack direction="row" alignItems="center" spacing={1}>
                         <EditIcon sx={{ color: 'primary.main' }} />
@@ -1442,7 +1475,11 @@ export default function StaffIndex({
                         <CloseIcon sx={{ fontSize: 18 }} />
                     </IconButton>
                 </DialogTitle>
-                <Box component="form" onSubmit={handleEditSubmit} noValidate>
+                <Box component="form" onSubmit={handleEditSubmit} noValidate autoComplete="off">
+                    {/* Dummy hidden inputs to stop aggressive browser autofill */}
+                    <input type="text" name="prevent_autofill_user_edit" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+                    <input type="password" name="prevent_autofill_pass_edit" style={{ display: 'none' }} tabIndex={-1} autoComplete="new-password" />
+
                     <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
                         {Object.keys(editForm.errors).length > 0 && (
                             <Alert severity="error" sx={{ mb: 2.5 }}>
@@ -1450,8 +1487,14 @@ export default function StaffIndex({
                             </Alert>
                         )}
 
-                        <Grid container spacing={2.5}>
-                            <Grid item xs={12} sm={4}>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 12 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.2 }}>
+                                    1. Identity & Contact Information
+                                </Typography>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -1461,24 +1504,11 @@ export default function StaffIndex({
                                     onChange={(e) => editForm.setData('name', e.target.value)}
                                     error={Boolean(editForm.errors.name)}
                                     helperText={editForm.errors.name}
+                                    inputProps={{ autoComplete: 'off' }}
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    size="small"
-                                    type="email"
-                                    label="Email Address"
-                                    value={editForm.data.email}
-                                    onChange={(e) => editForm.setData('email', e.target.value)}
-                                    error={Boolean(editForm.errors.email)}
-                                    helperText={editForm.errors.email}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     required
                                     fullWidth
@@ -1491,10 +1521,26 @@ export default function StaffIndex({
                                     InputProps={{
                                         startAdornment: <InputAdornment position="start">+91</InputAdornment>,
                                     }}
+                                    inputProps={{ autoComplete: 'off' }}
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                                <TextField
+                                    required
+                                    fullWidth
+                                    size="small"
+                                    type="email"
+                                    label="Email Address"
+                                    value={editForm.data.email}
+                                    onChange={(e) => editForm.setData('email', e.target.value)}
+                                    error={Boolean(editForm.errors.email)}
+                                    helperText={editForm.errors.email}
+                                    inputProps={{ autoComplete: 'new-email' }}
+                                />
+                            </Grid>
+
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     select
                                     fullWidth
@@ -1513,7 +1559,14 @@ export default function StaffIndex({
                                 </TextField>
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12 }}>
+                                <Divider sx={{ my: 0.5 }} />
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.2 }}>
+                                    2. Account Status & Password Reset
+                                </Typography>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     select
                                     fullWidth
@@ -1529,7 +1582,7 @@ export default function StaffIndex({
                                 </TextField>
                             </Grid>
 
-                            <Grid item xs={12} sm={4}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField
                                     fullWidth
                                     size="small"
@@ -1540,6 +1593,7 @@ export default function StaffIndex({
                                     onChange={(e) => editForm.setData('password', e.target.value)}
                                     error={Boolean(editForm.errors.password)}
                                     helperText={editForm.errors.password || 'Min 8 characters if changing'}
+                                    inputProps={{ autoComplete: 'new-password' }}
                                     InputProps={{
                                         endAdornment: (
                                             <InputAdornment position="end">
@@ -1553,7 +1607,7 @@ export default function StaffIndex({
                             </Grid>
 
                             {/* Multi-Store Assignment Selector */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : '#F8FAFC' }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.8 }}>
@@ -1609,7 +1663,7 @@ export default function StaffIndex({
                             </Grid>
 
                             {/* Managed Services Selector */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : '#F8FAFC' }}>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
                                         <Box>
