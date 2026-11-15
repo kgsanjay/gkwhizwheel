@@ -28,8 +28,8 @@ class AdminPickupPointWebController extends Controller
             'stores' => Store::where('status', StoreStatus::ACTIVE)
                 ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $accessible))
                 ->orderBy('city')
-                ->get(['id', 'name', 'city']),
-            'points' => PickupPoint::with('store:id,name,city')
+                ->get(['id', 'name', 'city', 'latitude', 'longitude']),
+            'points' => PickupPoint::with('store:id,name,city,latitude,longitude')
                 ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('store_id', $accessible))
                 ->orderBy('store_id')
                 ->orderBy('sort_order')
@@ -102,6 +102,21 @@ class AdminPickupPointWebController extends Controller
         $point->update(['is_active' => ! $point->is_active]);
 
         return back()->with('success', 'Pickup point publication updated.');
+    }
+
+    public function destroy(int $id, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
+
+        $point = PickupPoint::findOrFail($id);
+        if (! $user->isSuperAdmin()) {
+            abort_unless(in_array((int) $point->store_id, $user->accessibleStoreIds(), true), 403, 'Cannot delete pickup point belonging to another branch.');
+        }
+
+        $point->delete();
+
+        return back()->with('success', 'Pickup point removed successfully.');
     }
 
     private function rules(): array
