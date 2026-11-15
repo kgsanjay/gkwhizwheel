@@ -100,6 +100,7 @@ class AdminStaffWebController extends Controller
                     'city' => $s->city,
                 ]),
                 'services' => $u->assignedServicesList(),
+                'can_access_all_stores' => (bool) $u->can_access_all_stores,
                 'created_at' => $u->created_at?->toIso8601String(),
             ]),
             'stores' => $stores,
@@ -202,7 +203,7 @@ class AdminStaffWebController extends Controller
             'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($staff->id)],
             'role' => ['required', 'string', Rule::in([UserRole::STAFF->value, UserRole::STORE_MANAGER->value, UserRole::MANAGER->value, UserRole::ADMIN->value, UserRole::SUPER_ADMIN->value])],
             'password' => ['nullable', 'string', 'min:8'],
-            'status' => ['nullable', 'string', Rule::in([UserStatus::ACTIVE->value, UserStatus::BLACKLISTED->value])],
+            'status' => ['nullable', 'string', Rule::in([UserStatus::ACTIVE->value, UserStatus::BLACKLISTED->value, 'suspended'])],
             'store_ids' => ['nullable', 'array'],
             'store_ids.*' => ['integer', 'distinct', Rule::exists('stores', 'id')->where('status', StoreStatus::ACTIVE->value)],
             'services' => ['nullable', 'array'],
@@ -217,7 +218,8 @@ class AdminStaffWebController extends Controller
         ];
 
         if (! empty($validated['status'])) {
-            $updateData['status'] = UserStatus::from($validated['status']);
+            $statusVal = $validated['status'] === 'suspended' ? UserStatus::BLACKLISTED : UserStatus::from($validated['status']);
+            $updateData['status'] = $statusVal;
         }
 
         if (! empty($validated['password'])) {
@@ -242,6 +244,35 @@ class AdminStaffWebController extends Controller
 
         return redirect()->route('admin.staff.index')
             ->with('success', "Staff account for '{$staff->name}' updated successfully.");
+    }
+
+    /**
+     * Toggle active/suspended status of a staff member.
+     */
+    public function toggleStatus(int $id, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user?->isSuperAdmin() || $user?->isAdmin(), 403);
+        $isSuperAdmin = $user->isSuperAdmin();
+        $accessible = $user->accessibleStoreIds();
+
+        $staff = User::findOrFail($id);
+
+        if (! $isSuperAdmin) {
+            if ($staff->isSuperAdmin() || $staff->isAdmin()) {
+                abort(403, 'Branch Admin cannot modify status of Admin or SuperAdmin accounts.');
+            }
+            if (! $staff->stores()->whereIn('stores.id', $accessible)->exists()) {
+                abort(403, 'Branch Admin cannot modify staff from another branch.');
+            }
+        }
+
+        $newStatus = $staff->status === UserStatus::ACTIVE ? UserStatus::BLACKLISTED : UserStatus::ACTIVE;
+        $staff->update(['status' => $newStatus]);
+
+        $statusLabel = $newStatus === UserStatus::ACTIVE ? 'activated' : 'suspended';
+
+        return back()->with('success', "Staff account for '{$staff->name}' is now {$statusLabel}.");
     }
 
     /**

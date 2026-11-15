@@ -222,3 +222,25 @@ test('super admin can delete or deactivate a staff member', function (): void {
 
     $this->assertSoftDeleted($this->existingStaff);
 });
+
+test('super admin can toggle staff active and suspended status', function (): void {
+    expect($this->existingStaff->status)->toBe(UserStatus::ACTIVE);
+
+    // Toggle to suspended
+    $this->actingAs($this->superAdmin)
+        ->post("/admin/staff/{$this->existingStaff->id}/toggle-status")
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $this->existingStaff->refresh();
+    expect($this->existingStaff->status)->toBe(UserStatus::BLACKLISTED);
+
+    // Toggle back to active
+    $this->actingAs($this->superAdmin)
+        ->post("/admin/staff/{$this->existingStaff->id}/toggle-status")
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $this->existingStaff->refresh();
+    expect($this->existingStaff->status)->toBe(UserStatus::ACTIVE);
+});
