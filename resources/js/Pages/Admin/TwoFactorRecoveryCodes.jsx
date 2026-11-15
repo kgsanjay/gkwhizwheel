@@ -105,9 +105,9 @@ export default function TwoFactorRecoveryCodes({ recoveryCodes = [] }) {
                             mb: 3,
                         }}
                     >
-                        <Grid container spacing={1.5}>
+                        <Grid container spacing={1.5} disableEqualOverflow>
                             {recoveryCodes.map((code, index) => (
-                                <Grid item xs={6} key={index}>
+                                <Grid size={{ xs: 6 }} key={index}>
                                     <Paper
                                         elevation={0}
                                         sx={{

@@ -180,9 +180,9 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                 <Card sx={{ borderRadius: { xs: 2, sm: 3 }, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
                     <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
                         <Box component="form" onSubmit={handleSubmit}>
-                            <Grid container spacing={3}>
+                            <Grid container spacing={3} disableEqualOverflow>
                                 {/* Item Name */}
-                                <Grid item xs={12} sm={8}>
+                                <Grid size={{ xs: 12, sm: 8 }}>
                                     <TextField
                                         label={`${serviceConfig.item_label} Name`}
                                         required
@@ -195,7 +195,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                 </Grid>
 
                                 {/* Category */}
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Category / Subtype"
                                         fullWidth
@@ -222,7 +222,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                 </Grid>
 
                                 {/* Price Base & Unit */}
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Base Tariff / Rate (₹)"
                                         required
@@ -242,7 +242,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         select
                                         label="Pricing Unit"
@@ -262,7 +262,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                 </Grid>
 
                                 {/* Capacity & Badge */}
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Capacity / Seating"
                                         fullWidth
@@ -273,7 +273,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Highlight Badge"
                                         fullWidth
@@ -285,7 +285,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                 </Grid>
 
                                 {/* Multi-Image Showcase & Gallery */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <MultiImageUploader
                                         existingImages={item.images || []}
                                         data={data}
@@ -297,7 +297,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                 </Grid>
 
                                 {/* Description */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         label="Detailed Description"
                                         multiline
@@ -311,7 +311,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                 </Grid>
 
                                 {/* Features Tags */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
                                         Included Highlights / Features
                                     </Typography>
@@ -321,7 +321,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                                 Quick-Add Common Inclusions:
                                             </Typography>
-                                            <Stack direction="row" spacing={0.6} flexWrap="wrap" useFlexGap sx={{ gap: 0.6 }}>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
                                                 {serviceConfig.suggested_features.map((feat) => {
                                                     const isAdded = data.features && data.features.includes(feat);
                                                     return (
@@ -343,7 +343,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                                         />
                                                     );
                                                 })}
-                                            </Stack>
+                                            </Box>
                                         </Box>
                                     )}
 
@@ -365,7 +365,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                         </Button>
                                     </Box>
 
-                                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                         {data.features && data.features.map((feat, idx) => (
                                             <Box
                                                 key={idx}
@@ -391,12 +391,12 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                                 </Typography>
                                             </Box>
                                         ))}
-                                    </Stack>
+                                    </Box>
                                 </Grid>
 
                                 {/* Certifications & Regulatory Documents (Only for services that need it) */}
                                 {hasDocRequirements && (
-                                    <Grid item xs={12}>
+                                    <Grid size={{ xs: 12 }}>
                                         <Divider sx={{ my: 1.5 }} />
                                         <Box sx={{ mb: 2 }}>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -424,8 +424,8 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                                             borderColor: (hasUploadedDoc && docEntry?.verified) ? 'success.light' : 'divider',
                                                         }}
                                                     >
-                                                        <Grid container spacing={2} alignItems="center">
-                                                            <Grid item xs={12} sm={5}>
+                                                        <Grid container spacing={2} alignItems="center" disableEqualOverflow>
+                                                            <Grid size={{ xs: 12, sm: 5 }}>
                                                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
                                                                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                                                         {cfg.label}
@@ -479,7 +479,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                                                 )}
                                                             </Grid>
 
-                                                            <Grid item xs={12} sm={3}>
+                                                            <Grid size={{ xs: 12, sm: 3 }}>
                                                                 <Button
                                                                     variant={hasUploadedDoc ? 'outlined' : 'contained'}
                                                                     component="label"
@@ -501,7 +501,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                                                 </Button>
                                                             </Grid>
 
-                                                            <Grid item xs={12} sm={4}>
+                                                            <Grid size={{ xs: 12, sm: 4 }}>
                                                                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
                                                                     <TextField
                                                                         type="date"
@@ -544,7 +544,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                 )}
 
                                 {/* Status & Sorting */}
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         select
                                         label="Availability Status"
@@ -560,7 +560,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                     </TextField>
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         type="number"
                                         label="Display Sort Order"
@@ -570,7 +570,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Divider sx={{ my: 1 }} />
                                     <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1.5} justifyContent="flex-end" sx={{ mt: 2 }}>
                                         <Button

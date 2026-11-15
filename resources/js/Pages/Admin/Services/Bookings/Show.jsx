@@ -156,7 +156,7 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {}, a
 
                 <Grid container spacing={3}>
                     {/* Left Column: Customer & Service Details */}
-                    <Grid item xs={12} md={7}>
+                    <Grid size={{ xs: 12, md: 7 }}>
                         {/* Package / Service Item Card */}
                         <Card sx={{ borderRadius: 3, mb: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
                             <CardContent sx={{ p: 3 }}>
@@ -196,27 +196,48 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {}, a
                                 </Typography>
 
                                 <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>Full Name</Typography>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{booking.customer_name}</Typography>
                                     </Grid>
 
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>Phone Number</Typography>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            <PhoneIcon sx={{ fontSize: 15, color: 'success.main' }} /> +91 {booking.customer_phone}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.3 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                                +91 {booking.customer_phone}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`tel:${booking.customer_phone}`}
+                                                color="primary"
+                                                sx={{ p: 0.3 }}
+                                            >
+                                                <PhoneIcon sx={{ fontSize: 14 }} />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                component="a"
+                                                href={`https://wa.me/91${booking.customer_phone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${booking.customer_name}, regards from GK WhizWheel about your ${serviceConfig.title || 'booking'} #${booking.booking_number}.`)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                sx={{ p: 0.3, color: '#25D366' }}
+                                            >
+                                                <WhatsAppIcon sx={{ fontSize: 14 }} />
+                                            </IconButton>
+                                        </Box>
                                     </Grid>
 
                                     {booking.customer_email && (
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>Email Address</Typography>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{booking.customer_email}</Typography>
                                         </Grid>
                                     )}
 
                                     {booking.creator && (
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>Booked By Staff</Typography>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{booking.creator.name} (Hub Staff)</Typography>
                                         </Grid>
@@ -233,19 +254,19 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {}, a
                                 </Typography>
 
                                 <Grid container spacing={2}>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>Start Date & Time</Typography>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{formatDate(booking.start_datetime)}</Typography>
                                     </Grid>
 
                                     {booking.end_datetime && (
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>End Date & Time</Typography>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{formatDate(booking.end_datetime)}</Typography>
                                         </Grid>
                                     )}
 
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>Pickup Point</Typography>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                             <LocationOnIcon sx={{ fontSize: 16, color: 'secondary.main' }} /> {booking.pickup_location || 'Palya Main Rd Hub'}
@@ -253,7 +274,7 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {}, a
                                     </Grid>
 
                                     {booking.drop_location && (
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>Drop Destination</Typography>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{booking.drop_location}</Typography>
                                         </Grid>
@@ -275,7 +296,7 @@ export default function ServiceBookingShow({ serviceConfig = {}, booking = {}, a
                     </Grid>
 
                     {/* Right Column: Financials, Balance Collection & Operations Status */}
-                    <Grid item xs={12} md={5}>
+                    <Grid size={{ xs: 12, md: 5 }}>
                         <ApprovalReview key={`${booking.id}-${booking.updated_at}`} review={approvalReview} booking={booking} serviceSlug={serviceConfig.slug} />
                         {/* Financial Card */}
                         <Card sx={{ borderRadius: 3, mb: 3, boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>

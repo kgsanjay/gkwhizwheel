@@ -106,7 +106,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                         <Box component="form" onSubmit={handleSubmit}>
                             <Grid container spacing={3}>
                                 {/* Booking Source Channel */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <FormControl component="fieldset">
                                         <FormLabel component="legend" sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
                                             Reservation Type / Booking Channel
@@ -133,7 +133,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                 </Grid>
 
                                 {/* Service Item / Package Selection */}
-                                <Grid item xs={12} sm={8}>
+                                <Grid size={{ xs: 12, sm: 8 }}>
                                     <TextField
                                         select
                                         label={`Select ${serviceConfig.item_label}`}
@@ -152,7 +152,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     </TextField>
                                 </Grid>
 
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         type="number"
                                         label="Quantity / Pax / Days"
@@ -166,13 +166,13 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                 </Grid>
 
                                 {/* Customer Details */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <PersonIcon fontSize="small" sx={{ color: 'secondary.main' }} /> Customer Information
                                     </Typography>
                                 </Grid>
 
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Customer Full Name"
                                         required
@@ -184,7 +184,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="10-Digit Mobile Number"
                                         required
@@ -199,7 +199,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Email Address (Optional)"
                                         type="email"
@@ -212,14 +212,14 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                 </Grid>
 
                                 {/* Date, Time & Pickup Location */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Divider sx={{ my: 1 }} />
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 1, mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <LocationOnIcon fontSize="small" sx={{ color: 'secondary.main' }} /> Schedule & Locations
                                     </Typography>
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Start Date & Time"
                                         type="datetime-local"
@@ -232,7 +232,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="End Date & Time (Optional)"
                                         type="datetime-local"
@@ -245,7 +245,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Pickup Point / Meeting Spot"
                                         required
@@ -257,7 +257,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Drop Location / Destination"
                                         fullWidth
@@ -269,14 +269,14 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                 </Grid>
 
                                 {/* Financial Calculations */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Divider sx={{ my: 1 }} />
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 1, mt: 1 }}>
                                         Pricing & Payment Collection
                                     </Typography>
                                 </Grid>
 
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Base Amount (₹)"
                                         required
@@ -291,7 +291,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Discount (₹)"
                                         type="number"
@@ -304,7 +304,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
                                     <TextField
                                         label="Advance Paid On Spot (₹)"
                                         required
@@ -322,7 +322,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                 </Grid>
 
                                 {/* Total Summary Box */}
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Card sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 2.5, border: '1px dashed rgba(0,0,0,0.12)' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                                             <Box>
@@ -355,7 +355,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     </Card>
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         select
                                         label="Payment Method / Mode"
@@ -370,7 +370,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     </TextField>
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         select
                                         label="Initial Booking Status"
@@ -382,7 +382,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     </TextField>
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Customer Special Requests"
                                         multiline
@@ -394,7 +394,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <TextField
                                         label="Staff Internal Notes"
                                         multiline
@@ -406,7 +406,7 @@ export default function ServiceBookingCreate({ serviceConfig = {}, items = [] })
                                     />
                                 </Grid>
 
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12 }}>
                                     <Divider sx={{ my: 1 }} />
                                     <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1.5} justifyContent="flex-end" sx={{ mt: 2 }}>
                                         <Button
