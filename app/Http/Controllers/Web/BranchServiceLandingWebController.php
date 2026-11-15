@@ -209,8 +209,8 @@ class BranchServiceLandingWebController extends Controller
 
         $canonicalCitySlug = Str::slug($store->city ?: $store->name);
 
-        // Map service slug to canonical
-        $normalizedService = strtolower(trim($serviceSlug));
+        // Map service slug to canonical (supporting both hyphens and underscores)
+        $normalizedService = str_replace('_', '-', strtolower(trim($serviceSlug)));
         $serviceAliases = [
             'bike' => 'bikes',
             'bike-rentals' => 'bikes',
@@ -224,9 +224,11 @@ class BranchServiceLandingWebController extends Controller
             'boat-cruise' => 'boating',
             'sharavathi-boating' => 'boating',
             'taxi' => 'cabs',
+            'cab' => 'cabs',
             'taxi-services' => 'cabs',
             'car-rental' => 'cabs',
             'homestay' => 'homestays',
+            'rooms' => 'homestays',
             'stays' => 'homestays',
             'cottages' => 'homestays',
             'guides' => 'guide',
