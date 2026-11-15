@@ -282,8 +282,7 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
     const today = new Date().toISOString().split('T')[0];
     const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
 
-    const publishedBranches = stores.filter((s) => s.publication_status === 'published');
-    const branchList = (publicBranches.length > 0 ? publicBranches : (publishedBranches.length > 0 ? publishedBranches : stores))
+    const branchList = (publicBranches.length > 0 ? publicBranches : stores)
         .slice()
         .sort((a, b) => a.id - b.id);
     const branchCities = [...new Set(branchList.map((s) => s.city).filter(Boolean))];

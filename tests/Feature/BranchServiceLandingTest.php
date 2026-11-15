@@ -45,7 +45,6 @@ class BranchServiceLandingTest extends TestCase
             'email' => 'honnavar@whizwheel.in',
             'operating_hours_label' => '7:30 AM - 9:30 PM',
             'status' => StoreStatus::ACTIVE,
-            'publication_status' => 'published',
             'services' => [
                 'two_wheelers' => true,
                 'taxi' => true,
@@ -71,7 +70,6 @@ class BranchServiceLandingTest extends TestCase
             'email' => 'murudeshwar@whizwheel.in',
             'operating_hours_label' => '8:00 AM - 9:00 PM',
             'status' => StoreStatus::ACTIVE,
-            'publication_status' => 'published',
             'services' => [
                 'two_wheelers' => true,
                 'taxi' => true,

@@ -45,10 +45,7 @@ class HandleInertiaRequests extends Middleware
                 ->orderBy('id')
                 ->get()
                 ->pipe(function ($stores) {
-                    $published = $stores->where('publication_status', 'published');
-                    $selected = $published->isNotEmpty() ? $published : $stores;
-
-                    return $selected->map(function ($store): array {
+                    return $stores->map(function ($store): array {
                         $isHonnavar = str_contains(strtolower((string) ($store->city ?: $store->name)), 'honnavar');
                         $defaultServices = $isHonnavar
                             ? ['two_wheelers', 'taxi', 'homestay', 'boating', 'guide']

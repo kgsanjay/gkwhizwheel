@@ -15,21 +15,11 @@ Route::get('/', function () {
     }])->get();
 
     $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
-        ->where('publication_status', 'published')
         ->withCount(['bikes' => function ($query) {
             $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
         }])
         ->orderBy('id')
         ->get();
-
-    if ($stores->isEmpty()) {
-        $stores = \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)
-            ->withCount(['bikes' => function ($query) {
-                $query->where('status', \App\Enums\BikeStatus::AVAILABLE);
-            }])
-            ->orderBy('id')
-            ->get();
-    }
 
     $pickupPoints = \App\Models\PickupPoint::where('is_active', true)
         ->orderBy('sort_order')
