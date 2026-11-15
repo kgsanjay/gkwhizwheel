@@ -45,7 +45,7 @@ class WhizWheelCspPreset implements Preset
                 'data:',
             ])
 
-            // Images: self, data:, blob:, Unsplash CDN, and OpenStreetMap tiles
+            // Images: self, data:, blob:, Unsplash CDN, OpenStreetMap, and Google Maps tiles
             ->add(Directive::IMG, [
                 Keyword::SELF,
                 'data:',
@@ -55,10 +55,12 @@ class WhizWheelCspPreset implements Preset
                 'https://tile.openstreetmap.org',
                 'https://*.googleapis.com',
                 'https://*.gstatic.com',
+                'https://*.google.com',
+                'https://*.googleusercontent.com',
                 '*.google.com',
             ])
 
-            // Network connections: self, PhonePe APIs, map tiles, and Cloudflare telemetry/Turnstile
+            // Network connections: self, PhonePe APIs, map tiles, geocoder, and Cloudflare telemetry/Turnstile
             ->add(Directive::CONNECT, [
                 Keyword::SELF,
                 'https://api.phonepe.com',
@@ -66,6 +68,8 @@ class WhizWheelCspPreset implements Preset
                 'https://mercury-tst.phonepe.com',
                 'https://*.tile.openstreetmap.org',
                 'https://*.googleapis.com',
+                'https://*.google.com',
+                'https://nominatim.openstreetmap.org',
                 'https://challenges.cloudflare.com',
                 'https://cloudflareinsights.com',
             ])

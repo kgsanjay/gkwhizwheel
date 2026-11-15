@@ -26,11 +26,11 @@ export default function StoresCreate({
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         address_line: '',
-        city: 'Bengaluru',
+        city: 'Honnavar',
         state: 'Karnataka',
-        pincode: '',
-        latitude: 12.9716,
-        longitude: 77.5946,
+        pincode: '581334',
+        latitude: 14.2802,
+        longitude: 74.4439,
         phone: '',
         google_maps_url: '',
         status: 'active',
@@ -46,6 +46,7 @@ export default function StoresCreate({
             ...prev,
             latitude,
             longitude,
+            google_maps_url: prev.google_maps_url ? prev.google_maps_url : `https://www.google.com/maps?q=${latitude},${longitude}`,
         }));
     };
 
@@ -70,7 +71,7 @@ export default function StoresCreate({
                     Add Store Hub
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    Configure a new physical pickup & dropoff location. Use the OpenStreetMap picker to pinpoint exact GPS coordinates.
+                    Configure a new physical pickup & dropoff location. Use the interactive Google Maps GPS picker to pinpoint exact coordinates.
                 </Typography>
             </Box>
 
@@ -197,17 +198,17 @@ export default function StoresCreate({
                         </Paper>
                     </Grid>
 
-                    {/* Right Column: OpenStreetMap / Leaflet Picker */}
+                    {/* Right Column: Google Maps Interactive GPS Picker */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', mb: 3 }}>
                             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-                                <PlaceIcon color="primary" />
+                                <PlaceIcon sx={{ color: '#EA4335' }} />
                                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                    Interactive GPS Map Picker
+                                    Google Maps GPS Pinpoint
                                 </Typography>
                             </Stack>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Drag the pin or click on the map to set the store coordinates accurately for rider pickups and navigation.
+                                Drag the pin or click on Google Maps to set store coordinates accurately for rider pickups and navigation.
                             </Typography>
                             <Divider sx={{ mb: 2 }} />
 

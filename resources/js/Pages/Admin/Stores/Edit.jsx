@@ -49,6 +49,7 @@ export default function StoresEdit({
             ...prev,
             latitude,
             longitude,
+            google_maps_url: prev.google_maps_url ? prev.google_maps_url : `https://www.google.com/maps?q=${latitude},${longitude}`,
         }));
     };
 
@@ -203,17 +204,17 @@ export default function StoresEdit({
                         </Paper>
                     </Grid>
 
-                    {/* Right Column: OpenStreetMap / Leaflet Picker */}
+                    {/* Right Column: Google Maps Interactive GPS Picker */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', mb: 3 }}>
                             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-                                <PlaceIcon color="primary" />
+                                <PlaceIcon sx={{ color: '#EA4335' }} />
                                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                    Interactive GPS Map Picker
+                                    Google Maps GPS Pinpoint
                                 </Typography>
                             </Stack>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Move the marker pin or click anywhere on OpenStreetMap to update the hub coordinates.
+                                Move the marker pin or click anywhere on Google Maps to update the hub coordinates.
                             </Typography>
                             <Divider sx={{ mb: 2 }} />
 
