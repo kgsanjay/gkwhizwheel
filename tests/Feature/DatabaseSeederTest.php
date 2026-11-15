@@ -16,8 +16,8 @@ test('database seeder populates realistic dataset idempotently', function (): vo
     // 1. Run seeder
     $this->seed(DatabaseSeeder::class);
 
-    // Stores check
-    expect(Store::count())->toBe(2);
+    // Stores check (Honnavar Main Office, Honnavar Station Hub, and Murudeshwar Hub)
+    expect(Store::count())->toBe(3);
     $mainOffice = Store::where('name', 'GK WhizWheels Main Office')->first() ?? Store::firstOrFail();
     $stationHub = Store::where('name', 'Honnavar Railway Station Hub')->first() ?? Store::skip(1)->firstOrFail();
 
@@ -52,7 +52,7 @@ test('database seeder populates realistic dataset idempotently', function (): vo
     // 2. Test idempotency: re-running seeder should not duplicate records
     $this->seed(DatabaseSeeder::class);
 
-    expect(Store::count())->toBe(2)
+    expect(Store::count())->toBe(3)
         ->and(BikeCategory::count())->toBe(4)
         ->and(User::count())->toBe(5)
         ->and(Bike::count())->toBe(0)
