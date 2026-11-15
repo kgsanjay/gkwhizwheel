@@ -161,6 +161,60 @@ class AdminBikeModelWebController extends Controller
         return redirect()->route('admin.bike-models.index')
             ->with('success', 'Bike model created. Add and associate individually registered vehicles next.');
     }
+
+    public function update(int $id, Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+
+        $model = BikeModel::findOrFail($id);
+
+        $data = $request->validate([
+            'category_id' => ['required', 'integer', 'exists:bike_categories,id'],
+            'brand' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:100'],
+            'fuel_type' => ['required', new Enum(FuelType::class)],
+            'transmission' => ['required', new Enum(Transmission::class)],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $data['brand'] = trim($data['brand']);
+        $data['name'] = trim($data['name']);
+        if ($data['brand'] === '' || $data['name'] === '') {
+            throw ValidationException::withMessages(['name' => 'Brand and model name cannot be empty.']);
+        }
+
+        $duplicate = BikeModel::query()
+            ->where('id', '!=', $model->id)
+            ->where('category_id', $data['category_id'])
+            ->where('brand', $data['brand'])
+            ->where('name', $data['name'])
+            ->where('fuel_type', $data['fuel_type'])
+            ->where('transmission', $data['transmission'])
+            ->exists();
+
+        if ($duplicate) {
+            throw ValidationException::withMessages(['name' => 'Another bike model with these exact specifications already exists.']);
+        }
+
+        $model->update($data);
+
+        return redirect()->route('admin.bike-models.index')
+            ->with('success', "Bike model {$model->brand} {$model->name} updated successfully.");
+    }
+
+    public function toggleActive(int $id, Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+
+        $model = BikeModel::findOrFail($id);
+        $model->update(['is_active' => ! $model->is_active]);
+
+        $status = $model->is_active ? 'activated' : 'deactivated';
+
+        return redirect()->route('admin.bike-models.index')
+            ->with('success', "Bike model {$model->brand} {$model->name} has been {$status}.");
+    }
     /**
      * Register multiple distinct physical vehicles under a single catalog
      * model and branch. The entire batch is rejected if any row is invalid.

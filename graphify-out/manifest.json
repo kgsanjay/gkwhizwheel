@@ -372,9 +372,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminBikeModelWebController.php": {
-    "mtime": 1794656018.9841504,
-    "seen": 1794723023.070996,
-    "ast_hash": "3b0acdb8c98978ab9c8cdbf2c097afd6",
+    "mtime": 1794723408.327027,
+    "seen": 1794723696.3475451,
+    "ast_hash": "0255b8f733d4d207592b0808c02d69ff",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminBikeWebController.php": {
@@ -2370,9 +2370,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/BikeModels/Index.jsx": {
-    "mtime": 1794059843.1744823,
-    "seen": 1794723023.071197,
-    "ast_hash": "4e32f906f2f24c98672ea57a93312f62",
+    "mtime": 1794723672.88992,
+    "seen": 1794723696.3477519,
+    "ast_hash": "518a8a6b8e616a1c06cb8f7e4aa788cf",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Bikes/Create.jsx": {
@@ -2832,9 +2832,9 @@
     "semantic_hash": ""
   },
   "routes/web.php": {
-    "mtime": 1794721568.7402258,
-    "seen": 1794723023.071243,
-    "ast_hash": "cf3280b48e1768abb7d6298edcc2ebb7",
+    "mtime": 1794723481.7020695,
+    "seen": 1794723696.3478,
+    "ast_hash": "745587800b9e3762984b43a060e46cb3",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -3054,9 +3054,9 @@
     "semantic_hash": ""
   },
   "tests/Feature/BikeModelAdminWebTest.php": {
-    "mtime": 1794657032.8501208,
-    "seen": 1794723023.071265,
-    "ast_hash": "fbce2e07dd67de4cfa43fecce5e81a2d",
+    "mtime": 1794723433.7632034,
+    "seen": 1794723696.347824,
+    "ast_hash": "c2f8ae0e21c6a0212f107b3bf4664063",
     "semantic_hash": ""
   },
   "tests/Feature/BikeModelBookingAllocationTest.php": {
@@ -4611,6 +4611,12 @@
     "mtime": 1793760164.5332685,
     "seen": 1794723023.071434,
     "ast_hash": "03456606be53b7d7904f7e6a3a3f7dc4",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1794723145.1594906,
+    "seen": 1794723696.347907,
+    "ast_hash": "7888d592fbf76c428463abf3b7a6bbe6",
     "semantic_hash": ""
   },
   "package-lock.json": {

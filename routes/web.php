@@ -336,6 +336,8 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     // Bike Inventory
     Route::get('/bike-models', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'index'])->name('admin.bike-models.index');
     Route::post('/bike-models', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'store'])->name('admin.bike-models.store');
+    Route::match(['put', 'post'], '/bike-models/{id}', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'update'])->name('admin.bike-models.update');
+    Route::match(['patch', 'post'], '/bike-models/{id}/toggle-active', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'toggleActive'])->name('admin.bike-models.toggle-active');
     Route::post('/bike-models/{id}/branch-prices', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'saveBranchPrice'])->name('admin.bike-models.branch-prices');
     Route::post('/bike-models/{id}/bikes/bulk', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'bulkRegister'])->name('admin.bike-models.bulk-register');
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');

@@ -201,3 +201,27 @@ test('bulk registration limits the batch to fifty bikes', function (): void {
     ])->assertSessionHasErrors('bikes');
     expect(Bike::count())->toBe(0);
 });
+
+test('superadmin can update bike model and toggle active status', function (): void {
+    $this->actingAs($this->admin)->put('/admin/bike-models/'.$this->model->id, [
+        'category_id' => $this->category->id,
+        'brand' => 'Honda',
+        'name' => 'Activa 125',
+        'fuel_type' => 'petrol',
+        'transmission' => 'automatic',
+        'description' => 'Updated 125cc commuter',
+    ])->assertRedirect(route('admin.bike-models.index'));
+
+    $this->model->refresh();
+    expect($this->model->name)->toBe('Activa 125')
+        ->and($this->model->description)->toBe('Updated 125cc commuter');
+
+    $this->actingAs($this->admin)->patch('/admin/bike-models/'.$this->model->id.'/toggle-active')
+        ->assertRedirect(route('admin.bike-models.index'));
+
+    expect($this->model->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($this->manager)->patch('/admin/bike-models/'.$this->model->id.'/toggle-active')
+        ->assertForbidden();
+});
+
