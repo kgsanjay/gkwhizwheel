@@ -2370,8 +2370,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/BikeModels/Index.jsx": {
-    "mtime": 1794723672.88992,
-    "seen": 1794723696.3477519,
+    "mtime": 1794725217.4710262,
+    "seen": 1794725935.232255,
     "ast_hash": "518a8a6b8e616a1c06cb8f7e4aa788cf",
     "semantic_hash": ""
   },
@@ -2832,8 +2832,8 @@
     "semantic_hash": ""
   },
   "routes/web.php": {
-    "mtime": 1794723481.7020695,
-    "seen": 1794723696.3478,
+    "mtime": 1794725900.7267601,
+    "seen": 1794725935.2323031,
     "ast_hash": "745587800b9e3762984b43a060e46cb3",
     "semantic_hash": ""
   },
@@ -4614,9 +4614,15 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1794723145.1594906,
-    "seen": 1794723696.347907,
-    "ast_hash": "7888d592fbf76c428463abf3b7a6bbe6",
+    "mtime": 1794725858.2586784,
+    "seen": 1794725935.232405,
+    "ast_hash": "2af4fe12276dd04bae0e4e39ff7dce0b",
+    "semantic_hash": ""
+  },
+  "docs/adr/0001-ecc-antigravity-integration.md": {
+    "mtime": 1794725838.9964795,
+    "seen": 1794725935.232415,
+    "ast_hash": "92fd8564623b50abefc7e417ef0c3646",
     "semantic_hash": ""
   },
   "package-lock.json": {

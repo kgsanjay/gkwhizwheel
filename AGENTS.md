@@ -119,3 +119,52 @@ Before closing any task or committing:
    ```bash
    graphify update .
    ```
+
+---
+
+## 4. Everything Claude Code (ECC) System Integration
+
+This project integrates **Everything Claude Code (ECC) v2.2.3** via its native Antigravity installation adapter into `.agents/`.
+
+### Installed Components & Native Topology
+- **Managed State:** `.agents/ecc-install-state.json` (tracked with SHA-256 digests; verify via `scripts/doctor.js --target antigravity`).
+- **Workspace Rules (`.agents/rules/`):** 123 active rules with Antigravity activation triggers:
+  - Common principles: `trigger: always_on` (`common-coding-style.md`, `common-patterns.md`, `common-security.md`).
+  - Scoped language rules: `trigger: glob` (`php-*.md` for `**/*.php`, `typescript-*.md`, `react-*.md`).
+- **Slash Workflows (`.agents/workflows/`):** 99 workflows invokable in chat via `/<workflow-name>`:
+  - `/plan`: Step-by-step implementation planning with verification checkpoints.
+  - `/code-review`: Multi-tier code quality, security, and maintainability audit.
+  - `/tdd`: Red-Green-Refactor test-driven development workflow.
+  - `/build-fix`: Root-cause build failure analysis and repair.
+- **Custom Agents (`.agents/agents/`):** 71 subagents configured with Antigravity tool mappings and `flash`/`pro` models (e.g. `code-reviewer`, `architect`, `security-auditor`).
+- **Domain Skills (`.agents/skills/`):** 135 specialized skills including `laravel-patterns`, `react-patterns`, `database-migrations`, `api-design`, `codebase-onboarding`, and `architecture-decision-records`.
+
+### Unified Engineering Lifecycle (Graphify + ECC + Ponytail)
+When developing features or fixing bugs, follow this 5-stage loop:
+
+```text
+1. PLAN (/plan + Graphify)
+   └── Run /plan workflow.
+   └── Query Graphify (`graphify query`, `graphify path`) to map affected Eloquent models, controllers, and database relations before touching code.
+
+2. IMPLEMENT (Ponytail Standard + ECC Rules)
+   └── Apply Ponytail rule: minimal working diff, reuse existing helpers/components, solve root cause once.
+   └── Adhere to .agents/rules/common-coding-style.md and php-coding-style.md (PSR-12, strict types).
+   └── Follow MUI Grid v2 rules (size={{ xs: 12, sm: 6 }}) and dialog overflowX: 'hidden'.
+
+3. TEST & VERIFY (/tdd)
+   └── Execute unit/feature tests: php artisan test --filter=TestClass
+   └── Compile production bundle: npm run build
+
+4. REVIEW (/code-review)
+   └── Run /code-review to audit git diff against security, edge cases, and regressions before merging.
+
+5. PERSIST & SYNC (ADR + Graphify)
+   └── Log significant architectural choices to `docs/adr/`.
+   └── Update knowledge graph incrementally: graphify update .
+```
+
+### Harness Compatibility & Boundaries
+- **Supported:** Workspace rules, slash workflows, skills, subagents, ADR logging, and ECC doctor diagnostics.
+- **Unsupported/Skipped in Antigravity:** Arbitrary shell hook runtimes (`hooks-runtime`), Claude Code plugin slugs, and Plan Canvas browser server. Persistent knowledge is persisted directly on disk (`AGENTS.md`, `docs/adr/`, `graphify-out/wiki/`).
+
