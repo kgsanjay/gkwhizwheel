@@ -235,7 +235,7 @@ export default function AdminDashboard({
                         <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.6, px: 1, py: 0.25, borderRadius: 10, bgcolor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5', border: '1px solid', borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0' }}>
                             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />
                             <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: isDark ? '#34D399' : '#065F46' }}>
-                                Cluster Healthy · 7 Services Active
+                                {service_metrics.length > 0 ? `Cluster Active · ${service_metrics.length} Services Online` : 'Cluster Online'}
                             </Typography>
                         </Box>
                     </Box>
@@ -1464,7 +1464,7 @@ export default function AdminDashboard({
                                             {/* Hub */}
                                             <TableCell sx={{ py: 1.5 }}>
                                                 <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: 'text.primary' }}>
-                                                    {b.pickup_store?.name || 'Gokarna Hub'}
+                                                    {b.pickup_store?.name || b.pickup_store?.city || 'Hub'}
                                                 </Typography>
                                             </TableCell>
 
