@@ -215,6 +215,58 @@ const QUICK_BOOK_SERVICES = [
     },
 ];
 
+const MOBILE_STORIES = [
+    {
+        id: 'two_wheelers',
+        label: 'Bikes',
+        icon: <TwoWheelerIcon sx={{ fontSize: 24, color: '#F59E0B' }} />,
+        href: '/services/bikes',
+        ringGradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+    },
+    {
+        id: 'taxi',
+        label: 'Cabs',
+        icon: <LocalTaxiIcon sx={{ fontSize: 24, color: '#0284C7' }} />,
+        href: '/services/cabs',
+        ringGradient: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
+    },
+    {
+        id: 'boating',
+        label: 'Boats',
+        icon: <DirectionsBoatIcon sx={{ fontSize: 24, color: '#2563EB' }} />,
+        href: '/services/boating',
+        ringGradient: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+    },
+    {
+        id: 'scuba',
+        label: 'Scuba',
+        icon: <ScubaDivingIcon sx={{ fontSize: 24, color: '#0D9488' }} />,
+        href: '/services/scuba',
+        ringGradient: 'linear-gradient(135deg, #0D9488 0%, #0F766E 100%)',
+    },
+    {
+        id: 'homestay',
+        label: 'Stays',
+        icon: <HomeWorkIcon sx={{ fontSize: 24, color: '#059669' }} />,
+        href: '/services/homestays',
+        ringGradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+    },
+    {
+        id: 'guide',
+        label: 'Guides',
+        icon: <ExploreIcon sx={{ fontSize: 24, color: '#D97706' }} />,
+        href: '/services/guide',
+        ringGradient: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
+    },
+    {
+        id: 'tours',
+        label: 'Packages',
+        icon: <LuggageIcon sx={{ fontSize: 24, color: '#7C3AED' }} />,
+        href: '/services/tours',
+        ringGradient: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+    },
+];
+
 export default function Welcome({ categories = [], stores = [] , availableItems = [] }) {
     const { public_branches: publicBranches = [], site_settings: siteSettings = {} } = usePage().props;
     const dynamicPrimaryPhone = siteSettings.primary_phone || publicBranches[0]?.phone || stores[0]?.phone || '+918660989586';
@@ -769,12 +821,89 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                             color: isDark ? '#CBD5E1' : '#334155',
                                             fontSize: { xs: '0.96rem', md: '1.08rem' },
                                             lineHeight: 1.7,
-                                            mb: 3,
+                                            mb: { xs: 2, md: 3 },
                                             maxWidth: 640,
                                         }}
                                     >
                                         One trusted local platform for <strong>two-wheeler rentals</strong>, <strong>private AC cabs</strong>, <strong>Sharavathi backwater boating</strong>, <strong>riverfront homestays</strong>, <strong>Netrani scuba diving</strong>, <strong>trail guides</strong>, and <strong>custom tours</strong> — with transparent pricing and zero hidden fees.
                                     </Typography>
+
+                                    {/* Dedicated Mobile Stories / 7 Verticals App Rail (xs & sm) */}
+                                    <Box
+                                        sx={{
+                                            display: { xs: 'flex', md: 'none' },
+                                            alignItems: 'center',
+                                            gap: 1.75,
+                                            overflowX: 'auto',
+                                            WebkitOverflowScrolling: 'touch',
+                                            scrollbarWidth: 'none',
+                                            '&::-webkit-scrollbar': { display: 'none' },
+                                            py: 0.5,
+                                            mb: 2.5,
+                                            mx: { xs: -1, sm: 0 },
+                                            px: { xs: 1, sm: 0 },
+                                        }}
+                                    >
+                                        {MOBILE_STORIES.map((svc) => (
+                                            <Box
+                                                key={svc.id}
+                                                component={Link}
+                                                href={svc.href}
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    textDecoration: 'none',
+                                                    flexShrink: 0,
+                                                    width: 60,
+                                                    transition: 'transform 0.15s ease',
+                                                    '&:active': { transform: 'scale(0.92)' },
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        width: 52,
+                                                        height: 52,
+                                                        borderRadius: '50%',
+                                                        p: '2px',
+                                                        background: svc.ringGradient,
+                                                        boxShadow: isDark
+                                                            ? '0 4px 14px rgba(0, 0, 0, 0.45)'
+                                                            : '0 4px 14px rgba(15, 23, 42, 0.1)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        mb: 0.5,
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            borderRadius: '50%',
+                                                            bgcolor: isDark ? '#0F172A' : '#FFFFFF',
+                                                            display: 'grid',
+                                                            placeItems: 'center',
+                                                        }}
+                                                    >
+                                                        {svc.icon}
+                                                    </Box>
+                                                </Box>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        fontSize: '0.68rem',
+                                                        fontWeight: 800,
+                                                        color: isDark ? '#E2E8F0' : '#1E293B',
+                                                        textAlign: 'center',
+                                                        lineHeight: 1.1,
+                                                    }}
+                                                >
+                                                    {svc.label}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
 
                                     {/* Quick Service Pill Selector — syncs live with the showcase stage */}
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.9, mb: 3.25 }}>

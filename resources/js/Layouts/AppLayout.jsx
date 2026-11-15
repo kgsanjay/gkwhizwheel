@@ -191,6 +191,12 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
     const urlBranchSlug = branchUrlMatch ? branchUrlMatch[1].toLowerCase() : null;
     const urlServiceSlug = branchUrlMatch ? branchUrlMatch[2]?.toLowerCase() : null;
 
+    // Mobile App Navigation Active Tab State
+    const isHomeActive = url === '/' || url === '';
+    const isBikesActive = url.includes('/bikes') || url.includes('/two_wheelers');
+    const isServicesActive = (url.includes('/services') && !isBikesActive) || url === '/services';
+    const isTripsActive = url.startsWith('/account') || url.startsWith('/my-bookings') || url.startsWith('/bookings');
+
     const findBranchBySlug = (slug) => {
         if (!slug) return null;
         const s = slug.toLowerCase();
@@ -591,7 +597,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 src="/images/whizwheel-logo.png"
                                 alt="G.K. WhizWheel"
                                 sx={{
-                                    width: { xs: 175, sm: 200, md: 220 },
+                                    width: { xs: 130, sm: 180, md: 220 },
                                     maxWidth: '100%',
                                     height: 'auto',
                                     display: 'block',
@@ -1045,14 +1051,61 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                             )}
                         </Box>
 
-                        {/* Mobile Header Controls (xs and sm, below md) - ONLY Menu Button per user requirement */}
-                        <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center' }}>
+                        {/* Mobile Header Controls (Dedicated App Bar for Smartphones) */}
+                        <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 0.75 }}>
+                            {/* Live Branch Switcher Pill on Mobile */}
+                            {publicBranches.length > 0 && (
+                                <Button
+                                    size="small"
+                                    onClick={handleOpenBranchMenu}
+                                    aria-label="Select active hub"
+                                    aria-controls={isBranchMenuOpen ? 'branch-menu-tier3' : undefined}
+                                    aria-haspopup="true"
+                                    aria-expanded={isBranchMenuOpen}
+                                    startIcon={<LocationOnIcon sx={{ color: '#F59E0B !important', fontSize: 15 }} />}
+                                    endIcon={<KeyboardArrowDownIcon sx={{ fontSize: 13, color: isDark ? '#94A3B8' : '#64748B' }} />}
+                                    sx={{
+                                        py: 0.4,
+                                        px: 1,
+                                        borderRadius: 3,
+                                        bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                        border: isDark ? '1px solid rgba(245, 158, 11, 0.32)' : '1px solid #FDE68A',
+                                        color: isDark ? '#FBBF24' : '#92400E',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 800,
+                                        textTransform: 'none',
+                                        maxWidth: { xs: 110, sm: 150 },
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                    }}
+                                >
+                                    {activeBranch?.city || activeBranch?.name || 'Hub'}
+                                </Button>
+                            )}
+
+                            {/* Quick Dark/Light Switcher */}
+                            <IconButton
+                                onClick={toggleColorMode}
+                                aria-label="Toggle dark or light mode"
+                                size="small"
+                                sx={{
+                                    p: 0.65,
+                                    borderRadius: 2,
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #CBD5E1',
+                                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(15, 23, 42, 0.04)',
+                                    color: isDark ? '#FBBF24' : '#64748B',
+                                }}
+                            >
+                                {isDark ? <LightModeIcon sx={{ fontSize: 18 }} /> : <DarkModeIcon sx={{ fontSize: 18 }} />}
+                            </IconButton>
+
                             <IconButton
                                 onClick={handleToggleMobileDrawer}
                                 aria-label="Open mobile navigation menu"
                                 aria-expanded={mobileDrawerOpen}
                                 sx={{
-                                    p: 1,
+                                    p: 0.65,
                                     borderRadius: 2,
                                     border: isDark ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid #CBD5E1',
                                     bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)',
@@ -1063,7 +1116,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     '&:focus-visible': { outline: '3px solid #F59E0B', outlineOffset: '2px' },
                                 }}
                             >
-                                <MenuIcon sx={{ fontSize: 26 }} />
+                                <MenuIcon sx={{ fontSize: 24 }} />
                             </IconButton>
                         </Box>
                     </Toolbar>
@@ -2172,7 +2225,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
             )}
 
             {/* Main Content Area — Page controls internal container widths */}
-            <Box component="main" id="main-content" tabIndex={-1} sx={{ flexGrow: 1, width: '100%', outline: 'none', pb: noFooterMargin ? 0 : { xs: 8, md: 0 } }}>
+            <Box component="main" id="main-content" tabIndex={-1} sx={{ flexGrow: 1, width: '100%', outline: 'none', pb: { xs: 'calc(76px + env(safe-area-inset-bottom, 16px))', md: noFooterMargin ? 0 : 0 } }}>
                 {children}
             </Box>
 
@@ -2184,7 +2237,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                     color: '#CBD5E1',
                     borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                     pt: { xs: 5.5, md: 7 },
-                    pb: { xs: 11, md: 4.5 },
+                    pb: { xs: 'calc(96px + env(safe-area-inset-bottom, 16px))', md: 4.5 },
                     mt: noFooterMargin ? 0 : { xs: 5, md: 6 },
                     width: '100%',
                 }}
@@ -2535,50 +2588,214 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                 </Box>
             </Box>
 
-            {/* Mobile Fixed Quick-Action Bottom Dock */}
+            {/* Native Mobile App Dock (5-Tab Persistent Navigation) */}
             <Box
                 component="nav"
-                aria-label="Mobile Quick Actions"
+                aria-label="Mobile Application Navigation"
                 sx={{
-                    display: { xs: 'flex', md: 'none' },
+                    display: { xs: 'grid', md: 'none' },
+                    gridTemplateColumns: 'repeat(5, 1fr)',
                     position: 'fixed',
                     bottom: 0,
                     left: 0,
                     right: 0,
                     zIndex: 1200,
-                    bgcolor: 'rgba(15, 23, 42, 0.94)',
-                    backdropFilter: 'blur(16px)',
-                    borderTop: '1px solid rgba(245, 158, 11, 0.3)',
-                    boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.4)',
-                    py: 0.8,
-                    px: 1,
-                    justifyContent: 'space-around',
+                    bgcolor: isDark ? 'rgba(10, 15, 29, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+                    backdropFilter: 'blur(20px)',
+                    borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
+                    boxShadow: isDark ? '0 -6px 24px rgba(0, 0, 0, 0.6)' : '0 -4px 20px rgba(0, 0, 0, 0.08)',
+                    pt: 0.65,
+                    pb: 'calc(env(safe-area-inset-bottom, 8px) + 4px)',
+                    px: 0.5,
                     alignItems: 'center',
                 }}
             >
-                <Button
-                    component="a"
-                    href={`tel:${primaryBranchPhone}`}
+                {/* Tab 1: Home */}
+                <Box
+                    component={Link}
+                    href="/"
                     sx={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        color: '#E2E8F0',
-                        minWidth: 64,
-                        py: 0.5,
-                        px: 1,
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        '&:hover': { color: '#F59E0B', bgcolor: 'rgba(255, 255, 255, 0.05)' },
+                        justifyContent: 'center',
+                        textDecoration: 'none',
+                        py: 0.4,
+                        px: 0.25,
+                        position: 'relative',
+                        color: isHomeActive ? '#F59E0B' : (isDark ? '#94A3B8' : '#64748B'),
+                        transition: 'all 0.15s ease',
+                        '&:active': { transform: 'scale(0.92)' },
                     }}
                 >
-                    <PhoneIcon sx={{ fontSize: 20, color: '#F59E0B' }} />
-                    <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 800, mt: 0.2 }}>
-                        Call 24/7
+                    <HomeIcon sx={{ fontSize: 22, color: isHomeActive ? '#F59E0B' : 'inherit' }} />
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            fontSize: '0.67rem',
+                            fontWeight: isHomeActive ? 850 : 600,
+                            mt: 0.2,
+                            letterSpacing: '-0.01em',
+                            color: isHomeActive ? '#F59E0B' : 'inherit',
+                        }}
+                    >
+                        Home
                     </Typography>
-                </Button>
+                    {isHomeActive && (
+                        <Box
+                            sx={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: '50%',
+                                bgcolor: '#F59E0B',
+                                boxShadow: '0 0 6px #F59E0B',
+                                position: 'absolute',
+                                bottom: -2,
+                            }}
+                        />
+                    )}
+                </Box>
 
-                <Button
+                {/* Tab 2: Bikes Fleet */}
+                <Box
+                    component={Link}
+                    href={getServiceHref({ slug: 'bikes' })}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textDecoration: 'none',
+                        py: 0.4,
+                        px: 0.25,
+                        position: 'relative',
+                        color: isBikesActive ? '#F59E0B' : (isDark ? '#94A3B8' : '#64748B'),
+                        transition: 'all 0.15s ease',
+                        '&:active': { transform: 'scale(0.92)' },
+                    }}
+                >
+                    <TwoWheelerIcon sx={{ fontSize: 22, color: isBikesActive ? '#F59E0B' : 'inherit' }} />
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            fontSize: '0.67rem',
+                            fontWeight: isBikesActive ? 850 : 600,
+                            mt: 0.2,
+                            letterSpacing: '-0.01em',
+                            color: isBikesActive ? '#F59E0B' : 'inherit',
+                        }}
+                    >
+                        Bikes
+                    </Typography>
+                    {isBikesActive && (
+                        <Box
+                            sx={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: '50%',
+                                bgcolor: '#F59E0B',
+                                boxShadow: '0 0 6px #F59E0B',
+                                position: 'absolute',
+                                bottom: -2,
+                            }}
+                        />
+                    )}
+                </Box>
+
+                {/* Tab 3: All Services */}
+                <Box
+                    component={Link}
+                    href="/services"
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textDecoration: 'none',
+                        py: 0.4,
+                        px: 0.25,
+                        position: 'relative',
+                        color: isServicesActive ? '#F59E0B' : (isDark ? '#94A3B8' : '#64748B'),
+                        transition: 'all 0.15s ease',
+                        '&:active': { transform: 'scale(0.92)' },
+                    }}
+                >
+                    <ExploreIcon sx={{ fontSize: 22, color: isServicesActive ? '#F59E0B' : 'inherit' }} />
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            fontSize: '0.67rem',
+                            fontWeight: isServicesActive ? 850 : 600,
+                            mt: 0.2,
+                            letterSpacing: '-0.01em',
+                            color: isServicesActive ? '#F59E0B' : 'inherit',
+                        }}
+                    >
+                        Services
+                    </Typography>
+                    {isServicesActive && (
+                        <Box
+                            sx={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: '50%',
+                                bgcolor: '#F59E0B',
+                                boxShadow: '0 0 6px #F59E0B',
+                                position: 'absolute',
+                                bottom: -2,
+                            }}
+                        />
+                    )}
+                </Box>
+
+                {/* Tab 4: My Trips */}
+                <Box
+                    component={Link}
+                    href={auth?.user ? '/account' : '/login'}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textDecoration: 'none',
+                        py: 0.4,
+                        px: 0.25,
+                        position: 'relative',
+                        color: isTripsActive ? '#F59E0B' : (isDark ? '#94A3B8' : '#64748B'),
+                        transition: 'all 0.15s ease',
+                        '&:active': { transform: 'scale(0.92)' },
+                    }}
+                >
+                    <ReceiptLongIcon sx={{ fontSize: 22, color: isTripsActive ? '#F59E0B' : 'inherit' }} />
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            fontSize: '0.67rem',
+                            fontWeight: isTripsActive ? 850 : 600,
+                            mt: 0.2,
+                            letterSpacing: '-0.01em',
+                            color: isTripsActive ? '#F59E0B' : 'inherit',
+                        }}
+                    >
+                        My Trips
+                    </Typography>
+                    {isTripsActive && (
+                        <Box
+                            sx={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: '50%',
+                                bgcolor: '#F59E0B',
+                                boxShadow: '0 0 6px #F59E0B',
+                                position: 'absolute',
+                                bottom: -2,
+                            }}
+                        />
+                    )}
+                </Box>
+
+                {/* Tab 5: WhatsApp Chat */}
+                <Box
                     component="a"
                     href={whatsappGeneralUrl}
                     target="_blank"
@@ -2587,67 +2804,30 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        color: '#E2E8F0',
-                        minWidth: 64,
-                        py: 0.5,
-                        px: 1,
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        '&:hover': { color: '#10B981', bgcolor: 'rgba(255, 255, 255, 0.05)' },
+                        justifyContent: 'center',
+                        textDecoration: 'none',
+                        py: 0.4,
+                        px: 0.25,
+                        position: 'relative',
+                        color: '#10B981',
+                        transition: 'all 0.15s ease',
+                        '&:active': { transform: 'scale(0.92)' },
                     }}
                 >
-                    <WhatsAppIcon sx={{ fontSize: 20, color: '#10B981' }} />
-                    <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 800, mt: 0.2 }}>
-                        WhatsApp
+                    <WhatsAppIcon sx={{ fontSize: 22, color: '#10B981' }} />
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            fontSize: '0.67rem',
+                            fontWeight: 750,
+                            mt: 0.2,
+                            letterSpacing: '-0.01em',
+                            color: isDark ? '#34D399' : '#059669',
+                        }}
+                    >
+                        Chat
                     </Typography>
-                </Button>
-
-                <Button
-                    component={Link}
-                    href="/services"
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        color: '#E2E8F0',
-                        minWidth: 64,
-                        py: 0.5,
-                        px: 1,
-                        borderRadius: 2,
-                        textTransform: 'none',
-                        '&:hover': { color: '#38BDF8', bgcolor: 'rgba(255, 255, 255, 0.05)' },
-                    }}
-                >
-                    <ExploreIcon sx={{ fontSize: 20, color: '#38BDF8' }} />
-                    <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 800, mt: 0.2 }}>
-                        {servicesList.length} Services
-                    </Typography>
-                </Button>
-
-                <Button
-                    component={Link}
-                    href={getServiceHref({ slug: 'bikes' })}
-                    variant="contained"
-                    size="small"
-                    sx={{
-                        bgcolor: '#F59E0B',
-                        color: '#0F172A',
-                        fontWeight: 900,
-                        fontSize: '0.75rem',
-                        py: 0.8,
-                        px: 1.8,
-                        borderRadius: 2.5,
-                        textTransform: 'none',
-                        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.6,
-                        '&:hover': { bgcolor: '#D97706' },
-                    }}
-                >
-                    <ExploreIcon sx={{ fontSize: 18 }} />
-                    Book Now
-                </Button>
+                </Box>
             </Box>
         </Box>
     );

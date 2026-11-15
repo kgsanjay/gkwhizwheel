@@ -1909,6 +1909,57 @@ export default function ScubaPage({ availableItems = [] }) {
                         setModalOpen(true);
                     }}
                 />
+
+                {/* Mobile Sticky Booking Dock for Scuba */}
+                <Box
+                    sx={{
+                        display: { xs: 'flex', md: 'none' },
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 1150,
+                        bgcolor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.96)',
+                        backdropFilter: 'blur(16px)',
+                        borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                        boxShadow: '0 -6px 20px rgba(0,0,0,0.15)',
+                        px: 2,
+                        py: 1.25,
+                        pb: 'calc(env(safe-area-inset-bottom, 8px) + 8px)',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1.5,
+                    }}
+                >
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', fontSize: '0.68rem', fontWeight: 700, noWrap: true }}>
+                            Netrani Island Scuba
+                        </Typography>
+                        <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#06B6D4', lineHeight: 1.1, fontSize: '0.92rem' }}>
+                            Starts ₹2,999 / Dive
+                        </Typography>
+                    </Box>
+
+                    <Button
+                        variant="contained"
+                        size="medium"
+                        onClick={() => setModalOpen(true)}
+                        sx={{
+                            bgcolor: '#06B6D4',
+                            color: '#FFFFFF',
+                            fontWeight: 850,
+                            borderRadius: 2.5,
+                            px: 2.5,
+                            py: 1,
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 4px 14px rgba(6, 182, 212, 0.4)',
+                            '&:hover': { bgcolor: '#0891B2' },
+                        }}
+                    >
+                        Book Dive Slot
+                    </Button>
+                </Box>
                 <RelatedGuidesStrip
                     serviceKey="scuba"
                     title="Netrani Island Scuba Diving Guides"

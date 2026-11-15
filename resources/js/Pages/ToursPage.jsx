@@ -2070,6 +2070,57 @@ export default function ToursPage({ availableItems = [] }) {
                     setModalOpen(true);
                 }}
             />
+
+            {/* Mobile Sticky Booking Dock for Tour Packages */}
+            <Box
+                sx={{
+                    display: { xs: 'flex', md: 'none' },
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 1150,
+                    bgcolor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.96)',
+                    backdropFilter: 'blur(16px)',
+                    borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                    boxShadow: '0 -6px 20px rgba(0,0,0,0.15)',
+                    px: 2,
+                    py: 1.25,
+                    pb: 'calc(env(safe-area-inset-bottom, 8px) + 8px)',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1.5,
+                }}
+            >
+                <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', fontSize: '0.68rem', fontWeight: 700, noWrap: true }}>
+                        Custom Tour Packages
+                    </Typography>
+                    <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#7C3AED', lineHeight: 1.1, fontSize: '0.92rem' }}>
+                        Starts ₹2,999 / Person
+                    </Typography>
+                </Box>
+
+                <Button
+                    variant="contained"
+                    size="medium"
+                    onClick={() => setModalOpen(true)}
+                    sx={{
+                        bgcolor: '#7C3AED',
+                        color: '#FFFFFF',
+                        fontWeight: 850,
+                        borderRadius: 2.5,
+                        px: 2.5,
+                        py: 1,
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 4px 14px rgba(124, 58, 237, 0.4)',
+                        '&:hover': { bgcolor: '#6D28D9' },
+                    }}
+                >
+                    Book Package
+                </Button>
+            </Box>
         </AppLayout>
     );
 }

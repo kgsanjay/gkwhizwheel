@@ -124,7 +124,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                         </Card>
                     </Grid>
                     <Grid size={{ xs: 12, md: 5 }}>
-                        <Card variant="outlined" sx={{ borderRadius: 3, position: { md: 'sticky' }, top: { md: 95 } }}>
+                        <Card id="availability-booking-card" variant="outlined" sx={{ borderRadius: 3, position: { md: 'sticky' }, top: { md: 95 } }}>
                             <CardContent sx={{ p: 3 }}>
                                 <Typography variant="h5" fontWeight={800} sx={{ mb: 1 }}>Check availability</Typography>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -159,6 +159,63 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                         </Card>
                     </Grid>
                 </Grid>
+
+                {/* Mobile Sticky Booking Dock */}
+                <Box
+                    sx={{
+                        display: { xs: 'flex', md: 'none' },
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 1150,
+                        bgcolor: 'background.paper',
+                        borderTop: 1,
+                        borderColor: 'divider',
+                        boxShadow: '0 -6px 20px rgba(0,0,0,0.12)',
+                        px: 2,
+                        py: 1.25,
+                        pb: 'calc(env(safe-area-inset-bottom, 8px) + 8px)',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1.5,
+                    }}
+                >
+                    <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.68rem', fontWeight: 700 }}>
+                            {model.brand} {model.name}
+                        </Typography>
+                        <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#D97706', lineHeight: 1.1 }}>
+                            {price !== null ? `₹${Number(price).toLocaleString('en-IN')}` : 'Check Fare'}
+                            <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                                / day
+                            </Typography>
+                        </Typography>
+                    </Box>
+
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        size="medium"
+                        onClick={() => {
+                            if (datesValid && availability?.is_available) {
+                                beginBooking();
+                            } else {
+                                const card = document.getElementById('availability-booking-card');
+                                if (card) card.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }}
+                        sx={{
+                            fontWeight: 850,
+                            borderRadius: 2.5,
+                            px: 2.5,
+                            py: 1,
+                            boxShadow: '0 4px 14px rgba(245, 158, 11, 0.4)',
+                        }}
+                    >
+                        {datesValid && availability?.is_available ? 'Book Now' : 'Select Dates'}
+                    </Button>
+                </Box>
             </Box>
         </AppLayout>
     );

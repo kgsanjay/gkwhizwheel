@@ -2340,9 +2340,9 @@
     "semantic_hash": ""
   },
   "resources/js/Layouts/AppLayout.jsx": {
-    "mtime": 1794686946.125887,
-    "seen": 1794723023.0711942,
-    "ast_hash": "91b9aba7aed32fe470d1cd7028b35515",
+    "mtime": 1794739714.6025636,
+    "seen": 1794740047.4554062,
+    "ast_hash": "002da2908ac0c1737106155fbea06437",
     "semantic_hash": ""
   },
   "resources/js/Pages/About.jsx": {
@@ -2412,32 +2412,32 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Cabs/Operations.jsx": {
-    "mtime": 1794729957.1698093,
-    "seen": 1794730461.024482,
+    "mtime": 1794731249.4569685,
+    "seen": 1794740047.455413,
     "ast_hash": "0af2f35acc246d4837cc2b7c06a54e58",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/CheckIn/Index.jsx": {
-    "mtime": 1794730778.854373,
-    "seen": 1794730872.742412,
+    "mtime": 1794731249.554529,
+    "seen": 1794740047.455414,
     "ast_hash": "2b77912c064ddd44ca498167fb6c5420",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Coupons/Index.jsx": {
-    "mtime": 1794730570.788838,
-    "seen": 1794730872.742413,
+    "mtime": 1794731249.6207852,
+    "seen": 1794740047.455414,
     "ast_hash": "103c510f5dad135e79d75e96b4692dca",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Dashboard.jsx": {
-    "mtime": 1794730841.3983269,
-    "seen": 1794730872.742414,
+    "mtime": 1794731249.6805973,
+    "seen": 1794740047.455415,
     "ast_hash": "83e2ab42037a6c30d654fc7951ca177a",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Dispatch/Index.jsx": {
-    "mtime": 1794730796.066358,
-    "seen": 1794730872.7424152,
+    "mtime": 1794731249.7578802,
+    "seen": 1794740047.455416,
     "ast_hash": "78aeac5f7caafcde46eace744ccd7f5d",
     "semantic_hash": ""
   },
@@ -2448,32 +2448,32 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Logs/Index.jsx": {
-    "mtime": 1794730617.8544295,
-    "seen": 1794730872.742416,
+    "mtime": 1794731249.8062952,
+    "seen": 1794740047.4554172,
     "ast_hash": "b867db6bd785673294f7959ab66f5fad",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/PickupPoints/Index.jsx": {
-    "mtime": 1794730681.3651085,
-    "seen": 1794730872.742416,
+    "mtime": 1794731249.8563237,
+    "seen": 1794740047.455418,
     "ast_hash": "668ed2c788f6545241dfba259d053ea8",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Pricing/Index.jsx": {
-    "mtime": 1794730544.7905016,
-    "seen": 1794730872.7424169,
+    "mtime": 1794731249.912157,
+    "seen": 1794740047.455418,
     "ast_hash": "2bec49102eafc5055c5e7e2c39c39e1f",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Relocations/Index.jsx": {
-    "mtime": 1794730702.5663552,
-    "seen": 1794730872.7424178,
+    "mtime": 1794731249.9677463,
+    "seen": 1794740047.4554188,
     "ast_hash": "4590695eeb580f3cd93720d0ce662232",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Reports/Index.jsx": {
-    "mtime": 1794730655.242918,
-    "seen": 1794730872.7424178,
+    "mtime": 1794731250.0084136,
+    "seen": 1794740047.4554188,
     "ast_hash": "94d2d7b071bfe1d14adaff1f817972e9",
     "semantic_hash": ""
   },
@@ -2490,8 +2490,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Services/Bookings/Create.jsx": {
-    "mtime": 1794730429.7675605,
-    "seen": 1794730461.0244899,
+    "mtime": 1794731250.046296,
+    "seen": 1794740047.455421,
     "ast_hash": "ef2232b908dcdf27251c83582a035943",
     "semantic_hash": ""
   },
@@ -2502,8 +2502,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Services/Bookings/Show.jsx": {
-    "mtime": 1794729984.819772,
-    "seen": 1794730461.024491,
+    "mtime": 1794731250.0846825,
+    "seen": 1794740047.455422,
     "ast_hash": "32feff193ace18691fd5b8c445c4713a",
     "semantic_hash": ""
   },
@@ -2514,14 +2514,14 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Services/Items/Create.jsx": {
-    "mtime": 1794730266.2701368,
-    "seen": 1794730461.024493,
+    "mtime": 1794731250.1200368,
+    "seen": 1794740047.455424,
     "ast_hash": "fdc82e637724bb1f5396f580fe668473",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Services/Items/Edit.jsx": {
-    "mtime": 1794730384.1268167,
-    "seen": 1794730461.024493,
+    "mtime": 1794731250.1782198,
+    "seen": 1794740047.455424,
     "ast_hash": "56225d37f28f75554e1228ec16bc964a",
     "semantic_hash": ""
   },
@@ -2532,8 +2532,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Settings/Index.jsx": {
-    "mtime": 1794730742.3106997,
-    "seen": 1794730872.742424,
+    "mtime": 1794731250.2091944,
+    "seen": 1794740047.455425,
     "ast_hash": "6cff8e5c802636dbac20da542dee09ed",
     "semantic_hash": ""
   },
@@ -2568,8 +2568,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/TwoFactorRecoveryCodes.jsx": {
-    "mtime": 1794730393.6002705,
-    "seen": 1794730461.024498,
+    "mtime": 1794731250.2378929,
+    "seen": 1794740047.455429,
     "ast_hash": "430173dd031c342ab4011a9a6716d682",
     "semantic_hash": ""
   },
@@ -2604,9 +2604,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/ModelShow.jsx": {
-    "mtime": 1794685995.0857089,
-    "seen": 1794723023.07122,
-    "ast_hash": "05af7bac4152e5c0d426d51841c4ca02",
+    "mtime": 1794739824.7672398,
+    "seen": 1794740047.455433,
+    "ast_hash": "c6c4e2a6b5e8f38e71f35e5ccd4bd727",
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/Show.jsx": {
@@ -2628,9 +2628,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/BoatingPage.jsx": {
-    "mtime": 1794685995.0866451,
-    "seen": 1794723023.071223,
-    "ast_hash": "5d8c81899e1db908d51388def1f37ffc",
+    "mtime": 1794739881.778643,
+    "seen": 1794740047.455436,
+    "ast_hash": "591831ea321c4bea824d018414a90d87",
     "semantic_hash": ""
   },
   "resources/js/Pages/Bookings/Confirmation.jsx": {
@@ -2640,9 +2640,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/CabsPage.jsx": {
-    "mtime": 1794685995.0874975,
-    "seen": 1794723023.071224,
-    "ast_hash": "92d8c0232f378a2bb372a842e834479c",
+    "mtime": 1794739898.4681432,
+    "seen": 1794740047.455437,
+    "ast_hash": "daf08edaa41a522309d60c9c88ae03a4",
     "semantic_hash": ""
   },
   "resources/js/Pages/Contact.jsx": {
@@ -2658,15 +2658,15 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/GuidePage.jsx": {
-    "mtime": 1794685995.0895417,
-    "seen": 1794723023.0712261,
-    "ast_hash": "c80e2b3054890e45eecf32e972f08536",
+    "mtime": 1794739958.903506,
+    "seen": 1794740047.455439,
+    "ast_hash": "58a78fbd195ea09dc70474cf3335cf18",
     "semantic_hash": ""
   },
   "resources/js/Pages/HomestaysPage.jsx": {
-    "mtime": 1794685995.0899124,
-    "seen": 1794723023.0712261,
-    "ast_hash": "1b0557c7e9b55abc71248bc0f7c2841d",
+    "mtime": 1794739937.2892654,
+    "seen": 1794740047.4554398,
+    "ast_hash": "50d3ee64c8e130b549a9ef97fcd1f8cb",
     "semantic_hash": ""
   },
   "resources/js/Pages/HowItWorks.jsx": {
@@ -2682,9 +2682,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/ScubaPage.jsx": {
-    "mtime": 1794685995.0907128,
-    "seen": 1794723023.0712278,
-    "ast_hash": "d23772a14b70c9e62646b6063171e7bd",
+    "mtime": 1794739916.6748836,
+    "seen": 1794740047.455441,
+    "ast_hash": "1bdb092742ae9485e9553f2f609614c4",
     "semantic_hash": ""
   },
   "resources/js/Pages/ServiceBookingConfirmation.jsx": {
@@ -2694,9 +2694,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/ServiceDetail.jsx": {
-    "mtime": 1794489966.4794116,
-    "seen": 1794723023.071229,
-    "ast_hash": "8ced7dbaecd1df73ac3dd2e17042708d",
+    "mtime": 1794739848.6759064,
+    "seen": 1794740047.455443,
+    "ast_hash": "920388ceaaafc08f7122542689b7fc90",
     "semantic_hash": ""
   },
   "resources/js/Pages/Services.jsx": {
@@ -2718,15 +2718,15 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/ToursPage.jsx": {
-    "mtime": 1794685995.0910957,
-    "seen": 1794723023.071231,
-    "ast_hash": "b4e879654b56894cbf65a7caa67ac4e3",
+    "mtime": 1794739979.4742835,
+    "seen": 1794740047.455445,
+    "ast_hash": "fc170b83a93e570c9cc173e124298a3a",
     "semantic_hash": ""
   },
   "resources/js/Pages/Welcome.jsx": {
-    "mtime": 1794718137.4421027,
-    "seen": 1794723023.071232,
-    "ast_hash": "416112cbb999c0bf8ca043bd55c6044f",
+    "mtime": 1794739801.9914172,
+    "seen": 1794740047.455446,
+    "ast_hash": "9116331cd206275f90425a5cb3d40589",
     "semantic_hash": ""
   },
   "resources/js/api/client.js": {
