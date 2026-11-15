@@ -139,8 +139,8 @@ export default function BikesCreate({
             <Head title="Add New Bike - GkWhizWheel Admin" />
 
             {/* Header */}
-            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ mb: 2.5, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
                     <Button
                         component={Link}
                         href="/admin/bikes"
@@ -149,7 +149,7 @@ export default function BikesCreate({
                     >
                         Fleet Inventory
                     </Button>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                         Onboard New Bike
                     </Typography>
                 </Box>
@@ -653,13 +653,13 @@ export default function BikesCreate({
                         </Paper>
 
                         {/* Submit Actions */}
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
+                        <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
                             <Button
                                 component={Link}
                                 href="/admin/bikes"
                                 variant="outlined"
                                 disabled={processing}
-                                sx={{ textTransform: 'none', px: 3, borderRadius: 2 }}
+                                sx={{ textTransform: 'none', px: 3, borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
                             >
                                 Cancel
                             </Button>
@@ -669,7 +669,7 @@ export default function BikesCreate({
                                 color="secondary"
                                 disabled={processing}
                                 startIcon={processing ? <CircularProgress size={18} color="inherit" /> : null}
-                                sx={{ textTransform: 'none', fontWeight: 700, px: 3, borderRadius: 2 }}
+                                sx={{ textTransform: 'none', fontWeight: 700, px: 3, borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
                             >
                                 {processing ? 'Creating Bike...' : 'Register Bike in Fleet'}
                             </Button>

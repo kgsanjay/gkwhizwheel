@@ -159,17 +159,17 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
         <AdminLayout title={`Edit ${item.name}`}>
             <Head title={`Edit ${item.name} - Admin`} />
 
-            <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 900, mx: 'auto' }}>
-                <Box sx={{ mb: 3 }}>
+            <Box sx={{ p: { xs: 0, sm: 1, md: 2 }, maxWidth: 900, mx: 'auto' }}>
+                <Box sx={{ mb: 2.5, px: { xs: 0.5, sm: 0 } }}>
                     <Button
                         component={Link}
                         href={`/admin/services/${serviceConfig.slug}/items`}
                         startIcon={<ArrowBackIcon />}
-                        sx={{ textTransform: 'none', color: 'text.secondary', mb: 1 }}
+                        sx={{ textTransform: 'none', color: 'text.secondary', mb: 1, px: 0 }}
                     >
                         Back to {serviceConfig.title} Inventory
                     </Button>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                    <Typography variant="h5" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                         Edit {serviceConfig.item_label}: {item.name}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -177,8 +177,8 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                     </Typography>
                 </Box>
 
-                <Card sx={{ borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-                    <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
+                <Card sx={{ borderRadius: { xs: 2, sm: 3 }, boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+                    <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
                         <Box component="form" onSubmit={handleSubmit}>
                             <Grid container spacing={3}>
                                 {/* Item Name */}
@@ -572,11 +572,11 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
 
                                 <Grid item xs={12}>
                                     <Divider sx={{ my: 1 }} />
-                                    <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+                                    <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1.5} justifyContent="flex-end" sx={{ mt: 2 }}>
                                         <Button
                                             component={Link}
                                             href={`/admin/services/${serviceConfig.slug}/items`}
-                                            sx={{ textTransform: 'none' }}
+                                            sx={{ textTransform: 'none', width: { xs: '100%', sm: 'auto' } }}
                                         >
                                             Cancel
                                         </Button>
@@ -586,7 +586,7 @@ export default function ServiceItemEdit({ serviceConfig = {}, item = {} }) {
                                             color="primary"
                                             disabled={processing}
                                             startIcon={<SaveIcon />}
-                                            sx={{ fontWeight: 800, textTransform: 'none', px: 4 }}
+                                            sx={{ fontWeight: 800, textTransform: 'none', px: { xs: 2, sm: 4 }, width: { xs: '100%', sm: 'auto' } }}
                                         >
                                             {processing ? 'Updating...' : 'Save Changes'}
                                         </Button>

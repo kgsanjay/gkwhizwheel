@@ -694,13 +694,13 @@ export default function BikesEdit({
                         </Paper>
 
                         {/* Submit Actions */}
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
+                        <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
                             <Button
                                 component={Link}
                                 href="/admin/bikes"
                                 variant="outlined"
                                 disabled={processing}
-                                sx={{ textTransform: 'none', px: 3, borderRadius: 2 }}
+                                sx={{ textTransform: 'none', px: 3, borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
                             >
                                 Cancel
                             </Button>
@@ -710,7 +710,7 @@ export default function BikesEdit({
                                 color="secondary"
                                 disabled={processing}
                                 startIcon={processing ? <CircularProgress size={18} color="inherit" /> : null}
-                                sx={{ textTransform: 'none', fontWeight: 700, px: 3, borderRadius: 2 }}
+                                sx={{ textTransform: 'none', fontWeight: 700, px: 3, borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}
                             >
                                 {processing ? 'Saving Changes...' : 'Update Bike Details'}
                             </Button>

@@ -1138,15 +1138,15 @@ export default function AdminLayout({ children, title, currentStore }) {
                     zIndex: (theme) => theme.zIndex.drawer + 1,
                 }}
             >
-                <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1.5, sm: 2.5 }, minHeight: '58px !important', height: 58 }}>
+                <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1, sm: 2, md: 2.5 }, minHeight: { xs: '54px !important', sm: '58px !important' }, height: { xs: 54, sm: 58 } }}>
                     {/* Left: Mobile Toggle & Dynamic Breadcrumbs */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1.5 }, minWidth: 0 }}>
                         <IconButton
                             color="inherit"
                             aria-label="open drawer"
                             edge="start"
                             onClick={handleDrawerToggle}
-                            sx={{ display: { md: 'none' } }}
+                            sx={{ display: { md: 'none' }, p: { xs: 0.8, sm: 1 } }}
                         >
                             <MenuIcon />
                         </IconButton>
@@ -1190,15 +1190,19 @@ export default function AdminLayout({ children, title, currentStore }) {
                                 })}
                             </Breadcrumbs>
 
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
                                 <Typography
                                     variant="subtitle1"
                                     noWrap
                                     sx={{
                                         fontWeight: 800,
-                                        fontSize: { xs: '0.95rem', sm: '1.05rem' },
-                                        lineHeight: 1.1,
+                                        fontSize: { xs: '0.85rem', sm: '1.05rem' },
+                                        lineHeight: 1.2,
                                         color: 'text.primary',
+                                        maxWidth: { xs: 140, sm: 220, md: 350, lg: 'none' },
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
                                     }}
                                 >
                                     {title || 'Operations Console'}
@@ -1208,6 +1212,7 @@ export default function AdminLayout({ children, title, currentStore }) {
                                     label={roleBadge.label}
                                     color={roleBadge.color}
                                     sx={{
+                                        display: { xs: 'none', sm: 'inline-flex' },
                                         height: 20,
                                         fontSize: '0.66rem',
                                         fontWeight: 800,
@@ -1333,7 +1338,7 @@ export default function AdminLayout({ children, title, currentStore }) {
                     </Box>
 
                     {/* Right Controls & Quick Actions */}
-                    <Stack direction="row" spacing={{ xs: 0.6, sm: 1.2 }} alignItems="center">
+                    <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center">
                         {/* Live Operational Status Indicator */}
                         <Box
                             sx={{
@@ -1353,7 +1358,7 @@ export default function AdminLayout({ children, title, currentStore }) {
                             </Typography>
                         </Box>
 
-                        {/* Quick Ground Scanner Button */}
+                        {/* Quick Ground Scanner Button (Hidden on Mobile because Scan Pass is in bottom navigation) */}
                         <Button
                             component={Link}
                             href="/admin/check-in"
@@ -1361,6 +1366,7 @@ export default function AdminLayout({ children, title, currentStore }) {
                             size="small"
                             startIcon={<QrCodeScannerIcon sx={{ fontSize: 18 }} />}
                             sx={{
+                                display: { xs: 'none', md: 'inline-flex' },
                                 borderRadius: 1.8,
                                 fontWeight: 800,
                                 textTransform: 'none',
@@ -1377,7 +1383,7 @@ export default function AdminLayout({ children, title, currentStore }) {
                             Scan Pass
                         </Button>
 
-                        {/* Quick 1-Click New Booking Button */}
+                        {/* Quick 1-Click New Booking Button - Desktop */}
                         <Button
                             variant="contained"
                             color="secondary"
@@ -1386,6 +1392,7 @@ export default function AdminLayout({ children, title, currentStore }) {
                             endIcon={<ArrowDropDownIcon />}
                             onClick={(e) => setNewBookingAnchor(e.currentTarget)}
                             sx={{
+                                display: { xs: 'none', md: 'inline-flex' },
                                 borderRadius: 1.8,
                                 fontWeight: 800,
                                 textTransform: 'none',
@@ -1400,6 +1407,24 @@ export default function AdminLayout({ children, title, currentStore }) {
                         >
                             New Booking
                         </Button>
+
+                        {/* Quick 1-Click New Booking Button - Mobile Icon */}
+                        <Tooltip title="New Offline Reservation">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => setNewBookingAnchor(e.currentTarget)}
+                                sx={{
+                                    display: { xs: 'inline-flex', md: 'none' },
+                                    bgcolor: isDark ? '#F59E0B' : '#0F172A',
+                                    color: isDark ? '#0F172A' : '#FFFFFF',
+                                    p: 0.75,
+                                    borderRadius: 1.8,
+                                    '&:hover': { bgcolor: isDark ? '#D97706' : '#1E293B' },
+                                }}
+                            >
+                                <AddIcon sx={{ fontSize: 18 }} />
+                            </IconButton>
+                        </Tooltip>
 
                         <Menu
                             anchorEl={newBookingAnchor}
@@ -1469,6 +1494,7 @@ export default function AdminLayout({ children, title, currentStore }) {
                                 href="/"
                                 size="small"
                                 sx={{
+                                    display: { xs: 'none', sm: 'inline-flex' },
                                     color: 'text.secondary',
                                     bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'action.hover',
                                     '&:hover': {
@@ -1637,12 +1663,12 @@ export default function AdminLayout({ children, title, currentStore }) {
                 sx={{
                     flexGrow: 1,
                     p: { xs: 1.5, sm: 2.5, md: 3 },
-                    pb: { xs: 10, sm: 11, md: 4 },
+                    pb: { xs: 12, sm: 12, md: 4 },
                     width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
                     maxWidth: '100%',
                     overflowX: 'hidden',
-                    mt: '58px',
-                    minHeight: 'calc(100vh - 58px)',
+                    mt: { xs: '54px', sm: '58px' },
+                    minHeight: { xs: 'calc(100vh - 54px)', sm: 'calc(100vh - 58px)' },
                 }}
             >
                 {/* Global Flash Alerts */}

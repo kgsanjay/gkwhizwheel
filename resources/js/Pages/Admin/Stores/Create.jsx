@@ -253,8 +253,8 @@ export default function StoresCreate({
 
                     {/* Submit Bar */}
                     <Grid size={{ xs: 12 }}>
-                        <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                            <Button component={Link} href="/admin/stores" sx={{ textTransform: 'none' }}>
+                        <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: 'flex-end', gap: 1.5 }}>
+                            <Button component={Link} href="/admin/stores" sx={{ textTransform: 'none', width: { xs: '100%', sm: 'auto' } }}>
                                 Cancel
                             </Button>
                             <Button
@@ -262,7 +262,7 @@ export default function StoresCreate({
                                 variant="contained"
                                 disabled={processing}
                                 startIcon={processing ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                                sx={{ textTransform: 'none', borderRadius: 2, px: 3.5, fontWeight: 700 }}
+                                sx={{ textTransform: 'none', borderRadius: 2, px: 3.5, fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
                             >
                                 Save Store Hub
                             </Button>
