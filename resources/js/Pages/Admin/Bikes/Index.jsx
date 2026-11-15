@@ -287,36 +287,54 @@ export default function BikesIndex({
             { label: 'PUC', doc: docs?.emission },
         ];
 
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const thirtyDaysLater = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+
         return (
-            <Stack direction="row" spacing={0.5}>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
                 {items.map((item) => {
                     const isPresent = Boolean(item.doc);
+                    let color = 'default';
+                    let variant = 'outlined';
+                    let statusText = 'Missing';
+
+                    if (isPresent) {
+                        variant = 'filled';
+                        const exp = item.doc.expiry_date;
+                        if (exp && exp < todayStr) {
+                            color = 'error';
+                            statusText = `EXPIRED (${exp})`;
+                        } else if (exp && exp <= thirtyDaysLater) {
+                            color = 'warning';
+                            statusText = `Expiring Soon (${exp})`;
+                        } else {
+                            color = 'success';
+                            statusText = `Verified (Exp: ${exp || 'Active'})`;
+                        }
+                    }
+
                     return (
                         <Tooltip
                             key={item.label}
-                            title={
-                                isPresent
-                                    ? `${item.label}: Expiry ${item.doc.expiry_date || 'N/A'}`
-                                    : `${item.label} Missing`
-                            }
+                            title={`${item.label}: ${statusText}`}
                         >
                             <Chip
                                 label={item.label}
                                 size="small"
-                                color={isPresent ? 'success' : 'default'}
-                                variant={isPresent ? 'filled' : 'outlined'}
+                                color={color}
+                                variant={variant}
                                 sx={{
                                     height: 20,
                                     fontSize: '0.65rem',
-                                    fontWeight: 700,
+                                    fontWeight: 800,
                                     px: 0.2,
-                                    opacity: isPresent ? 1 : 0.45,
+                                    opacity: isPresent ? 1 : 0.5,
                                 }}
                             />
                         </Tooltip>
                     );
                 })}
-            </Stack>
+            </Box>
         );
     };
 
@@ -336,7 +354,7 @@ export default function BikesIndex({
                 </Box>
 
                 {!isManager && (
-                    <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" gap={1}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
                         <Button
                             variant={selectedBikeIds.length > 0 ? 'contained' : 'outlined'}
                             color="warning"
@@ -376,7 +394,7 @@ export default function BikesIndex({
                         >
                             Add New Bike
                         </Button>
-                    </Stack>
+                    </Box>
                 )}
             </Box>
 
@@ -912,7 +930,7 @@ export default function BikesIndex({
                                             {renderDocumentStatus(bike.documents)}
                                         </Box>
 
-                                        <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap" gap={0.5}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
                                             {bike.status !== 'rented' && (
                                                 <Button
                                                     variant="outlined"
@@ -967,13 +985,13 @@ export default function BikesIndex({
                                                     </IconButton>
                                                 </>
                                             )}
-                                        </Stack>
+                                        </Box>
                                     </CardContent>
                                 </Card>
                             </Grid>
                         ))
                     ) : (
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                                 <Typography variant="body1" sx={{ color: 'text.secondary' }}>
                                     No bikes found matching your criteria.
@@ -990,6 +1008,7 @@ export default function BikesIndex({
                 onClose={() => !isImporting && setImportModalOpen(false)}
                 maxWidth="sm"
                 fullWidth
+                PaperProps={{ sx: { overflowX: 'hidden', borderRadius: 3 } }}
             >
                 <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>
@@ -1005,7 +1024,7 @@ export default function BikesIndex({
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers sx={{ p: 3 }}>
+                <DialogContent dividers sx={{ p: 3, overflowX: 'hidden' }}>
                     {importError && (
                         <Alert severity="error" sx={{ mb: 2 }}>
                             {importError}
@@ -1094,6 +1113,7 @@ export default function BikesIndex({
                 onClose={() => !isBulkSubmitting && setBulkPricingOpen(false)}
                 maxWidth="sm"
                 fullWidth
+                PaperProps={{ sx: { overflowX: 'hidden', borderRadius: 3 } }}
             >
                 <form onSubmit={handleBulkPricingSubmit}>
                     <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1115,7 +1135,7 @@ export default function BikesIndex({
                         </IconButton>
                     </DialogTitle>
 
-                    <DialogContent dividers sx={{ p: 3 }}>
+                    <DialogContent dividers sx={{ p: 3, overflowX: 'hidden' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                             <Box>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
@@ -1163,7 +1183,7 @@ export default function BikesIndex({
                                 </ToggleButtonGroup>
                             </Box>
 
-                            <Grid container spacing={2}>
+                            <Grid container spacing={2} disableEqualOverflow>
                                 {(bulkApplyTo === 'both' || bulkApplyTo === 'weekday_only') && (
                                     <Grid size={{ xs: 12, sm: bulkApplyTo === 'both' ? 6 : 12 }}>
                                         <TextField
@@ -1242,9 +1262,10 @@ export default function BikesIndex({
                 onClose={() => setDeleteModalOpen(false)}
                 maxWidth="xs"
                 fullWidth
+                PaperProps={{ sx: { overflowX: 'hidden', borderRadius: 3 } }}
             >
                 <DialogTitle sx={{ fontWeight: 800 }}>Confirm Decommission</DialogTitle>
-                <DialogContent>
+                <DialogContent sx={{ overflowX: 'hidden' }}>
                     <Typography variant="body2">
                         Are you sure you want to remove <strong>{bikeToDelete?.brand} {bikeToDelete?.model_name}</strong> ({bikeToDelete?.registration_number}) from the fleet inventory?
                     </Typography>
@@ -1264,6 +1285,7 @@ export default function BikesIndex({
                 onClose={() => !isUploadingDoc && setUploadDocModalOpen(false)}
                 maxWidth="xs"
                 fullWidth
+                PaperProps={{ sx: { overflowX: 'hidden', borderRadius: 3 } }}
             >
                 <form onSubmit={handleUploadDocSubmit}>
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1274,7 +1296,7 @@ export default function BikesIndex({
                             <CloseIcon fontSize="small" />
                         </IconButton>
                     </DialogTitle>
-                    <DialogContent dividers sx={{ p: 2.5 }}>
+                    <DialogContent dividers sx={{ p: 2.5, overflowX: 'hidden' }}>
                         <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 2 }}>
                             Vehicle: <strong>{selectedBikeForDoc?.registration_number}</strong> ({selectedBikeForDoc?.brand} {selectedBikeForDoc?.model_name})
                         </Typography>

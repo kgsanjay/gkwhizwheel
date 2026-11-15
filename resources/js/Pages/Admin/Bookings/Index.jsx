@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '../../../Layouts/AdminLayout';
+import { useColorMode } from '../../../theme/ColorModeContext';
 import {
     Box,
     Typography,
@@ -28,9 +29,12 @@ import {
     Stack,
     Tooltip,
     Divider,
+    ToggleButton,
+    ToggleButtonGroup,
 } from '@mui/material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
@@ -42,12 +46,14 @@ import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PersonIcon from '@mui/icons-material/Person';
 import PhoneIcon from '@mui/icons-material/Phone';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import CancelIcon from '@mui/icons-material/Cancel';
 import LanguageIcon from '@mui/icons-material/Language';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import AddIcon from '@mui/icons-material/Add';
 import HandoverWizardModal from '../../../Components/BookingModals/HandoverWizardModal';
 import ReturnInspectionWizardModal from '../../../Components/BookingModals/ReturnInspectionWizardModal';
 
@@ -60,6 +66,9 @@ export default function BookingsIndex({
     channels = [],
     filters = {},
 }) {
+    const { mode } = useColorMode();
+    const isDark = mode === 'dark';
+
     const [viewMode, setViewMode] = useState(filters.view_mode || 'list');
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [selectedStore, setSelectedStore] = useState(filters.store_id || '');
@@ -137,6 +146,14 @@ export default function BookingsIndex({
         handleFilterChange({ month: newM });
     };
 
+    const getWhatsAppUrl = (phone, name, bookingRef) => {
+        if (!phone) return null;
+        const cleanPhone = phone.replace(/\D/g, '');
+        const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+        const text = encodeURIComponent(`Hello ${name || 'Customer'}, this is GK WhizWheel regarding your rental booking #${bookingRef || ''}.`);
+        return `https://wa.me/${targetPhone}?text=${text}`;
+    };
+
     // Build Calendar Grid (42 cells: 6 weeks x 7 days)
     const calendarDays = useMemo(() => {
         const [year, month] = currentMonth.split('-').map(Number);
@@ -145,7 +162,6 @@ export default function BookingsIndex({
         const daysInMonth = new Date(year, month, 0).getDate();
 
         const cells = [];
-        // Previous month padding
         const prevMonthDays = new Date(year, month - 1, 0).getDate();
         for (let i = startDayOfWeek - 1; i >= 0; i--) {
             const dayNum = prevMonthDays - i;
@@ -155,13 +171,11 @@ export default function BookingsIndex({
             cells.push({ date: dateStr, day: dayNum, isCurrentMonth: false });
         }
 
-        // Current month days
         for (let d = 1; d <= daysInMonth; d++) {
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             cells.push({ date: dateStr, day: d, isCurrentMonth: true });
         }
 
-        // Next month padding to reach 35 or 42
         const totalNeeded = cells.length > 35 ? 42 : 35;
         let nextDay = 1;
         while (cells.length < totalNeeded) {
@@ -175,7 +189,6 @@ export default function BookingsIndex({
         return cells;
     }, [currentMonth]);
 
-    // Map events into days
     const eventsByDate = useMemo(() => {
         const map = {};
         calendar_events.forEach((evt) => {
@@ -218,78 +231,175 @@ export default function BookingsIndex({
     }, [currentMonth]);
 
     return (
-        <AdminLayout title="Unified Bookings & Calendar">
-            <Head title="Bookings & Calendar - Admin" />
+        <AdminLayout title="Two-Wheeler Bookings & Calendar">
+            <Head title="Two-Wheeler Bookings - Admin" />
+
+            {/* Header & Quick Action */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', md: 'center' },
+                    flexDirection: { xs: 'column', md: 'row' },
+                    gap: 2,
+                    mb: 3.5,
+                }}
+            >
+                <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                        <TwoWheelerIcon sx={{ color: 'primary.main', fontSize: 32 }} />
+                        <Typography
+                            variant="h4"
+                            component="h1"
+                            sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}
+                        >
+                            Two-Wheeler Rental Bookings
+                        </Typography>
+                        <Chip
+                            label={`${stats.total ?? 0} Total`}
+                            size="small"
+                            sx={{ fontWeight: 800, height: 24, fontSize: '0.72rem' }}
+                        />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                        Manage rental reservations, walk-in check-ins, customer handovers, return inspections, and deposit refunds.
+                    </Typography>
+                </Box>
+                <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                    <Button
+                        component={Link}
+                        href="/admin/check-in"
+                        variant="outlined"
+                        startIcon={<CheckCircleIcon />}
+                        sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            borderColor: 'divider',
+                            color: 'text.primary',
+                        }}
+                    >
+                        Ground Scanner
+                    </Button>
+                    <Button
+                        component={Link}
+                        href="/admin/services/two_wheelers/bookings/create"
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            px: 2.5,
+                            boxShadow: '0 4px 14px rgba(25, 118, 210, 0.3)',
+                        }}
+                    >
+                        + New Rental
+                    </Button>
+                </Stack>
+            </Box>
 
             {/* Top Metrics Row */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid container spacing={2} sx={{ mb: 3.5 }}>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+                    <Card
+                        sx={{
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 3,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        }}
+                    >
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
                                     <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TOTAL BOOKINGS
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={800} color="text.primary">
+                                    <Typography variant="h4" fontWeight={800} color="text.primary" sx={{ mt: 0.5 }}>
                                         {stats.total ?? 0}
                                     </Typography>
                                 </Box>
-                                <PendingActionsIcon sx={{ color: 'primary.main', fontSize: 36 }} />
+                                <PendingActionsIcon sx={{ color: 'primary.main', fontSize: 36, opacity: 0.8 }} />
                             </Box>
                         </CardContent>
                     </Card>
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+                    <Card
+                        sx={{
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 3,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        }}
+                    >
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
                                     <Typography variant="caption" color="warning.main" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         ACTIVE ON-ROAD
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={800} color="warning.main">
+                                    <Typography variant="h4" fontWeight={800} color="warning.main" sx={{ mt: 0.5 }}>
                                         {stats.active_rentals ?? 0}
                                     </Typography>
                                 </Box>
-                                <TwoWheelerIcon sx={{ color: 'warning.main', fontSize: 36 }} />
+                                <TwoWheelerIcon sx={{ color: 'warning.main', fontSize: 36, opacity: 0.8 }} />
                             </Box>
                         </CardContent>
                     </Card>
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+                    <Card
+                        sx={{
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 3,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        }}
+                    >
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
                                     <Typography variant="caption" color="info.main" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TODAY'S PICKUPS
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={800} color="info.main">
+                                    <Typography variant="h4" fontWeight={800} color="info.main" sx={{ mt: 0.5 }}>
                                         {stats.today_handovers ?? 0}
                                     </Typography>
                                 </Box>
-                                <CheckCircleIcon sx={{ color: 'info.main', fontSize: 36 }} />
+                                <CheckCircleIcon sx={{ color: 'info.main', fontSize: 36, opacity: 0.8 }} />
                             </Box>
                         </CardContent>
                     </Card>
                 </Grid>
 
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+                    <Card
+                        sx={{
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 3,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        }}
+                    >
                         <CardContent sx={{ py: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Box>
                                     <Typography variant="caption" color="success.main" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         TODAY'S RETURNS
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={800} color="success.main">
+                                    <Typography variant="h4" fontWeight={800} color="success.main" sx={{ mt: 0.5 }}>
                                         {stats.today_returns ?? 0}
                                     </Typography>
                                 </Box>
-                                <AssignmentReturnIcon sx={{ color: 'success.main', fontSize: 36 }} />
+                                <AssignmentReturnIcon sx={{ color: 'success.main', fontSize: 36, opacity: 0.8 }} />
                             </Box>
                         </CardContent>
                     </Card>
@@ -297,26 +407,40 @@ export default function BookingsIndex({
             </Grid>
 
             {/* Filter & View Switcher Bar */}
-            <Card sx={{ mb: 3, p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+            <Card
+                sx={{
+                    mb: 3,
+                    p: 2.2,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                }}
+            >
                 <Grid container spacing={2} alignItems="center">
-                    {/* View Mode Toggle */}
-                    <Grid size={{ xs: 12, md: 3 }}>
-                        <ButtonGroup variant="outlined" size="small" fullWidth>
-                            <Button
-                                variant={viewMode === 'list' ? 'contained' : 'outlined'}
-                                startIcon={<ViewListIcon />}
-                                onClick={() => handleViewModeChange('list')}
-                            >
-                                List View
-                            </Button>
-                            <Button
-                                variant={viewMode === 'calendar' ? 'contained' : 'outlined'}
-                                startIcon={<CalendarMonthIcon />}
-                                onClick={() => handleViewModeChange('calendar')}
-                            >
+                    {/* View Mode Toggle: List, Cards, Calendar */}
+                    <Grid size={{ xs: 12, md: 3.5 }}>
+                        <ToggleButtonGroup
+                            value={viewMode}
+                            exclusive
+                            size="small"
+                            fullWidth
+                            onChange={(_, val) => val && handleViewModeChange(val)}
+                        >
+                            <ToggleButton value="list" aria-label="list view">
+                                <ViewListIcon fontSize="small" sx={{ mr: 0.8 }} />
+                                List
+                            </ToggleButton>
+                            <ToggleButton value="cards" aria-label="card view">
+                                <ViewModuleIcon fontSize="small" sx={{ mr: 0.8 }} />
+                                Cards
+                            </ToggleButton>
+                            <ToggleButton value="calendar" aria-label="calendar view">
+                                <CalendarMonthIcon fontSize="small" sx={{ mr: 0.8 }} />
                                 Calendar
-                            </Button>
-                        </ButtonGroup>
+                            </ToggleButton>
+                        </ToggleButtonGroup>
                     </Grid>
 
                     {/* Search Field */}
@@ -332,9 +456,6 @@ export default function BookingsIndex({
                                 input: {
                                     startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
                                 },
-                            }}
-                            InputProps={{
-                                startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
                             }}
                         />
                     </Grid>
@@ -362,7 +483,7 @@ export default function BookingsIndex({
                     </Grid>
 
                     {/* Channel Filter */}
-                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+                    <Grid size={{ xs: 6, sm: 3, md: 1.5 }}>
                         <TextField
                             select
                             size="small"
@@ -374,7 +495,7 @@ export default function BookingsIndex({
                                 handleFilterChange({ channel: e.target.value });
                             }}
                         >
-                            <MenuItem value="">All Channels</MenuItem>
+                            <MenuItem value="">All</MenuItem>
                             {channels.map((c) => (
                                 <MenuItem key={c.value} value={c.value}>
                                     {c.label}
@@ -397,54 +518,55 @@ export default function BookingsIndex({
                             }}
                         >
                             <MenuItem value="">All Statuses</MenuItem>
-                            {statuses.map((s) => (
-                                <MenuItem key={s.value} value={s.value}>
-                                    {s.label}
+                            {statuses.map((st) => (
+                                <MenuItem key={st.value} value={st.value}>
+                                    {st.label}
                                 </MenuItem>
                             ))}
                         </TextField>
                     </Grid>
                 </Grid>
 
-                {/* Additional Date Row & Action Buttons */}
-                <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider', display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Sub-row for Date Filters & Reset */}
+                <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+                    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1 }}>
                         <TextField
                             type="date"
                             size="small"
-                            label="From Date"
-                            slotProps={{ inputLabel: { shrink: true } }}
+                            label="From"
                             InputLabelProps={{ shrink: true }}
                             value={dateFrom}
                             onChange={(e) => {
                                 setDateFrom(e.target.value);
                                 handleFilterChange({ date_from: e.target.value });
                             }}
-                            sx={{ width: 155 }}
+                            sx={{ width: 145 }}
                         />
                         <TextField
                             type="date"
                             size="small"
-                            label="To Date"
-                            slotProps={{ inputLabel: { shrink: true } }}
+                            label="To"
                             InputLabelProps={{ shrink: true }}
                             value={dateTo}
                             onChange={(e) => {
                                 setDateTo(e.target.value);
                                 handleFilterChange({ date_to: e.target.value });
                             }}
-                            sx={{ width: 155 }}
+                            sx={{ width: 145 }}
                         />
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<FilterListOffIcon />}
-                            onClick={handleResetFilters}
-                            color="inherit"
-                        >
-                            Reset
-                        </Button>
-                    </Box>
+                        {(searchTerm || selectedStore || selectedChannel || selectedStatus || dateFrom || dateTo) && (
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                color="inherit"
+                                onClick={handleResetFilters}
+                                startIcon={<FilterListOffIcon />}
+                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                            >
+                                Reset Filters
+                            </Button>
+                        )}
+                    </Stack>
 
                     {viewMode === 'calendar' && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -466,12 +588,243 @@ export default function BookingsIndex({
             </Card>
 
             {/* ========================================================================= */}
+            {/* VIEW MODE: CARDS */}
+            {/* ========================================================================= */}
+            {viewMode === 'cards' && (
+                <>
+                    {bookings.data.length === 0 ? (
+                        <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
+                            <TwoWheelerIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                            <Typography variant="h6" fontWeight={700}>
+                                No bookings found
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                No rentals match the current search filters.
+                            </Typography>
+                        </Paper>
+                    ) : (
+                        <Grid container spacing={2.5}>
+                            {bookings.data.map((b) => {
+                                const chipProps = getStatusChipProps(b.status);
+                                const waUrl = getWhatsAppUrl(b.user?.phone, b.user?.name, b.booking_reference);
+                                const balance = Math.max(0, (b.total_amount || 0) - (b.paid_amount || 0));
+
+                                return (
+                                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={b.id}>
+                                        <Card
+                                            sx={{
+                                                borderRadius: 3,
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                                bgcolor: 'background.paper',
+                                                height: '100%',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                                            }}
+                                        >
+                                            <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                                {/* Header Bar */}
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                                                    <Box>
+                                                        <Typography variant="h6" fontWeight={800} color="primary.main">
+                                                            #{b.booking_reference}
+                                                        </Typography>
+                                                        <Chip
+                                                            size="small"
+                                                            variant="outlined"
+                                                            icon={b.channel === 'online' ? <LanguageIcon sx={{ fontSize: 13 }} /> : <StorefrontIcon sx={{ fontSize: 13 }} />}
+                                                            label={b.channel === 'online' ? 'Online' : 'Walk-in'}
+                                                            sx={{ mt: 0.5, height: 20, fontSize: '0.68rem', fontWeight: 600 }}
+                                                        />
+                                                    </Box>
+                                                    <Chip size="small" {...chipProps} sx={{ fontWeight: 700 }} />
+                                                </Box>
+
+                                                {/* Customer Block */}
+                                                <Paper
+                                                    variant="outlined"
+                                                    sx={{
+                                                        p: 1.5,
+                                                        borderRadius: 2,
+                                                        bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                                                        mb: 2,
+                                                    }}
+                                                >
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <Box>
+                                                            <Typography variant="subtitle2" fontWeight={800}>
+                                                                {b.user?.name || 'Walk-in Guest'}
+                                                            </Typography>
+                                                            <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary', display: 'block' }}>
+                                                                {b.user?.phone || 'No phone'}
+                                                            </Typography>
+                                                        </Box>
+                                                        {b.user?.phone && (
+                                                            <Stack direction="row" spacing={0.6}>
+                                                                <IconButton
+                                                                    component="a"
+                                                                    href={`tel:${b.user.phone}`}
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    sx={{ p: 0.5 }}
+                                                                >
+                                                                    <PhoneIcon sx={{ fontSize: 16 }} />
+                                                                </IconButton>
+                                                                {waUrl && (
+                                                                    <IconButton
+                                                                        component="a"
+                                                                        href={waUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        size="small"
+                                                                        sx={{ p: 0.5, color: '#25D366' }}
+                                                                    >
+                                                                        <WhatsAppIcon sx={{ fontSize: 16 }} />
+                                                                    </IconButton>
+                                                                )}
+                                                            </Stack>
+                                                        )}
+                                                    </Box>
+                                                </Paper>
+
+                                                {/* Bike & Plate */}
+                                                <Box sx={{ mb: 1.5 }}>
+                                                    <Typography variant="body2" fontWeight={700}>
+                                                        {b.bike?.model || 'Two-Wheeler'}
+                                                    </Typography>
+                                                    {b.bike?.registration_number && (
+                                                        <Chip
+                                                            label={b.bike.registration_number}
+                                                            size="small"
+                                                            sx={{
+                                                                mt: 0.5,
+                                                                fontFamily: 'monospace',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.72rem',
+                                                                bgcolor: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
+                                                                color: isDark ? '#FCD34D' : '#92400E',
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Box>
+
+                                                {/* Dates & Route */}
+                                                <Box sx={{ mb: 2 }}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                        📅 {b.start_date} to {b.end_date}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.3 }}>
+                                                        📍 {b.pickup_store?.name}
+                                                        {b.return_store?.id !== b.pickup_store?.id && ` ➔ ${b.return_store?.name}`}
+                                                    </Typography>
+                                                </Box>
+
+                                                {/* Financial Breakdown */}
+                                                <Box sx={{ mt: 'auto', pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                                                        <Box>
+                                                            <Typography variant="caption" color="text.secondary">Total</Typography>
+                                                            <Typography variant="subtitle1" fontWeight={800}>
+                                                                ₹{b.total_amount?.toLocaleString('en-IN')}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ textAlign: 'right' }}>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {balance > 0 ? 'Due on Handover' : 'Payment Status'}
+                                                            </Typography>
+                                                            <Typography
+                                                                variant="subtitle2"
+                                                                fontWeight={800}
+                                                                color={balance > 0 ? 'warning.main' : 'success.main'}
+                                                            >
+                                                                {balance > 0 ? `₹${balance.toLocaleString('en-IN')}` : 'Paid'}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+
+                                                    {/* Operational Actions */}
+                                                    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                                        {b.status === 'confirmed' && (
+                                                            <Button
+                                                                variant="contained"
+                                                                size="small"
+                                                                color="primary"
+                                                                fullWidth
+                                                                startIcon={<TwoWheelerIcon sx={{ fontSize: 15 }} />}
+                                                                onClick={() => setHandoverBooking(b)}
+                                                                sx={{ textTransform: 'none', fontWeight: 700 }}
+                                                            >
+                                                                Handover
+                                                            </Button>
+                                                        )}
+                                                        {b.status === 'handed_over' && (
+                                                            <Button
+                                                                variant="contained"
+                                                                size="small"
+                                                                color="warning"
+                                                                fullWidth
+                                                                startIcon={<AssignmentReturnIcon sx={{ fontSize: 15 }} />}
+                                                                onClick={() => setReturnBooking(b)}
+                                                                sx={{ textTransform: 'none', fontWeight: 700 }}
+                                                            >
+                                                                Return
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            component={Link}
+                                                            href={`/admin/bookings/${b.id}/edit`}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ textTransform: 'none', minWidth: 40 }}
+                                                        >
+                                                            <EditIcon fontSize="small" />
+                                                        </Button>
+                                                        {b.paid_amount > 0 && (
+                                                            <Button
+                                                                component={Link}
+                                                                href={`/admin/bookings/${b.id}/refund`}
+                                                                size="small"
+                                                                variant="outlined"
+                                                                color="secondary"
+                                                                sx={{ textTransform: 'none', minWidth: 40 }}
+                                                            >
+                                                                <CurrencyRupeeIcon fontSize="small" />
+                                                            </Button>
+                                                        )}
+                                                    </Stack>
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                );
+                            })}
+                        </Grid>
+                    )}
+
+                    {/* Pagination */}
+                    {bookings.last_page > 1 && (
+                        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                            <Pagination
+                                count={bookings.last_page}
+                                page={bookings.current_page}
+                                onChange={(_, page) => {
+                                    router.get('/admin/bookings', { ...filters, page, view_mode: 'cards' }, { preserveState: true });
+                                }}
+                                color="primary"
+                            />
+                        </Box>
+                    )}
+                </>
+            )}
+
+            {/* ========================================================================= */}
             {/* VIEW MODE: CALENDAR */}
             {/* ========================================================================= */}
-            {viewMode === 'calendar' ? (
+            {viewMode === 'calendar' && (
                 <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                     {/* Days of Week Header */}
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: 'background.default', borderBottom: '1px solid', borderColor: 'divider', textAlign: 'center', py: 1 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'background.default', borderBottom: '1px solid', borderColor: 'divider', textAlign: 'center', py: 1 }}>
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
                             <Typography key={d} variant="subtitle2" fontWeight={700} color="text.secondary">
                                 {d}
@@ -495,7 +848,7 @@ export default function BookingsIndex({
                                         display: 'flex',
                                         flexDirection: 'column',
                                         transition: 'background-color 0.15s',
-                                        '&:hover': { bgcolor: cd.isCurrentMonth ? '#F1F5F9' : '#F8FAFC' },
+                                        '&:hover': { bgcolor: cd.isCurrentMonth ? (isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9') : (isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC') },
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
@@ -560,23 +913,25 @@ export default function BookingsIndex({
                         })}
                     </Box>
                 </Card>
-            ) : (
-                /* ========================================================================= */
-                /* VIEW MODE: LIST */
-                /* ========================================================================= */
+            )}
+
+            {/* ========================================================================= */}
+            {/* VIEW MODE: LIST */}
+            {/* ========================================================================= */}
+            {viewMode === 'list' && (
                 <Card sx={{ borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                     <TableContainer component={Paper} elevation={0} sx={{ overflowX: 'auto' }}>
-                        <Table sx={{ minWidth: 860 }}>
-                            <TableHead sx={{ bgcolor: 'background.default' }}>
+                        <Table sx={{ minWidth: 920 }}>
+                            <TableHead sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'background.default' }}>
                                 <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Booking Ref & Channel</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Customer Details</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Bike Model</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Rental Dates</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Store Hub</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }}>Status</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }} align="right">Total Amount</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase' }} align="center">Actions</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }}>Booking Ref & Channel</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }}>Customer Details</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }}>Bike Model</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }}>Rental Dates</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }}>Store Hub</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }}>Status</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }} align="right">Financials</TableCell>
+                                    <TableCell sx={{ fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase' }} align="center">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -591,38 +946,80 @@ export default function BookingsIndex({
                                 ) : (
                                     bookings.data.map((b) => {
                                         const chipProps = getStatusChipProps(b.status);
+                                        const waUrl = getWhatsAppUrl(b.user?.phone, b.user?.name, b.booking_reference);
+                                        const balance = Math.max(0, (b.total_amount || 0) - (b.paid_amount || 0));
+
                                         return (
                                             <TableRow key={b.id} hover>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontWeight={700} color="primary.main">
-                                                        {b.booking_reference}
+                                                    <Typography variant="body2" fontWeight={800} color="primary.main">
+                                                        #{b.booking_reference}
                                                     </Typography>
                                                     <Chip
                                                         size="small"
                                                         variant="outlined"
                                                         icon={b.channel === 'online' ? <LanguageIcon sx={{ fontSize: 14 }} /> : <StorefrontIcon sx={{ fontSize: 14 }} />}
                                                         label={b.channel === 'online' ? 'Online' : 'Walk-in'}
-                                                        sx={{ mt: 0.5, height: 20, fontSize: 11 }}
+                                                        sx={{ mt: 0.5, height: 20, fontSize: 11, fontWeight: 600 }}
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Typography variant="body2" fontWeight={600}>
+                                                    <Typography variant="body2" fontWeight={700}>
                                                         {b.user?.name}
                                                     </Typography>
-                                                    <Typography variant="caption" color="text.secondary" display="block">
-                                                        {b.user?.phone}
+                                                    <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.3 }}>
+                                                        <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                                                            {b.user?.phone}
+                                                        </Typography>
+                                                        {b.user?.phone && (
+                                                            <>
+                                                                <IconButton
+                                                                    component="a"
+                                                                    href={`tel:${b.user.phone}`}
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    sx={{ p: 0.2 }}
+                                                                >
+                                                                    <PhoneIcon sx={{ fontSize: 13 }} />
+                                                                </IconButton>
+                                                                {waUrl && (
+                                                                    <IconButton
+                                                                        component="a"
+                                                                        href={waUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        size="small"
+                                                                        sx={{ p: 0.2, color: '#25D366' }}
+                                                                    >
+                                                                        <WhatsAppIcon sx={{ fontSize: 13 }} />
+                                                                    </IconButton>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </Stack>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="body2" fontWeight={700}>
+                                                        {b.bike?.model}
                                                     </Typography>
+                                                    {b.bike?.registration_number && (
+                                                        <Chip
+                                                            label={b.bike.registration_number}
+                                                            size="small"
+                                                            sx={{
+                                                                mt: 0.3,
+                                                                height: 20,
+                                                                fontFamily: 'monospace',
+                                                                fontWeight: 800,
+                                                                fontSize: '0.68rem',
+                                                                bgcolor: isDark ? 'rgba(251,191,36,0.15)' : '#FEF3C7',
+                                                                color: isDark ? '#FCD34D' : '#92400E',
+                                                            }}
+                                                        />
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Typography variant="body2" fontWeight={600}>
-                                                        {b.bike?.model}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary" display="block">
-                                                        {b.bike?.registration_number}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2">
                                                         {b.start_date}
                                                     </Typography>
                                                     <Typography variant="caption" color="text.secondary" display="block">
@@ -630,37 +1027,41 @@ export default function BookingsIndex({
                                                     </Typography>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Typography variant="body2">
+                                                    <Typography variant="body2" fontWeight={600}>
                                                         {b.pickup_store?.name}
                                                     </Typography>
                                                     {b.return_store?.id !== b.pickup_store?.id && (
-                                                        <Typography variant="caption" color="warning.main" display="block">
+                                                        <Typography variant="caption" color="warning.main" display="block" fontWeight={600}>
                                                             Return: {b.return_store?.name}
                                                         </Typography>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Chip size="small" {...chipProps} />
+                                                    <Chip size="small" {...chipProps} sx={{ fontWeight: 700 }} />
                                                 </TableCell>
                                                 <TableCell align="right">
-                                                    <Typography variant="body2" fontWeight={700}>
+                                                    <Typography variant="body2" fontWeight={800}>
                                                         ₹{b.total_amount.toLocaleString('en-IN')}
                                                     </Typography>
-                                                    {b.paid_amount > 0 && (
-                                                        <Typography variant="caption" color="success.main" display="block">
-                                                            Paid: ₹{b.paid_amount.toLocaleString('en-IN')}
+                                                    {balance > 0 ? (
+                                                        <Typography variant="caption" color="warning.main" display="block" fontWeight={700}>
+                                                            Due: ₹{balance.toLocaleString('en-IN')}
+                                                        </Typography>
+                                                    ) : (
+                                                        <Typography variant="caption" color="success.main" display="block" fontWeight={700}>
+                                                            Fully Paid
                                                         </Typography>
                                                     )}
                                                 </TableCell>
                                                 <TableCell align="center">
-                                                    <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
+                                                    <Stack direction="row" spacing={0.8} justifyContent="center" alignItems="center">
                                                         {b.status === 'confirmed' && (
                                                             <Tooltip title="Start Bike Handover Inspection">
                                                                 <Button
                                                                     variant="contained"
                                                                     size="small"
                                                                     color="primary"
-                                                                    startIcon={<TwoWheelerIcon sx={{ fontSize: 16 }} />}
+                                                                    startIcon={<TwoWheelerIcon sx={{ fontSize: 15 }} />}
                                                                     onClick={() => setHandoverBooking(b)}
                                                                     sx={{ textTransform: 'none', py: 0.3, px: 1, fontSize: '0.75rem', fontWeight: 700 }}
                                                                 >
@@ -674,7 +1075,7 @@ export default function BookingsIndex({
                                                                     variant="contained"
                                                                     size="small"
                                                                     color="warning"
-                                                                    startIcon={<AssignmentReturnIcon sx={{ fontSize: 16 }} />}
+                                                                    startIcon={<AssignmentReturnIcon sx={{ fontSize: 15 }} />}
                                                                     onClick={() => setReturnBooking(b)}
                                                                     sx={{ textTransform: 'none', py: 0.3, px: 1, fontSize: '0.75rem', fontWeight: 700 }}
                                                                 >
@@ -721,7 +1122,7 @@ export default function BookingsIndex({
                                 count={bookings.last_page}
                                 page={bookings.current_page}
                                 onChange={(_, page) => {
-                                    router.get('/admin/bookings', { ...filters, page }, { preserveState: true });
+                                    router.get('/admin/bookings', { ...filters, page, view_mode: 'list' }, { preserveState: true });
                                 }}
                                 color="primary"
                             />
@@ -732,41 +1133,60 @@ export default function BookingsIndex({
 
             {/* Quick Event Popover / Dialog for Calendar */}
             {selectedEvent && (
-                <Dialog open={Boolean(selectedEvent)} onClose={() => setSelectedEvent(null)} maxWidth="xs" fullWidth>
+                <Dialog
+                    open={Boolean(selectedEvent)}
+                    onClose={() => setSelectedEvent(null)}
+                    maxWidth="xs"
+                    fullWidth
+                    PaperProps={{ sx: { overflowX: 'hidden', borderRadius: 3 } }}
+                >
                     <DialogTitle sx={{ pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box>
-                            <Typography variant="h6" fontWeight={700}>
-                                {selectedEvent.booking_reference}
+                            <Typography variant="h6" fontWeight={800}>
+                                #{selectedEvent.booking_reference}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 {selectedEvent.start} to {selectedEvent.end}
                             </Typography>
                         </Box>
-                        <Chip size="small" {...getStatusChipProps(selectedEvent.status)} />
+                        <Chip size="small" {...getStatusChipProps(selectedEvent.status)} sx={{ fontWeight: 700 }} />
                     </DialogTitle>
                     <Divider />
-                    <DialogContent sx={{ pt: 2 }}>
+                    <DialogContent sx={{ pt: 2, overflowX: 'hidden' }}>
                         <Stack spacing={1.5}>
                             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                                 <PersonIcon sx={{ color: 'text.secondary' }} />
-                                <Box>
-                                    <Typography variant="body2" fontWeight={600}>
+                                <Box sx={{ flexGrow: 1 }}>
+                                    <Typography variant="body2" fontWeight={700}>
                                         {selectedEvent.customer_name}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {selectedEvent.customer_phone || 'No phone'}
-                                    </Typography>
+                                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.3 }}>
+                                        <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                                            {selectedEvent.customer_phone || 'No phone'}
+                                        </Typography>
+                                        {selectedEvent.customer_phone && (
+                                            <IconButton
+                                                component="a"
+                                                href={`tel:${selectedEvent.customer_phone}`}
+                                                size="small"
+                                                color="primary"
+                                                sx={{ p: 0.2 }}
+                                            >
+                                                <PhoneIcon sx={{ fontSize: 13 }} />
+                                            </IconButton>
+                                        )}
+                                    </Stack>
                                 </Box>
                             </Box>
 
                             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                                 <TwoWheelerIcon sx={{ color: 'text.secondary' }} />
                                 <Box>
-                                    <Typography variant="body2" fontWeight={600}>
+                                    <Typography variant="body2" fontWeight={700}>
                                         {selectedEvent.bike_model}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        Reg: {selectedEvent.registration_number || 'N/A'}
+                                        Plate: {selectedEvent.registration_number || 'N/A'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -774,7 +1194,7 @@ export default function BookingsIndex({
                             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                                 <LocationOnIcon sx={{ color: 'text.secondary' }} />
                                 <Box>
-                                    <Typography variant="body2">
+                                    <Typography variant="body2" fontWeight={600}>
                                         Pickup: {selectedEvent.pickup_store}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
@@ -785,9 +1205,9 @@ export default function BookingsIndex({
 
                             <Box sx={{ pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="subtitle2" color="text.secondary">
-                                    Total Booking Cost:
+                                    Total Rental Cost:
                                 </Typography>
-                                <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                                <Typography variant="subtitle1" fontWeight={800} color="primary.main">
                                     ₹{selectedEvent.total_amount?.toLocaleString('en-IN')}
                                 </Typography>
                             </Box>
@@ -855,7 +1275,7 @@ export default function BookingsIndex({
                             size="small"
                             startIcon={<EditIcon />}
                         >
-                            Edit Details
+                            Edit
                         </Button>
                         <Button
                             component={Link}
@@ -886,4 +1306,3 @@ export default function BookingsIndex({
         </AdminLayout>
     );
 }
-

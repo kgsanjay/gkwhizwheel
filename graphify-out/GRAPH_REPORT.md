@@ -1,17 +1,17 @@
 # Graph Report - gkwhizwheel  (2026-11-15)
 
 ## Corpus Check
-- 667 files · ~500,594 words
+- 667 files · ~502,934 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 26 file(s) not represented in the graph (top: (none) 18, .ico 3, .xml 2)
 
 ## Summary
-- 4983 nodes · 11729 edges · 299 communities (150 shown, 149 thin omitted)
+- 4983 nodes · 11730 edges · 299 communities (150 shown, 149 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 310 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `991db850`
+- Built from commit: `6beded0d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -269,16 +269,16 @@
 10. `BookingStatus` - 117 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Field Specifications:` --references--> `ActivityLog`  [INFERRED]
-  docs/03-API-SPECIFICATION.md → app/Models/ActivityLog.php
-- `Offline IndexedDB Sync Contract (`POST /admin/check-in/sync`)` --references--> `ActivityLog`  [INFERRED]
-  docs/API.md → app/Models/ActivityLog.php
-- `Remaining explicit work` --references--> `ServiceBooking`  [INFERRED]
-  docs/requirements/SERVICE-RESOURCE-ARCHITECTURE.md → app/Models/ServiceBooking.php
 - `Security, Multi-Tenant Scoping & Data Integrity` --references--> `ActivityLog`  [INFERRED]
   AGENTS.md → app/Models/ActivityLog.php
 - `6.8 Immutable System Audit Trails & Activity Logging` --references--> `ActivityLog`  [INFERRED]
   DETAILED_FEATURE_SPECIFICATION.md → app/Models/ActivityLog.php
+- `Field Specifications:` --references--> `ActivityLog`  [INFERRED]
+  docs/03-API-SPECIFICATION.md → app/Models/ActivityLog.php
+- `Offline IndexedDB Sync Contract (`POST /admin/check-in/sync`)` --references--> `ActivityLog`  [INFERRED]
+  docs/API.md → app/Models/ActivityLog.php
+- `3.6 Coupon & Promotional Code Validator` --references--> `Coupon`  [INFERRED]
+  DETAILED_FEATURE_SPECIFICATION.md → app/Models/Coupon.php
 
 ## Import Cycles
 - None detected.
@@ -886,7 +886,7 @@ Cohesion: 0.29
 Nodes (6): ADR 0001: Integration of Everything Claude Code (ECC) in Google Antigravity, Consequences, Context, Date, Decision, Status
 
 ## Knowledge Gaps
-- **72 isolated node(s):** `AVAILABLE`, `MAINTENANCE`, `ON_RENT`, `RETIRED`, `OFFLINE` (+67 more)
+- **72 isolated node(s):** `AVAILABLE`, `MAINTENANCE`, `ON_RENT`, `RETIRED`, `ELECTRIC` (+67 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2356 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **149 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -894,7 +894,7 @@ Nodes (6): ADR 0001: Integration of Everything Claude Code (ECC) in Google Antig
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `User` connect `User` to `BikeStatus`, `Store`, `PaymentStatus`, `UserStatus`, `CabDispatchFlowTest.php`, `AdminServiceEnquiryWebController.php`, `Inertia\Response`, `UserRole`, `Illuminate\Http\JsonResponse`, `Bike`, `Inertia\Response`, `BikeModelBookingAllocationTest.php`, `Illuminate\Http\Request`, `ServiceBookingApprovalTest.php`, `ServiceBooking`, `RefundServiceTest.php`, `CabDispatch`, `AdminBookingHandoverReturnWebTest.php`, `BookingStatus`, `IdorTest.php`, `Illuminate\Database\Eloquent\Relations\HasMany`, `ServiceAvailabilityServiceTest.php`, `CabMySqlConcurrencyTest.php`, `BookingChannel`, `Illuminate\Http\Resources\Json\JsonResource`, `Illuminate\Console\Command`, `ServiceItemAndBookingApiTest.php`, `CabInventoryFoundationTest.php`, `Illuminate\Database\Seeder`, `VoucherService`, `Inertia\Testing\AssertableInertia`, `CheckBikeDocumentExpiryCommandTest.php`, `WhatsAppNotificationAndWebhookTest.php`, `AdminBikesWebTest.php`, `BranchAdminOperationalTest`, `CabFareQuoteEngineTest.php`, `AdminAuthAndPanelTest.php`, `ServiceBookingConfirmedNotification`, `CustomerAccountWebTest.php`, `ServiceRoleBasedAccessTest.php`, `AdminStaffWebTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `SensitiveDataLoggingAuditTest.php`, `AdminPricingWebTest.php`, `AvailabilityServiceTest.php`, `BikeRelocationResolutionTest.php`, `.isSuperAdmin`, `AdminGroundCheckInTest`, `AdminStoresWebTest.php`, `ActivityLog`, `AdminServiceCategoryTest.php`, `ServicePaymentEligibilityTest.php`, `AuthEndpointsTest.php`, `AdminCouponsWebTest.php`, `AdminServiceItemDocumentsTest.php`, `CustomerAdminStaffRouteAccessDenialTest.php`, `ServiceQuoteSnapshotTest.php`, `CustomerBookingEndpointsTest.php`, `DynamicServicePricingTest.php`, `PublicBikesEndpointsTest.php`, `BranchAccessIsolationTest.php`, `CustomerServiceEnquiryAccountTest.php`, `ServiceBookingConcurrencyTest.php`, `Store`, `App\Models\User`, `WhizWheelV2StandardizationTest.php`, `BranchBikeModelPrice`, `AdminCheckInWebController`, `StaffPolicy`, `SanctumTokenSecurityTest.php`, `CouponPolicy`, `SchemaMigrationsTest.php`, `PricingRulePolicy`, `LogsAndSyncMigrationsTest.php`, `BikeAndPricingMigrationsTest.php`, `AdminCouponsEndpointsTest.php`, `HtmlEscapingAndXssAuditTest`, `.isStaffOrAdmin`, `Illuminate\Database\Eloquent\Model`, `TwoFactorEnforcementTest.php`, `AdminReportsWebTest.php`, `InertiaFrontendTest.php`, `ServiceBookingAlertRecipients.php`, `SanctumApiTest.php`, `AdminDispatchWebTest`?**
-  _High betweenness centrality (0.094) - this node is a cross-community bridge._
+  _High betweenness centrality (0.099) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `User` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`User` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `AVAILABLE`, `MAINTENANCE`, `ON_RENT` to the rest of the system?**
@@ -902,7 +902,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `BikeStatus` be split into smaller, more focused modules?**
   _Cohesion score 0.03225806451612903 - nodes in this community are weakly interconnected._
 - **Why does `Store` connect `Store` to `BikeStatus`, `Store`, `PaymentStatus`, `UserStatus`, `DynamicServicePricingTest.php`, `BranchAccessIsolationTest.php`, `PublicBikesEndpointsTest.php`, `CabDispatchFlowTest.php`, `AdminServiceEnquiryWebController.php`, `Inertia\Response`, `UserRole`, `Illuminate\Http\JsonResponse`, `App\Models\User`, `BranchBikeModelPrice`, `BikeModelBookingAllocationTest.php`, `Inertia\Response`, `Bike`, `ServiceBookingApprovalTest.php`, `Controller`, `WhizWheelV2StandardizationTest.php`, `AdminBikeWebController.php`, `RefundServiceTest.php`, `PricingService`, `AdminReportsWebTest.php`, `AdminBookingHandoverReturnWebTest.php`, `CabMySqlConcurrencyTest.php`, `BookingStatus`, `IdorTest.php`, `Illuminate\Database\Eloquent\Relations\HasMany`, `ServiceItemController.php`, `CabMySqlConcurrencyTest.php`, `AdminBookingWebController.php`, `BookingChannel`, `AdminStoreWebController.php`, `AdminDispatchWebTest`, `Illuminate\Console\Command`, `ServiceItemAndBookingApiTest.php`, `BikeResource`, `CabInventoryFoundationTest.php`, `AdminPricingRuleWebController.php`, `BranchServiceLandingWebController.php`, `Inertia\Testing\AssertableInertia`, `CheckBikeDocumentExpiryCommandTest.php`, `WhatsAppNotificationAndWebhookTest.php`, `AdminBikesWebTest.php`, `PricingRule`, `BranchAdminOperationalTest`, `CabFareQuoteEngineTest.php`, `AdminAuthAndPanelTest.php`, `ServiceBookingConfirmedNotification`, `CustomerAccountWebTest.php`, `ServiceRoleBasedAccessTest.php`, `AdminStaffWebTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `Illuminate\Database\Eloquent\Model`, `AdminDashboardController.php`, `AdminReportWebController.php`, `AdminPricingWebTest.php`, `AvailabilityServiceTest.php`, `BikeDirectionalPickupReturnFeeTest.php`, `BikeFrontendPagesTest.php`, `BikeRelocationResolutionTest.php`, `.isSuperAdmin`, `AvailabilityService`, `AdminGroundCheckInTest`, `AdminStoresWebTest.php`, `ActivityLog`, `AdminServiceCategoryTest.php`, `PricingServiceTest.php`, `AdminServiceItemDocumentsTest.php`, `BranchBikeRentalLandingTest.php`, `CustomerBookingEndpointsTest.php`?**
-  _High betweenness centrality (0.074) - this node is a cross-community bridge._
+  _High betweenness centrality (0.075) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `Booking` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`Booking` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Store` be split into smaller, more focused modules?**
