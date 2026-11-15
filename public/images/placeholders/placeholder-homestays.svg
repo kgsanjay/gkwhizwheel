@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="homeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fdfbf7" />
+      <stop offset="100%" stop-color="#f4eee4" />
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="500" fill="url(#homeBg)" />
+  <rect x="24" y="24" width="752" height="452" rx="20" fill="#ffffff" stroke="#eef1f6" stroke-width="2" />
+
+  <!-- Cottage / Homestay Vector Illustration -->
+  <g transform="translate(400, 190) scale(1.15)">
+    <!-- Palm Tree on Left -->
+    <path d="M -100 65 Q -90 10 -75 -40" fill="none" stroke="#78350f" stroke-width="6" stroke-linecap="round"/>
+    <path d="M -75 -40 Q -110 -65 -130 -40" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round"/>
+    <path d="M -75 -40 Q -75 -80 -60 -75" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round"/>
+    <path d="M -75 -40 Q -40 -65 -30 -40" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- Cottage Roof -->
+    <polygon points="0,-45 -70,5 70,5" fill="#b45309" stroke="#78350f" stroke-width="3"/>
+    <!-- Cottage Base -->
+    <rect x="-55" y="5" width="110" height="60" rx="3" fill="#f8fafc" stroke="#002244" stroke-width="3"/>
+    <!-- Door -->
+    <rect x="-14" y="25" width="28" height="40" rx="2" fill="#003366"/>
+    <circle cx="8" cy="45" r="2.5" fill="#FFC107"/>
+    <!-- Windows -->
+    <rect x="-44" y="20" width="20" height="20" rx="3" fill="#38bdf8" stroke="#002244" stroke-width="2"/>
+    <rect x="24" y="20" width="20" height="20" rx="3" fill="#38bdf8" stroke="#002244" stroke-width="2"/>
+  </g>
+
+  <!-- Tag & Labels -->
+  <rect x="270" y="44" width="260" height="28" rx="14" fill="#003366" />
+  <text x="400" y="63" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="1.5" text-anchor="middle">VERIFIED COASTAL STAYS</text>
+
+  <text x="400" y="375" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="900" fill="#002244" text-anchor="middle">Riverfront &amp; Coastal Homestays</text>
+  <text x="400" y="403" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#555555" text-anchor="middle">Scenic Beach &amp; Backwater Cottages • Authentic Coastal Meals</text>
+  
+  <text x="400" y="437" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#b45309" letter-spacing="1" text-anchor="middle">IMAGE PREVIEW • PROPERTY PHOTO PENDING</text>
+</svg>

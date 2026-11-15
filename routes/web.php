@@ -31,18 +31,100 @@ Route::get('/', function () {
             ->get();
     }
 
+    $pickupPoints = \App\Models\PickupPoint::where('is_active', true)
+        ->orderBy('sort_order')
+        ->get(['id', 'store_id', 'name', 'slug', 'address_line', 'landmark', 'delivery_fee', 'pickup_fee', 'return_fee', 'supports_pickup', 'supports_return']);
+
+    $featuredBikeModels = \App\Models\BikeModel::where('is_active', true)
+        ->with([
+            'category:id,name,base_daily_rate',
+            'branchPrices.store:id,name,city',
+        ])
+        ->withCount(['bikes' => fn ($q) => $q->where('status', \App\Enums\BikeStatus::AVAILABLE)])
+        ->orderBy('brand')
+        ->orderBy('name')
+        ->get()
+        ->map(function ($model) {
+            $rep = $model->bikes()->whereNotNull('primary_image_path')->first(['primary_image_path']);
+            $img = $model->primary_image_path ?: $rep?->primary_image_path;
+
+            return [
+                'id' => $model->id,
+                'brand' => $model->brand,
+                'name' => $model->name,
+                'slug' => \Illuminate\Support\Str::slug($model->brand . ' ' . $model->name),
+                'category_name' => $model->category?->name,
+                'fuel_type' => $model->fuel_type->value,
+                'transmission' => $model->transmission->value,
+                'available_count' => $model->bikes_count,
+                'indicative_daily_rate' => (float) ($model->branchPrices->first()?->weekday_rate ?? $model->category?->base_daily_rate ?? 0),
+                'branch_prices' => $model->branchPrices->map(fn ($bp) => [
+                    'store_id' => $bp->store_id,
+                    'store_name' => $bp->store?->name,
+                    'store_city' => $bp->store?->city,
+                    'weekday_rate' => (float) $bp->weekday_rate,
+                    'weekend_rate' => (float) $bp->weekend_rate,
+                ])->values()->all(),
+                'image_url' => $img
+                    ? (str_starts_with($img, 'http') ? $img : \Illuminate\Support\Facades\Storage::disk('public')->url($img))
+                    : null,
+            ];
+        });
+
+    $serviceItems = \App\Models\ServiceItem::whereIn('status', ['available', 'active'])
+        ->with(['images' => fn ($q) => $q->orderBy('sort_order'), 'store'])
+        ->orderBy('sort_order')
+        ->get();
+
+    $serviceCategories = $serviceItems->groupBy('service_type')->map(function ($items, $type) {
+        return [
+            'service_type' => $type,
+            'count' => $items->count(),
+            'min_price' => (float) $items->min('price_base'),
+            'items' => $items->values(),
+        ];
+    });
+
+    $reviews = \App\Models\Review::where('is_visible', true)
+        ->with(['user:id,name', 'bike:id,registration_number,brand,model_name'])
+        ->where('rating', '>=', 4)
+        ->latest()
+        ->take(6)
+        ->get()
+        ->map(fn ($r) => [
+            'id' => $r->id,
+            'rating' => (int) $r->rating,
+            'comment' => $r->comment,
+            'customer_name' => $r->user?->name ?? 'Verified Traveler',
+            'bike_name' => $r->bike ? trim(($r->bike->brand ?? '') . ' ' . ($r->bike->model_name ?? '')) : 'Coastal Rental',
+            'created_at' => $r->created_at?->toISOString(),
+        ]);
+
+    $liveStats = [
+        'active_bikes' => \App\Models\Bike::where('status', \App\Enums\BikeStatus::AVAILABLE)->count(),
+        'coastal_hubs' => \App\Models\Store::where('status', \App\Enums\StoreStatus::ACTIVE)->count(),
+        'pickup_points' => \App\Models\PickupPoint::where('is_active', true)->count(),
+        'completed_bookings' => \App\Models\Booking::whereIn('status', [\App\Enums\BookingStatus::COMPLETED, \App\Enums\BookingStatus::RETURNED])->count(),
+    ];
+
     return Inertia::render('Welcome', [
         'categories' => $categories,
         'stores' => $stores,
-        'availableItems' => \App\Models\ServiceItem::query()
-            ->whereIn('status', ['available', 'active'])
-            ->orderBy('sort_order')
-            ->get(['id', 'service_type', 'name', 'price_base', 'price_unit', 'status', 'store_id']),
+        'pickupPoints' => $pickupPoints,
+        'featuredBikeModels' => $featuredBikeModels,
+        'serviceCategories' => $serviceCategories,
+        'featuredServices' => $serviceItems,
+        'availableItems' => $serviceItems,
+        'reviews' => $reviews,
+        'liveStats' => $liveStats,
     ]);
 })->name('home');
 
 Route::get('/bike-rentals/branches/{id}/{slug?}', [\App\Http\Controllers\Web\BranchBikeRentalController::class, 'show'])
     ->whereNumber('id')->name('bike-rentals.branches.show');
+Route::get('/{branch}/services/{serviceSlug}', [\App\Http\Controllers\Web\BranchServiceLandingWebController::class, 'show'])
+    ->where('branch', '^(?!admin|api|services|blog|explore|account|login|register|logout).*$')
+    ->name('branch.service.show');
 Route::get('/services/bikes', [\App\Http\Controllers\Web\BikeWebController::class, 'index'])->name('bikes.index');
 Route::get('/services/bikes/models/{id}/{slug?}', [\App\Http\Controllers\Web\BikeModelWebController::class, 'show'])
     ->whereNumber('id')->name('services.bikes.models.show');

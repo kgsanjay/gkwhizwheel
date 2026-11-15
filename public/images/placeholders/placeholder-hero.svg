@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002244" />
+      <stop offset="60%" stop-color="#003366" />
+      <stop offset="100%" stop-color="#071b30" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFC107" />
+      <stop offset="100%" stop-color="#FFD54F" />
+    </linearGradient>
+    <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGrad)" />
+  <rect width="800" height="500" fill="url(#gridPattern)" />
+
+  <!-- Subtle Coastal Wave Patterns -->
+  <path d="M 0 380 Q 200 340 400 370 T 800 350 L 800 500 L 0 500 Z" fill="rgba(255, 193, 7, 0.05)" />
+  <path d="M 0 420 Q 200 390 400 410 T 800 390 L 800 500 L 0 500 Z" fill="rgba(255, 255, 255, 0.03)" />
+
+  <!-- Center Decorative Shield & Icon -->
+  <circle cx="400" cy="180" r="54" fill="rgba(255, 193, 7, 0.12)" stroke="#FFC107" stroke-width="2" />
+  
+  <!-- Stylized Compass / Navigation Icon -->
+  <g transform="translate(400, 180) scale(1.3)">
+    <circle cx="0" cy="0" r="24" fill="none" stroke="#FFC107" stroke-width="2" stroke-dasharray="3 3"/>
+    <polygon points="0,-18 5,0 0,6 -5,0" fill="#FFC107" />
+    <polygon points="0,18 5,0 0,-6 -5,0" fill="#ffffff" fill-opacity="0.8" />
+    <circle cx="0" cy="0" r="3" fill="#002244" />
+  </g>
+
+  <!-- Text & Branding -->
+  <rect x="250" y="260" width="300" height="28" rx="14" fill="rgba(255, 193, 7, 0.15)" stroke="rgba(255, 193, 7, 0.3)" stroke-width="1"/>
+  <text x="400" y="279" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" fill="#FFC107" letter-spacing="1.5" text-anchor="middle">GK WHIZWHEEL COASTAL HUB</text>
+
+  <text x="400" y="330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">Sharavathi Backwaters &amp; Fleet</text>
+  <text x="400" y="360" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="500" fill="rgba(255,255,255,0.7)" text-anchor="middle">Honnavar &amp; Murudeshwar Operating Corridors</text>
+
+  <!-- Subtle placeholder badge -->
+  <rect x="300" y="405" width="200" height="26" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+  <text x="400" y="422" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="rgba(255,255,255,0.5)" text-anchor="middle">Official Image Upload Pending</text>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="bikeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8f9fa" />
+      <stop offset="100%" stop-color="#eef1f6" />
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="500" fill="url(#bikeBg)" />
+  <rect x="24" y="24" width="752" height="452" rx="20" fill="#ffffff" stroke="#eef1f6" stroke-width="2" />
+
+  <!-- Road Horizon Line -->
+  <line x1="80" y1="310" x2="720" y2="310" stroke="#e2e8f0" stroke-width="3" stroke-linecap="round" />
+  <line x1="280" y1="310" x2="360" y2="310" stroke="#FFC107" stroke-width="3" stroke-linecap="round" />
+  <line x1="440" y1="310" x2="520" y2="310" stroke="#FFC107" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Scooter / Bike Vector Illustration -->
+  <g transform="translate(400, 195) scale(1.15)">
+    <!-- Back Wheel -->
+    <circle cx="-75" cy="55" r="34" fill="#002244" stroke="#eef1f6" stroke-width="6"/>
+    <circle cx="-75" cy="55" r="18" fill="#FFC107"/>
+    <circle cx="-75" cy="55" r="6" fill="#002244"/>
+
+    <!-- Front Wheel -->
+    <circle cx="75" cy="55" r="34" fill="#002244" stroke="#eef1f6" stroke-width="6"/>
+    <circle cx="75" cy="55" r="18" fill="#FFC107"/>
+    <circle cx="75" cy="55" r="6" fill="#002244"/>
+
+    <!-- Chassis Body -->
+    <path d="M -75 55 L -45 10 L 0 10 L 35 45 L 75 55" fill="none" stroke="#003366" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Floorboard -->
+    <path d="M -40 45 L 20 45" stroke="#002244" stroke-width="8" stroke-linecap="round"/>
+    <!-- Seat -->
+    <path d="M -65 5 Q -40 -12 0 2 L -10 18 Z" fill="#002244" rx="4"/>
+    <!-- Front Apron & Steering -->
+    <path d="M 20 45 L 55 -25 L 42 -38" fill="none" stroke="#003366" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Handlebar -->
+    <path d="M 32 -38 L 52 -38" stroke="#002244" stroke-width="6" stroke-linecap="round"/>
+    <!-- Headlamp -->
+    <circle cx="58" cy="-25" r="6" fill="#FFC107"/>
+  </g>
+
+  <!-- Tag & Labels -->
+  <rect x="275" y="44" width="250" height="28" rx="14" fill="#003366" />
+  <text x="400" y="63" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" fill="#ffffff" letter-spacing="1.5" text-anchor="middle">COMMERCIAL TWO-WHEELERS</text>
+
+  <text x="400" y="370" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="900" fill="#002244" text-anchor="middle">Self-Drive Bike &amp; Scooter Fleet</text>
+  <text x="400" y="398" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#555555" text-anchor="middle">Honda Activa 6G • Access 125 • Hunter 350 • Electric EV</text>
+  
+  <text x="400" y="432" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#FFC107" letter-spacing="1" text-anchor="middle">IMAGE PREVIEW • VEHICLE PHOTO PENDING</text>
+</svg>

@@ -97,3 +97,7 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Agent Skills & Local Tooling
+/.agents/
+skills-lock.json

@@ -416,12 +416,14 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
 
     const handleSearch = (e) => {
         e.preventDefault();
+        const branchObj = branchList.find((b) => String(b.id) === String(searchStore)) || activeBranch;
+        const branchSlug = (branchObj?.slug || branchObj?.city || 'honnavar').toLowerCase();
         const params = new URLSearchParams();
         if (searchStore) params.append('store_id', searchStore);
         if (searchCategory) params.append('category_id', searchCategory);
         if (startDate) params.append('start_date', startDate);
         if (endDate) params.append('end_date', endDate);
-        router.visit(`/services/bikes?${params.toString()}`);
+        router.visit(`/${branchSlug}/services/bikes?${params.toString()}`);
     };
 
 

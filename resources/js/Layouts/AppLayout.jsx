@@ -69,6 +69,7 @@ const SITE_CONTAINER_SX = {
 const servicesList = [
     {
         key: 'two_wheelers',
+        slug: 'bikes',
         title: 'Bike & Scooter Rentals',
         shortTitle: 'Bike Rentals',
         desc: 'Browse listed scooters and motorcycles',
@@ -79,6 +80,7 @@ const servicesList = [
     },
     {
         key: 'taxi',
+        slug: 'cabs',
         title: 'Coastal Cabs & Taxis',
         shortTitle: 'Cabs & Taxis',
         desc: 'Sedan, SUV & tempo for Gokarna, Murudeshwar & airport',
@@ -89,6 +91,7 @@ const servicesList = [
     },
     {
         key: 'homestay',
+        slug: 'homestays',
         title: 'Homestays & Coastal Rooms',
         shortTitle: 'Homestays',
         desc: 'Verified riverside cottages & beachfront villas in Honnavar',
@@ -99,6 +102,7 @@ const servicesList = [
     },
     {
         key: 'rooms',
+        slug: 'homestays',
         title: 'Rooms & Coastal Stays',
         shortTitle: 'Rooms',
         desc: 'Temple-view rooms and beachfront coastal lodges in Murudeshwar',
@@ -109,6 +113,7 @@ const servicesList = [
     },
     {
         key: 'boating',
+        slug: 'boating',
         title: 'Sharavathi Backwater Boating',
         shortTitle: 'Backwater Boating',
         desc: 'Island cruises, mangrove safari & sunset rides',
@@ -119,6 +124,7 @@ const servicesList = [
     },
     {
         key: 'scuba',
+        slug: 'scuba',
         title: 'Netrani Island Scuba Diving',
         shortTitle: 'Scuba Diving',
         desc: 'PADI certified guides & clear coral reef diving',
@@ -129,6 +135,7 @@ const servicesList = [
     },
     {
         key: 'guide',
+        slug: 'guide',
         title: 'Local Travel Guides & Trails',
         shortTitle: 'Local Guides',
         desc: 'Native experts for waterfall treks & temple heritage',
@@ -139,6 +146,7 @@ const servicesList = [
     },
     {
         key: 'tours',
+        slug: 'tours',
         title: 'Custom Tour Packages',
         shortTitle: 'Tour Packages',
         desc: 'All-inclusive Karavali coastal combos & customized itineraries',
@@ -179,6 +187,18 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
     const whatsappGeneralUrl = `https://wa.me/${primaryWhatsappDigits}?text=`
         + encodeURIComponent('Hi GK WhizWheel, I would like to enquire about your travel and rental services.');
 
+    const branchUrlMatch = url.match(/^\/([^/?#]+)\/services(?:\/([^/?#]+))?/);
+    const urlBranchSlug = branchUrlMatch ? branchUrlMatch[1].toLowerCase() : null;
+    const urlServiceSlug = branchUrlMatch ? branchUrlMatch[2]?.toLowerCase() : null;
+
+    const findBranchBySlug = (slug) => {
+        if (!slug) return null;
+        const s = slug.toLowerCase();
+        return publicBranches.find((b) => (b.slug || b.city || '').toLowerCase() === s || (b.name || '').toLowerCase() === s) || null;
+    };
+
+    const branchFromUrl = findBranchBySlug(urlBranchSlug);
+
     const [userMenuAnchor, setUserMenuAnchor] = useState(null);
     const isUserMenuOpen = Boolean(userMenuAnchor);
 
@@ -189,6 +209,9 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
     const isBranchMenuOpen = Boolean(branchMenuAnchor);
 
     const [selectedBranchId, setSelectedBranchId] = useState(() => {
+        if (branchFromUrl) {
+            return String(branchFromUrl.id);
+        }
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('customer_active_branch_id');
             if (saved && publicBranches.some((b) => String(b.id) === String(saved))) {
@@ -197,6 +220,15 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
         }
         return publicBranches[0]?.id ? String(publicBranches[0].id) : '';
     });
+
+    useEffect(() => {
+        if (branchFromUrl && String(branchFromUrl.id) !== String(selectedBranchId)) {
+            setSelectedBranchId(String(branchFromUrl.id));
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('customer_active_branch_id', String(branchFromUrl.id));
+            }
+        }
+    }, [branchFromUrl?.id]);
 
     useEffect(() => {
         const handleBranchSync = (e) => {
@@ -208,7 +240,40 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
         return () => window.removeEventListener('customerBranchChanged', handleBranchSync);
     }, []);
 
-    const activeBranch = publicBranches.find((b) => String(b.id) === String(selectedBranchId)) || publicBranches[0] || null;
+    const activeBranch = branchFromUrl || publicBranches.find((b) => String(b.id) === String(selectedBranchId)) || publicBranches[0] || null;
+    const activeBranchSlug = (activeBranch?.slug || activeBranch?.city || 'honnavar').toLowerCase();
+
+    const isServiceAvailableInBranch = (svc, branch) => {
+        if (!branch) return true;
+        const branchSvcs = branch.services;
+        if (!branchSvcs) return true;
+
+        if (Array.isArray(branchSvcs)) {
+            if (branchSvcs.includes(svc.key) || branchSvcs.includes(svc.slug)) return true;
+            if (svc.slug === 'bikes' && branchSvcs.includes('two_wheelers')) return true;
+            if (svc.slug === 'cabs' && (branchSvcs.includes('taxi') || branchSvcs.includes('cabs'))) return true;
+            if (svc.slug === 'homestays' && (branchSvcs.includes('homestay') || branchSvcs.includes('rooms'))) return true;
+            if (svc.slug === 'tours' && (branchSvcs.includes('tours') || branchSvcs.length === 0)) return true;
+            return false;
+        }
+
+        if (typeof branchSvcs === 'object') {
+            if (branchSvcs[svc.key] !== undefined) return Boolean(branchSvcs[svc.key]);
+            if (branchSvcs[svc.slug] !== undefined) return Boolean(branchSvcs[svc.slug]);
+            if (svc.slug === 'bikes' && branchSvcs.two_wheelers !== undefined) return Boolean(branchSvcs.two_wheelers);
+            if (svc.slug === 'cabs' && (branchSvcs.taxi !== undefined || branchSvcs.cabs !== undefined)) return Boolean(branchSvcs.taxi || branchSvcs.cabs);
+            if (svc.slug === 'homestays' && (branchSvcs.homestay !== undefined || branchSvcs.rooms !== undefined)) {
+                return Boolean(branchSvcs.homestay || branchSvcs.rooms);
+            }
+            return true;
+        }
+
+        return true;
+    };
+
+    const visibleServicesList = servicesList.filter((svc) => isServiceAvailableInBranch(svc, activeBranch));
+
+    const getServiceHref = (svc) => `/${activeBranchSlug}/services/${svc.slug}`;
 
     const handleOpenBranchMenu = (event) => {
         setBranchMenuAnchor(event.currentTarget);
@@ -227,10 +292,18 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
             }));
         }
         setBranchMenuAnchor(null);
-    };
 
-    const branchServices = activeBranch?.services || ['two_wheelers', 'taxi', 'homestay', 'boating', 'guide'];
-    const visibleServicesList = servicesList.filter((svc) => branchServices.includes(svc.key));
+        // If user is currently on a dynamic service page (e.g. /{branch}/services/{serviceSlug})
+        // redirect/navigate to the selected branch's service page
+        if (urlBranchSlug) {
+            const newBranchSlug = (branch.slug || branch.city || 'honnavar').toLowerCase();
+            const targetServiceSlug = urlServiceSlug || 'bikes';
+            const matchingSvc = servicesList.find((s) => s.slug === targetServiceSlug || s.key === targetServiceSlug);
+            const isAvail = matchingSvc ? isServiceAvailableInBranch(matchingSvc, branch) : true;
+            const finalServiceSlug = isAvail ? targetServiceSlug : 'bikes';
+            router.visit(`/${newBranchSlug}/services/${finalServiceSlug}`);
+        }
+    };
 
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
     const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
@@ -279,9 +352,12 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
     };
 
 
-    const isServiceLinkActive = (svc) => (
-        svc.matchPrefixes.some((prefix) => url === prefix || url.startsWith(`${prefix}/`))
-    );
+    const isServiceLinkActive = (svc) => {
+        const branchSpecificHref = getServiceHref(svc);
+        if (url === branchSpecificHref || url.startsWith(`${branchSpecificHref}/`)) return true;
+        if (url === svc.href || url.startsWith(`${svc.href}/`)) return true;
+        return svc.matchPrefixes.some((prefix) => url === prefix || url.startsWith(`${prefix}/`));
+    };
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: isDark ? '#0B1120' : '#F8FAFC', color: isDark ? '#F8FAFC' : '#0F172A', width: '100%', overflowX: 'clip' }}>
@@ -897,7 +973,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         color="secondary"
                                         size="medium"
                                         component={Link}
-                                        href="/services/bikes"
+                                        href={getServiceHref({ slug: 'bikes' })}
                                         sx={{
                                             fontWeight: 800,
                                             px: 2.5,
@@ -954,7 +1030,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         color="secondary"
                                         size="medium"
                                         component={Link}
-                                        href="/services/bikes"
+                                        href={getServiceHref({ slug: 'bikes' })}
                                         sx={{
                                             fontWeight: 800,
                                             px: 2.75,
@@ -1010,149 +1086,248 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: { xs: 'flex-start', lg: 'space-between' },
-                                gap: { xs: 0.75, lg: 1 },
+                                gap: { xs: 0.75, lg: 1.5 },
                                 overflowX: 'auto',
                                 WebkitOverflowScrolling: 'touch',
                                 scrollbarWidth: 'none',
                                 '&::-webkit-scrollbar': { display: 'none' },
                             }}
                         >
-                            {/* Branch Selector Dropdown in Service Bar */}
-                            {publicBranches.length > 0 && (
-                                <Box sx={{ display: 'inline-flex', alignItems: 'center', mr: 0.5, flexShrink: 0 }}>
-                                    <Button
-                                        size="small"
-                                        onClick={handleOpenBranchMenu}
-                                        aria-label="Select active branch"
-                                        aria-controls={isBranchMenuOpen ? 'branch-menu-tier3' : undefined}
-                                        aria-haspopup="true"
-                                        aria-expanded={isBranchMenuOpen}
-                                        startIcon={<LocationOnIcon sx={{ color: '#F59E0B !important', fontSize: 17 }} />}
-                                        endIcon={<KeyboardArrowDownIcon sx={{ fontSize: 16 }} />}
-                                        sx={{
-                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
-                                            color: isDark ? '#FBBF24' : '#92400E',
-                                            border: isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #FDE68A',
-                                            fontWeight: 800,
-                                            fontSize: '13px',
-                                            borderRadius: 9999,
-                                            px: 1.5,
-                                            py: '5px',
-                                            whiteSpace: 'nowrap',
-                                            textTransform: 'none',
-                                            flexShrink: 0,
-                                            '&:hover': {
-                                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.24)' : '#FDE68A',
-                                            },
-                                        }}
-                                    >
-                                        {activeBranch?.city || activeBranch?.name || 'Hub'} Hub
-                                    </Button>
-                                    <Menu
-                                        id="branch-menu-tier3"
-                                        anchorEl={branchMenuAnchor}
-                                        open={isBranchMenuOpen}
-                                        onClose={handleCloseBranchMenu}
-                                        PaperProps={{
-                                            sx: {
-                                                mt: 1,
-                                                minWidth: 230,
-                                                borderRadius: 2.5,
-                                                bgcolor: isDark ? '#0F172A' : '#FFFFFF',
-                                                color: isDark ? '#F8FAFC' : '#0F172A',
-                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
-                                                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-                                                p: 0.5,
-                                            },
-                                        }}
-                                    >
-                                        <Box sx={{ px: 2, py: 0.8, borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0' }}>
-                                            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: isDark ? '#94A3B8' : '#64748B' }}>
-                                                Select Operating Hub
-                                            </Typography>
-                                        </Box>
-                                        {publicBranches.map((branch) => {
-                                            const isSelected = String(branch.id) === String(activeBranch?.id);
-                                            return (
-                                                <MenuItem
-                                                    key={branch.id}
-                                                    onClick={() => handleSelectBranch(branch)}
-                                                    selected={isSelected}
-                                                    sx={{
-                                                        borderRadius: 1.5,
-                                                        my: 0.2,
-                                                        py: 0.9,
-                                                        px: 1.5,
-                                                        bgcolor: isSelected ? (isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7') : 'transparent',
-                                                    }}
-                                                >
-                                                    <ListItemIcon sx={{ minWidth: 28 }}>
-                                                        <LocationOnIcon sx={{ fontSize: 17, color: isSelected ? '#F59E0B' : (isDark ? '#64748B' : '#94A3B8') }} />
-                                                    </ListItemIcon>
-                                                    <ListItemText
-                                                        primary={
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                <Typography variant="body2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
-                                                                    {branch.city || branch.name}
-                                                                </Typography>
-                                                                {isSelected && (
-                                                                    <Chip label="Active" size="small" sx={{ height: 16, fontSize: '0.62rem', fontWeight: 800, bgcolor: '#F59E0B', color: '#0F172A' }} />
-                                                                )}
-                                                            </Box>
-                                                        }
-                                                        secondary={
-                                                            <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', fontSize: '0.7rem' }}>
-                                                                {branch.name}
-                                                            </Typography>
-                                                        }
-                                                    />
-                                                </MenuItem>
-                                            );
-                                        })}
-                                    </Menu>
-                                </Box>
-                            )}
-
-                            {visibleServicesList.map((svc) => {
-                                const active = isServiceLinkActive(svc);
-                                return (
-                                    <Link
-                                        key={svc.href}
-                                        href={svc.href}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            padding: '6px 12px',
-                                            borderRadius: '9999px',
-                                            fontSize: '13px',
-                                            fontWeight: active ? 800 : 600,
-                                            whiteSpace: 'nowrap',
-                                            flexShrink: 0,
-                                            textDecoration: 'none',
-                                            color: active ? '#D97706' : (isDark ? '#CBD5E1' : '#334155'),
-                                            backgroundColor: active
-                                                ? (isDark ? 'rgba(217, 119, 6, 0.16)' : '#FEF3C7')
-                                                : 'transparent',
-                                            border: `1px solid ${active ? 'rgba(217, 119, 6, 0.45)' : 'transparent'}`,
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                    >
-                                        <Box
-                                            component="span"
+                            {/* Left: Branch Selector Dropdown & Dynamic Service Pills */}
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 }, flexShrink: 0 }}>
+                                {publicBranches.length > 0 && (
+                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', mr: 0.5, flexShrink: 0 }}>
+                                        <Button
+                                            size="small"
+                                            onClick={handleOpenBranchMenu}
+                                            aria-label="Select active branch"
+                                            aria-controls={isBranchMenuOpen ? 'branch-menu-tier3' : undefined}
+                                            aria-haspopup="true"
+                                            aria-expanded={isBranchMenuOpen}
+                                            startIcon={<LocationOnIcon sx={{ color: '#F59E0B !important', fontSize: 17 }} />}
+                                            endIcon={<KeyboardArrowDownIcon sx={{ fontSize: 16 }} />}
                                             sx={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                color: active ? '#D97706' : (isDark ? '#94A3B8' : '#64748B'),
-                                                '& svg': { fontSize: 17 },
+                                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                                color: isDark ? '#FBBF24' : '#92400E',
+                                                border: isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #FDE68A',
+                                                fontWeight: 800,
+                                                fontSize: '13px',
+                                                borderRadius: 9999,
+                                                px: 1.5,
+                                                py: '5px',
+                                                whiteSpace: 'nowrap',
+                                                textTransform: 'none',
+                                                flexShrink: 0,
+                                                '&:hover': {
+                                                    bgcolor: isDark ? 'rgba(245, 158, 11, 0.24)' : '#FDE68A',
+                                                },
                                             }}
                                         >
-                                            {svc.icon}
-                                        </Box>
-                                        <span>{svc.shortTitle}</span>
-                                    </Link>
-                                );
-                            })}
+                                            {activeBranch?.city || activeBranch?.name || 'Hub'} Hub
+                                        </Button>
+                                        <Menu
+                                            id="branch-menu-tier3"
+                                            anchorEl={branchMenuAnchor}
+                                            open={isBranchMenuOpen}
+                                            onClose={handleCloseBranchMenu}
+                                            PaperProps={{
+                                                sx: {
+                                                    mt: 1,
+                                                    minWidth: 230,
+                                                    borderRadius: 2.5,
+                                                    bgcolor: isDark ? '#0F172A' : '#FFFFFF',
+                                                    color: isDark ? '#F8FAFC' : '#0F172A',
+                                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                                                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                                                    p: 0.5,
+                                                },
+                                            }}
+                                        >
+                                            <Box sx={{ px: 2, py: 0.8, borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0' }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: isDark ? '#94A3B8' : '#64748B' }}>
+                                                    Select Operating Hub
+                                                </Typography>
+                                            </Box>
+                                            {publicBranches.map((branch) => {
+                                                const isSelected = String(branch.id) === String(activeBranch?.id);
+                                                return (
+                                                    <MenuItem
+                                                        key={branch.id}
+                                                        onClick={() => handleSelectBranch(branch)}
+                                                        selected={isSelected}
+                                                        sx={{
+                                                            borderRadius: 1.5,
+                                                            my: 0.2,
+                                                            py: 0.9,
+                                                            px: 1.5,
+                                                            bgcolor: isSelected ? (isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7') : 'transparent',
+                                                        }}
+                                                    >
+                                                        <ListItemIcon sx={{ minWidth: 28 }}>
+                                                            <LocationOnIcon sx={{ fontSize: 17, color: isSelected ? '#F59E0B' : (isDark ? '#64748B' : '#94A3B8') }} />
+                                                        </ListItemIcon>
+                                                        <ListItemText
+                                                            primary={
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    <Typography variant="body2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
+                                                                        {branch.city || branch.name}
+                                                                    </Typography>
+                                                                    {isSelected && (
+                                                                        <Chip label="Active" size="small" sx={{ height: 16, fontSize: '0.62rem', fontWeight: 800, bgcolor: '#F59E0B', color: '#0F172A' }} />
+                                                                    )}
+                                                                </Box>
+                                                            }
+                                                            secondary={
+                                                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', fontSize: '0.7rem' }}>
+                                                                    {branch.name}
+                                                                </Typography>
+                                                            }
+                                                        />
+                                                    </MenuItem>
+                                                );
+                                            })}
+                                        </Menu>
+                                    </Box>
+                                )}
+
+                                {visibleServicesList.map((svc) => {
+                                    const active = isServiceLinkActive(svc);
+                                    const serviceHref = getServiceHref(svc);
+                                    return (
+                                        <Link
+                                            key={svc.key || svc.slug}
+                                            href={serviceHref}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '6px 12px',
+                                                borderRadius: '9999px',
+                                                fontSize: '13px',
+                                                fontWeight: active ? 800 : 600,
+                                                whiteSpace: 'nowrap',
+                                                flexShrink: 0,
+                                                textDecoration: 'none',
+                                                color: active ? '#D97706' : (isDark ? '#CBD5E1' : '#334155'),
+                                                backgroundColor: active
+                                                    ? (isDark ? 'rgba(217, 119, 6, 0.16)' : '#FEF3C7')
+                                                    : 'transparent',
+                                                border: `1px solid ${active ? 'rgba(217, 119, 6, 0.45)' : 'transparent'}`,
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    color: active ? '#D97706' : (isDark ? '#94A3B8' : '#64748B'),
+                                                    '& svg': { fontSize: 17 },
+                                                }}
+                                            >
+                                                {svc.icon}
+                                            </Box>
+                                            <span>{svc.shortTitle}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </Box>
+
+                            {/* Right: Active Branch Direct Contact Desk */}
+                            {activeBranch && (
+                                <Box
+                                    sx={{
+                                        display: { xs: 'none', md: 'inline-flex' },
+                                        alignItems: 'center',
+                                        gap: 1.25,
+                                        ml: 'auto',
+                                        pl: 2,
+                                        borderLeft: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #E2E8F0',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                                        <Box
+                                            sx={{
+                                                width: 7,
+                                                height: 7,
+                                                borderRadius: '50%',
+                                                bgcolor: '#10B981',
+                                                boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)',
+                                            }}
+                                        />
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontWeight: 800,
+                                                fontSize: '12px',
+                                                color: isDark ? '#E2E8F0' : '#1E293B',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {activeBranch.city || activeBranch.name} Desk
+                                        </Typography>
+                                    </Box>
+
+                                    <Box
+                                        component="a"
+                                        href={`tel:${activeBranch.phone || primaryPhone}`}
+                                        aria-label={`Call ${activeBranch.city || 'branch'} desk`}
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            px: 1.25,
+                                            py: '4px',
+                                            borderRadius: 9999,
+                                            fontSize: '12px',
+                                            fontWeight: 700,
+                                            color: isDark ? '#FBBF24' : '#92400E',
+                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7',
+                                            border: isDark ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid #FDE68A',
+                                            textDecoration: 'none',
+                                            whiteSpace: 'nowrap',
+                                            transition: 'all 0.15s ease',
+                                            '&:hover': {
+                                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.22)' : '#FDE68A',
+                                            },
+                                        }}
+                                    >
+                                        <PhoneIcon sx={{ fontSize: 13, color: '#F59E0B' }} />
+                                        <span>{formatBranchPhone(activeBranch.phone || primaryPhone)}</span>
+                                    </Box>
+
+                                    <Box
+                                        component="a"
+                                        href={`https://wa.me/${(activeBranch.whatsapp || activeBranch.phone || primaryWhatsappDigits).replace(/\D/g, '')}?text=${encodeURIComponent(`Hi GK WhizWheel ${activeBranch.city || activeBranch.name} Hub, I would like to enquire about your services.`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={`WhatsApp ${activeBranch.city || 'branch'} desk`}
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            px: 1.25,
+                                            py: '4px',
+                                            borderRadius: 9999,
+                                            fontSize: '12px',
+                                            fontWeight: 700,
+                                            color: isDark ? '#34D399' : '#047857',
+                                            bgcolor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5',
+                                            border: isDark ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid #A7F3D0',
+                                            textDecoration: 'none',
+                                            whiteSpace: 'nowrap',
+                                            transition: 'all 0.15s ease',
+                                            '&:hover': {
+                                                bgcolor: isDark ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5',
+                                            },
+                                        }}
+                                    >
+                                        <WhatsAppIcon sx={{ fontSize: 14, color: '#10B981' }} />
+                                        <span>WhatsApp</span>
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                 </Collapse>
@@ -1219,7 +1394,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                         <Grid key={idx} size={{ xs: 12, sm: 6 }}>
                             <Box
                                 component={Link}
-                                href={svc.href}
+                                href={getServiceHref(svc)}
                                 onClick={handleCloseServicesMenu}
                                 sx={{
                                     display: 'flex',
@@ -1231,7 +1406,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     color: 'inherit',
                                     transition: 'all 0.18s ease',
                                     border: '1px solid transparent',
-                                    bgcolor: url.startsWith(svc.href)
+                                    bgcolor: isServiceLinkActive(svc)
                                         ? (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.07)')
                                         : 'transparent',
                                     '&:hover': {
@@ -1569,7 +1744,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 </Button>
                                 <Button
                                     component={Link}
-                                    href="/services/bikes"
+                                    href={getServiceHref({ slug: 'bikes' })}
                                     onClick={handleCloseMobileDrawer}
                                     variant="contained"
                                     color="secondary"
@@ -1777,46 +1952,49 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                     borderLeft: isDark ? '2px solid rgba(245, 158, 11, 0.3)' : '2px solid rgba(217, 119, 6, 0.3)',
                                 }}
                             >
-                                {visibleServicesList.map((svc, sIdx) => (
-                                    <ListItemButton
-                                        key={sIdx}
-                                        component={Link}
-                                        href={svc.href}
-                                        onClick={handleCloseMobileDrawer}
-                                        sx={{
-                                            py: 0.8,
-                                            px: 1.2,
-                                            mb: 0.3,
-                                            borderRadius: 2,
-                                            bgcolor: url.startsWith(svc.href)
-                                                ? (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)')
-                                                : 'transparent',
-                                            '&:hover': {
-                                                bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
-                                            },
-                                        }}
-                                    >
-                                        <ListItemIcon sx={{ minWidth: 32 }}>
-                                            {svc.icon}
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary={svc.title}
-                                            secondary={svc.badge}
-                                            primaryTypographyProps={{
-                                                fontWeight: url.startsWith(svc.href) ? 800 : 600,
-                                                fontSize: '0.84rem',
-                                                color: url.startsWith(svc.href)
-                                                    ? (isDark ? '#FBBF24' : '#B45309')
-                                                    : (isDark ? '#F1F5F9' : '#1E293B'),
+                                {visibleServicesList.map((svc, sIdx) => {
+                                    const active = isServiceLinkActive(svc);
+                                    return (
+                                        <ListItemButton
+                                            key={sIdx}
+                                            component={Link}
+                                            href={getServiceHref(svc)}
+                                            onClick={handleCloseMobileDrawer}
+                                            sx={{
+                                                py: 0.8,
+                                                px: 1.2,
+                                                mb: 0.3,
+                                                borderRadius: 2,
+                                                bgcolor: active
+                                                    ? (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(245, 158, 11, 0.08)')
+                                                    : 'transparent',
+                                                '&:hover': {
+                                                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
+                                                },
                                             }}
-                                            secondaryTypographyProps={{
-                                                fontSize: '0.7rem',
-                                                color: isDark ? '#94A3B8' : '#64748B',
-                                                fontWeight: 600,
-                                            }}
-                                        />
-                                    </ListItemButton>
-                                ))}
+                                        >
+                                            <ListItemIcon sx={{ minWidth: 32 }}>
+                                                {svc.icon}
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={svc.title}
+                                                secondary={svc.badge}
+                                                primaryTypographyProps={{
+                                                    fontWeight: active ? 800 : 600,
+                                                    fontSize: '0.84rem',
+                                                    color: active
+                                                        ? (isDark ? '#FBBF24' : '#B45309')
+                                                        : (isDark ? '#F1F5F9' : '#1E293B'),
+                                                }}
+                                                secondaryTypographyProps={{
+                                                    fontSize: '0.7rem',
+                                                    color: isDark ? '#94A3B8' : '#64748B',
+                                                    fontWeight: 600,
+                                                }}
+                                            />
+                                        </ListItemButton>
+                                    );
+                                })}
                             </Box>
                         </Collapse>
 
@@ -2115,19 +2293,11 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 Services
                             </Typography>
                             <Stack spacing={1.2}>
-                                {[
-                                    { label: 'Bikes & Scooters', href: '/services/bikes' },
-                                    { label: 'Coastal AC Cabs', href: '/services/cabs' },
-                                    { label: 'Homestays', href: '/services/homestays' },
-                                    { label: 'Sharavathi Boating', href: '/services/boating' },
-                                    { label: 'Netrani Scuba', href: '/services/scuba' },
-                                    { label: 'Local Guides', href: '/services/guide' },
-                                    { label: 'Custom Tours', href: '/services/tours' },
-                                ].map((item) => (
+                                {visibleServicesList.map((svc) => (
                                     <Typography
-                                        key={item.href}
+                                        key={svc.key || svc.slug}
                                         component={Link}
-                                        href={item.href}
+                                        href={getServiceHref(svc)}
                                         variant="body2"
                                         sx={{
                                             color: '#94A3B8',
@@ -2138,7 +2308,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                             '&:hover': { color: '#FBBF24' },
                                         }}
                                     >
-                                        {item.label}
+                                        {svc.shortTitle || svc.title}
                                     </Typography>
                                 ))}
                             </Stack>
@@ -2456,7 +2626,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
 
                 <Button
                     component={Link}
-                    href="/services/bikes"
+                    href={getServiceHref({ slug: 'bikes' })}
                     variant="contained"
                     size="small"
                     sx={{

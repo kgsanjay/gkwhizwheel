@@ -284,10 +284,8 @@ class AdminDashboardController extends Controller
                     ->count();
 
                 $bExpiringDocs = \App\Models\BikeDocument::whereHas('bike', fn ($q) => $q->where('current_store_id', $branch->id))
-                    ->where(function ($q): void {
-                        $q->where('expiry_date', '<=', now()->addDays(30))
-                            ->orWhere('status', 'expired');
-                    })
+                    ->whereNotNull('expiry_date')
+                    ->where('expiry_date', '<=', now()->addDays(30))
                     ->count();
 
                 $branchComparison[] = [
