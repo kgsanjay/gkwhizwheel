@@ -1551,10 +1551,10 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                     </Box>
 
                     <Grid container spacing={2.5}>
-                        {apiBikes
-                            .filter((b) => !searchStore || String(b.current_store_id) === String(searchStore) || String(b.home_store_id) === String(searchStore) || true)
-                            .slice(0, 4)
-                            .map((bike) => {
+                        {(() => {
+                            const branchBikes = apiBikes.filter((b) => !searchStore || String(b.current_store_id) === String(searchStore) || String(b.home_store_id) === String(searchStore));
+                            const bikesToShow = branchBikes.length > 0 ? branchBikes : apiBikes;
+                            return bikesToShow.slice(0, 4).map((bike) => {
                                 const weekday = bike.daily_rate ?? bike.weekday_rate ?? bike.category?.base_daily_rate ?? 500;
                                 const weekend = bike.weekend_rate ?? weekday;
                                 const img = bike.primary_image_url || bike.images?.[0]?.image_url || '/images/services/bike-placeholder.jpg';
@@ -1666,7 +1666,8 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
                                         </Card>
                                     </Grid>
                                 );
-                            })}
+                            });
+                        })()}
                     </Grid>
                 </Box>
             )}

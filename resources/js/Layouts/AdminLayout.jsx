@@ -420,10 +420,18 @@ export default function AdminLayout({ children, title, currentStore }) {
 
     // Branch context state
     const [selectedBranchId, setSelectedBranchId] = useState(() => {
+        if (currentStore?.id) {
+            return String(currentStore.id);
+        }
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlStoreId = urlParams.get('store_id');
+            if (urlStoreId) return urlStoreId;
+        }
         if (!canAccessAllStores && assignedStores.length > 0) {
             return String(assignedStores[0].id);
         }
-        return localStorage.getItem('admin_active_branch_id') || 'all';
+        return (typeof window !== 'undefined' ? localStorage.getItem('admin_active_branch_id') : null) || 'all';
     });
     const [branchAnchorEl, setBranchAnchorEl] = useState(null);
 
@@ -431,6 +439,15 @@ export default function AdminLayout({ children, title, currentStore }) {
         setSelectedBranchId(branchId);
         if (canAccessAllStores) {
             localStorage.setItem('admin_active_branch_id', branchId);
+            if (typeof window !== 'undefined') {
+                const currentUrl = new URL(window.location.href);
+                if (branchId === 'all') {
+                    currentUrl.searchParams.delete('store_id');
+                } else {
+                    currentUrl.searchParams.set('store_id', branchId);
+                }
+                router.visit(currentUrl.pathname + currentUrl.search, { preserveState: false });
+            }
         }
         setBranchAnchorEl(null);
     };
