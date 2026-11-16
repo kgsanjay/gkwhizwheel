@@ -331,10 +331,9 @@ class AdminCheckInWebController extends Controller
             return $this->formatServiceBooking($serviceBooking);
         }
 
-        // 3. Check Two-Wheeler Booking by reference or booking_number or phone
+        // 3. Check Two-Wheeler Booking by reference or id or phone
         $bikeQuery = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'user']);
         $bikeBooking = $bikeQuery->where('booking_reference', $code)
-            ->orWhere('booking_number', $code)
             ->orWhere('id', is_numeric($code) ? (int) $code : 0)
             ->first();
 

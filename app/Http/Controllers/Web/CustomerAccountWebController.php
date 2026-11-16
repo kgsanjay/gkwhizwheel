@@ -172,8 +172,14 @@ class CustomerAccountWebController extends Controller
             abort(403, 'You are not authorized to view this booking.');
         }
 
+        $bookingData = (new BookingResource($booking))->resolve();
+        $qrDataUri = app(\App\Services\QrCodeService::class)->generateDataUri(route('bookings.confirmation', $booking->id));
+        $bookingData['qr_data_uri'] = $qrDataUri;
+        $bookingData['qr_code_url'] = route('bookings.qr', $booking->id);
+
         return Inertia::render('Account/BookingDetail', [
-            'booking' => (new BookingResource($booking))->resolve(),
+            'booking' => $bookingData,
+            'qrDataUri' => $qrDataUri,
         ]);
     }
 

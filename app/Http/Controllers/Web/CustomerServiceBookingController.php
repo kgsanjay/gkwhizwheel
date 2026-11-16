@@ -238,10 +238,12 @@ class CustomerServiceBookingController extends Controller
         $this->authorizeBookingAccess($request->user(), $booking);
 
         $coordinator = (new ServiceBookingConfirmedNotification($booking))->getCoordinatorDetails();
+        $qrDataUri = app(\App\Services\QrCodeService::class)->generateDataUri(route('services.booking.confirmation', $booking->booking_number));
 
         return Inertia::render('ServiceBookingConfirmation', [
             'booking' => $booking,
             'coordinator' => $coordinator,
+            'qrDataUri' => $qrDataUri,
         ]);
     }
 
@@ -482,5 +484,23 @@ class CustomerServiceBookingController extends Controller
         $this->authorizeBookingAccess($request->user(), $booking);
 
         return $voucherService->renderServiceVoucherHtml($booking);
+    }
+
+    /**
+     * Stream check-in QR code as a PNG image for service booking.
+     */
+    public function qrCode(string $bookingNumber, \App\Services\QrCodeService $qrCodeService, Request $request): \Illuminate\Http\Response
+    {
+        $booking = ServiceBooking::where('booking_number', $bookingNumber)->firstOrFail();
+
+        $this->authorizeBookingAccess($request->user(), $booking);
+
+        $verificationUrl = route('services.booking.confirmation', $booking->booking_number);
+        $png = $qrCodeService->generatePng($verificationUrl);
+
+        return response($png, 200, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 }

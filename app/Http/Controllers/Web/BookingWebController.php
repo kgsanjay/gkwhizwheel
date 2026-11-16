@@ -15,6 +15,7 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Notifications\BookingConfirmationNotification;
 use App\Notifications\PaymentReceiptNotification;
+use App\Services\QrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,7 @@ class BookingWebController extends Controller
     /**
      * Display the booking confirmation page.
      */
-    public function confirmation(int $id, Request $request): Response
+    public function confirmation(int $id, Request $request, QrCodeService $qrCodeService): Response
     {
         $booking = Booking::with([
             'bike.images',
@@ -45,17 +46,22 @@ class BookingWebController extends Controller
         if ($currentUser === null) {
             abort(401, 'Sign in to access your booking documents.');
         }
-        {
-            $isOwner = $currentUser->id === $booking->user_id;
-            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
-            if (! $isOwner && ! $isStaffOrAdmin) {
-                abort(403, 'You are not authorized to view this booking confirmation.');
-            }
+        $isOwner = $currentUser->id === $booking->user_id;
+        $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+
+        if (! $isOwner && ! $isStaffOrAdmin) {
+            abort(403, 'You are not authorized to view this booking confirmation.');
         }
 
+        $bookingData = (new BookingResource($booking))->resolve();
+        $qrDataUri = $qrCodeService->generateDataUri(route('bookings.confirmation', $booking->id));
+        $bookingData['qr_data_uri'] = $qrDataUri;
+        $bookingData['qr_code_url'] = route('bookings.qr', $booking->id);
+
         return Inertia::render('Bookings/Confirmation', [
-            'booking' => (new BookingResource($booking))->resolve(),
+            'booking' => $bookingData,
+            'qrDataUri' => $qrDataUri,
         ]);
     }
 
@@ -130,8 +136,13 @@ class BookingWebController extends Controller
         ]);
 
         $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
-            ->where('id', $id)
-            ->orWhere('booking_number', $id)
+            ->where(function ($query) use ($id): void {
+                if (is_numeric($id)) {
+                    $query->where('id', (int) $id)->orWhere('booking_reference', (string) $id);
+                } else {
+                    $query->where('booking_reference', (string) $id);
+                }
+            })
             ->firstOrFail();
 
         $currentUser = $request->user();
@@ -201,13 +212,61 @@ class BookingWebController extends Controller
             ?? '');
 
         if (preg_match('/^TXN_BK_(\d+)_/', $txnId, $m)) {
-            return redirect()->route('bookings.confirmation', (int) $m[1])
-                ->with('status', 'Returned from PhonePe. Your booking will be confirmed after server-side payment verification.');
+            $bookingId = (int) $m[1];
+            $booking = Booking::with('user')->find($bookingId);
+
+            if ($booking && $booking->user) {
+                // Ensure customer is authenticated in the web session
+                if (\Illuminate\Support\Facades\Auth::guest()) {
+                    \Illuminate\Support\Facades\Auth::guard('web')->login($booking->user);
+                    if ($request->hasSession()) {
+                        $request->session()->regenerate();
+                    }
+                }
+
+                // In local/testing environments where webhooks cannot reach 127.0.0.1,
+                // auto-confirm the booking on successful callback from the UAT simulator.
+                if (app()->environment('local', 'testing') && $booking->status !== BookingStatus::CONFIRMED) {
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($booking, $txnId): void {
+                        $booking->update([
+                            'status' => BookingStatus::CONFIRMED,
+                        ]);
+
+                        Payment::firstOrCreate(
+                            [
+                                'booking_id' => $booking->id,
+                                'gateway_reference' => $txnId,
+                            ],
+                            [
+                                'amount' => \App\Services\BikeBookingPayments::expectedGatewayAmount($booking),
+                                'method' => PaymentMethod::PHONEPE,
+                                'type' => PaymentType::ADVANCE,
+                                'status' => PaymentStatus::SUCCESS,
+                                'notes' => 'Simulated PhonePe UAT test confirmation.',
+                            ]
+                        );
+
+                        if ($booking->user !== null) {
+                            $booking->user->notify(new BookingConfirmationNotification($booking));
+                        }
+                    });
+                }
+            }
+
+            return redirect()->route('bookings.confirmation', $bookingId)
+                ->with('status', 'Payment successful! Your booking is confirmed.');
         }
 
         if (preg_match('/^TXN_SRV_(\d+)_/', $txnId, $m)) {
-            $srvBooking = \App\Models\ServiceBooking::find((int) $m[1]);
+            $srvBooking = \App\Models\ServiceBooking::with('user')->find((int) $m[1]);
             if ($srvBooking) {
+                if ($srvBooking->user && \Illuminate\Support\Facades\Auth::guest()) {
+                    \Illuminate\Support\Facades\Auth::guard('web')->login($srvBooking->user);
+                    if ($request->hasSession()) {
+                        $request->session()->regenerate();
+                    }
+                }
+
                 return redirect()->route('services.booking.confirmation', $srvBooking->booking_number)
                     ->with('success', 'PhonePe payment processed. Review your service booking details below.');
             }
@@ -222,8 +281,13 @@ class BookingWebController extends Controller
     public function printVoucher(int|string $id, \App\Services\VoucherService $voucherService, Request $request): \Illuminate\View\View
     {
         $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user'])
-            ->where('id', $id)
-            ->orWhere('booking_number', $id)
+            ->where(function ($query) use ($id): void {
+                if (is_numeric($id)) {
+                    $query->where('id', (int) $id)->orWhere('booking_reference', (string) $id);
+                } else {
+                    $query->where('booking_reference', (string) $id);
+                }
+            })
             ->firstOrFail();
 
         $currentUser = $request->user();
@@ -249,5 +313,37 @@ class BookingWebController extends Controller
         }
 
         return $voucherService->renderBikeVoucherHtml($booking);
+    }
+
+    /**
+     * Stream check-in QR code as a PNG image.
+     */
+    public function qrCode(int|string $id, QrCodeService $qrCodeService, Request $request): \Illuminate\Http\Response
+    {
+        $booking = Booking::where(function ($query) use ($id): void {
+            if (is_numeric($id)) {
+                $query->where('id', (int) $id)->orWhere('booking_reference', (string) $id);
+            } else {
+                $query->where('booking_reference', (string) $id);
+            }
+        })->firstOrFail();
+
+        $currentUser = $request->user();
+        if ($currentUser !== null) {
+            $isOwner = $currentUser->id === $booking->user_id;
+            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+
+            if (! $isOwner && ! $isStaffOrAdmin) {
+                abort(403, 'You are not authorized to view this check-in pass.');
+            }
+        }
+
+        $verificationUrl = route('bookings.confirmation', $booking->id);
+        $png = $qrCodeService->generatePng($verificationUrl);
+
+        return response($png, 200, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 }

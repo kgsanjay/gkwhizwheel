@@ -90,5 +90,58 @@ class StoreSeeder extends Seeder
                 $storeData
             );
         }
+
+        // Ensure default pickup points have approved directional fees (0.00 for free hub, not null)
+        $honnavarStore = Store::where('city', 'Honnavar')->first();
+        if ($honnavarStore) {
+            \App\Models\PickupPoint::updateOrCreate(
+                ['store_id' => $honnavarStore->id, 'slug' => 'gk-whizwheel-store'],
+                [
+                    'name' => 'G.K. WhizWheel Store',
+                    'address_line' => 'Palya Main Rd, Honnavar, Karnataka 581334',
+                    'pickup_fee' => 0.00,
+                    'return_fee' => 0.00,
+                    'supports_pickup' => true,
+                    'supports_return' => true,
+                    'is_active' => true,
+                ]
+            );
+            \App\Models\PickupPoint::updateOrCreate(
+                ['store_id' => $honnavarStore->id, 'slug' => 'ksrtc-bus-stand-honnavar'],
+                [
+                    'name' => 'KSRTC Bus Stand Honnavar',
+                    'address_line' => 'KSRTC Bus Stand, Honnavar, Karnataka 581334',
+                    'pickup_fee' => 50.00,
+                    'return_fee' => 50.00,
+                    'supports_pickup' => true,
+                    'supports_return' => true,
+                    'is_active' => true,
+                ]
+            );
+            \App\Models\PickupPoint::updateOrCreate(
+                ['store_id' => $honnavarStore->id, 'slug' => 'railway-station-honnavar'],
+                [
+                    'name' => 'Railway Station Honnavar',
+                    'address_line' => 'Railway Station Rd, Karki, Karnataka 581341',
+                    'pickup_fee' => 50.00,
+                    'return_fee' => 50.00,
+                    'supports_pickup' => true,
+                    'supports_return' => true,
+                    'is_active' => true,
+                ]
+            );
+            \App\Models\PickupPoint::updateOrCreate(
+                ['store_id' => $honnavarStore->id, 'slug' => 'sharavati-circle'],
+                [
+                    'name' => 'Sharavati Circle',
+                    'address_line' => 'Sharavati Circle, Honnavar, Karnataka 581334',
+                    'pickup_fee' => 30.00,
+                    'return_fee' => 30.00,
+                    'supports_pickup' => true,
+                    'supports_return' => true,
+                    'is_active' => true,
+                ]
+            );
+        }
     }
 }

@@ -25,6 +25,8 @@ final class BikeBillingStatementService
         $paid = round((float) $successfulPayments->sum('amount'), 2);
         $tax = ($booking->price_breakdown_json ?? [])['bike_gst'] ?? null;
         $billing = ($booking->price_breakdown_json ?? [])['checkout_billing'] ?? null;
+        $verificationUrl = route('bookings.confirmation', $booking->id);
+        $qrDataUri = app(\App\Services\QrCodeService::class)->generateDataUri($verificationUrl);
 
         $pdf = Pdf::loadView('vouchers.bike_billing_statement', [
             'booking' => $booking,
@@ -33,6 +35,7 @@ final class BikeBillingStatementService
             'payments' => $successfulPayments,
             'paid' => $paid,
             'balance' => max(0, round((float) $booking->total_amount - $paid, 2)),
+            'qrDataUri' => $qrDataUri,
         ])->setPaper('a4');
 
         return $pdf->download($booking->booking_reference.'_billing_statement.pdf');

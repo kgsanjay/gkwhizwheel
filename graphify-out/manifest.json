@@ -276,15 +276,15 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/AuthController.php": {
-    "mtime": 1794504032.2514882,
-    "seen": 1794723023.070986,
-    "ast_hash": "d36d71bde7371cf2111e5ce2e47e40fe",
+    "mtime": 1794756316.2940578,
+    "seen": 1794756675.2916238,
+    "ast_hash": "3e069a2f96980e793f8cf0f28078f47b",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/Customer/BookingController.php": {
-    "mtime": 1794654132.7536721,
-    "seen": 1794723023.070987,
-    "ast_hash": "b75d9a0e9413206091ce0c1108790551",
+    "mtime": 1794764360.2618287,
+    "seen": 1794764544.361302,
+    "ast_hash": "325436556a49361f5f1fe8b8eb66fddf",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/Customer/CustomerKycController.php": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/Public/BikeController.php": {
-    "mtime": 1794059843.158601,
-    "seen": 1794723023.070988,
-    "ast_hash": "292155f9229e3c698a7e825fb73b2937",
+    "mtime": 1794764727.6482031,
+    "seen": 1794765735.149811,
+    "ast_hash": "8368f91004a5de4c53d305f960c5059e",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/Public/BikeDocumentDownloadController.php": {
@@ -372,9 +372,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminBikeModelWebController.php": {
-    "mtime": 1794723408.327027,
-    "seen": 1794723696.3475451,
-    "ast_hash": "0255b8f733d4d207592b0808c02d69ff",
+    "mtime": 1794763193.9715073,
+    "seen": 1794763347.265277,
+    "ast_hash": "856f7d286be5d7af48be8e47d18c9284",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminBikeWebController.php": {
@@ -438,9 +438,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminCheckInWebController.php": {
-    "mtime": 1789184832.647634,
-    "seen": 1794723023.071002,
-    "ast_hash": "a7f57e7bf45686700fee5a5c2c848dc8",
+    "mtime": 1794767840.2077878,
+    "seen": 1794768336.771957,
+    "ast_hash": "c075a1758f9c65065d282900143fc7a9",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminCouponWebController.php": {
@@ -540,9 +540,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BikeCheckoutWebController.php": {
-    "mtime": 1794666230.7043407,
-    "seen": 1794723023.071014,
-    "ast_hash": "11858e1724ce951cd0205c41d5f46129",
+    "mtime": 1794749633.7058315,
+    "seen": 1794750056.9939961,
+    "ast_hash": "5ec5439f3318f501e45e3b936379a8be",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BikeModelWebController.php": {
@@ -564,9 +564,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BookingWebController.php": {
-    "mtime": 1794654133.0011945,
-    "seen": 1794723023.0710158,
-    "ast_hash": "bdfb10f0c55fed6beabc0173e00e1eff",
+    "mtime": 1794770242.443034,
+    "seen": 1794770836.328529,
+    "ast_hash": "3bf0e470993e09577b17d404beea489e",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BranchBikeRentalController.php": {
@@ -576,9 +576,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BranchServiceLandingWebController.php": {
-    "mtime": 1794715035.3302891,
-    "seen": 1794723023.071017,
-    "ast_hash": "127b43707dcb2542622bedc6146b47c2",
+    "mtime": 1794748755.9385912,
+    "seen": 1794749598.9901812,
+    "ast_hash": "537d56bedd567a401f3521055547553e",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/CabEnquiryWebController.php": {
@@ -594,15 +594,15 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/CustomerAccountWebController.php": {
-    "mtime": 1794666783.4960835,
-    "seen": 1794723023.071019,
-    "ast_hash": "c7464417b8c5cd15388642eafb007fd9",
+    "mtime": 1794770242.5081556,
+    "seen": 1794770836.328533,
+    "ast_hash": "8d87d14bdb52e61c5621d4536549e946",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/CustomerServiceBookingController.php": {
-    "mtime": 1794654133.0699778,
-    "seen": 1794723023.0710201,
-    "ast_hash": "ba06aa5d7e2a966f12c7a060f5c3bdc4",
+    "mtime": 1794769833.245789,
+    "seen": 1794770193.771641,
+    "ast_hash": "4ab21fb0c7deebcef7cf2342b93de833",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/ServiceEnquiryWebController.php": {
@@ -792,15 +792,15 @@
     "semantic_hash": ""
   },
   "app/Http/Requests/Customer/HoldBikeModelRequest.php": {
-    "mtime": 1794062436.086266,
-    "seen": 1794723023.071039,
-    "ast_hash": "3e39c0e9d1f57613507f7e37de9a46bf",
+    "mtime": 1794764322.702628,
+    "seen": 1794764544.361362,
+    "ast_hash": "47fbc0fa4a219badc1d0f56ff15efc4a",
     "semantic_hash": ""
   },
   "app/Http/Requests/Customer/HoldBookingRequest.php": {
-    "mtime": 1794062436.0868363,
-    "seen": 1794723023.071039,
-    "ast_hash": "097e9f032db5ae8c6cd702f0eed9f294",
+    "mtime": 1794764342.9362273,
+    "seen": 1794764544.361363,
+    "ast_hash": "21feea25aa0980d1a46795c1bf951eb3",
     "semantic_hash": ""
   },
   "app/Http/Requests/Customer/UploadKycDocumentRequest.php": {
@@ -822,9 +822,9 @@
     "semantic_hash": ""
   },
   "app/Http/Requests/Public/BikePriceQuoteRequest.php": {
-    "mtime": 1789183530.411887,
-    "seen": 1794723023.071042,
-    "ast_hash": "aecc71544f97ca2793b55048c4ad9044",
+    "mtime": 1794764299.3395777,
+    "seen": 1794764544.361366,
+    "ast_hash": "bf1ce30875aff97aca1a34bd9f21f27a",
     "semantic_hash": ""
   },
   "app/Http/Requests/Staff/CollectStaffPaymentRequest.php": {
@@ -882,9 +882,9 @@
     "semantic_hash": ""
   },
   "app/Http/Resources/BookingResource.php": {
-    "mtime": 1794666148.4759033,
-    "seen": 1794723023.071048,
-    "ast_hash": "fdd529a53d260e86020ae0c3b4cfccc1",
+    "mtime": 1794769856.1768205,
+    "seen": 1794770193.7716732,
+    "ast_hash": "a3f425673c1f2a56b137f86d9ea38e7e",
     "semantic_hash": ""
   },
   "app/Http/Resources/CouponResource.php": {
@@ -1224,9 +1224,9 @@
     "semantic_hash": ""
   },
   "app/Notifications/BookingConfirmationNotification.php": {
-    "mtime": 1794505076.73165,
-    "seen": 1794723023.071083,
-    "ast_hash": "85dc4e65d3a28db2da19499eb8c0e9df",
+    "mtime": 1794770242.6301956,
+    "seen": 1794770836.328609,
+    "ast_hash": "ec980afec965c7d15bb1b6513071e577",
     "semantic_hash": ""
   },
   "app/Notifications/Concerns/LogsNotification.php": {
@@ -1284,9 +1284,9 @@
     "semantic_hash": ""
   },
   "app/Notifications/ServiceBookingConfirmedNotification.php": {
-    "mtime": 1794505076.8525064,
-    "seen": 1794723023.0710888,
-    "ast_hash": "ea2639e41561e43c5e79e8d28ed0647c",
+    "mtime": 1794770242.7149773,
+    "seen": 1794770836.328616,
+    "ast_hash": "f45ab63e47a523eb7b5f0bd4e4d4e645",
     "semantic_hash": ""
   },
   "app/Notifications/ServiceManagerBookingAlertNotification.php": {
@@ -1344,15 +1344,15 @@
     "semantic_hash": ""
   },
   "app/Services/AvailabilityService.php": {
-    "mtime": 1794066431.2547815,
-    "seen": 1794723023.071095,
-    "ast_hash": "735ca6a8a519c1551aafad54971d7be0",
+    "mtime": 1794764727.8479395,
+    "seen": 1794765735.149933,
+    "ast_hash": "40d0c999ac2a0b84d6e92857977297d7",
     "semantic_hash": ""
   },
   "app/Services/BikeBillingStatementService.php": {
-    "mtime": 1794513889.758909,
-    "seen": 1794723023.071095,
-    "ast_hash": "3146d74900fb94d6bf2899ad51c8320c",
+    "mtime": 1794769176.251118,
+    "seen": 1794770193.771727,
+    "ast_hash": "d2d0264ad3716ffbe2b6ee8429329cc1",
     "semantic_hash": ""
   },
   "app/Services/BikeBookingPayments.php": {
@@ -1440,21 +1440,21 @@
     "semantic_hash": ""
   },
   "app/Services/PhonePeService.php": {
-    "mtime": 1794654133.3304954,
-    "seen": 1794723023.071104,
-    "ast_hash": "52fa8987a0730db3caba61a4f5cb847f",
+    "mtime": 1794753559.1041026,
+    "seen": 1794754139.073333,
+    "ast_hash": "c05cbcc0c90053937cccadcfad891655",
     "semantic_hash": ""
   },
   "app/Services/PricingService.php": {
-    "mtime": 1794666219.2641473,
-    "seen": 1794723023.071105,
-    "ast_hash": "73e495c7d5927fc11f6f09bdcc89543c",
+    "mtime": 1794764727.9185374,
+    "seen": 1794765735.149945,
+    "ast_hash": "a97873d3d0ef46582eb5c0ad96a4e3ce",
     "semantic_hash": ""
   },
   "app/Services/QrCodeService.php": {
-    "mtime": 1788983602.1910284,
-    "seen": 1794723023.071105,
-    "ast_hash": "0bf220ec1cc290c2794949ec8197c6b5",
+    "mtime": 1794770242.7821343,
+    "seen": 1794770836.328636,
+    "ast_hash": "e10c0ffaabd3afe8bfae6417eae425f3",
     "semantic_hash": ""
   },
   "app/Services/RefundService.php": {
@@ -1530,9 +1530,9 @@
     "semantic_hash": ""
   },
   "app/Services/VoucherService.php": {
-    "mtime": 1794488648.6855457,
-    "seen": 1794723023.0711129,
-    "ast_hash": "d6ba655079d99ff6416f0039eed4e779",
+    "mtime": 1794769783.6557963,
+    "seen": 1794770193.771747,
+    "ast_hash": "2d5503f2df320b325b5bca3d3615fa06",
     "semantic_hash": ""
   },
   "app/Services/WhatsAppService.php": {
@@ -1590,9 +1590,9 @@
     "semantic_hash": ""
   },
   "config/bike_gst.php": {
-    "mtime": 1794513889.7596862,
-    "seen": 1794723023.071119,
-    "ast_hash": "3fdab61df29d744646ac1b91edbffba8",
+    "mtime": 1794759026.5133665,
+    "seen": 1794763347.265418,
+    "ast_hash": "1a5f4e924ca5b32025e1a2f3fb70048c",
     "semantic_hash": ""
   },
   "config/booking.php": {
@@ -1674,9 +1674,9 @@
     "semantic_hash": ""
   },
   "config/services.php": {
-    "mtime": 1794654140.4836946,
-    "seen": 1794723023.071127,
-    "ast_hash": "a7e146d2407a93249c22786905831065",
+    "mtime": 1794754094.6851103,
+    "seen": 1794754139.07336,
+    "ast_hash": "5ca2ef04eafd5bc5b8d004cdc5d05dba",
     "semantic_hash": ""
   },
   "config/session.php": {
@@ -2112,9 +2112,9 @@
     "semantic_hash": ""
   },
   "database/seeders/BikeSeeder.php": {
-    "mtime": 1794513889.760538,
-    "seen": 1794723023.071172,
-    "ast_hash": "6fe50f4a3784cf28004d2890c6f72855",
+    "mtime": 1794763145.7517745,
+    "seen": 1794763347.26548,
+    "ast_hash": "147bd0e2e708268f73b887e5c0a59156",
     "semantic_hash": ""
   },
   "database/seeders/DatabaseSeeder.php": {
@@ -2148,9 +2148,9 @@
     "semantic_hash": ""
   },
   "database/seeders/StoreSeeder.php": {
-    "mtime": 1794714454.6779015,
-    "seen": 1794723023.071176,
-    "ast_hash": "e3bc4e2c0ffb4a4c95cf60ce27e256e9",
+    "mtime": 1794750000.1078532,
+    "seen": 1794750056.9941819,
+    "ast_hash": "804fbede248679528d533f332036ce7a",
     "semantic_hash": ""
   },
   "database/seeders/SuperAdminSeeder.php": {
@@ -2244,9 +2244,9 @@
     "semantic_hash": ""
   },
   "resources/js/Components/Booking/CheckoutModal.jsx": {
-    "mtime": 1794640760.0287087,
-    "seen": 1794723023.0711849,
-    "ast_hash": "daa333bec5d1c68a85b789ff3b493c1b",
+    "mtime": 1794764384.602802,
+    "seen": 1794764544.3615308,
+    "ast_hash": "3441c558734e18772971bfff745e420b",
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/BoatingBookingModal.jsx": {
@@ -2340,8 +2340,8 @@
     "semantic_hash": ""
   },
   "resources/js/Layouts/AppLayout.jsx": {
-    "mtime": 1794739714.6025636,
-    "seen": 1794740047.4554062,
+    "mtime": 1794740102.6403012,
+    "seen": 1794748668.0481899,
     "ast_hash": "002da2908ac0c1737106155fbea06437",
     "semantic_hash": ""
   },
@@ -2352,9 +2352,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Account/BookingDetail.jsx": {
-    "mtime": 1794666445.4568107,
-    "seen": 1794723023.0711958,
-    "ast_hash": "b4aae28229340b62de1a00f1711cd941",
+    "mtime": 1794770773.2020147,
+    "seen": 1794770836.328743,
+    "ast_hash": "e5d26b63d8cb9ec5e7a42d3843acea0a",
     "semantic_hash": ""
   },
   "resources/js/Pages/Account/Bookings.jsx": {
@@ -2370,9 +2370,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/BikeModels/Index.jsx": {
-    "mtime": 1794725217.4710262,
-    "seen": 1794725935.232255,
-    "ast_hash": "518a8a6b8e616a1c06cb8f7e4aa788cf",
+    "mtime": 1794763365.4326217,
+    "seen": 1794764544.361546,
+    "ast_hash": "e0b44a70fbbcb584106981518c450e0b",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Bikes/Create.jsx": {
@@ -2592,9 +2592,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/Checkout.jsx": {
-    "mtime": 1794640760.389189,
-    "seen": 1794723023.071219,
-    "ast_hash": "df67c9a0b62751e6269a6765c696b4ff",
+    "mtime": 1794764397.506327,
+    "seen": 1794764544.361572,
+    "ast_hash": "b5586cc8d5eadd2db464312a173f0bc2",
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/Index.jsx": {
@@ -2604,8 +2604,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/ModelShow.jsx": {
-    "mtime": 1794739824.7672398,
-    "seen": 1794740047.455433,
+    "mtime": 1794740102.744039,
+    "seen": 1794748668.048218,
     "ast_hash": "c6c4e2a6b5e8f38e71f35e5ccd4bd727",
     "semantic_hash": ""
   },
@@ -2634,9 +2634,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bookings/Confirmation.jsx": {
-    "mtime": 1794513889.7683096,
-    "seen": 1794723023.071223,
-    "ast_hash": "0e45635abc0a305edd6036ae37dbfe72",
+    "mtime": 1794770773.2860844,
+    "seen": 1794770836.328776,
+    "ast_hash": "276214f43f15de601f097b36c72ca0ed",
     "semantic_hash": ""
   },
   "resources/js/Pages/CabsPage.jsx": {
@@ -2688,9 +2688,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/ServiceBookingConfirmation.jsx": {
-    "mtime": 1794640760.4642084,
-    "seen": 1794723023.071229,
-    "ast_hash": "750367c6d7ff23fe1afadb6fd8ff9099",
+    "mtime": 1794770773.3390613,
+    "seen": 1794770836.328782,
+    "ast_hash": "10fe0a2fe2bb39f1e7697f0a929c9dbd",
     "semantic_hash": ""
   },
   "resources/js/Pages/ServiceDetail.jsx": {
@@ -2706,9 +2706,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Services/BranchServiceLanding.jsx": {
-    "mtime": 1794686946.2000802,
-    "seen": 1794723023.07123,
-    "ast_hash": "fae326b623b54f61981d454389c914eb",
+    "mtime": 1794765760.1870272,
+    "seen": 1794767509.056293,
+    "ast_hash": "d8293ac10a1b29c6dffa2c4685b38a64",
     "semantic_hash": ""
   },
   "resources/js/Pages/Terms.jsx": {
@@ -2724,8 +2724,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Welcome.jsx": {
-    "mtime": 1794739801.9914172,
-    "seen": 1794740047.455446,
+    "mtime": 1794740103.1350687,
+    "seen": 1794748668.04823,
     "ast_hash": "9116331cd206275f90425a5cb3d40589",
     "semantic_hash": ""
   },
@@ -2796,21 +2796,21 @@
     "semantic_hash": ""
   },
   "resources/views/vouchers/bike_billing_statement.blade.php": {
-    "mtime": 1794513889.772047,
-    "seen": 1794723023.071239,
-    "ast_hash": "4812587166098ae6eb1683f3b17d5ab7",
+    "mtime": 1794770243.0538416,
+    "seen": 1794770836.328795,
+    "ast_hash": "f6cdb999f4bbf3f3d86703b88989c9ac",
     "semantic_hash": ""
   },
   "resources/views/vouchers/bike_voucher.blade.php": {
-    "mtime": 1788983889.920185,
-    "seen": 1794723023.07124,
-    "ast_hash": "2a451d0857fb4b7d94fc87bbf4b3ec58",
+    "mtime": 1794770243.14334,
+    "seen": 1794770836.328796,
+    "ast_hash": "9f788bf903821c0d0b9617f0aa48fcd0",
     "semantic_hash": ""
   },
   "resources/views/vouchers/service_voucher.blade.php": {
-    "mtime": 1788983620.4576776,
-    "seen": 1794723023.071241,
-    "ast_hash": "78b31c4b0936bad08317453542fe29e2",
+    "mtime": 1794770243.2140012,
+    "seen": 1794770836.3287969,
+    "ast_hash": "75ffedb8e1fe154ecf614c9424ddc021",
     "semantic_hash": ""
   },
   "resources/views/welcome.blade.php": {
@@ -2832,9 +2832,9 @@
     "semantic_hash": ""
   },
   "routes/web.php": {
-    "mtime": 1794725900.7267601,
-    "seen": 1794725935.2323031,
-    "ast_hash": "745587800b9e3762984b43a060e46cb3",
+    "mtime": 1794769811.7301311,
+    "seen": 1794770193.771899,
+    "ast_hash": "ed5f4066d4197cd0df642928bb7b9782",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -3012,9 +3012,9 @@
     "semantic_hash": ""
   },
   "tests/Feature/BikeBookingDocumentAccessTest.php": {
-    "mtime": 1794513889.7734697,
-    "seen": 1794723023.071261,
-    "ast_hash": "1711751db11a1f216e2ff6c515d99a8e",
+    "mtime": 1794770128.862225,
+    "seen": 1794770193.77192,
+    "ast_hash": "a340f1f5929cb3aecc64298eed54eeac",
     "semantic_hash": ""
   },
   "tests/Feature/BikeBookingPickupPointsTest.php": {
@@ -3054,9 +3054,9 @@
     "semantic_hash": ""
   },
   "tests/Feature/BikeModelAdminWebTest.php": {
-    "mtime": 1794723433.7632034,
-    "seen": 1794723696.347824,
-    "ast_hash": "c2f8ae0e21c6a0212f107b3bf4664063",
+    "mtime": 1794752521.7450373,
+    "seen": 1794752731.916041,
+    "ast_hash": "255847f44dba4fc97d10dc69ed114fee",
     "semantic_hash": ""
   },
   "tests/Feature/BikeModelBookingAllocationTest.php": {
@@ -3804,9 +3804,9 @@
     "semantic_hash": ""
   },
   "tests/Unit/PricingServiceTest.php": {
-    "mtime": 1793737793.923997,
-    "seen": 1794723023.07134,
-    "ast_hash": "38e700d0825ef91528b12c477846c318",
+    "mtime": 1794764470.1671858,
+    "seen": 1794764544.3617148,
+    "ast_hash": "12c99192f7a2e4d496bd3920fb1a2164",
     "semantic_hash": ""
   },
   "vite.config.js": {
@@ -4098,15 +4098,15 @@
     "semantic_hash": ""
   },
   "public/images/bikes/honda-dio-dlx.jpg": {
-    "mtime": 1788687358.237394,
-    "seen": 1794723023.0713742,
-    "ast_hash": "7c37b91185acb76e9d9e35e14e66b293",
+    "mtime": 1794763129.6328487,
+    "seen": 1794763347.265719,
+    "ast_hash": "dba4ef136956031b5f03e69272a29a93",
     "semantic_hash": ""
   },
   "public/images/bikes/honda-dio-dlx.webp": {
-    "mtime": 1789149054.4004595,
-    "seen": 1794723023.0713751,
-    "ast_hash": "64574447ccfd8440af31b762f916b2d4",
+    "mtime": 1794763317.3349273,
+    "seen": 1794763347.2657201,
+    "ast_hash": "23984f0c58c18b7bbd552508c1f892b0",
     "semantic_hash": ""
   },
   "public/images/bikes/honda-hness.jpg": {
@@ -4623,6 +4623,12 @@
     "mtime": 1794725838.9964795,
     "seen": 1794725935.232415,
     "ast_hash": "92fd8564623b50abefc7e417ef0c3646",
+    "semantic_hash": ""
+  },
+  "config/dompdf.php": {
+    "mtime": 1794769791.788334,
+    "seen": 1794770193.771758,
+    "ast_hash": "f2aef593d3661d616c062c7f3408e48f",
     "semantic_hash": ""
   },
   "package-lock.json": {

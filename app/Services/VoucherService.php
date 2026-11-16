@@ -15,7 +15,8 @@ class VoucherService
 {
     public function __construct(
         protected QrCodeService $qrCodeService
-    ) {}
+    ) {
+    }
 
     /**
      * Generate downloadable or streamable PDF voucher for a travel service booking.
@@ -66,12 +67,13 @@ class VoucherService
         $qrDataUri = $this->qrCodeService->generateDataUri($verificationUrl);
 
         $pdf = Pdf::loadView('vouchers.bike_voucher', [
-            'booking' => $booking->loadMissing(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user']),
+            'booking' => $booking->loadMissing(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user', 'payments']),
             'qrDataUri' => $qrDataUri,
             'isPdf' => true,
         ])->setPaper('a4', 'portrait');
 
-        $filename = "{$booking->booking_number}_rental_agreement.pdf";
+        $ref = $booking->booking_reference ?: "BK-{$booking->id}";
+        $filename = "{$ref}_rental_agreement.pdf";
 
         return $stream ? $pdf->stream($filename) : $pdf->download($filename);
     }
@@ -85,7 +87,7 @@ class VoucherService
         $qrDataUri = $this->qrCodeService->generateDataUri($verificationUrl);
 
         return view('vouchers.bike_voucher', [
-            'booking' => $booking->loadMissing(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user']),
+            'booking' => $booking->loadMissing(['bike.category', 'pickupStore', 'returnStore', 'addons', 'user', 'payments']),
             'qrDataUri' => $qrDataUri,
             'isPdf' => false,
         ]);

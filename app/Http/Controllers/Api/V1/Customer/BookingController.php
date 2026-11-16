@@ -43,6 +43,8 @@ class BookingController extends Controller
             'return_location_details' => $request->validated('return_location_details'),
             'start_date' => (string) $request->validated('start_date'),
             'end_date' => (string) $request->validated('end_date'),
+            'pickup_time' => $request->validated('pickup_time'),
+            'return_time' => $request->validated('return_time'),
             'channel' => BookingChannel::ONLINE,
             'idempotency_key' => (string) $request->validated('idempotency_key'),
             'coupon_code' => $request->validated('coupon_code'),
@@ -77,6 +79,8 @@ class BookingController extends Controller
             'return_location_details' => $request->validated('return_location_details'),
             'start_date' => (string) $request->validated('start_date'),
             'end_date' => (string) $request->validated('end_date'),
+            'pickup_time' => $request->validated('pickup_time'),
+            'return_time' => $request->validated('return_time'),
             'idempotency_key' => (string) $request->validated('idempotency_key'),
             'coupon_code' => $request->validated('coupon_code'),
             'addons' => $request->validated('addons') ?? [],
@@ -165,7 +169,7 @@ class BookingController extends Controller
             'billing' => ['nullable', 'array'],
             'billing.type' => ['required_with:billing', 'in:personal,business'],
             'billing.name' => ['required_with:billing', 'string', 'min:2', 'max:150'],
-            'billing.address' => ['required_with:billing', 'string', 'min:8', 'max:500'],
+            'billing.address' => ['required_with:billing', 'string', 'min:3', 'max:500'],
             'billing.state_code' => ['required_with:billing', 'digits:2'],
             'billing.gstin' => ['nullable', 'string', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],
         ]);
@@ -236,10 +240,10 @@ class BookingController extends Controller
         }
         $booking->update(['price_breakdown_json' => $breakdown]);
 
-        // Reuse an already-created payment page for sequential retries.
-        // A fresh gateway attempt should not be issued just because the
-        // customer double-clicked or refreshed the checkout screen.
-        if (! empty($breakdown['phonepe_transaction_id'])) {
+        // Reuse an already-created payment page for sequential retries,
+        // unless explicitly retrying or if existing session was an invalid synthetic token.
+        $isSynthetic = isset($breakdown['phonepe_redirect_url']) && preg_match('/simulator\?token=[A-Za-z0-9]{32}$/', (string) $breakdown['phonepe_redirect_url']);
+        if (! empty($breakdown['phonepe_transaction_id']) && ! $request->boolean('retry') && ! $isSynthetic) {
             if (empty($breakdown['phonepe_redirect_url'])) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'payment_option' => 'A PhonePe payment is already in progress. Check its result before attempting another payment.',

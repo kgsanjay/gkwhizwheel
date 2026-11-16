@@ -381,3 +381,52 @@ test('an exact directional rule takes precedence over a generic fallback rule', 
 
     expect($quote['one_way_fee_amount'])->toBe(200.00);
 });
+
+test('24-hour cycle billing charges 1 day for 24-hour duration across consecutive dates', function (): void {
+    // 24 hours: Tuesday 09:00 to Wednesday 09:00 (base rate 500/day)
+    $quote = $this->pricingService->calculateQuote(
+        bike: $this->bike,
+        startDate: '2026-09-08',
+        endDate: '2026-09-09',
+        pickupStore: $this->storeA,
+        returnStore: $this->storeA,
+        pickupTime: '09:00',
+        returnTime: '09:00'
+    );
+
+    expect($quote['price_breakdown_json']['days'])->toBe(1)
+        ->and($quote['price_breakdown_json']['hours'])->toBe(24)
+        ->and($quote['base_amount'])->toBe(500.00);
+});
+
+test('24-hour cycle billing charges 2 days for 48-hour duration and 1 day for same-day duration', function (): void {
+    // 48 hours: Tuesday 09:00 to Thursday 09:00
+    $quote48 = $this->pricingService->calculateQuote(
+        bike: $this->bike,
+        startDate: '2026-09-08',
+        endDate: '2026-09-10',
+        pickupStore: $this->storeA,
+        returnStore: $this->storeA,
+        pickupTime: '09:00',
+        returnTime: '09:00'
+    );
+
+    expect($quote48['price_breakdown_json']['days'])->toBe(2)
+        ->and($quote48['price_breakdown_json']['hours'])->toBe(48)
+        ->and($quote48['base_amount'])->toBe(1000.00);
+
+    // Same-day 10 hours: Tuesday 09:00 to Tuesday 19:00
+    $quoteSameDay = $this->pricingService->calculateQuote(
+        bike: $this->bike,
+        startDate: '2026-09-08',
+        endDate: '2026-09-08',
+        pickupStore: $this->storeA,
+        returnStore: $this->storeA,
+        pickupTime: '09:00',
+        returnTime: '19:00'
+    );
+
+    expect($quoteSameDay['price_breakdown_json']['days'])->toBe(1)
+        ->and($quoteSameDay['price_breakdown_json']['hours'])->toBe(10)
+        ->and($quoteSameDay['base_amount'])->toBe(500.00);
+});

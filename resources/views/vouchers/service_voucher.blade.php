@@ -5,35 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trip Voucher #{{ $booking->booking_number }} - GK WhizWheels</title>
     <style>
+        @page {
+            size: A4 portrait;
+            margin: 8mm 10mm;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "DejaVu Sans", sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        body, table, td, th, div, span, strong, b, p, a, li, ul {
+            font-family: "DejaVu Sans", sans-serif;
         }
 
         body {
             background-color: #F8FAFC;
             color: #1E293B;
-            font-size: 13px;
-            line-height: 1.5;
-            padding: 20px;
+            font-size: 10.5px;
+            line-height: 1.35;
+            padding: 12px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 790px;
             margin: 0 auto;
             background: #FFFFFF;
             border: 1px solid #E2E8F0;
-            border-radius: 12px;
-            padding: 32px;
+            border-radius: 8px;
+            padding: 16px 20px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            page-break-inside: avoid;
         }
 
         /* Web Action Bar */
         .no-print {
-            max-width: 800px;
-            margin: 0 auto 16px auto;
+            max-width: 790px;
+            margin: 0 auto 12px auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -42,11 +54,11 @@
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 9px 18px;
-            font-size: 13px;
-            font-weight: 700;
-            border-radius: 8px;
+            gap: 6px;
+            padding: 7px 14px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 6px;
             text-decoration: none;
             cursor: pointer;
             border: none;
@@ -71,9 +83,9 @@
         .header {
             display: table;
             width: 100%;
-            border-bottom: 2px solid #E2E8F0;
-            padding-bottom: 20px;
-            margin-bottom: 24px;
+            border-bottom: 2px solid #0284C7;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .header-left {
@@ -90,38 +102,38 @@
         }
 
         .brand-title {
-            font-size: 24px;
-            font-weight: 900;
+            font-size: 19px;
+            font-weight: bold;
             color: #0F172A;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
         }
 
         .brand-subtitle {
-            font-size: 12px;
+            font-size: 9px;
             color: #0284C7;
-            font-weight: 700;
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
         }
 
         .contact-info {
-            font-size: 11px;
+            font-size: 9px;
             color: #64748B;
-            line-height: 1.4;
+            line-height: 1.3;
         }
 
         .badge-confirmed {
             display: inline-block;
             background: #DCFCE7;
             color: #15803D;
-            font-weight: 800;
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 20px;
+            font-weight: bold;
+            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 6px;
+            letter-spacing: 0.4px;
+            margin-top: 4px;
         }
 
         .qr-box {
@@ -130,61 +142,62 @@
         }
 
         .qr-image {
-            width: 95px;
-            height: 95px;
+            width: 65px;
+            height: 65px;
             border: 1px solid #E2E8F0;
-            border-radius: 6px;
-            padding: 3px;
+            border-radius: 5px;
+            padding: 2px;
             background: #FFFFFF;
         }
 
         .qr-label {
-            font-size: 9px;
+            font-size: 8px;
             color: #64748B;
-            font-weight: 700;
-            margin-top: 3px;
+            font-weight: bold;
+            margin-top: 2px;
         }
 
         /* Main Sections */
         .section-title {
-            font-size: 12px;
-            font-weight: 800;
+            font-size: 10px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.5px;
             color: #0284C7;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             border-bottom: 1px solid #F1F5F9;
-            padding-bottom: 4px;
+            padding-bottom: 3px;
         }
 
         .grid-2 {
             display: table;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .col-half {
             display: table-cell;
             width: 50%;
             vertical-align: top;
-            padding-right: 12px;
+            padding-right: 8px;
         }
 
         .col-half:last-child {
             padding-right: 0;
-            padding-left: 12px;
+            padding-left: 8px;
         }
 
         .card {
             background: #F8FAFC;
             border: 1px solid #E2E8F0;
-            border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 16px;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
         }
 
         .meta-row {
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+            line-height: 1.25;
         }
 
         .meta-row:last-child {
@@ -192,22 +205,22 @@
         }
 
         .meta-label {
-            font-size: 10px;
-            font-weight: 700;
+            font-size: 8.5px;
+            font-weight: bold;
             color: #64748B;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
         }
 
         .meta-value {
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 10.5px;
+            font-weight: bold;
             color: #0F172A;
         }
 
         .meta-value-lg {
-            font-size: 15px;
-            font-weight: 900;
+            font-size: 12px;
+            font-weight: bold;
             color: #0284C7;
         }
 
@@ -215,25 +228,26 @@
         .table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .table th {
             background: #F1F5F9;
             color: #475569;
-            font-size: 11px;
-            font-weight: 800;
+            font-size: 9px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             text-align: left;
-            padding: 9px 12px;
+            padding: 5px 8px;
             border-top: 1px solid #E2E8F0;
             border-bottom: 1px solid #E2E8F0;
         }
 
         .table td {
-            padding: 10px 12px;
+            padding: 5px 8px;
             border-bottom: 1px solid #F1F5F9;
+            font-size: 9.5px;
             color: #1E293B;
         }
 
@@ -243,53 +257,53 @@
 
         .tariff-total-row {
             background: #F8FAFC;
-            font-weight: 900;
-            font-size: 14px;
+            font-weight: bold;
+            font-size: 10.5px;
             color: #0F172A;
-            border-top: 2px solid #CBD5E1 !important;
-            border-bottom: 2px solid #CBD5E1 !important;
+            border-top: 1.5px solid #CBD5E1 !important;
+            border-bottom: 1.5px solid #CBD5E1 !important;
         }
 
         .highlight-balance {
             color: #E11D48;
-            font-weight: 900;
+            font-weight: bold;
         }
 
         .highlight-paid {
             color: #15803D;
-            font-weight: 900;
+            font-weight: bold;
         }
 
         /* Terms / Footer */
         .guidelines {
             background: #FFFBEB;
             border: 1px solid #FDE68A;
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-top: 16px;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-top: 8px;
         }
 
         .guidelines-title {
-            font-size: 11px;
-            font-weight: 800;
+            font-size: 9px;
+            font-weight: bold;
             color: #B45309;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
         }
 
         .guidelines ul {
-            padding-left: 16px;
-            font-size: 11px;
+            padding-left: 14px;
+            font-size: 8.5px;
             color: #78350F;
-            line-height: 1.5;
+            line-height: 1.35;
         }
 
         .footer {
-            margin-top: 24px;
-            padding-top: 14px;
+            margin-top: 10px;
+            padding-top: 5px;
             border-top: 1px solid #E2E8F0;
             text-align: center;
-            font-size: 10px;
+            font-size: 8px;
             color: #94A3B8;
         }
 
@@ -333,19 +347,19 @@
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                <div class="brand-subtitle">G.K. WhizWheels • Honnavar Coastal Tourism</div>
+                <div class="brand-subtitle">G.K. WhizWheels &bull; Honnavar Coastal Tourism</div>
                 <div class="brand-title">Official Travel Pass & Voucher</div>
                 <div class="contact-info">
                     Palya Main Road Hub, Honnavar, Uttara Kannada, Karnataka - 581334<br>
                     24x7 Traveler Hotline: <strong>+91 86609 89586</strong> / <strong>+91 94815 12340</strong><br>
-                    Website: gkwhizwheel.in • Email: support@gkwhizwheel.com
+                    Website: gkwhizwheel.in &bull; Email: support@gkwhizwheel.com
                 </div>
                 <div>
-                    <span class="badge-confirmed">● {{ strtoupper($booking->status) }}</span>
+                    <span class="badge-confirmed">&bull; {{ strtoupper($booking->status) }}</span>
                     @if($booking->payment_status === 'paid')
-                        <span class="badge-confirmed" style="background:#E0F2FE; color:#0369A1;">● FULLY SETTLED</span>
+                        <span class="badge-confirmed" style="background:#E0F2FE; color:#0369A1;">&bull; FULLY SETTLED</span>
                     @else
-                        <span class="badge-confirmed" style="background:#FEF3C7; color:#B45309;">● PAY ON ARRIVAL</span>
+                        <span class="badge-confirmed" style="background:#FEF3C7; color:#B45309;">&bull; PAY ON ARRIVAL</span>
                     @endif
                 </div>
             </div>
@@ -355,7 +369,7 @@
                         <img src="{{ $qrDataUri }}" alt="Booking QR Verification" class="qr-image">
                     @endif
                     <div class="qr-label">SCAN TO VERIFY PASS</div>
-                    <div style="font-size: 11px; font-weight: 800; color: #0F172A; margin-top: 2px;">
+                    <div style="font-size: 11px; font-weight: bold; color: #0F172A; margin-top: 2px;">
                         #{{ $booking->booking_number }}
                     </div>
                 </div>
@@ -383,7 +397,7 @@
                     <div class="meta-row">
                         <div class="meta-label">Scheduled Date & Time</div>
                         <div class="meta-value" style="color: #0284C7;">
-                            {{ $booking->start_datetime ? $booking->start_datetime->format('D, d M Y • h:i A') : 'Confirmed on Schedule' }}
+                            {{ $booking->start_datetime ? $booking->start_datetime->format('D, d M Y') . ' &bull; ' . $booking->start_datetime->format('h:i A') : 'Confirmed on Schedule' }}
                         </div>
                     </div>
                     <div class="meta-row">
@@ -425,7 +439,7 @@
                     </div>
                     <div class="meta-row">
                         <div class="meta-label" style="color: #15803D;">Direct Hotline / WhatsApp</div>
-                        <div class="meta-value" style="color: #166534; font-weight: 800;">{{ $coordinator['phone'] ?? '+91 86609 89586' }}</div>
+                        <div class="meta-value" style="color: #166534; font-weight: bold;">{{ $coordinator['phone'] ?? '+91 86609 89586' }}</div>
                     </div>
                     <div class="meta-row">
                         <div class="meta-label" style="color: #15803D;">Station / Dock Hub</div>
@@ -451,7 +465,7 @@
                     <td>
                         <strong>{{ $booking->serviceItem?->name ?? ucwords(str_replace('_', ' ', $booking->service_type)) }}</strong>
                         <div style="font-size: 11px; color: #64748B;">
-                            Direct Honnavar local tariff • Zero hidden commissions
+                            Direct Honnavar local tariff &bull; Zero hidden commissions
                         </div>
                     </td>
                     <td>{{ $booking->quantity }}</td>
@@ -471,17 +485,17 @@
                     <td class="text-right">₹{{ number_format((float)$booking->total_amount, 2) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="3" style="font-weight: 700;">Advance Paid Online</td>
+                    <td colspan="3" style="font-weight: bold;">Advance Paid Online</td>
                     <td class="text-right highlight-paid">₹{{ number_format((float)$booking->advance_paid, 2) }}</td>
                 </tr>
                 <tr>
-                    <td colspan="3" style="font-weight: 900; font-size: 13px;">
+                    <td colspan="3" style="font-weight: bold; font-size: 12px;">
                         Net Balance Due on Arrival / Boarding
-                        <div style="font-size: 10px; color: #64748B; font-weight: normal;">
+                        <div style="font-size: 9.5px; color: #64748B; font-weight: normal;">
                             Payable via Cash / UPI (Google Pay, PhonePe, Paytm) at pickup
                         </div>
                     </td>
-                    <td class="text-right highlight-balance" style="font-size: 14px;">
+                    <td class="text-right highlight-balance" style="font-size: 13px;">
                         ₹{{ number_format((float)$booking->balance_due, 2) }}
                     </td>
                 </tr>
@@ -502,9 +516,18 @@
         <!-- Footer -->
         <div class="footer">
             Thank you for booking with G.K. WhizWheels! This electronic pass serves as your confirmed voucher and valid tax receipt.<br>
-            Emergency Contact: +91 86609 89586 • Palya Main Rd Hub, Honnavar, Karnataka
+            Emergency Contact: +91 86609 89586 &bull; Palya Main Rd Hub, Honnavar, Karnataka
         </div>
     </div>
 
+    @if(empty($isPdf) && request()->has('autoprint'))
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                window.print();
+            }, 300);
+        });
+    </script>
+    @endif
 </body>
 </html>

@@ -171,7 +171,9 @@ class BikeController extends Controller
             returnStore: (int) $request->validated('return_store_id'),
             couponCode: $request->validated('coupon_code'),
             addons: $request->validated('addons') ?? [],
-            userId: $request->user()?->id
+            userId: $request->user()?->id,
+            pickupTime: $request->validated('pickup_time'),
+            returnTime: $request->validated('return_time'),
         );
 
         $quote = \App\Services\BikeBookingPayments::waiveDeposit($quote);

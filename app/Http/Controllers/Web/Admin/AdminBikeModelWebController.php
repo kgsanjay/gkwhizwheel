@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Web\Admin;
 
 use App\Enums\BikeStatus;
+use App\Enums\BookingStatus;
 use App\Enums\FuelType;
 use App\Enums\Transmission;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Bike;
 use App\Models\BikeCategory;
 use App\Models\BikeModel;
+use App\Models\Booking;
 use App\Models\BranchBikeModelPrice;
 use App\Models\Store;
 use Illuminate\Http\RedirectResponse;
@@ -58,6 +61,7 @@ class AdminBikeModelWebController extends Controller
                     'fuel_type' => $model->fuel_type->value,
                     'transmission' => $model->transmission->value,
                     'description' => $model->description,
+                    'primary_image_path' => $model->primary_image_path,
                     'is_active' => (bool) $model->is_active,
                     'total_units' => $units->count(),
                     'branch_prices' => $model->branchPrices->map(fn (BranchBikeModelPrice $price): array => [
@@ -139,12 +143,21 @@ class AdminBikeModelWebController extends Controller
             'fuel_type' => ['required', new Enum(FuelType::class)],
             'transmission' => ['required', new Enum(Transmission::class)],
             'description' => ['nullable', 'string', 'max:5000'],
+            'primary_image_path' => ['nullable', 'string', 'max:255'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ]);
         $data['brand'] = trim($data['brand']);
         $data['name'] = trim($data['name']);
         if ($data['brand'] === '' || $data['name'] === '') {
             throw ValidationException::withMessages(['name' => 'Brand and model name cannot be empty.']);
         }
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('bikes/models', 'public');
+            $data['primary_image_path'] = '/storage/' . $path;
+        }
+        unset($data['image']);
+
         $duplicate = BikeModel::query()
             ->where('category_id', $data['category_id'])
             ->where('brand', $data['brand'])
@@ -175,6 +188,8 @@ class AdminBikeModelWebController extends Controller
             'fuel_type' => ['required', new Enum(FuelType::class)],
             'transmission' => ['required', new Enum(Transmission::class)],
             'description' => ['nullable', 'string', 'max:5000'],
+            'primary_image_path' => ['nullable', 'string', 'max:255'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -183,6 +198,12 @@ class AdminBikeModelWebController extends Controller
         if ($data['brand'] === '' || $data['name'] === '') {
             throw ValidationException::withMessages(['name' => 'Brand and model name cannot be empty.']);
         }
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('bikes/models', 'public');
+            $data['primary_image_path'] = '/storage/' . $path;
+        }
+        unset($data['image']);
 
         $duplicate = BikeModel::query()
             ->where('id', '!=', $model->id)
@@ -214,6 +235,68 @@ class AdminBikeModelWebController extends Controller
 
         return redirect()->route('admin.bike-models.index')
             ->with('success', "Bike model {$model->brand} {$model->name} has been {$status}.");
+    }
+
+    public function destroy(int $id, Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->role === UserRole::SUPER_ADMIN, 403);
+
+        $model = BikeModel::findOrFail($id);
+
+        // Active booking check
+        $hasActiveBookings = Booking::query()
+            ->where('bike_model_id', $model->id)
+            ->whereIn('status', [
+                BookingStatus::HELD,
+                BookingStatus::PENDING_PAYMENT,
+                BookingStatus::CONFIRMED,
+                BookingStatus::HANDED_OVER,
+            ])
+            ->exists();
+
+        if ($hasActiveBookings) {
+            throw ValidationException::withMessages([
+                'delete' => "Cannot delete '{$model->brand} {$model->name}' because there are active or ongoing customer bookings for this vehicle model. Please complete or cancel those bookings first, or deactivate the model.",
+            ]);
+        }
+
+        $unitsCount = Bike::where('bike_model_id', $model->id)->count();
+        $modelName = "{$model->brand} {$model->name}";
+        $modelId = $model->id;
+        $oldValues = [
+            'id' => $model->id,
+            'brand' => $model->brand,
+            'name' => $model->name,
+            'category_id' => $model->category_id,
+            'unlinked_units' => $unitsCount,
+        ];
+
+        DB::transaction(function () use ($model, $unitsCount, $modelId, $oldValues, $request): void {
+            // Unlink any associated physical vehicles so their records remain safe
+            Bike::where('bike_model_id', $model->id)->update([
+                'bike_model_id' => null,
+            ]);
+
+            // Branch price overrides
+            BranchBikeModelPrice::where('bike_model_id', $model->id)->delete();
+
+            $model->delete();
+
+            ActivityLog::create([
+                'user_id' => $request->user()?->id,
+                'action' => 'bike_model_deleted',
+                'subject_type' => BikeModel::class,
+                'subject_id' => $modelId,
+                'old_values' => $oldValues,
+            ]);
+        });
+
+        $msg = "Bike model {$modelName} deleted successfully.";
+        if ($unitsCount > 0) {
+            $msg .= " {$unitsCount} physical vehicles were safely detached and moved to unlinked units.";
+        }
+
+        return redirect()->route('admin.bike-models.index')->with('success', $msg);
     }
     /**
      * Register multiple distinct physical vehicles under a single catalog

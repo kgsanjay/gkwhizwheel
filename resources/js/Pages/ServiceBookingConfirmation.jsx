@@ -32,7 +32,7 @@ import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 
 
-export default function ServiceBookingConfirmation({ booking = {}, coordinator = {}, razorpayKey = '' }) {
+export default function ServiceBookingConfirmation({ booking = {}, coordinator = {}, razorpayKey = '', qrDataUri = null }) {
     const [currentBooking, setCurrentBooking] = React.useState(booking);
     const [gateway, setGateway] = React.useState('phonepe');
     const [paying, setPaying] = React.useState(false);
@@ -226,6 +226,98 @@ export default function ServiceBookingConfirmation({ booking = {}, coordinator =
                         </Stack>
                     </Box>
                 </Box>
+
+                {/* Digital Express Check-In QR Pass */}
+                {isConfirmed && qrDataUri && (
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: { xs: 2.5, sm: 3 },
+                            mb: 4,
+                            bgcolor: '#FFFFFF',
+                            border: '2px dashed #0284C7',
+                            borderRadius: 4,
+                            boxShadow: '0 10px 25px -5px rgba(2, 132, 199, 0.08)',
+                        }}
+                    >
+                        <Grid container spacing={3} alignItems="center">
+                            <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <Box
+                                    sx={{
+                                        p: 1.5,
+                                        bgcolor: '#FFFFFF',
+                                        borderRadius: 3,
+                                        boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
+                                        border: '1px solid #CBD5E1',
+                                        textAlign: 'center',
+                                    }}
+                                >
+                                    <img
+                                        src={qrDataUri}
+                                        alt={`Express Check-In QR for ${currentBooking.booking_number}`}
+                                        style={{
+                                            width: 140,
+                                            height: 140,
+                                            display: 'block',
+                                            margin: '0 auto',
+                                        }}
+                                    />
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            display: 'block',
+                                            mt: 0.5,
+                                            fontFamily: 'monospace',
+                                            fontWeight: 800,
+                                            color: '#0F172A',
+                                            letterSpacing: 0.5,
+                                        }}
+                                    >
+                                        #{currentBooking.booking_number}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 8, md: 9 }} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                                <Box
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        px: 1.5,
+                                        py: 0.5,
+                                        bgcolor: '#F0F9FF',
+                                        color: '#0369A1',
+                                        borderRadius: 2,
+                                        mb: 1,
+                                    }}
+                                >
+                                    <CheckCircleIcon sx={{ fontSize: 18 }} />
+                                    <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                        Express Boarding Pass
+                                    </Typography>
+                                </Box>
+                                <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5 }}>
+                                    Show this QR to your Coordinator
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#64748B', mb: 2, maxWidth: 520 }}>
+                                    Present this code upon arrival for instant verification and boarding. <strong>No need to download or print anything!</strong>
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+                                    <Chip
+                                        size="small"
+                                        label={currentBooking.service_item?.name || serviceTitle}
+                                        sx={{ fontWeight: 600 }}
+                                    />
+                                    <Chip
+                                        size="small"
+                                        label={currentBooking.pickup_location || coordinator.spot || 'Honnavar'}
+                                        sx={{ fontWeight: 600 }}
+                                    />
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </Paper>
+                )}
 
                 {paySuccessMsg && (
                     <Alert severity="success" sx={{ mb: 3, borderRadius: 2, fontWeight: 700 }}>

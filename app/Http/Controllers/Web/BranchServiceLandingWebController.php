@@ -355,10 +355,10 @@ class BranchServiceLandingWebController extends Controller
                     'weekend_rate' => $weekendRate,
                     'indicative_daily_rate' => $weekdayRate,
                     'image_url' => $imagePath
-                        ? (str_starts_with($imagePath, 'http')
+                        ? (str_starts_with($imagePath, 'http') || str_starts_with($imagePath, '/')
                             ? $imagePath
                             : Storage::disk('public')->url($imagePath))
-                        : '/images/bikes/honda_activa_6g.png',
+                        : '/images/bikes/honda-activa.webp',
                 ];
             })->values()->all();
         } else {
@@ -400,7 +400,11 @@ class BranchServiceLandingWebController extends Controller
                 'name' => $other->name,
                 'city' => $other->city,
                 'slug' => Str::slug($other->city ?: $other->name),
-            ])->values()->all();
+            ])
+            ->filter(fn (array $b): bool => $b['slug'] !== $canonicalCitySlug)
+            ->unique('slug')
+            ->values()
+            ->all();
 
         // Cab rates if viewing cab service
         $cabFareRules = [];

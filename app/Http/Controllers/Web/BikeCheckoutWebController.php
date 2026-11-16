@@ -30,6 +30,10 @@ final class BikeCheckoutWebController extends Controller
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'pickup_store_id' => ['required', 'integer', 'exists:stores,id'],
             'return_store_id' => ['required', 'integer', 'exists:stores,id'],
+            'pickup_point_id' => ['nullable', 'integer', 'exists:pickup_points,id'],
+            'return_point_id' => ['nullable', 'integer', 'exists:pickup_points,id'],
+            'pickup_time' => ['nullable', 'string', 'max:10'],
+            'return_time' => ['nullable', 'string', 'max:10'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
             'addons' => ['nullable', 'json', 'max:2000'],
         ]);
@@ -68,12 +72,36 @@ final class BikeCheckoutWebController extends Controller
         $bikeModelId = $params['bike_model_id'] ?? null;
         if ($bikeModelId !== null) {
             $model = BikeModel::query()->where('is_active', true)
+                ->with(['category'])
                 ->withCount('bikes')->findOrFail((int) $bikeModelId);
             abort_if($model->bikes_count === 0, 404, 'No bike units are listed for this model.');
+
+            $imagePath = $model->primary_image_path;
+            $imageUrl = $imagePath
+                ? (str_starts_with($imagePath, 'http') || str_starts_with($imagePath, '/')
+                    ? $imagePath
+                    : \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath))
+                : '/images/bikes/honda-activa.webp';
+
+            $branchPrice = \App\Models\BranchBikeModelPrice::where('store_id', $pickup->id)
+                ->where('bike_model_id', $model->id)
+                ->first();
+            $weekdayRate = $branchPrice?->weekday_rate ?? $model->category?->base_daily_rate ?? 500.0;
+            $weekendRate = $branchPrice?->weekend_rate ?? ($weekdayRate * 1.2);
+
             $bike = [
+                'id' => $model->id,
                 'brand' => $model->brand,
+                'name' => $model->name,
                 'model_name' => $model->name,
-                'primary_image_url' => null,
+                'primary_image_url' => $imageUrl,
+                'image_url' => $imageUrl,
+                'category_name' => $model->category?->name ?? 'Scooter',
+                'fuel_type' => $model->fuel_type->value ?? 'Petrol',
+                'transmission' => $model->transmission->value ?? 'Automatic',
+                'description' => $model->description,
+                'weekday_rate' => (float) $weekdayRate,
+                'weekend_rate' => (float) $weekendRate,
             ];
             $backUrl = '/services/bikes/models/'.$model->id.'/'.\Illuminate\Support\Str::slug($model->brand.' '.$model->name);
         } else {
@@ -82,21 +110,31 @@ final class BikeCheckoutWebController extends Controller
             $backUrl = '/services/bikes/'.$unit->id;
         }
 
-        // Preserve the selected route and dates if a customer edits the trip.
-        $backUrl .= '?'.http_build_query([
+        // Preserve the selected route, points, dates and times if a customer edits the trip.
+        $backParams = [
             'pickup_store_id' => $pickup->id,
             'return_store_id' => $return->id,
             'start_date' => $params['start_date'],
             'end_date' => $params['end_date'],
-        ]);
+        ];
+        if (! empty($params['pickup_point_id'])) $backParams['pickup_point_id'] = $params['pickup_point_id'];
+        if (! empty($params['return_point_id'])) $backParams['return_point_id'] = $params['return_point_id'];
+        if (! empty($params['pickup_time'])) $backParams['pickup_time'] = $params['pickup_time'];
+        if (! empty($params['return_time'])) $backParams['return_time'] = $params['return_time'];
+
+        $backUrl .= '?'.http_build_query($backParams);
 
         return Inertia::render('Bikes/Checkout', [
             'bike' => $bike,
             'bikeModelId' => $bikeModelId !== null ? (int) $bikeModelId : null,
-            'pickupStore' => $pickup->only(['id', 'name', 'city']),
-            'returnStore' => $return->only(['id', 'name', 'city']),
+            'pickupStore' => $pickup->only(['id', 'name', 'city', 'address_line', 'phone']),
+            'returnStore' => $return->only(['id', 'name', 'city', 'address_line', 'phone']),
             'startDate' => $params['start_date'],
             'endDate' => $params['end_date'],
+            'pickupTime' => $params['pickup_time'] ?? '09:00',
+            'returnTime' => $params['return_time'] ?? '09:00',
+            'pickupPointId' => ! empty($params['pickup_point_id']) ? (int) $params['pickup_point_id'] : null,
+            'returnPointId' => ! empty($params['return_point_id']) ? (int) $params['return_point_id'] : null,
             'couponCode' => $params['coupon_code'] ?? '',
             'selectedAddons' => array_map(fn (array $addon) => [
                 'addon_type' => $addon['addon_type'],

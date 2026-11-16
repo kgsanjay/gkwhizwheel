@@ -40,6 +40,8 @@ class HoldBookingRequest extends FormRequest
             'bike_id' => ['required', 'integer', 'exists:bikes,id'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'pickup_time' => ['nullable', 'string', 'max:10'],
+            'return_time' => ['nullable', 'string', 'max:10'],
             'pickup_store_id' => ['required', 'integer', 'exists:stores,id'],
             'return_store_id' => ['required', 'integer', 'exists:stores,id'],
             'pickup_point_id' => ['nullable', 'integer', 'exists:pickup_points,id'],

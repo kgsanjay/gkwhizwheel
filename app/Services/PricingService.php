@@ -59,7 +59,9 @@ class PricingService
         int|Store $returnStore,
         ?string $couponCode = null,
         array $addons = [],
-        ?int $userId = null
+        ?int $userId = null,
+        ?string $pickupTime = null,
+        ?string $returnTime = null
     ): array {
         $bikeModel = $bike instanceof Bike ? $bike : Bike::with('category')->findOrFail($bike);
         $bikeModel->loadMissing('category');
@@ -72,6 +74,32 @@ class PricingService
 
         if ($start->gt($end)) {
             throw new InvalidArgumentException('Start date must be before or equal to end date.');
+        }
+
+        // Determine billed days:
+        // When explicit pickup and return times are provided (e.g., 09:00 to 09:00 next day),
+        // calculate based on standard 24-hour cycles:
+        // - Up to 24 hours (e.g. 15 Nov 09:00 to 16 Nov 09:00) = 1 Day
+        // - Up to 48 hours (e.g. 15 Nov 09:00 to 17 Nov 09:00) = 2 Days
+        // - Same-day (e.g. 15 Nov 09:00 to 15 Nov 19:00) = 1 Day (minimum 1 day)
+        $hasTimes = ! empty($pickupTime) && ! empty($returnTime);
+        if ($hasTimes) {
+            $startDateTime = Carbon::parse(Carbon::parse($startDate)->toDateString().' '.$pickupTime);
+            $endDateTime = Carbon::parse(Carbon::parse($endDate)->toDateString().' '.$returnTime);
+
+            if ($endDateTime->lt($startDateTime)) {
+                throw new InvalidArgumentException('Return date and time must be after pickup date and time.');
+            }
+
+            $diffMinutes = $startDateTime->diffInMinutes($endDateTime);
+            $totalHours = max(1, (int) ceil($diffMinutes / 60));
+            // Standard 24h cycle: 1 to 24 hrs = 1 day, 25 to 48 hrs = 2 days, etc.
+            $billedDays = max(1, (int) ceil($totalHours / 24));
+        } else {
+            // Date-only legacy mode: calendar days inclusive (e.g. Nov 15 to Nov 15 = 1 day, Nov 15 to Nov 16 = 2 days)
+            $diffDays = $start->diffInDays($end);
+            $billedDays = (int) $diffDays + 1;
+            $totalHours = $billedDays * 24;
         }
 
         // 1. Determine base rate and security deposit
@@ -97,15 +125,15 @@ class PricingService
             })
             ->get();
 
-        // 3. Iterate day-by-day across the booking range
+        // 3. Iterate day-by-day across the billed duration
         $current = $start->copy();
         $dailyBreakdown = [];
         $totalBaseAmount = 0.0;
         $totalAdjustments = 0.0;
         $daysCount = 0;
 
-        while ($current->lte($end)) {
-            $daysCount++;
+        for ($dayIndex = 0; $dayIndex < $billedDays; $dayIndex++) {
+            $daysCount = $dayIndex + 1;
             $totalBaseAmount += $baseDailyRate;
             $dayOfWeek = $current->dayOfWeek;
             $dateString = $current->toDateString();
@@ -314,7 +342,10 @@ class PricingService
         $totalAmount = round($rentalSubtotal + $depositFinalAmount, 2);
 
         $priceBreakdownJson = [
-            'days' => $daysCount,
+            'days' => $billedDays,
+            'hours' => $totalHours,
+            'pickup_time' => $pickupTime,
+            'return_time' => $returnTime,
             'base_daily_rate' => round($baseDailyRate, 2),
             'base_amount' => $baseAmount,
             'daily_breakdown' => $dailyBreakdown,

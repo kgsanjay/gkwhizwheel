@@ -47,7 +47,8 @@ class BookingConfirmationNotification extends Notification
                 "{$pickupStore} ({$startDate})",
                 '₹'.number_format((float) $this->booking->total_amount, 2),
             ])
-            ->buttonUrl(route('bookings.confirmation', $this->booking->id));
+            ->buttonUrl(route('bookings.confirmation', $this->booking->id))
+            ->documentUrl(route('bookings.qr', $this->booking->id));
     }
 
     /**
@@ -62,8 +63,10 @@ class BookingConfirmationNotification extends Notification
         $startDate = $this->booking->start_date ? \Carbon\Carbon::parse($this->booking->start_date)->toFormattedDateString() : '';
         $endDate = $this->booking->end_date ? \Carbon\Carbon::parse($this->booking->end_date)->toFormattedDateString() : '';
 
+        $qrPng = app(\App\Services\QrCodeService::class)->generatePng(route('bookings.confirmation', $this->booking->id));
+
         return (new MailMessage())
-            ->subject("Booking Confirmed - {$this->booking->booking_reference}")
+            ->subject("Booking Confirmed & Express Check-In Pass - {$this->booking->booking_reference}")
             ->greeting("Hello {$notifiable->name},")
             ->line('Your bike rental booking has been confirmed successfully!')
             ->line("Booking Reference: {$this->booking->booking_reference}")
@@ -71,7 +74,11 @@ class BookingConfirmationNotification extends Notification
             ->line("Pickup Location: {$pickupStore} ({$startDate})")
             ->line("Return Location: {$returnStore} ({$endDate})")
             ->line('Total Charged (Advance + Deposit): ₹'.number_format((float) $this->booking->total_amount, 2))
-            ->action('View Booking Details', route('bookings.confirmation', $this->booking->id))
+            ->line('Your Express Check-In QR Pass is attached to this email. Show it on your mobile screen at the hub desk for instant vehicle key handover — no printing required!')
+            ->action('View Booking & Live QR Code', route('bookings.confirmation', $this->booking->id))
+            ->attachData($qrPng, "checkin-qr-{$this->booking->booking_reference}.png", [
+                'mime' => 'image/png',
+            ])
             ->line('Thank you for choosing GK WhizWheel! Please carry your valid Driving License at pickup time.');
     }
 

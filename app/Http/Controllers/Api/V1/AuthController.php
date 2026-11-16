@@ -334,19 +334,24 @@ class AuthController extends Controller
             // Generate 6-digit OTP cached for 10 minutes
             $otp = (string) random_int(100000, 999999);
             Cache::put("checkout_otp:{$existing->id}", $otp, now()->addMinutes(10));
+            \Illuminate\Support\Facades\Log::info("Checkout OTP generated for user {$existing->id} ({$cleanPhone}): {$otp}");
 
             // Deliver via Mail if email available
             if ($existing->email && filter_var($existing->email, FILTER_VALIDATE_EMAIL)) {
                 try {
                     Notification::route('mail', $existing->email)->notify(new OtpNotification($otp));
-                } catch (\Throwable) {}
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Could not send OTP email to {$existing->email}: " . $e->getMessage());
+                }
             }
 
             // Deliver via WhatsApp if phone available
             if ($existing->phone) {
                 try {
                     Notification::route(\App\Channels\WhatsAppChannel::class, $existing->phone)->notify(new OtpNotification($otp));
-                } catch (\Throwable) {}
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Could not send OTP WhatsApp to {$existing->phone}: " . $e->getMessage());
+                }
             }
 
             $maskedPhone = substr($existing->phone ?? $cleanPhone, 0, 2).'******'.substr($existing->phone ?? $cleanPhone, -2);
@@ -362,6 +367,7 @@ class AuthController extends Controller
                 'user_id' => $existing->id,
                 'masked_phone' => $maskedPhone,
                 'masked_email' => $maskedEmail,
+                'debug_otp' => app()->environment('local', 'testing') ? $otp : null,
                 'message' => 'Welcome back! We found your existing account. Please enter the 6-digit verification code sent to your phone/email to continue.',
             ]);
         }

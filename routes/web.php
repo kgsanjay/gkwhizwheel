@@ -255,6 +255,7 @@ Route::post('/services/bookings/{bookingNumber}/verify-payment', [\App\Http\Cont
     ->name('services.booking.verify-payment');
 Route::get('/services/bookings/{bookingNumber}/voucher', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'downloadVoucher'])->name('services.booking.voucher');
 Route::get('/services/bookings/{bookingNumber}/print', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'printVoucher'])->name('services.booking.print');
+Route::get('/services/bookings/{bookingNumber}/qr', [\App\Http\Controllers\Web\CustomerServiceBookingController::class, 'qrCode'])->name('services.booking.qr');
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
 Route::get('/about-us', fn () => Inertia::render('About'));
 Route::get('/explore', fn () => Inertia::render('ExplorePage'))->name('explore');
@@ -275,6 +276,7 @@ Route::get('/bookings/{id}/voucher', [\App\Http\Controllers\Web\BookingWebContro
 Route::get('/bookings/{id}/billing-statement', [\App\Http\Controllers\Web\BookingWebController::class, 'downloadBillingStatement'])
     ->middleware('auth')->whereNumber('id')->name('bookings.billing-statement');
 Route::get('/bookings/{id}/print', [\App\Http\Controllers\Web\BookingWebController::class, 'printVoucher'])->name('bookings.print');
+Route::get('/bookings/{id}/qr', [\App\Http\Controllers\Web\BookingWebController::class, 'qrCode'])->name('bookings.qr');
 Route::post('/dev/bookings/{id}/simulate-payment', [\App\Http\Controllers\Web\BookingWebController::class, 'simulateTestPayment'])->name('dev.bookings.simulate-payment');
 Route::match(['get', 'post'], '/payment/phonepe/callback', [\App\Http\Controllers\Web\BookingWebController::class, 'handlePhonePeCallback'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
@@ -338,6 +340,7 @@ Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
     Route::post('/bike-models', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'store'])->name('admin.bike-models.store');
     Route::match(['put', 'post'], '/bike-models/{id}', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'update'])->name('admin.bike-models.update');
     Route::match(['patch', 'post'], '/bike-models/{id}/toggle-active', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'toggleActive'])->name('admin.bike-models.toggle-active');
+    Route::delete('/bike-models/{id}', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'destroy'])->name('admin.bike-models.destroy');
     Route::post('/bike-models/{id}/branch-prices', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'saveBranchPrice'])->name('admin.bike-models.branch-prices');
     Route::post('/bike-models/{id}/bikes/bulk', [\App\Http\Controllers\Web\Admin\AdminBikeModelWebController::class, 'bulkRegister'])->name('admin.bike-models.bulk-register');
     Route::get('/bikes', [\App\Http\Controllers\Web\Admin\AdminBikeWebController::class, 'index'])->name('admin.bikes.index');

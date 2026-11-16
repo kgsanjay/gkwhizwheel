@@ -34,6 +34,8 @@ class HoldBikeModelRequest extends FormRequest
             'return_location_details' => ['nullable', 'string', 'max:255'],
             'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'pickup_time' => ['nullable', 'string', 'max:10'],
+            'return_time' => ['nullable', 'string', 'max:10'],
             'coupon_code' => ['nullable', 'string', 'max:50'],
             'addons' => ['nullable', 'array'],
             'addons.*.addon_type' => ['required_with:addons', 'string', Rule::in(array_keys(\App\Services\PricingService::ADDON_RATES))],

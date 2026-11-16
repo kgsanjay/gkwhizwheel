@@ -61,6 +61,10 @@ export default function CheckoutModal({
     quote,
     currentUser,
     presentation = 'dialog',
+    initialPickupPointId = '',
+    initialReturnPointId = '',
+    pickupTime = '09:00',
+    returnTime = '09:00',
 }) {
     const { auth } = usePage().props;
     const [resolvedUser, setResolvedUser] = useState(currentUser || auth?.user || null);
@@ -73,9 +77,9 @@ export default function CheckoutModal({
     const [otpChallenge, setOtpChallenge] = useState(null);
     const [otpCode, setOtpCode] = useState('');
     const [billingType, setBillingType] = useState('personal');
-    const [billingName, setBillingName] = useState('');
+    const [billingName, setBillingName] = useState(activeUser?.name || '');
     const [billingAddress, setBillingAddress] = useState('');
-    const [billingStateCode, setBillingStateCode] = useState('');
+    const [billingStateCode, setBillingStateCode] = useState('29');
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [billingGstin, setBillingGstin] = useState('');
 
@@ -86,8 +90,8 @@ export default function CheckoutModal({
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [heldBooking, setHeldBooking] = useState(null);
-    const [pickupPointId, setPickupPointId] = useState('');
-    const [returnPointId, setReturnPointId] = useState('');
+    const [pickupPointId, setPickupPointId] = useState(initialPickupPointId ? String(initialPickupPointId) : '');
+    const [returnPointId, setReturnPointId] = useState(initialReturnPointId ? String(initialReturnPointId) : '');
     const [pickupDetails, setPickupDetails] = useState('');
     const [returnDetails, setReturnDetails] = useState('');
     const pickupPointsQuery = useQuery({
@@ -104,6 +108,26 @@ export default function CheckoutModal({
     });
     const pickupPoints = (pickupPointsQuery.data?.data || []).filter((point) => point.supports_pickup);
     const returnPoints = (returnPointsQuery.data?.data || []).filter((point) => point.supports_return);
+
+    useEffect(() => {
+        if (pickupPoints.length > 0) {
+            if (initialPickupPointId && pickupPoints.some((p) => String(p.id) === String(initialPickupPointId))) {
+                setPickupPointId(String(initialPickupPointId));
+            } else if (!pickupPointId && pickupPoints[0]) {
+                setPickupPointId(String(pickupPoints[0].id));
+            }
+        }
+    }, [pickupPoints, initialPickupPointId]);
+
+    useEffect(() => {
+        if (returnPoints.length > 0) {
+            if (initialReturnPointId && returnPoints.some((p) => String(p.id) === String(initialReturnPointId))) {
+                setReturnPointId(String(initialReturnPointId));
+            } else if (!returnPointId && returnPoints[0]) {
+                setReturnPointId(String(returnPoints[0].id));
+            }
+        }
+    }, [returnPoints, initialReturnPointId]);
     const pickupPoint = pickupPoints.find((p) => String(p.id) === pickupPointId);
     const returnPoint = returnPoints.find((p) => String(p.id) === returnPointId);
     const hasPointOptions = pickupPoints.length > 0 && returnPoints.length > 0;
@@ -152,8 +176,16 @@ export default function CheckoutModal({
             setErrorMessage('Please review and accept the rental terms before payment.');
             return;
         }
-        if (billingName.trim().length < 2 || billingAddress.trim().length < 8 || !/^\\d{2}$/.test(billingStateCode)) {
-            setErrorMessage('Enter the billing name, full address and two-digit state code before continuing.');
+        if (billingName.trim().length < 2) {
+            setErrorMessage('Please enter a billing name (at least 2 characters).');
+            return;
+        }
+        if (billingAddress.trim().length < 3) {
+            setErrorMessage('Please enter a billing address or town (at least 3 characters, e.g. Kumta).');
+            return;
+        }
+        if (!/^\d{2}$/.test(billingStateCode.trim())) {
+            setErrorMessage('Please enter a valid 2-digit GST state code (e.g. 29 for Karnataka).');
             return;
         }
         if (billingType === 'business' && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(billingGstin.trim().toUpperCase())) {
@@ -243,6 +275,8 @@ export default function CheckoutModal({
                     ...(bikeModelId ? { bike_model_id: bikeModelId } : { bike_id: bike.id }),
                     start_date: startDate,
                     end_date: endDate,
+                    pickup_time: pickupTime || undefined,
+                    return_time: returnTime || undefined,
                     pickup_store_id: Number(pickupStore.id),
                     return_store_id: Number(returnStore.id),
                     pickup_point_id: Number(pickupPointId),
@@ -451,14 +485,14 @@ export default function CheckoutModal({
                 )}
             </DialogTitle>
 
-            <Box sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderTop: '1px solid #E2E8F0' }}>
-                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                    <Chip size="small" label="1. Rider and pickup" color={!heldBooking ? 'primary' : 'default'}
-                        variant={!heldBooking ? 'filled' : 'outlined'} />
-                    <Chip size="small" label="2. Pricing and GST" color={heldBooking ? 'primary' : 'default'}
-                        variant={heldBooking ? 'filled' : 'outlined'} />
-                    <Chip size="small" label="3. Secure payment" color={heldBooking ? 'primary' : 'default'} variant="outlined" />
-                </Stack>
+            <Box sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderTop: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 0.5 }}>
+                    <Chip size="small" label="1. Rider & Location" color={!heldBooking ? 'primary' : 'default'}
+                        variant={!heldBooking ? 'filled' : 'outlined'} sx={{ fontWeight: 750 }} />
+                    <Chip size="small" label="2. Pricing & GST" color={heldBooking ? 'primary' : 'default'}
+                        variant={heldBooking ? 'filled' : 'outlined'} sx={{ fontWeight: 750 }} />
+                    <Chip size="small" label="3. Secure Payment" color={heldBooking ? 'primary' : 'default'} variant="outlined" sx={{ fontWeight: 750 }} />
+                </Box>
                 <Typography variant="caption" color="text.secondary">
                     {heldBooking
                         ? 'Bike held. Review the final total and payment details before paying.'
@@ -497,6 +531,11 @@ export default function CheckoutModal({
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>
                             Welcome back! An account matching <strong>{otpChallenge.masked_phone || otpChallenge.masked_email}</strong> already exists. Enter the 6-digit OTP sent to your WhatsApp/Email to continue checkout safely.
+                            {otpChallenge.debug_otp && (
+                                <Box component="span" sx={{ display: 'block', mt: 1, color: '#B45309', fontWeight: 800 }}>
+                                    (Test Mode OTP: <strong>{otpChallenge.debug_otp}</strong>)
+                                </Box>
+                            )}
                         </Typography>
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="stretch">
                             <TextField
@@ -550,7 +589,13 @@ export default function CheckoutModal({
                                     label="Full Name (As on Driving License)"
                                     placeholder="e.g. Rahul Sharma"
                                     value={riderName}
-                                    onChange={(e) => setRiderName(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setRiderName(val);
+                                        if (!billingName || billingName === riderName) {
+                                            setBillingName(val);
+                                        }
+                                    }}
                                 />
                             )}
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
@@ -676,6 +721,8 @@ export default function CheckoutModal({
                         <TextField size="small" required fullWidth label={billingType === 'business' ? 'Registered business name' : 'Billing name'}
                             value={billingName} onChange={(e) => setBillingName(e.target.value)} inputProps={{ maxLength: 150 }} />
                         <TextField size="small" required fullWidth multiline minRows={2} label="Full billing address"
+                            placeholder="e.g. Kumta, Karnataka"
+                            helperText="City, street or town name (at least 3 characters)"
                             value={billingAddress} onChange={(e) => setBillingAddress(e.target.value)} inputProps={{ maxLength: 500 }} />
                         <TextField size="small" required fullWidth label="GST state code (2 digits)" helperText="For example, Karnataka = 29. Used to verify GSTIN state; does not determine place of supply."
                             value={billingStateCode} onChange={(e) => setBillingStateCode(e.target.value.replace(/\D/g, '').slice(0, 2))} inputProps={{ inputMode: 'numeric', maxLength: 2 }} />
@@ -859,6 +906,16 @@ export default function CheckoutModal({
             </DialogContent>
 
             <DialogActions sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {!heldBooking && !pointFeesConfigured && (
+                    <Alert severity="warning" sx={{ width: '100%', fontSize: '0.82rem', fontWeight: 650 }}>
+                        The selected pickup or return location has pending fee approval from the branch. Please choose an approved handover point (such as the main hub store) to continue.
+                    </Alert>
+                )}
+                {heldBooking && !acceptedTerms && (
+                    <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 700, textAlign: 'center' }}>
+                        Please accept the rental agreement terms to proceed with payment.
+                    </Typography>
+                )}
                 <Button
                     variant="contained"
                     color="secondary"

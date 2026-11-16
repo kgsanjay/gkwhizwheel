@@ -72,7 +72,8 @@ class ServiceBookingConfirmedNotification extends Notification
                 $coordinatorInfo,
                 '₹'.number_format((float) $this->serviceBooking->total_amount, 2),
             ])
-            ->buttonUrl($voucherUrl);
+            ->buttonUrl($voucherUrl)
+            ->documentUrl(route('services.booking.qr', $this->serviceBooking->booking_number));
     }
 
     /**
@@ -90,6 +91,8 @@ class ServiceBookingConfirmedNotification extends Notification
         $customerName = $notifiable->name ?? $this->serviceBooking->customer_name ?? 'Valued Customer';
         $startDate = $this->serviceBooking->start_datetime ? Carbon::parse($this->serviceBooking->start_datetime)->toFormattedDateString() : '';
 
+        $qrPng = app(\App\Services\QrCodeService::class)->generatePng($voucherUrl);
+
         $mail = (new MailMessage())
             ->subject("Service Booking Confirmed - {$this->serviceBooking->booking_number}")
             ->greeting("Hello {$customerName},")
@@ -105,7 +108,12 @@ class ServiceBookingConfirmedNotification extends Notification
             $mail->line('Balance Due: ₹'.number_format((float) $this->serviceBooking->balance_due, 2).' (Payable at desk or online via voucher)');
         }
 
+        $mail->line('Your digital check-in QR pass is attached. Show it to your coordinator upon arrival for immediate boarding.');
+
         return $mail->action('View Digital Voucher', $voucherUrl)
+            ->attachData($qrPng, "checkin-pass-{$this->serviceBooking->booking_number}.png", [
+                'mime' => 'image/png',
+            ])
             ->line('Need assistance? Contact the booking branch or reply to this email for support.');
     }
 }

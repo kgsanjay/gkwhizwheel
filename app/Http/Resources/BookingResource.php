@@ -59,6 +59,8 @@ class BookingResource extends JsonResource
             'held_until' => $this->held_until?->toIso8601String(),
             'agreement_signed_at' => $this->agreement_signed_at?->toIso8601String(),
             'price_breakdown_json' => $this->price_breakdown_json,
+            'qr_code_url' => route('bookings.qr', $this->id),
+            'qr_data_uri' => $this->resource->qr_data_uri ?? null,
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,

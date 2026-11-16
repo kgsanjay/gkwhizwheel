@@ -263,7 +263,9 @@ class AvailabilityService
                 returnStore: $returnStoreId,
                 couponCode: $couponCode,
                 addons: $addons,
-                userId: $userId
+                userId: $userId,
+                pickupTime: $params['pickup_time'] ?? null,
+                returnTime: $params['return_time'] ?? null,
             );
 
             // The selected pickup and return fees are authoritative and must be

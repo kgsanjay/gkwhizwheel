@@ -34,7 +34,7 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
 
-export default function BookingConfirmation({ booking }) {
+export default function BookingConfirmation({ booking, qrDataUri }) {
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
     const bike = booking.bike || {};
@@ -49,10 +49,6 @@ export default function BookingConfirmation({ booking }) {
     const isOneWay = pickupStore.id !== returnStore.id;
     const isElectric = bike.fuel_type === 'electric';
 
-    const handlePrint = () => {
-        window.print();
-    };
-
     return (
         <AppLayout>
             <Head title={`Bike Booking ${booking.booking_reference} - GK WhizWheel`} />
@@ -66,10 +62,14 @@ export default function BookingConfirmation({ booking }) {
                 <Button
                     variant="outlined"
                     startIcon={<PrintIcon />}
-                    onClick={handlePrint}
+                    component="a"
+                    href={`/bookings/${booking.id}/print?autoprint=1`}
+                    target="_blank"
                     sx={{
                         color: isDark ? '#FFFFFF' : '#0F172A',
                         borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                        fontWeight: 700,
+                        textTransform: 'none',
                     }}
                 >
                     Print Receipt
@@ -228,6 +228,108 @@ export default function BookingConfirmation({ booking }) {
                     </Button>
                 </Box>
             </Paper>
+
+            {/* Express Hub Check-In QR Pass (No Download Needed) */}
+            {isConfirmed && (booking.qr_data_uri || qrDataUri) && (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: { xs: 2.5, sm: 3 },
+                        mb: 4,
+                        bgcolor: isDark ? 'rgba(15, 23, 42, 0.85)' : '#FFFFFF',
+                        border: '2px dashed #0F766E',
+                        borderRadius: 4,
+                        boxShadow: '0 10px 25px -5px rgba(15, 118, 110, 0.08)',
+                    }}
+                >
+                    <Grid container spacing={3} alignItems="center">
+                        <Grid size={{ xs: 12, sm: 4, md: 3 }} sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <Box
+                                sx={{
+                                    p: 1.5,
+                                    bgcolor: '#FFFFFF',
+                                    borderRadius: 3,
+                                    boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
+                                    border: '1px solid #CBD5E1',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                <img
+                                    src={booking.qr_data_uri || qrDataUri}
+                                    alt={`Express Hub Check-In QR for ${booking.booking_reference}`}
+                                    style={{
+                                        width: 140,
+                                        height: 140,
+                                        display: 'block',
+                                        margin: '0 auto',
+                                    }}
+                                />
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        display: 'block',
+                                        mt: 0.5,
+                                        fontFamily: 'monospace',
+                                        fontWeight: 800,
+                                        color: '#0F172A',
+                                        letterSpacing: 0.5,
+                                    }}
+                                >
+                                    #{booking.booking_reference}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 8, md: 9 }} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                            <Box
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    px: 1.5,
+                                    py: 0.5,
+                                    bgcolor: '#ECFDF5',
+                                    color: '#065F46',
+                                    borderRadius: 2,
+                                    mb: 1,
+                                }}
+                            >
+                                <CheckCircleIcon sx={{ fontSize: 18 }} />
+                                <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                    Express Hub Check-In Pass
+                                </Typography>
+                            </Box>
+                            <Typography variant="h5" sx={{ fontWeight: 800, color: isDark ? '#FFFFFF' : '#0F172A', mb: 0.5 }}>
+                                Instant Vehicle Handover Pass
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', mb: 2, maxWidth: 520 }}>
+                                Present this QR code directly on your mobile screen to our ground executive at <strong>{pickupStore.name || 'Palya Main Rd Hub'}</strong> for instant key & helmet handover. <strong>No need to download or print anything!</strong>
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+                                <Chip
+                                    size="small"
+                                    icon={<TwoWheelerIcon sx={{ fontSize: '16px !important' }} />}
+                                    label={`${bike.brand || ''} ${bike.model_name || 'Scooter'}`}
+                                    sx={{ fontWeight: 600 }}
+                                />
+                                <Chip
+                                    size="small"
+                                    icon={<LocationOnIcon sx={{ fontSize: '16px !important' }} />}
+                                    label={pickupStore.name || 'Honnavar Hub'}
+                                    sx={{ fontWeight: 600 }}
+                                />
+                                <Chip
+                                    size="small"
+                                    icon={<VerifiedUserIcon sx={{ fontSize: '16px !important' }} />}
+                                    color="success"
+                                    variant="outlined"
+                                    label="Digital KYC & Advance Verified"
+                                    sx={{ fontWeight: 700 }}
+                                />
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            )}
 
             <Grid container spacing={4}>
                 {/* Left Column: Trip & Vehicle Overview */}

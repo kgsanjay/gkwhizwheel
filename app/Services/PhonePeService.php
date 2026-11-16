@@ -92,7 +92,7 @@ class PhonePeService
                 'Content-Type' => 'application/json',
                 'X-VERIFY' => $checksum,
                 'accept' => 'application/json',
-            ])->timeout(5)->post($baseUrl.$endpoint, [
+            ])->timeout(8)->post($baseUrl.$endpoint, [
                 'request' => $base64Payload,
             ]);
 
@@ -108,27 +108,40 @@ class PhonePeService
                     'raw' => $json,
                 ];
             }
-        } catch (\Throwable) {
-            // fall through to synthetic order for testing / local environment
+
+            \Illuminate\Support\Facades\Log::warning('PhonePe payment initiation rejected', [
+                'merchant_id' => $merchantId,
+                'status' => $response->status(),
+                'response' => $response->json() ?? $response->body(),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('PhonePe payment initiation network exception', [
+                'merchant_id' => $merchantId,
+                'message' => $e->getMessage(),
+            ]);
         }
 
-        if (app()->environment('local', 'testing')) {
-            // ponytail: synthetic order generation for PhonePe sandbox/local dev testing
+        if (app()->environment('testing')) {
+            // Simulated order for PHPUnit / test suite environments
             return [
                 'merchant_transaction_id' => $merchantTransactionId,
                 'amount' => $amount,
                 'amount_paise' => $amountPaise,
-                'redirect_url' => 'https://mercury-uat.phonepe.com/transact/simulator?token='.Str::random(32),
+                'redirect_url' => $finalRedirectUrl.'?merchantTransactionId='.$merchantTransactionId,
                 'status' => 'pending_payment',
                 'raw' => [
                     'success' => true,
                     'code' => 'PAYMENT_INITIATED',
-                    'message' => 'Payment initiated successfully',
+                    'message' => 'Simulated test payment initiated successfully',
                 ],
             ];
         }
 
-        throw new \RuntimeException('PhonePe payment initiation failed: '.(isset($response) ? $response->body() : 'unknown error'));
+        $errorMsg = isset($response)
+            ? ($response->json('message') ?? $response->json('code') ?? 'Gateway returned HTTP '.$response->status())
+            : 'Unable to connect to PhonePe gateway.';
+
+        throw new \RuntimeException('PhonePe payment initiation failed: '.$errorMsg);
     }
 
     /**

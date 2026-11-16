@@ -37,6 +37,9 @@ import {
     Typography,
     CircularProgress,
     Badge,
+    Menu,
+    ListItemIcon,
+    ListItemText,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
@@ -61,6 +64,7 @@ import PlaceIcon from '@mui/icons-material/Place';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import TuneIcon from '@mui/icons-material/Tune';
 import SpeedIcon from '@mui/icons-material/Speed';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 export default function BikeModelsIndex({
     models = [],
@@ -90,6 +94,7 @@ export default function BikeModelsIndex({
         fuel_type: 'petrol',
         transmission: 'automatic',
         description: '',
+        primary_image_path: '',
     });
 
     // Edit Modal State
@@ -102,6 +107,7 @@ export default function BikeModelsIndex({
         fuel_type: 'petrol',
         transmission: 'automatic',
         description: '',
+        primary_image_path: '',
         is_active: true,
     });
 
@@ -111,6 +117,46 @@ export default function BikeModelsIndex({
     const [bulkRows, setBulkRows] = useState([{ registration_number: '', odometer_reading: 0 }]);
     const [bulkErrors, setBulkErrors] = useState({});
     const [bulkProcessing, setBulkProcessing] = useState(false);
+
+    // Delete Confirmation State
+    const [deletingModel, setDeletingModel] = useState(null);
+    const [deleteProcessing, setDeleteProcessing] = useState(false);
+    const [deleteError, setDeleteError] = useState(null);
+
+    // Contextual Row Menu State
+    const [menuAnchor, setMenuAnchor] = useState(null);
+    const [menuModel, setMenuModel] = useState(null);
+
+    const handleOpenMenu = (event, model) => {
+        setMenuAnchor(event.currentTarget);
+        setMenuModel(model);
+    };
+
+    const handleCloseMenu = () => {
+        setMenuAnchor(null);
+        setMenuModel(null);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (!deletingModel || deleteProcessing) return;
+        setDeleteProcessing(true);
+        setDeleteError(null);
+
+        router.delete(`/admin/bike-models/${deletingModel.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setDeletingModel(null);
+                setDeleteProcessing(false);
+            },
+            onError: (err) => {
+                setDeleteError(err.delete || err.message || 'Failed to delete bike model.');
+                setDeleteProcessing(false);
+            },
+            onFinish: () => {
+                setDeleteProcessing(false);
+            },
+        });
+    };
 
     // Branch Dynamic Rates State
     const [rateEdits, setRateEdits] = useState({});
@@ -161,6 +207,7 @@ export default function BikeModelsIndex({
             fuel_type: model.fuel_type || 'petrol',
             transmission: model.transmission || 'automatic',
             description: model.description || '',
+            primary_image_path: model.primary_image_path || '',
             is_active: Boolean(model.is_active),
         });
         editForm.clearErrors();
@@ -691,17 +738,31 @@ export default function BikeModelsIndex({
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                             <Box
                                                                 sx={{
-                                                                    width: 42,
-                                                                    height: 42,
+                                                                    width: 48,
+                                                                    height: 48,
                                                                     borderRadius: 2,
                                                                     bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+                                                                    border: '1px solid',
+                                                                    borderColor: 'divider',
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'center',
                                                                     color: 'warning.main',
+                                                                    overflow: 'hidden',
+                                                                    flexShrink: 0,
                                                                 }}
                                                             >
-                                                                <TwoWheelerIcon />
+                                                                {model.primary_image_path ? (
+                                                                    <Box
+                                                                        component="img"
+                                                                        src={model.primary_image_path}
+                                                                        alt={`${model.brand} ${model.name}`}
+                                                                        sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 0.5 }}
+                                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                                    />
+                                                                ) : (
+                                                                    <TwoWheelerIcon />
+                                                                )}
                                                             </Box>
                                                             <Box>
                                                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
@@ -803,33 +864,62 @@ export default function BikeModelsIndex({
 
                                                     {/* Actions */}
                                                     <TableCell align="right">
-                                                        <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                                                        <Stack direction="row" spacing={0.8} justifyContent="flex-end" alignItems="center">
                                                             <Button
                                                                 size="small"
                                                                 variant="outlined"
                                                                 onClick={() => startBulk(model)}
-                                                                startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-                                                                sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700 }}
+                                                                startIcon={<AddIcon sx={{ fontSize: 15 }} />}
+                                                                sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: '0.74rem', fontWeight: 700 }}
                                                             >
                                                                 Add Bikes
                                                             </Button>
 
-                                                            <IconButton size="small" onClick={() => startEdit(model)} sx={{ color: 'text.secondary' }}>
-                                                                <Tooltip title="Edit Model Specifications">
-                                                                    <EditIcon sx={{ fontSize: 18 }} />
-                                                                </Tooltip>
-                                                            </IconButton>
-
                                                             <Button
                                                                 size="small"
-                                                                variant={isExpanded ? 'contained' : 'text'}
-                                                                color={isExpanded ? 'warning' : 'primary'}
-                                                                endIcon={isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                                                variant={isExpanded ? 'contained' : 'outlined'}
+                                                                color={isExpanded ? 'warning' : 'inherit'}
+                                                                endIcon={isExpanded ? <ExpandLessIcon sx={{ fontSize: 16 }} /> : <ExpandMoreIcon sx={{ fontSize: 16 }} />}
                                                                 onClick={() => setExpanded(isExpanded ? null : model.id)}
-                                                                sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 800 }}
+                                                                sx={{ textTransform: 'none', borderRadius: 1.5, fontSize: '0.74rem', fontWeight: 800 }}
                                                             >
                                                                 {isExpanded ? 'Close' : 'Fleet & Rates'}
                                                             </Button>
+
+                                                            <Tooltip title="Edit Specifications">
+                                                                <IconButton size="small" onClick={() => startEdit(model)} sx={{ color: 'text.secondary', border: '1px solid', borderColor: 'divider' }}>
+                                                                    <EditIcon sx={{ fontSize: 16 }} />
+                                                                </IconButton>
+                                                            </Tooltip>
+
+                                                            <Tooltip title="Delete Bike Model">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="error"
+                                                                    onClick={() => {
+                                                                        setDeleteError(null);
+                                                                        setDeletingModel(model);
+                                                                    }}
+                                                                    sx={{
+                                                                        color: 'error.main',
+                                                                        border: '1px solid',
+                                                                        borderColor: 'error.light',
+                                                                        '&:hover': { bgcolor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2' },
+                                                                    }}
+                                                                >
+                                                                    <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                                                                </IconButton>
+                                                            </Tooltip>
+
+                                                            <Tooltip title="More Options">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={(e) => handleOpenMenu(e, model)}
+                                                                    sx={{ color: 'text.secondary', border: '1px solid', borderColor: 'divider' }}
+                                                                >
+                                                                    <MoreVertIcon sx={{ fontSize: 16 }} />
+                                                                </IconButton>
+                                                            </Tooltip>
                                                         </Stack>
                                                     </TableCell>
                                                 </TableRow>
@@ -1119,17 +1209,31 @@ export default function BikeModelsIndex({
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                             <Box
                                                 sx={{
-                                                    width: 44,
-                                                    height: 44,
+                                                    width: 52,
+                                                    height: 52,
                                                     borderRadius: 2,
-                                                    bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FFFBEB',
-                                                    color: 'warning.main',
+                                                    bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+                                                    border: '1px solid',
+                                                    borderColor: 'divider',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
+                                                    color: 'warning.main',
+                                                    overflow: 'hidden',
+                                                    flexShrink: 0,
                                                 }}
                                             >
-                                                <TwoWheelerIcon />
+                                                {model.primary_image_path ? (
+                                                    <Box
+                                                        component="img"
+                                                        src={model.primary_image_path}
+                                                        alt={`${model.brand} ${model.name}`}
+                                                        sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 0.5 }}
+                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                ) : (
+                                                    <TwoWheelerIcon />
+                                                )}
                                             </Box>
                                             <Box>
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>
@@ -1217,7 +1321,7 @@ export default function BikeModelsIndex({
                                             )}
                                         </Box>
 
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack direction="row" spacing={0.8} alignItems="center">
                                             <Button
                                                 fullWidth
                                                 size="small"
@@ -1238,9 +1342,43 @@ export default function BikeModelsIndex({
                                             >
                                                 Manage Fleet & Rates
                                             </Button>
-                                            <IconButton size="small" onClick={() => startEdit(model)} sx={{ border: '1px solid', borderColor: 'divider' }}>
-                                                <EditIcon sx={{ fontSize: 16 }} />
-                                            </IconButton>
+                                            <Tooltip title="Add Bikes">
+                                                <IconButton size="small" onClick={() => startBulk(model)} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                                                    <AddIcon sx={{ fontSize: 16 }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Edit Specifications">
+                                                <IconButton size="small" onClick={() => startEdit(model)} sx={{ border: '1px solid', borderColor: 'divider' }}>
+                                                    <EditIcon sx={{ fontSize: 16 }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Delete Bike Model">
+                                                <IconButton
+                                                    size="small"
+                                                    color="error"
+                                                    onClick={() => {
+                                                        setDeleteError(null);
+                                                        setDeletingModel(model);
+                                                    }}
+                                                    sx={{
+                                                        border: '1px solid',
+                                                        borderColor: 'error.light',
+                                                        color: 'error.main',
+                                                        '&:hover': { bgcolor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2' },
+                                                    }}
+                                                >
+                                                    <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="More Options">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => handleOpenMenu(e, model)}
+                                                    sx={{ border: '1px solid', borderColor: 'divider' }}
+                                                >
+                                                    <MoreVertIcon sx={{ fontSize: 16 }} />
+                                                </IconButton>
+                                            </Tooltip>
                                         </Stack>
                                     </Box>
                                 </Paper>
@@ -1374,6 +1512,19 @@ export default function BikeModelsIndex({
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.2 }}>
                                     2. Customer Presentation & Descriptions
                                 </Typography>
+                            </Grid>
+
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Primary Image Path / URL"
+                                    placeholder="e.g. /images/bikes/honda-dio-dlx.webp"
+                                    value={createForm.data.primary_image_path}
+                                    onChange={(e) => createForm.setData('primary_image_path', e.target.value)}
+                                    error={Boolean(createForm.errors.primary_image_path)}
+                                    helperText={createForm.errors.primary_image_path || 'Asset path or URL to showcase this vehicle model'}
+                                />
                             </Grid>
 
                             <Grid size={{ xs: 12 }}>
@@ -1522,6 +1673,19 @@ export default function BikeModelsIndex({
                                     <MenuItem value="automatic">Automatic</MenuItem>
                                     <MenuItem value="manual">Manual</MenuItem>
                                 </TextField>
+                            </Grid>
+
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Primary Image Path / URL"
+                                    placeholder="e.g. /images/bikes/honda-dio-dlx.webp"
+                                    value={editForm.data.primary_image_path}
+                                    onChange={(e) => editForm.setData('primary_image_path', e.target.value)}
+                                    error={Boolean(editForm.errors.primary_image_path)}
+                                    helperText={editForm.errors.primary_image_path || 'Asset path or URL to showcase this vehicle model'}
+                                />
                             </Grid>
 
                             <Grid size={{ xs: 12 }}>
@@ -1730,6 +1894,209 @@ export default function BikeModelsIndex({
                     </DialogActions>
                 </Box>
             </Dialog>
+
+            {/* Delete Bike Model Confirmation Dialog */}
+            <Dialog
+                open={Boolean(deletingModel)}
+                onClose={() => !deleteProcessing && setDeletingModel(null)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3.5,
+                        border: '1px solid',
+                        borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
+                        boxShadow: '0 24px 48px -12px rgba(0,0,0,0.25)',
+                        overflowX: 'hidden',
+                    },
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 900, fontSize: '1.2rem', pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <Box
+                            sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 2,
+                                bgcolor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2',
+                                color: 'error.main',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <DeleteOutlineIcon />
+                        </Box>
+                        <span>Delete Bike Model</span>
+                    </Stack>
+                    <IconButton size="small" disabled={deleteProcessing} onClick={() => setDeletingModel(null)}>
+                        <CloseIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                </DialogTitle>
+
+                <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, overflowX: 'hidden' }}>
+                    {deleteError && (
+                        <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
+                            {deleteError}
+                        </Alert>
+                    )}
+
+                    <Typography variant="body1" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
+                        Are you sure you want to permanently delete {deletingModel?.brand} {deletingModel?.name}?
+                    </Typography>
+
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                        This will permanently remove the catalog model specifications and all configured branch pricing overrides.
+                    </Typography>
+
+                    {deletingModel?.total_units > 0 && (
+                        <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ mb: 2, borderRadius: 2 }}>
+                            <strong>{deletingModel.total_units} registered physical vehicles</strong> are currently associated with this model. Deleting this model will safely decouple these vehicles as unlinked units so their service and registration histories remain preserved.
+                        </Alert>
+                    )}
+
+                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: isDark ? 'rgba(0,0,0,0.2)' : '#F8FAFC', border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', display: 'block', mb: 0.5, textTransform: 'uppercase' }}>
+                            Summary of Impact:
+                        </Typography>
+                        <Stack spacing={0.5}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                • Model ID: #{deletingModel?.id} ({deletingModel?.category_name})
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                • Linked physical units: {deletingModel?.total_units || 0} vehicle(s) will be unlinked
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                • Branch pricing rules: {deletingModel?.branch_prices?.length || 0} override(s) will be deleted
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                • Booking protection: Models with active/ongoing customer bookings cannot be deleted
+                            </Typography>
+                        </Stack>
+                    </Box>
+                </DialogContent>
+
+                <DialogActions sx={{ px: 3, py: 2 }}>
+                    <Button disabled={deleteProcessing} onClick={() => setDeletingModel(null)} sx={{ textTransform: 'none', color: 'text.secondary' }}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        disabled={deleteProcessing}
+                        onClick={handleDeleteConfirm}
+                        startIcon={deleteProcessing ? <CircularProgress size={16} color="inherit" /> : <DeleteOutlineIcon />}
+                        sx={{
+                            textTransform: 'none',
+                            borderRadius: 2,
+                            px: 3,
+                            fontWeight: 800,
+                        }}
+                    >
+                        {deleteProcessing ? 'Deleting...' : 'Delete Bike Model'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Contextual More Actions Menu */}
+            <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={handleCloseMenu}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2.5,
+                        minWidth: 210,
+                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                    },
+                }}
+            >
+                <MenuItem
+                    onClick={() => {
+                        const m = menuModel;
+                        handleCloseMenu();
+                        startBulk(m);
+                    }}
+                    sx={{ fontSize: '0.85rem', fontWeight: 600, py: 1 }}
+                >
+                    <ListItemIcon>
+                        <AddIcon fontSize="small" sx={{ color: 'warning.main' }} />
+                    </ListItemIcon>
+                    <ListItemText primary="Register Physical Bikes" />
+                </MenuItem>
+
+                <MenuItem
+                    onClick={() => {
+                        const m = menuModel;
+                        handleCloseMenu();
+                        startEdit(m);
+                    }}
+                    sx={{ fontSize: '0.85rem', fontWeight: 600, py: 1 }}
+                >
+                    <ListItemIcon>
+                        <EditIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="Edit Specifications" />
+                </MenuItem>
+
+                <MenuItem
+                    onClick={() => {
+                        const m = menuModel;
+                        handleCloseMenu();
+                        setViewMode('list');
+                        setExpanded(m.id);
+                    }}
+                    sx={{ fontSize: '0.85rem', fontWeight: 600, py: 1 }}
+                >
+                    <ListItemIcon>
+                        <TuneIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="Manage Fleet & Rates" />
+                </MenuItem>
+
+                <MenuItem
+                    onClick={() => {
+                        const m = menuModel;
+                        handleCloseMenu();
+                        handleToggleActive(m);
+                    }}
+                    sx={{ fontSize: '0.85rem', fontWeight: 600, py: 1 }}
+                >
+                    <ListItemIcon>
+                        {menuModel?.is_active ? (
+                            <WarningAmberIcon fontSize="small" sx={{ color: 'warning.main' }} />
+                        ) : (
+                            <CheckCircleIcon fontSize="small" sx={{ color: 'success.main' }} />
+                        )}
+                    </ListItemIcon>
+                    <ListItemText primary={menuModel?.is_active ? 'Deactivate Model' : 'Activate Model'} />
+                </MenuItem>
+
+                <Divider sx={{ my: 0.5 }} />
+
+                <MenuItem
+                    onClick={() => {
+                        const m = menuModel;
+                        handleCloseMenu();
+                        setDeleteError(null);
+                        setDeletingModel(m);
+                    }}
+                    sx={{
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        py: 1,
+                        color: 'error.main',
+                        '&:hover': { bgcolor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2' },
+                    }}
+                >
+                    <ListItemIcon>
+                        <DeleteOutlineIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary="Delete Model" primaryTypographyProps={{ color: 'error.main', fontWeight: 700 }} />
+                </MenuItem>
+            </Menu>
         </AdminLayout>
     );
 }

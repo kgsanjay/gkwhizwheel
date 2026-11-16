@@ -225,3 +225,85 @@ test('superadmin can update bike model and toggle active status', function (): v
         ->assertForbidden();
 });
 
+test('superadmin can delete a bike model, which unlinks units and removes branch prices', function (): void {
+    $bike = Bike::create([
+        'category_id' => $this->category->id,
+        'bike_model_id' => $this->model->id,
+        'current_store_id' => $this->honnavar->id,
+        'home_store_id' => $this->honnavar->id,
+        'brand' => 'Honda',
+        'model_name' => 'Activa 6G',
+        'registration_number' => 'KA-47-DEL-01',
+        'fuel_type' => FuelType::PETROL,
+        'transmission' => Transmission::AUTOMATIC,
+        'status' => BikeStatus::AVAILABLE,
+    ]);
+
+    \App\Models\BranchBikeModelPrice::create([
+        'bike_model_id' => $this->model->id,
+        'store_id' => $this->honnavar->id,
+        'weekday_rate' => 450,
+        'weekend_rate' => 550,
+    ]);
+
+    $this->actingAs($this->admin)->delete('/admin/bike-models/'.$this->model->id)
+        ->assertRedirect(route('admin.bike-models.index'));
+
+    expect(BikeModel::find($this->model->id))->toBeNull()
+        ->and($bike->fresh()->bike_model_id)->toBeNull()
+        ->and(\App\Models\BranchBikeModelPrice::where('bike_model_id', $this->model->id)->count())->toBe(0);
+});
+
+test('manager cannot delete a bike model', function (): void {
+    $this->actingAs($this->manager)->delete('/admin/bike-models/'.$this->model->id)
+        ->assertForbidden();
+    expect(BikeModel::find($this->model->id))->not->toBeNull();
+});
+
+test('cannot delete a bike model when active bookings exist', function (): void {
+    $bike = Bike::create([
+        'category_id' => $this->category->id,
+        'bike_model_id' => $this->model->id,
+        'current_store_id' => $this->honnavar->id,
+        'home_store_id' => $this->honnavar->id,
+        'brand' => 'Honda',
+        'model_name' => 'Activa 6G',
+        'registration_number' => 'KA-47-DEL-02',
+        'fuel_type' => FuelType::PETROL,
+        'transmission' => Transmission::AUTOMATIC,
+        'status' => BikeStatus::ON_RENT,
+    ]);
+
+    $customer = User::create([
+        'name' => 'Customer',
+        'email' => 'customer.test@example.test',
+        'phone' => '9888809299',
+        'password' => 'Password123!',
+        'role' => UserRole::CUSTOMER,
+        'status' => UserStatus::ACTIVE,
+    ]);
+
+    \App\Models\Booking::create([
+        'booking_reference' => 'BK-TEST-DEL-01',
+        'channel' => \App\Enums\BookingChannel::ONLINE,
+        'bike_id' => $bike->id,
+        'user_id' => $customer->id,
+        'bike_model_id' => $this->model->id,
+        'pickup_store_id' => $this->honnavar->id,
+        'return_store_id' => $this->honnavar->id,
+        'start_date' => now()->addDay()->toDateString(),
+        'end_date' => now()->addDays(2)->toDateString(),
+        'base_amount' => 1000,
+        'deposit_amount' => 0,
+        'total_amount' => 1000,
+        'price_breakdown_json' => [],
+        'idempotency_key' => 'key-test-del-01',
+        'status' => \App\Enums\BookingStatus::CONFIRMED,
+    ]);
+
+    $this->actingAs($this->admin)->delete('/admin/bike-models/'.$this->model->id)
+        ->assertSessionHasErrors('delete');
+
+    expect(BikeModel::find($this->model->id))->not->toBeNull();
+});
+
