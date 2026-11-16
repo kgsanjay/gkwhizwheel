@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -249,6 +250,22 @@ class AdminStoreWebController extends Controller
 
             // Clean up empty pickup points associated with this store
             $store->pickupPoints()->delete();
+
+            // Clean up bike transfers if table exists
+            if (Schema::hasTable('bike_transfers')) {
+                DB::table('bike_transfers')
+                    ->where('from_store_id', $store->id)
+                    ->orWhere('to_store_id', $store->id)
+                    ->delete();
+            }
+
+            // Clean up bike relocation tasks if table exists
+            if (Schema::hasTable('bike_relocation_tasks')) {
+                DB::table('bike_relocation_tasks')
+                    ->where('from_store_id', $store->id)
+                    ->orWhere('required_store_id', $store->id)
+                    ->delete();
+            }
 
             // Clean up branch pricing rules and model prices
             BranchBikeModelPrice::where('store_id', $store->id)->delete();
