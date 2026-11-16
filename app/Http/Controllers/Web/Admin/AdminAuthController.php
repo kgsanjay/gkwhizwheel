@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,20 +27,16 @@ class AdminAuthController extends Controller
      */
     public function create(Request $request): Response|RedirectResponse
     {
-        $user = $request->user();
         $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
 
-        if ($user !== null) {
-            if ($user->isStaffOrAdmin()) {
+        if ($isAdminRoute) {
+            $adminUser = Auth::guard('admin')->user();
+            if ($adminUser !== null && $adminUser->isStaffOrAdmin()) {
                 return redirect()->route('admin.dashboard');
             }
-
-            if ($isAdminRoute) {
-                // User is a customer attempting to reach admin login; log them out of customer session
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-            } else {
+        } else {
+            $customerUser = Auth::guard('web')->user();
+            if ($customerUser !== null) {
                 return redirect()->route('account.index');
             }
         }
@@ -57,7 +54,7 @@ class AdminAuthController extends Controller
      */
     public function createRegister(Request $request): Response|RedirectResponse
     {
-        $user = $request->user();
+        $user = Auth::guard('web')->user();
 
         if ($user !== null) {
             return redirect()->route('account.index');
@@ -70,9 +67,23 @@ class AdminAuthController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request for both customers and staff.
+     * Route incoming authentication request to either admin guard or web guard.
      */
     public function store(Request $request): RedirectResponse
+    {
+        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.login*');
+
+        if ($isAdminRoute) {
+            return $this->storeAdmin($request);
+        }
+
+        return $this->storeCustomer($request);
+    }
+
+    /**
+     * Handle incoming admin/staff authentication request using the admin guard.
+     */
+    public function storeAdmin(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'login' => ['required', 'string'],
@@ -93,11 +104,17 @@ class AdminAuthController extends Controller
         }
 
         $identifier = $validated['login'];
+        $remember = (bool) ($validated['remember'] ?? false);
+
         $user = User::where('email', $identifier)
             ->orWhere('phone', $identifier)
             ->first();
 
-        if (! $user || ! $user->password || ! Hash::check($validated['password'], $user->password)) {
+        $credentials = $user
+            ? ['email' => $user->email, 'password' => $validated['password']]
+            : ['email' => $identifier, 'password' => $validated['password']];
+
+        if (! Auth::guard('admin')->attempt($credentials, $remember)) {
             RateLimiter::hit($throttleKey, $lockoutSeconds);
 
             return back()->withErrors([
@@ -105,7 +122,126 @@ class AdminAuthController extends Controller
             ])->onlyInput('login');
         }
 
-        if ($user->status === UserStatus::BLACKLISTED) {
+        /** @var \App\Models\User $authenticatedUser */
+        $authenticatedUser = Auth::guard('admin')->user();
+
+        if ($authenticatedUser->status === UserStatus::BLACKLISTED) {
+            Auth::guard('admin')->logout();
+            RateLimiter::hit($throttleKey, $lockoutSeconds);
+
+            throw ValidationException::withMessages([
+                'login' => 'This account has been suspended or deactivated.',
+            ]);
+        }
+
+        // Strict Spatie Role check post-login:
+        // User must have super_admin, admin, store_manager, or staff roles
+        $allowedRoles = ['super_admin', 'superadmin', 'admin', 'store_manager', 'staff', 'manager'];
+        $hasAuthorizedRole = false;
+        try {
+            $hasAuthorizedRole = $authenticatedUser->hasAnyRole($allowedRoles);
+        } catch (\Throwable) {
+            $hasAuthorizedRole = false;
+        }
+
+        if (! $hasAuthorizedRole) {
+            $roleVal = $authenticatedUser->role instanceof UserRole ? $authenticatedUser->role->value : (string) $authenticatedUser->role;
+            $hasAuthorizedRole = in_array($roleVal, $allowedRoles, true) || $authenticatedUser->isStaffOrAdmin();
+        }
+
+        if (! $hasAuthorizedRole) {
+            Auth::guard('admin')->logout();
+            RateLimiter::hit($throttleKey, $lockoutSeconds);
+
+            throw ValidationException::withMessages([
+                'login' => 'Unauthorized access to admin portal.',
+            ]);
+        }
+
+        RateLimiter::clear($throttleKey);
+
+        // Two-Factor Authentication enforcement for admin & staff:
+        if ($authenticatedUser->hasTwoFactorEnabled()) {
+            Auth::guard('admin')->logout();
+            $request->session()->put([
+                'login.2fa.user_id' => $authenticatedUser->id,
+                'login.2fa.remember' => $remember,
+                'login.2fa.guard' => 'admin',
+            ]);
+
+            return redirect()->route('admin.2fa.challenge');
+        }
+
+        if ($authenticatedUser->requiresTwoFactor()) {
+            Auth::guard('admin')->logout();
+            $request->session()->put([
+                'login.2fa.user_id' => $authenticatedUser->id,
+                'login.2fa.remember' => $remember,
+                'login.2fa.setup_required' => true,
+                'login.2fa.guard' => 'admin',
+            ]);
+
+            return redirect()->route('admin.2fa.setup');
+        }
+
+        $request->session()->put('admin.last_activity_time', time());
+        $request->session()->regenerate();
+
+        $intended = session()->get('url.intended');
+        if ($intended && str_contains($intended, '/admin') && ! str_contains($intended, '/admin/login')) {
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        return redirect()->route('admin.dashboard');
+    }
+
+    /**
+     * Handle incoming public/customer authentication request using the default web guard.
+     */
+    public function storeCustomer(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'login' => ['required', 'string'],
+            'password' => ['required', 'string'],
+            'remember' => ['nullable', 'boolean'],
+        ]);
+
+        $throttleKey = 'login.customer:' . Str::transliterate(Str::lower($validated['login']));
+        $maxAttempts = 5;
+        $lockoutSeconds = 300;
+
+        if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()->withErrors([
+                'login' => "Too many login attempts. This account is temporarily locked. Please try again in {$seconds} seconds.",
+            ])->onlyInput('login');
+        }
+
+        $identifier = $validated['login'];
+        $remember = (bool) ($validated['remember'] ?? false);
+
+        $user = User::where('email', $identifier)
+            ->orWhere('phone', $identifier)
+            ->first();
+
+        $credentials = $user
+            ? ['email' => $user->email, 'password' => $validated['password']]
+            : ['email' => $identifier, 'password' => $validated['password']];
+
+        if (! Auth::guard('web')->attempt($credentials, $remember)) {
+            RateLimiter::hit($throttleKey, $lockoutSeconds);
+
+            return back()->withErrors([
+                'login' => 'Invalid email/phone or password.',
+            ])->onlyInput('login');
+        }
+
+        /** @var \App\Models\User $authenticatedUser */
+        $authenticatedUser = Auth::guard('web')->user();
+
+        if ($authenticatedUser->status === UserStatus::BLACKLISTED) {
+            Auth::guard('web')->logout();
             RateLimiter::hit($throttleKey, $lockoutSeconds);
 
             return back()->withErrors([
@@ -113,62 +249,17 @@ class AdminAuthController extends Controller
             ])->onlyInput('login');
         }
 
-        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.login*');
-        if ($isAdminRoute && $user->role === UserRole::CUSTOMER) {
-            RateLimiter::hit($throttleKey, $lockoutSeconds);
-
-            return back()->withErrors([
-                'login' => 'Access denied. Customer accounts cannot access the admin console.',
-            ])->onlyInput('login');
-        }
-
         RateLimiter::clear($throttleKey);
-
-        $remember = (bool) ($validated['remember'] ?? false);
-
-        // Two-Factor Authentication enforcement for admin & staff:
-        if ($user->role !== UserRole::CUSTOMER) {
-            // If user already has 2FA enabled, challenge for TOTP code
-            if ($user->hasTwoFactorEnabled()) {
-                $request->session()->put([
-                    'login.2fa.user_id' => $user->id,
-                    'login.2fa.remember' => $remember,
-                ]);
-
-                return redirect()->route('admin.2fa.challenge');
-            }
-
-            // Super Admin and Store Manager: 2FA is required at minimum
-            if ($user->requiresTwoFactor()) {
-                $request->session()->put([
-                    'login.2fa.user_id' => $user->id,
-                    'login.2fa.remember' => $remember,
-                    'login.2fa.setup_required' => true,
-                ]);
-
-                return redirect()->route('admin.2fa.setup');
-            }
-        }
-
-        Auth::login($user, $remember);
-
         $request->session()->regenerate();
 
-        if ($user->role === UserRole::CUSTOMER) {
-            $intended = session()->get('url.intended');
-            if ($intended && ! str_contains($intended, '/admin')) {
-                return redirect()->intended(route('account.index'));
-            }
-            return redirect()->route('account.index');
-        }
-
-        // For staff, store_manager, and super_admin:
+        // Customer login strictly operates on the web guard with customer privileges.
+        // It strictly does not touch the admin guard.
         $intended = session()->get('url.intended');
-        if ($intended && str_contains($intended, '/admin') && ! str_contains($intended, '/admin/login')) {
-            return redirect()->intended(route('admin.dashboard'));
+        if ($intended && ! str_contains($intended, '/admin')) {
+            return redirect()->intended(route('account.index'));
         }
 
-        return redirect()->route('admin.dashboard');
+        return redirect()->route('account.index');
     }
 
     /**
@@ -244,9 +335,11 @@ class AdminAuthController extends Controller
         }
 
         RateLimiter::clear($throttleKey);
-        $request->session()->forget(['login.2fa.user_id', 'login.2fa.remember', 'login.2fa.setup_required']);
+        $guard = $request->session()->get('login.2fa.guard', 'admin');
+        $request->session()->forget(['login.2fa.user_id', 'login.2fa.remember', 'login.2fa.setup_required', 'login.2fa.guard']);
 
-        Auth::login($user, $remember);
+        Auth::guard($guard)->login($user, $remember);
+        $request->session()->put('admin.last_activity_time', time());
         $request->session()->regenerate();
 
         $intended = session()->get('url.intended');
@@ -262,7 +355,7 @@ class AdminAuthController extends Controller
      */
     public function twoFactorSetup(Request $request, TwoFactorService $twoFactorService): Response|RedirectResponse
     {
-        $user = $request->user();
+        $user = Auth::guard('admin')->user() ?? $request->user();
 
         if (! $user) {
             $userId = $request->session()->get('login.2fa.user_id');
@@ -298,7 +391,7 @@ class AdminAuthController extends Controller
      */
     public function twoFactorConfirm(Request $request, TwoFactorService $twoFactorService): RedirectResponse
     {
-        $user = $request->user();
+        $user = Auth::guard('admin')->user() ?? $request->user();
 
         if (! $user) {
             $userId = $request->session()->get('login.2fa.user_id');
@@ -328,11 +421,13 @@ class AdminAuthController extends Controller
             'two_factor_recovery_codes' => $recoveryCodes,
         ])->save();
 
-        if (! Auth::check()) {
+        $guard = $request->session()->get('login.2fa.guard', 'admin');
+        if (! Auth::guard($guard)->check()) {
             $remember = (bool) $request->session()->get('login.2fa.remember', false);
-            Auth::login($user, $remember);
-            $request->session()->forget(['login.2fa.user_id', 'login.2fa.remember', 'login.2fa.setup_required']);
-            $request->session()->regenerate();
+            Auth::guard($guard)->login($user, $remember);
+            $request->session()->forget(['login.2fa.user_id', 'login.2fa.remember', 'login.2fa.setup_required', 'login.2fa.guard']);
+            $request->session()->put('admin.last_activity_time', time());
+        $request->session()->regenerate();
         }
 
         $request->session()->put('admin.2fa.new_recovery_codes', $recoveryCodes);
@@ -345,7 +440,7 @@ class AdminAuthController extends Controller
      */
     public function twoFactorRecoveryCodes(Request $request): Response|RedirectResponse
     {
-        $user = $request->user();
+        $user = Auth::guard('admin')->user() ?? $request->user();
 
         if (! $user) {
             return redirect()->route('admin.login');
@@ -363,7 +458,7 @@ class AdminAuthController extends Controller
      */
     public function twoFactorDisable(Request $request): RedirectResponse
     {
-        $user = $request->user();
+        $user = Auth::guard('admin')->user() ?? $request->user();
 
         if (! $user) {
             return redirect()->route('admin.login');
@@ -407,7 +502,7 @@ class AdminAuthController extends Controller
             'whatsapp_opt_in' => (bool) ($validated['whatsapp_opt_in'] ?? true),
         ]);
 
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
         return redirect()->route('account.index')->with('success', 'Account created successfully! Welcome to GK WhizWheels.');
@@ -418,14 +513,26 @@ class AdminAuthController extends Controller
      */
     public function destroy(Request $request): mixed
     {
-        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*');
+        $isAdminRoute = $request->is('admin/*') || $request->routeIs('admin.*') || $request->has('admin');
 
-        Auth::logout();
+        if ($isAdminRoute) {
+            Auth::guard('admin')->logout();
+            $request->session()->forget(['admin.last_activity_time', 'admin.active_store_id']);
+            // If the active web session is also staff/admin, clear it on admin logout
+            if (Auth::guard('web')->check() && Auth::guard('web')->user()?->isStaffOrAdmin()) {
+                Auth::guard('web')->logout();
+            }
+            $targetUrl = route('admin.login');
+        } else {
+            Auth::guard('web')->logout();
+            $targetUrl = route('home');
+        }
 
-        $request->session()->invalidate();
+        // Invalidate session if no guards remain authenticated; otherwise preserve other active guard session
+        if (! Auth::guard('admin')->check() && ! Auth::guard('web')->check()) {
+            $request->session()->invalidate();
+        }
         $request->session()->regenerateToken();
-
-        $targetUrl = $isAdminRoute ? route('admin.login') : route('home');
 
         if ($request->header('X-Inertia')) {
             return \Inertia\Inertia::location($targetUrl);

@@ -56,7 +56,16 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
         $middleware->statefulApi();
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin') || $request->is('admin/*') ? route('admin.login') : route('login'));
+        $middleware->priority([
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\AdminSessionTimeout::class,
+            \App\Http\Middleware\EnsureAdminOrStaff::class,
+            \Illuminate\Auth\Middleware\Authenticate::class,
+        ]);
         $middleware->alias([
+            'admin.timeout' => \App\Http\Middleware\AdminSessionTimeout::class,
             'admin.auth' => \App\Http\Middleware\EnsureAdminOrStaff::class,
             'service.access' => \App\Http\Middleware\EnsureServiceAccess::class,
             'role' => \App\Http\Middleware\EnsureRole::class,
@@ -85,6 +94,15 @@ return Application::configure(basePath: dirname(__DIR__))
                     'errors' => null,
                 ], 401);
             }
+
+            $isAdmin = $request->is('admin') || $request->is('admin/*') || in_array('admin', $e->guards(), true);
+            $loginRoute = $isAdmin ? route('admin.login') : route('login');
+
+            if ($request->header('X-Inertia')) {
+                return \Inertia\Inertia::location($loginRoute);
+            }
+
+            return redirect()->guest($loginRoute);
         });
 
         $exceptions->render(function (BikeNotAvailableException|ServiceItemNotAvailableException $e, Request $request) {

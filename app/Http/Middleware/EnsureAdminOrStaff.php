@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Enums\UserRole;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAdminOrStaff
@@ -18,10 +19,25 @@ class EnsureAdminOrStaff
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $user = Auth::guard('admin')->user() ?? $request->user('admin');
 
         if ($user === null) {
-            if ($request->is('api/*')) {
+            // If user is authenticated on web guard as customer, reject admin access with 403 Forbidden
+            $customerUser = Auth::guard('web')->user() ?? $request->user();
+            if ($customerUser !== null && ! $customerUser->isStaffOrAdmin()) {
+                if ($request->is('api/*') || $request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'data' => null,
+                        'message' => 'Unauthorized. Staff or Admin privileges required.',
+                        'errors' => null,
+                    ], 403);
+                }
+
+                abort(403, 'Unauthorized. Staff or Admin privileges required.');
+            }
+
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
@@ -38,7 +54,7 @@ class EnsureAdminOrStaff
         }
 
         if (! $user->isStaffOrAdmin()) {
-            if ($request->is('api/*')) {
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
@@ -49,6 +65,8 @@ class EnsureAdminOrStaff
 
             abort(403, 'Unauthorized. Staff or Admin privileges required.');
         }
+
+        Auth::shouldUse('admin');
 
         return $next($request);
     }

@@ -33,7 +33,7 @@ import RestoreIcon from '@mui/icons-material/Restore';
 
 export default function SettingsIndex({ settings = {} }) {
     const { auth, flash } = usePage().props;
-    const isSuperAdmin = auth?.user?.role === 'super_admin';
+    const isSuperAdmin = (auth?.admin?.role || auth?.user?.role) === 'super_admin';
 
     const [maintenanceLoading, setMaintenanceLoading] = useState(null);
 

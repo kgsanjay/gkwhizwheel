@@ -276,9 +276,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/AuthController.php": {
-    "mtime": 1794756316.2940578,
-    "seen": 1794756675.2916238,
-    "ast_hash": "3e069a2f96980e793f8cf0f28078f47b",
+    "mtime": 1794796780.154819,
+    "seen": 1794797127.3656042,
+    "ast_hash": "ae8410f2e10b360004b2b29d811128ba",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/Customer/BookingController.php": {
@@ -366,9 +366,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminAuthController.php": {
-    "mtime": 1794640758.8305535,
-    "seen": 1794723023.0709949,
-    "ast_hash": "db81787fd026109420f8a5d3b588cc53",
+    "mtime": 1794796535.6702802,
+    "seen": 1794797127.3656151,
+    "ast_hash": "8be3b484b8196b4c5b7a529852989520",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminBikeModelWebController.php": {
@@ -534,9 +534,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Auth/GoogleAuthController.php": {
-    "mtime": 1794505076.6104476,
-    "seen": 1794723023.0710132,
-    "ast_hash": "0f55ab1933e21adadbaf99021665b92f",
+    "mtime": 1794796369.0298545,
+    "seen": 1794797127.3656352,
+    "ast_hash": "db80848985407250f025ac7ad21f404c",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BikeCheckoutWebController.php": {
@@ -618,27 +618,27 @@
     "semantic_hash": ""
   },
   "app/Http/Middleware/EnsureAdminOrStaff.php": {
-    "mtime": 1794640759.0776658,
-    "seen": 1794723023.071021,
-    "ast_hash": "dbce1edd85bd2eefa9fc32e8946ea1e1",
+    "mtime": 1794797055.294581,
+    "seen": 1794797127.365647,
+    "ast_hash": "bed062a148ad37a39684382675583403",
     "semantic_hash": ""
   },
   "app/Http/Middleware/EnsureRole.php": {
-    "mtime": 1794640759.1333175,
-    "seen": 1794723023.071022,
-    "ast_hash": "85a2016b0aa1e60e97e3cba736b99112",
+    "mtime": 1794796369.209597,
+    "seen": 1794797127.3656478,
+    "ast_hash": "80c0b94f53af18dc097e03d055f394b0",
     "semantic_hash": ""
   },
   "app/Http/Middleware/EnsureServiceAccess.php": {
-    "mtime": 1794640759.189005,
-    "seen": 1794723023.071023,
-    "ast_hash": "44d6c85a29e3a998e3702aa534364b10",
+    "mtime": 1794796369.2668629,
+    "seen": 1794797127.3656478,
+    "ast_hash": "74b4d0d7dd0058b1fb1fa1a60181cd2d",
     "semantic_hash": ""
   },
   "app/Http/Middleware/HandleInertiaRequests.php": {
-    "mtime": 1794715035.3798838,
-    "seen": 1794723023.071023,
-    "ast_hash": "739fb54188a2b0e170fc00407b3d9f86",
+    "mtime": 1794796369.3312924,
+    "seen": 1794797127.365649,
+    "ast_hash": "b0349a8032c679809e7dbf5492220603",
     "semantic_hash": ""
   },
   "app/Http/Middleware/SecurityHeaders.php": {
@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "app/Models/User.php": {
-    "mtime": 1794655770.1948729,
-    "seen": 1794723023.071081,
-    "ast_hash": "af5fa3b7707c6a7407854a21a56f4014",
+    "mtime": 1794796877.0932052,
+    "seen": 1794797127.365716,
+    "ast_hash": "fc5914978d73414ee35ec57dcc132eda",
     "semantic_hash": ""
   },
   "app/Notifications/BikeDocumentExpiryAlertNotification.php": {
@@ -1554,9 +1554,9 @@
     "semantic_hash": ""
   },
   "bootstrap/app.php": {
-    "mtime": 1794718418.413094,
-    "seen": 1794723023.071115,
-    "ast_hash": "e534bbb54fe99d72e3a7fd7eab88bc12",
+    "mtime": 1794796478.764252,
+    "seen": 1794797127.365758,
+    "ast_hash": "b3712e9406f3d3eed5d7b9dc55659929",
     "semantic_hash": ""
   },
   "bootstrap/providers.php": {
@@ -1578,9 +1578,9 @@
     "semantic_hash": ""
   },
   "config/auth.php": {
-    "mtime": 1788625149.946973,
-    "seen": 1794723023.071118,
-    "ast_hash": "b531acd505c8999c815d946c1a42a159",
+    "mtime": 1794795846.541717,
+    "seen": 1794796298.998553,
+    "ast_hash": "ef1bc2b95a860e189afe3f610110a062",
     "semantic_hash": ""
   },
   "config/backup.php": {
@@ -2334,15 +2334,15 @@
     "semantic_hash": ""
   },
   "resources/js/Layouts/AdminLayout.jsx": {
-    "mtime": 1794718137.3159096,
-    "seen": 1794723023.0711942,
-    "ast_hash": "2803ae7a485cd303ef4b8585e153de38",
+    "mtime": 1794796369.4984565,
+    "seen": 1794797127.365851,
+    "ast_hash": "f8855f095c8894efc7501e4c8b39bcc2",
     "semantic_hash": ""
   },
   "resources/js/Layouts/AppLayout.jsx": {
-    "mtime": 1794740102.6403012,
-    "seen": 1794748668.0481899,
-    "ast_hash": "002da2908ac0c1737106155fbea06437",
+    "mtime": 1794796369.5768397,
+    "seen": 1794797127.3658519,
+    "ast_hash": "dbefb2f6308e38020f38395b777476c7",
     "semantic_hash": ""
   },
   "resources/js/Pages/About.jsx": {
@@ -2388,9 +2388,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Bikes/Index.jsx": {
-    "mtime": 1794729788.465273,
-    "seen": 1794730461.024479,
-    "ast_hash": "4eb768a463cbb3c4f519081af041a727",
+    "mtime": 1794796369.642178,
+    "seen": 1794797127.365858,
+    "ast_hash": "467ef566ea1943659528594b14c091ad",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Bookings/Edit.jsx": {
@@ -2430,9 +2430,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Dashboard.jsx": {
-    "mtime": 1794731249.6805973,
-    "seen": 1794740047.455415,
-    "ast_hash": "83e2ab42037a6c30d654fc7951ca177a",
+    "mtime": 1794796369.6943784,
+    "seen": 1794797127.3658628,
+    "ast_hash": "0ce78f106ba5798d9573f6c194673b51",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Dispatch/Index.jsx": {
@@ -2532,9 +2532,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Settings/Index.jsx": {
-    "mtime": 1794731250.2091944,
-    "seen": 1794740047.455425,
-    "ast_hash": "6cff8e5c802636dbac20da542dee09ed",
+    "mtime": 1794796369.7285056,
+    "seen": 1794797127.365875,
+    "ast_hash": "c006ae7e50dc4a751a931494261c9de1",
     "semantic_hash": ""
   },
   "resources/js/Pages/Admin/Staff/Index.jsx": {
@@ -2820,9 +2820,9 @@
     "semantic_hash": ""
   },
   "routes/api.php": {
-    "mtime": 1794727945.9092102,
-    "seen": 1794728624.619267,
-    "ast_hash": "8ac3f10b9fed8982349572e3eea94109",
+    "mtime": 1794796795.8532705,
+    "seen": 1794797127.36591,
+    "ast_hash": "c21d89fd31dff8018f98eaf76d92d3f1",
     "semantic_hash": ""
   },
   "routes/console.php": {
@@ -2832,9 +2832,9 @@
     "semantic_hash": ""
   },
   "routes/web.php": {
-    "mtime": 1794769811.7301311,
-    "seen": 1794770193.771899,
-    "ast_hash": "ed5f4066d4197cd0df642928bb7b9782",
+    "mtime": 1794796483.0456653,
+    "seen": 1794797127.365911,
+    "ast_hash": "f52577ea48bf87b005d8778e4fe1a48a",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -3786,9 +3786,9 @@
     "semantic_hash": ""
   },
   "tests/TestCase.php": {
-    "mtime": 1788625150.0107763,
-    "seen": 1794723023.071338,
-    "ast_hash": "3ed7937d4310f5bfaa2117d9d69e06e7",
+    "mtime": 1794796926.752021,
+    "seen": 1794797127.366026,
+    "ast_hash": "7b850d8d874f8e3b77dd282e358a2214",
     "semantic_hash": ""
   },
   "tests/Unit/BikeGstQuoteTest.php": {
@@ -4629,6 +4629,18 @@
     "mtime": 1794769791.788334,
     "seen": 1794770193.771758,
     "ast_hash": "f2aef593d3661d616c062c7f3408e48f",
+    "semantic_hash": ""
+  },
+  "tests/Feature/MultiGuardAuthenticationTest.php": {
+    "mtime": 1794797043.9736369,
+    "seen": 1794797127.36598,
+    "ast_hash": "edeee1faf5d74d8606d0a1846310dfe0",
+    "semantic_hash": ""
+  },
+  "app/Http/Middleware/AdminSessionTimeout.php": {
+    "mtime": 1794796463.1210883,
+    "seen": 1794797127.3656461,
+    "ast_hash": "b12398ebcb216cb44e3dac7373909176",
     "semantic_hash": ""
   },
   "package-lock.json": {

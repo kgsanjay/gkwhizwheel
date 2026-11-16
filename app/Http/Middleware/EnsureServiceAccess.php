@@ -18,7 +18,7 @@ class EnsureServiceAccess
      */
     public function handle(Request $request, Closure $next, ?string $requiredService = null): Response
     {
-        $user = $request->user();
+        $user = \Illuminate\Support\Facades\Auth::guard('admin')->user() ?? $request->user();
 
         if ($user === null) {
             if ($request->is('api/*')) {

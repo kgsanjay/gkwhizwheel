@@ -19,7 +19,7 @@ class EnsureRole
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        $user = $request->user();
+        $user = \Illuminate\Support\Facades\Auth::guard('admin')->user() ?? $request->user();
 
         if ($user === null) {
             if ($request->is('api/*') || $request->expectsJson()) {

@@ -477,8 +477,12 @@ class AuthController extends Controller
     {
         $expirationMinutes = (int) config('sanctum.expiration', 43200);
 
+        $tokenName = $name !== 'auth_token'
+            ? $name
+            : ($user->isStaffOrAdmin() ? 'admin-device' : 'auth_token');
+
         return $user->createToken(
-            name: $name,
+            name: $tokenName,
             abilities: $user->tokenAbilities(),
             expiresAt: now()->addMinutes($expirationMinutes)
         )->plainTextToken;

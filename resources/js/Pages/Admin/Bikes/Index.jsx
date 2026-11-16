@@ -61,7 +61,7 @@ export default function BikesIndex({
     stats = {},
 }) {
     const { auth } = usePage().props;
-    const isManager = auth?.user?.role === 'staff';
+    const isManager = (auth?.admin?.role || auth?.user?.role) === 'staff';
 
     const [viewMode, setViewMode] = useState('list');
     const [search, setSearch] = useState(filters.search || '');

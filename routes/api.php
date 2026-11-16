@@ -204,7 +204,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     // Admin Routes
-    Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('admin')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'ability:admin-access', 'role:super_admin'])->prefix('admin')->group(function (): void {
         // Bikes
         Route::prefix('bikes')->group(function (): void {
             Route::post('/', [\App\Http\Controllers\Api\V1\Admin\BikeController::class, 'store']);
@@ -261,7 +261,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     // Admin & Store Manager Routes
-    Route::middleware(['auth:sanctum', 'role:super_admin,store_manager'])->prefix('admin')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'ability:admin-access', 'role:super_admin,store_manager'])->prefix('admin')->group(function (): void {
         // Staff
         Route::prefix('staff')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\V1\Admin\StaffController::class, 'index']);
@@ -282,7 +282,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     // Admin & Store Manager Service Items
-    Route::middleware(['auth:sanctum', 'role:super_admin,store_manager'])->prefix('admin/service-items')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'ability:admin-access', 'role:super_admin,store_manager'])->prefix('admin/service-items')->group(function (): void {
         Route::get('/', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'store']);
         Route::get('/{id}', [\App\Http\Controllers\Api\V1\Admin\ServiceItemController::class, 'show']);

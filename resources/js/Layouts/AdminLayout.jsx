@@ -408,7 +408,7 @@ export default function AdminLayout({ children, title, currentStore }) {
     const { url = '' } = usePage();
     const { mode, toggleColorMode } = useColorMode();
     const isDark = mode === 'dark';
-    const user = auth?.user;
+    const user = auth?.admin || auth?.user;
     const rawRole = user?.role || 'staff';
     const isSuperAdmin = rawRole === 'superadmin' || rawRole === 'super_admin';
     const isAdmin = rawRole === 'admin' || rawRole === 'store_manager';

@@ -91,7 +91,7 @@ class GoogleAuthController extends Controller
                 ]);
             }
 
-            Auth::login($user);
+            Auth::guard('web')->login($user);
             $request->session()->regenerate();
 
             if ($user->role === UserRole::CUSTOMER) {

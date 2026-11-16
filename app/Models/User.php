@@ -363,6 +363,7 @@ class User extends Authenticatable
     {
         if ($this->isSuperAdmin()) {
             return [
+                'admin-access',
                 'admin:manage',
                 'admin:bikes',
                 'admin:pricing',
@@ -385,6 +386,7 @@ class User extends Authenticatable
 
         if ($this->isAdmin()) {
             return [
+                'admin-access',
                 'staff:bikes',
                 'staff:bookings',
                 'staff:service-bookings',
@@ -398,6 +400,7 @@ class User extends Authenticatable
 
         if ($this->isManager()) {
             return [
+                'admin-access',
                 'staff:bikes',
                 'staff:bookings',
                 'staff:service-bookings',
@@ -407,11 +410,49 @@ class User extends Authenticatable
             ];
         }
 
+        try {
+            if ($this->hasAnyRole(['super_admin', 'superadmin', 'admin', 'store_manager', 'staff', 'manager'])) {
+                return [
+                    'admin-access',
+                    'staff:bikes',
+                    'staff:bookings',
+                    'staff:service-bookings',
+                    'staff:customers',
+                    'staff:sync',
+                    'customer:profile',
+                ];
+            }
+        } catch (\Throwable) {
+        }
+
         return [
             'customer:bookings',
             'customer:kyc',
             'customer:profile',
         ];
+    }
+
+    /**
+     * Determine if the current API token has a given ability.
+     */
+    public function tokenCan(string $ability): bool
+    {
+        $token = $this->currentAccessToken();
+
+        if (! $token) {
+            return false;
+        }
+
+        if ($token->can($ability)) {
+            return true;
+        }
+
+        // If the token abilities are empty or wildcard, fallback to the user's role-scoped abilities
+        if (empty($token->abilities) || in_array('*', (array) $token->abilities, true)) {
+            return in_array($ability, $this->tokenAbilities(), true);
+        }
+
+        return false;
     }
 
     /**
@@ -428,7 +469,15 @@ class User extends Authenticatable
      */
     public function requiresTwoFactor(): bool
     {
-        return $this->isSuperAdmin() || $this->isAdmin();
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
+            return true;
+        }
+
+        try {
+            return $this->hasAnyRole(['super_admin', 'superadmin', 'admin', 'store_manager']);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }
 

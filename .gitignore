@@ -68,11 +68,12 @@ bootstrap/cache/*.php
 # /staff/app-version direct downloads per 05-ENVIRONMENT-SETUP.md) are NOT ignored.
 !public/downloads/*.apk
 
-# Local SQLite databases
+# Local SQLite & SQL database dumps
 database/*.sqlite
 database/*.sqlite-journal
 database/*.sqlite-shm
 database/*.sqlite-wal
+*.sql
 
 # Operating System & File Managers
 .DS_Store

@@ -72,25 +72,10 @@ class HandleInertiaRequests extends Middleware
                     })->values()->all();
                 }),
             'auth' => [
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'phone' => $request->user()->phone,
-                    'role' => $request->user()->role?->value ?? (string) $request->user()->role,
-                    'assigned_services' => $request->user()->assignedServicesList(),
-                    'assigned_stores' => $request->user()->stores()->where('stores.status', \App\Enums\StoreStatus::ACTIVE->value)->get()->map(fn ($s): array => [
-                        'id' => $s->id,
-                        'name' => $s->name,
-                        'city' => $s->city,
-                        'slug' => $s->slug,
-                    ])->values()->all(),
-                    'can_access_all_stores' => $request->user()->canAccessAllStores(),
-                    'has_two_factor_enabled' => $request->user()->hasTwoFactorEnabled(),
-                    'requires_two_factor' => $request->user()->requiresTwoFactor(),
-                ] : null,
+                'user' => ($webUser = \Illuminate\Support\Facades\Auth::guard('web')->user() ?? ($request->is('admin*') ? \Illuminate\Support\Facades\Auth::guard('admin')->user() : null)) ? $this->formatUser($webUser) : null,
+                'admin' => ($adminUser = \Illuminate\Support\Facades\Auth::guard('admin')->user()) ? $this->formatUser($adminUser) : null,
             ],
-            'sidebar_counts' => fn () => ($user = $request->user()) && $user->isStaffOrAdmin() ? [
+            'sidebar_counts' => fn () => ($user = \Illuminate\Support\Facades\Auth::guard('admin')->user() ?? $request->user()) && $user->isStaffOrAdmin() ? [
                 'bikes' => [
                     'total' => \App\Models\Booking::whereIn('status', [
                         \App\Enums\BookingStatus::PENDING_PAYMENT,
@@ -117,6 +102,40 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'csrf_token' => csrf_token(),
+        ];
+    }
+
+    /**
+     * Format a user instance for shared Inertia auth props.
+     *
+     * @param  \App\Models\User|null  $user
+     * @return array<string, mixed>|null
+     */
+    protected function formatUser(?\App\Models\User $user): ?array
+    {
+        if ($user === null) {
+            return null;
+        }
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'role' => $user->role?->value ?? (string) $user->role,
+            'assigned_services' => $user->assignedServicesList(),
+            'assigned_stores' => $user->stores()
+                ->where('stores.status', \App\Enums\StoreStatus::ACTIVE->value)
+                ->get()
+                ->map(fn ($s): array => [
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'city' => $s->city,
+                    'slug' => $s->slug,
+                ])->values()->all(),
+            'can_access_all_stores' => $user->canAccessAllStores(),
+            'has_two_factor_enabled' => $user->hasTwoFactorEnabled(),
+            'requires_two_factor' => $user->requiresTwoFactor(),
         ];
     }
 }

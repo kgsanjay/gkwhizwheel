@@ -295,14 +295,14 @@ Route::get('/account/kyc/{id}/download', [\App\Http\Controllers\Api\V1\Customer\
 
 // Authentication
 Route::get('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('login');
-Route::post('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])->middleware('throttle:auth')->name('login.store');
+Route::post('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeCustomer'])->middleware('throttle:auth')->name('login.store');
 Route::get('/signup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister'])->name('register');
 Route::get('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister']);
 Route::post('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeRegister'])->middleware('throttle:auth')->name('register.store');
 Route::get('/auth/google', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 Route::get('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('admin.login');
-Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'store'])->middleware('throttle:auth')->name('admin.login.store');
+Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeAdmin'])->middleware('throttle:auth')->name('admin.login.store');
 Route::post('/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('logout');
 Route::post('/admin/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('admin.logout');
 
@@ -312,10 +312,10 @@ Route::post('/admin/2fa/challenge', [\App\Http\Controllers\Web\Admin\AdminAuthCo
 Route::get('/admin/2fa/setup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorSetup'])->name('admin.2fa.setup');
 Route::post('/admin/2fa/confirm', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorConfirm'])->middleware('throttle:auth')->name('admin.2fa.confirm');
 Route::get('/admin/2fa/recovery-codes', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorRecoveryCodes'])->name('admin.2fa.recovery-codes');
-Route::post('/admin/2fa/disable', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorDisable'])->middleware('auth')->name('admin.2fa.disable');
+Route::post('/admin/2fa/disable', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorDisable'])->middleware('auth:admin')->name('admin.2fa.disable');
 
 // Admin & Staff Portal Shell
-Route::middleware(['admin.auth'])->prefix('admin')->group(function (): void {
+Route::middleware(['admin.timeout', 'admin.auth', 'auth:admin'])->prefix('admin')->group(function (): void {
     Route::get('/', [\App\Http\Controllers\Web\Admin\AdminDashboardController::class, 'index'])->name('admin.index');
     Route::get('/dashboard', [\App\Http\Controllers\Web\Admin\AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/relocations', [\App\Http\Controllers\Web\Admin\BikeRelocationController::class, 'index'])->name('admin.relocations.index');

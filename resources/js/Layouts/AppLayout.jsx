@@ -910,7 +910,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                         </MenuItem>
 
                                         {/* Staff Console if admin or staff */}
-                                        {auth.user.role !== 'customer' && (
+                                        {(auth?.admin || (auth?.user && auth.user.role !== 'customer')) && (
                                             <MenuItem
                                                 component={Link}
                                                 href="/admin/dashboard"
@@ -1723,7 +1723,7 @@ export default function AppLayout({ children, fullWidth = false, noFooterMargin 
                                 >
                                     KYC Verification
                                 </Button>
-                                {auth.user.role !== 'customer' && (
+                                {(auth?.admin || (auth?.user && auth.user.role !== 'customer')) && (
                                     <Button
                                         component={Link}
                                         href="/admin/dashboard"

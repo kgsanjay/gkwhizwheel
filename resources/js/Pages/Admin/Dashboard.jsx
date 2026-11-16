@@ -69,7 +69,7 @@ export default function AdminDashboard({
     const { auth } = usePage().props;
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const user = auth?.user;
+    const user = auth?.admin || auth?.user;
     const userRole = user?.role || 'staff';
     const isSuperAdmin = userRole === 'super_admin';
     const isStoreManager = userRole === 'store_manager';
