@@ -460,7 +460,11 @@ class User extends Authenticatable
      */
     public function hasTwoFactorEnabled(): bool
     {
-        return $this->two_factor_confirmed_at !== null && ! empty($this->two_factor_secret);
+        try {
+            return $this->two_factor_confirmed_at !== null && ! empty($this->two_factor_secret);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

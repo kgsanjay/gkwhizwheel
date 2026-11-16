@@ -369,7 +369,12 @@ class AdminAuthController extends Controller
         }
 
         // Generate or retrieve unconfirmed secret key
-        $secret = $user->two_factor_secret;
+        $secret = null;
+        try {
+            $secret = $user->two_factor_secret;
+        } catch (\Throwable) {
+            $secret = null;
+        }
         if (empty($secret)) {
             $secret = $twoFactorService->generateSecretKey();
             $user->forceFill(['two_factor_secret' => $secret])->save();
