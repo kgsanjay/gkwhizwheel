@@ -29,9 +29,16 @@ import {
     Tooltip,
     Alert,
     Snackbar,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import PlaceIcon from '@mui/icons-material/Place';
 import SearchIcon from '@mui/icons-material/Search';
@@ -64,6 +71,29 @@ export default function StoresIndex({
     const [selectedCity, setSelectedCity] = useState(filters.city || '');
     const [viewMode, setViewMode] = useState('list');
     const [toastMessage, setToastMessage] = useState('');
+    const [deletingStore, setDeletingStore] = useState(null);
+    const [deleteProcessing, setDeleteProcessing] = useState(false);
+
+    const handleDeleteConfirm = () => {
+        if (!deletingStore || deleteProcessing) return;
+        setDeleteProcessing(true);
+
+        router.delete(`/admin/stores/${deletingStore.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setToastMessage(`Branch "${deletingStore.name}" deleted successfully.`);
+                setDeletingStore(null);
+                setDeleteProcessing(false);
+            },
+            onError: (errors) => {
+                setToastMessage(errors.message || errors.error || Object.values(errors)[0] || 'Failed to delete branch.');
+                setDeleteProcessing(false);
+            },
+            onFinish: () => {
+                setDeleteProcessing(false);
+            },
+        });
+    };
 
     const handleSearchSubmit = (e) => {
         if (e) e.preventDefault();
@@ -767,6 +797,23 @@ export default function StoresIndex({
                                                 >
                                                     Edit
                                                 </Button>
+                                                {stores.length > 1 && store.id !== 1 && !store.name?.toLowerCase().includes('honnavar hub') && (
+                                                    <Button
+                                                        onClick={() => setDeletingStore(store)}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        color="error"
+                                                        startIcon={<DeleteOutlineIcon sx={{ fontSize: 14 }} />}
+                                                        sx={{
+                                                            textTransform: 'none',
+                                                            fontWeight: 700,
+                                                            fontSize: '0.75rem',
+                                                            borderRadius: 2,
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                )}
                                             </Stack>
                                         </TableCell>
                                     </TableRow>
@@ -943,21 +990,44 @@ export default function StoresIndex({
                                                 </Typography>
                                             </Stack>
 
-                                            <Button
-                                                component={Link}
-                                                href={`/admin/stores/${store.id}/edit`}
-                                                fullWidth
-                                                variant="contained"
-                                                size="small"
-                                                startIcon={<EditIcon sx={{ fontSize: 15 }} />}
-                                                sx={{
-                                                    textTransform: 'none',
-                                                    fontWeight: 700,
-                                                    borderRadius: 2,
-                                                }}
-                                            >
-                                                Edit Store Hub
-                                            </Button>
+                                            <Stack direction="row" spacing={1}>
+                                                <Button
+                                                    component={Link}
+                                                    href={`/admin/stores/${store.id}/edit`}
+                                                    fullWidth
+                                                    variant="contained"
+                                                    size="small"
+                                                    startIcon={<EditIcon sx={{ fontSize: 15 }} />}
+                                                    sx={{
+                                                        textTransform: 'none',
+                                                        fontWeight: 700,
+                                                        borderRadius: 2,
+                                                    }}
+                                                >
+                                                    Edit Store Hub
+                                                </Button>
+                                                {stores.length > 1 && store.id !== 1 && !store.name?.toLowerCase().includes('honnavar hub') && (
+                                                    <Tooltip title="Delete Branch">
+                                                        <IconButton
+                                                            onClick={() => setDeletingStore(store)}
+                                                            color="error"
+                                                            size="small"
+                                                            sx={{
+                                                                border: '1px solid',
+                                                                borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.3)',
+                                                                borderRadius: 2,
+                                                                px: 1.25,
+                                                                '&:hover': {
+                                                                    borderColor: 'error.main',
+                                                                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)',
+                                                                },
+                                                            }}
+                                                        >
+                                                            <DeleteOutlineIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
+                                            </Stack>
                                         </Box>
                                     </CardContent>
                                 </Card>
@@ -966,6 +1036,56 @@ export default function StoresIndex({
                     })}
                 </Grid>
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={Boolean(deletingStore)}
+                onClose={() => !deleteProcessing && setDeletingStore(null)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        overflowX: 'hidden',
+                        borderRadius: 3,
+                        p: 1,
+                    },
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 800, fontSize: '1.15rem', pb: 1 }}>
+                    Delete Branch?
+                </DialogTitle>
+                <DialogContent sx={{ overflowX: 'hidden' }}>
+                    <DialogContentText sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
+                        Are you sure you want to delete branch{' '}
+                        <strong>{deletingStore?.name}</strong>?
+                        This action will permanently remove this store hub from GK WhizWheel.
+                    </DialogContentText>
+                    {deletingStore?.current_bikes_count > 0 && (
+                        <Alert severity="warning" sx={{ mt: 2, fontSize: '0.8rem' }}>
+                            This branch currently has {deletingStore.current_bikes_count} bike(s) assigned.
+                        </Alert>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        onClick={() => setDeletingStore(null)}
+                        disabled={deleteProcessing}
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleDeleteConfirm}
+                        color="error"
+                        variant="contained"
+                        disabled={deleteProcessing}
+                        startIcon={deleteProcessing ? <CircularProgress size={16} color="inherit" /> : <DeleteOutlineIcon />}
+                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+                    >
+                        {deleteProcessing ? 'Deleting...' : 'Delete Branch'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Notification Toast */}
             <Snackbar

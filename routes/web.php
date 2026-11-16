@@ -409,6 +409,7 @@ Route::middleware(['admin.timeout', 'admin.auth', 'auth:admin'])->prefix('admin'
         Route::match(['post', 'put'], '/stores/{id}', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'update'])->name('admin.stores.update');
         Route::post('/stores/{id}/services', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'updateServices'])->name('admin.stores.services');
         Route::match(['post', 'patch'], '/stores/{id}/toggle', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'toggle'])->name('admin.stores.toggle');
+        Route::delete('/stores/{id}', [\App\Http\Controllers\Web\Admin\AdminStoreWebController::class, 'destroy'])->name('admin.stores.destroy')->middleware('role:super_admin');
 
         // Pickup/return points belong to a branch, not an additional store.
         Route::get('/pickup-points', [\App\Http\Controllers\Web\Admin\AdminPickupPointWebController::class, 'index'])->name('admin.pickup-points.index');
