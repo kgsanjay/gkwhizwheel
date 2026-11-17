@@ -273,6 +273,7 @@ class AdminAuthController extends Controller
     {
         $validated = $request->validate([
             'login' => ['required', 'string'],
+            'channel' => ['nullable', 'string', 'in:whatsapp,email'],
         ]);
 
         $input = trim((string) $validated['login']);
@@ -374,13 +375,19 @@ class AdminAuthController extends Controller
             || empty(config('services.whatsapp.token'))
             || str_contains($request->getHost(), 'staging');
 
+        $requestedChannel = $validated['channel'] ?? ($isPhone ? 'whatsapp' : 'email');
+        $message = $requestedChannel === 'whatsapp'
+            ? ($maskedPhone ? "Verification code sent to your WhatsApp ({$maskedPhone})." : 'Verification code sent to your WhatsApp.')
+            : ($maskedEmail ? "Verification code sent to your Email ({$maskedEmail})." : 'Verification code sent to your Email.');
+
         return response()->json([
             'success' => true,
             'user_id' => $user->id,
+            'channel' => $requestedChannel,
             'masked_phone' => $maskedPhone,
             'masked_email' => $maskedEmail,
             'debug_otp' => $exposeDebugOtp ? $otp : null,
-            'message' => 'Verification code sent to your WhatsApp and Email.',
+            'message' => $message,
         ]);
     }
 

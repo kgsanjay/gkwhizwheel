@@ -94,7 +94,9 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
         return 'password';
     });
     const [otpStep, setOtpStep] = useState('input'); // 'input' | 'verify'
-    const [otpLoginInput, setOtpLoginInput] = useState('');
+    const [otpChannel, setOtpChannel] = useState('whatsapp'); // 'whatsapp' | 'email'
+    const [otpPhoneInput, setOtpPhoneInput] = useState('');
+    const [otpEmailInput, setOtpEmailInput] = useState('');
     const [otpRemember, setOtpRemember] = useState(true);
     const [otpValue, setOtpValue] = useState('');
     const [otpData, setOtpData] = useState(null);
@@ -118,11 +120,19 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
         };
     }, [otpStep, resendTimer]);
 
-    const handleRequestOtp = async (e) => {
+    const handleRequestOtp = async (e, overrideChannel = null) => {
         if (e) e.preventDefault();
-        const input = (otpLoginInput || loginForm.data.login || '').trim();
+        const activeChannel = overrideChannel || otpChannel;
+        const rawInput = activeChannel === 'whatsapp' ? otpPhoneInput : otpEmailInput;
+        const fallbackInput = (loginForm.data.login || '').trim();
+        const input = (rawInput || fallbackInput).trim();
+
         if (!input) {
-            setOtpError('Please enter your mobile number or email address.');
+            setOtpError(
+                activeChannel === 'whatsapp'
+                    ? 'Please enter your 10-digit WhatsApp mobile number.'
+                    : 'Please enter your registered email address.'
+            );
             return;
         }
 
@@ -131,9 +141,15 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
         setUserNotFound(false);
 
         try {
-            const res = await axios.post('/login/otp/request', { login: input });
+            const res = await axios.post('/login/otp/request', {
+                login: input,
+                channel: activeChannel,
+            });
             if (res.data?.success) {
                 setOtpData(res.data);
+                if (overrideChannel) {
+                    setOtpChannel(overrideChannel);
+                }
                 setOtpStep('verify');
                 setResendTimer(30);
                 if (res.data.debug_otp) {
@@ -147,7 +163,7 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
             if (data?.not_found) {
                 setUserNotFound(true);
             }
-            setOtpError(data?.message || data?.errors?.login?.[0] || 'Failed to send verification code. Please check your number or email.');
+            setOtpError(data?.message || data?.errors?.login?.[0] || 'Failed to send verification code. Please check your details.');
         } finally {
             setOtpRequestLoading(false);
         }
@@ -186,17 +202,21 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
         }
     };
 
-    const handleResendOtp = async () => {
+    const handleResendOtp = async (targetChannel = null) => {
         if (resendTimer > 0 || otpRequestLoading) return;
-        await handleRequestOtp();
+        await handleRequestOtp(null, targetChannel || otpChannel);
     };
 
     const handleSwitchToRegisterWithPhone = () => {
-        const clean = (otpLoginInput || loginForm.data.login || '').replace(/[^0-9]/g, '');
-        if (clean.length >= 10) {
-            registerForm.setData('phone', clean.slice(-10));
-        } else if ((otpLoginInput || loginForm.data.login || '').includes('@')) {
-            registerForm.setData('email', (otpLoginInput || loginForm.data.login || '').trim());
+        if (otpChannel === 'whatsapp') {
+            const clean = otpPhoneInput.replace(/[^0-9]/g, '');
+            if (clean.length >= 10) {
+                registerForm.setData('phone', clean.slice(-10));
+            }
+        } else {
+            if (otpEmailInput.includes('@')) {
+                registerForm.setData('email', otpEmailInput.trim());
+            }
         }
         setCurrentTab(1);
     };
@@ -554,7 +574,7 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                     startIcon={<LockOutlinedIcon sx={{ fontSize: 16 }} />}
                                     sx={{
                                         borderRadius: 2,
-                                        py: 0.8,
+                                        py: 0.85,
                                         fontWeight: 700,
                                         fontSize: '0.85rem',
                                         textTransform: 'none',
@@ -571,15 +591,21 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                     size="small"
                                     onClick={() => {
                                         setLoginMethod('otp');
-                                        if (loginForm.data.login && !otpLoginInput) {
-                                            setOtpLoginInput(loginForm.data.login);
+                                        if (loginForm.data.login) {
+                                            if (loginForm.data.login.includes('@')) {
+                                                setOtpChannel('email');
+                                                setOtpEmailInput(loginForm.data.login);
+                                            } else {
+                                                setOtpChannel('whatsapp');
+                                                setOtpPhoneInput(loginForm.data.login);
+                                            }
                                         }
                                         setOtpError(null);
                                     }}
-                                    startIcon={<WhatsAppIcon sx={{ fontSize: 16, color: '#22C55E' }} />}
+                                    startIcon={<SecurityIcon sx={{ fontSize: 16, color: '#F59E0B' }} />}
                                     sx={{
                                         borderRadius: 2,
-                                        py: 0.8,
+                                        py: 0.85,
                                         fontWeight: 700,
                                         fontSize: '0.85rem',
                                         textTransform: 'none',
@@ -589,7 +615,7 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                         transition: 'all 0.2s ease',
                                     }}
                                 >
-                                    WhatsApp / OTP
+                                    Instant OTP Login
                                 </Button>
                             </Box>
 
@@ -625,8 +651,13 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                                 autoFocus
                                                 value={loginForm.data.login}
                                                 onChange={(e) => {
-                                                    loginForm.setData('login', e.target.value);
-                                                    setOtpLoginInput(e.target.value);
+                                                    const val = e.target.value;
+                                                    loginForm.setData('login', val);
+                                                    if (val.includes('@')) {
+                                                        setOtpEmailInput(val);
+                                                    } else {
+                                                        setOtpPhoneInput(val);
+                                                    }
                                                 }}
                                                 error={Boolean(loginForm.errors.login)}
                                                 placeholder="e.g. 9876543210 or your@email.com"
@@ -802,7 +833,7 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                 </Box>
                             )}
 
-                            {/* ================= METHOD 2: OTP / WHATSAPP LOGIN ================= */}
+                            {/* ================= METHOD 2 (STEP 1): OTP INPUT ================= */}
                             {loginMethod === 'otp' && otpStep === 'input' && (
                                 <Box component="form" onSubmit={handleRequestOtp} noValidate>
                                     {otpError && (
@@ -826,66 +857,207 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                         </Alert>
                                     )}
 
-                                    <Stack spacing={2.25} sx={{ mt: 1 }}>
-                                        <Box>
-                                            <Typography
-                                                component="label"
-                                                htmlFor="otp-login-input"
+                                    {/* Channel Selector: WhatsApp vs Email */}
+                                    <Box sx={{ mb: 2.25 }}>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                display: 'block',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 700,
+                                                color: isDark ? '#94A3B8' : '#64748B',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.04em',
+                                                mb: 1,
+                                                textAlign: 'center',
+                                            }}
+                                        >
+                                            Where should we send your login code?
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr 1fr',
+                                                gap: 1.25,
+                                                p: 0.5,
+                                                borderRadius: 2.5,
+                                                bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F1F5F9',
+                                                border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
+                                            }}
+                                        >
+                                            <Button
+                                                fullWidth
+                                                size="small"
+                                                onClick={() => {
+                                                    setOtpChannel('whatsapp');
+                                                    setOtpError(null);
+                                                }}
+                                                startIcon={<WhatsAppIcon sx={{ fontSize: 18, color: '#22C55E' }} />}
                                                 sx={{
-                                                    display: 'block',
-                                                    fontSize: '0.825rem',
+                                                    py: 0.9,
+                                                    borderRadius: 2,
                                                     fontWeight: 700,
-                                                    color: isDark ? '#E2E8F0' : '#1E293B',
-                                                    mb: 0.75,
+                                                    fontSize: '0.85rem',
+                                                    textTransform: 'none',
+                                                    bgcolor: otpChannel === 'whatsapp' ? (isDark ? '#1E293B' : '#FFFFFF') : 'transparent',
+                                                    color: otpChannel === 'whatsapp' ? (isDark ? '#4ADE80' : '#15803D') : (isDark ? '#94A3B8' : '#64748B'),
+                                                    border: otpChannel === 'whatsapp' ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid transparent',
+                                                    boxShadow: otpChannel === 'whatsapp' ? (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.06)') : 'none',
+                                                    transition: 'all 0.2s ease',
                                                 }}
                                             >
-                                                Mobile Number or Email <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
-                                            </Typography>
-                                            <TextField
+                                                WhatsApp
+                                            </Button>
+                                            <Button
                                                 fullWidth
-                                                id="otp-login-input"
-                                                name="otp-login-input"
-                                                autoComplete="tel"
-                                                autoFocus
-                                                value={otpLoginInput}
-                                                onChange={(e) => {
-                                                    setOtpLoginInput(e.target.value);
+                                                size="small"
+                                                onClick={() => {
+                                                    setOtpChannel('email');
                                                     setOtpError(null);
-                                                    setUserNotFound(false);
                                                 }}
-                                                placeholder="e.g. 9876543210 or your@email.com"
-                                                helperText="We'll send a 6-digit verification code to your WhatsApp and Email"
-                                                FormHelperTextProps={{
-                                                    sx: {
-                                                        color: isDark ? '#94A3B8' : '#64748B',
-                                                        mt: 0.75,
-                                                        mx: 0.5,
-                                                        fontSize: '0.75rem',
-                                                    },
+                                                startIcon={<EmailIcon sx={{ fontSize: 18, color: '#3B82F6' }} />}
+                                                sx={{
+                                                    py: 0.9,
+                                                    borderRadius: 2,
+                                                    fontWeight: 700,
+                                                    fontSize: '0.85rem',
+                                                    textTransform: 'none',
+                                                    bgcolor: otpChannel === 'email' ? (isDark ? '#1E293B' : '#FFFFFF') : 'transparent',
+                                                    color: otpChannel === 'email' ? (isDark ? '#60A5FA' : '#1D4ED8') : (isDark ? '#94A3B8' : '#64748B'),
+                                                    border: otpChannel === 'email' ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid transparent',
+                                                    boxShadow: otpChannel === 'email' ? (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.06)') : 'none',
+                                                    transition: 'all 0.2s ease',
                                                 }}
-                                                slotProps={{
-                                                    input: {
-                                                        startAdornment: (
-                                                            <InputAdornment position="start">
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                                                    <WhatsAppIcon sx={{ color: '#22C55E', fontSize: 18 }} />
-                                                                    <Typography
-                                                                        variant="body2"
-                                                                        sx={{
-                                                                            fontWeight: 700,
-                                                                            color: isDark ? '#CBD5E1' : '#475569',
-                                                                            fontSize: '0.85rem',
-                                                                        }}
-                                                                    >
-                                                                        +91
-                                                                    </Typography>
-                                                                </Box>
-                                                            </InputAdornment>
-                                                        ),
-                                                    },
-                                                }}
-                                            />
+                                            >
+                                                Email
+                                            </Button>
                                         </Box>
+                                    </Box>
+
+                                    <Stack spacing={2.25} sx={{ mt: 1 }}>
+                                        {/* Field 1: WhatsApp Mobile Number */}
+                                        {otpChannel === 'whatsapp' && (
+                                            <Box>
+                                                <Typography
+                                                    component="label"
+                                                    htmlFor="otp-phone-input"
+                                                    sx={{
+                                                        display: 'block',
+                                                        fontSize: '0.825rem',
+                                                        fontWeight: 700,
+                                                        color: isDark ? '#E2E8F0' : '#1E293B',
+                                                        mb: 0.75,
+                                                    }}
+                                                >
+                                                    WhatsApp Mobile Number <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                                </Typography>
+                                                <TextField
+                                                    fullWidth
+                                                    id="otp-phone-input"
+                                                    name="otp-phone-input"
+                                                    type="tel"
+                                                    autoComplete="tel"
+                                                    autoFocus
+                                                    value={otpPhoneInput}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val.includes('@')) {
+                                                            setOtpChannel('email');
+                                                            setOtpEmailInput(val);
+                                                            setOtpPhoneInput('');
+                                                        } else {
+                                                            setOtpPhoneInput(val);
+                                                        }
+                                                        setOtpError(null);
+                                                        setUserNotFound(false);
+                                                    }}
+                                                    placeholder="98765 43210"
+                                                    helperText="We'll send your 6-digit login code directly to your WhatsApp"
+                                                    FormHelperTextProps={{
+                                                        sx: {
+                                                            color: isDark ? '#94A3B8' : '#64748B',
+                                                            mt: 0.75,
+                                                            mx: 0.5,
+                                                            fontSize: '0.75rem',
+                                                        },
+                                                    }}
+                                                    slotProps={{
+                                                        input: {
+                                                            startAdornment: (
+                                                                <InputAdornment position="start">
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                                                        <WhatsAppIcon sx={{ color: '#22C55E', fontSize: 18 }} />
+                                                                        <Typography
+                                                                            variant="body2"
+                                                                            sx={{
+                                                                                fontWeight: 700,
+                                                                                color: isDark ? '#CBD5E1' : '#475569',
+                                                                                fontSize: '0.85rem',
+                                                                            }}
+                                                                        >
+                                                                            +91
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </InputAdornment>
+                                                            ),
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
+
+                                        {/* Field 2: Email Address */}
+                                        {otpChannel === 'email' && (
+                                            <Box>
+                                                <Typography
+                                                    component="label"
+                                                    htmlFor="otp-email-input"
+                                                    sx={{
+                                                        display: 'block',
+                                                        fontSize: '0.825rem',
+                                                        fontWeight: 700,
+                                                        color: isDark ? '#E2E8F0' : '#1E293B',
+                                                        mb: 0.75,
+                                                    }}
+                                                >
+                                                    Registered Email Address <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                                </Typography>
+                                                <TextField
+                                                    fullWidth
+                                                    id="otp-email-input"
+                                                    name="otp-email-input"
+                                                    type="email"
+                                                    autoComplete="email"
+                                                    autoFocus
+                                                    value={otpEmailInput}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setOtpEmailInput(val);
+                                                        setOtpError(null);
+                                                        setUserNotFound(false);
+                                                    }}
+                                                    placeholder="yourname@example.com"
+                                                    helperText="We'll send your 6-digit login code to your email inbox"
+                                                    FormHelperTextProps={{
+                                                        sx: {
+                                                            color: isDark ? '#94A3B8' : '#64748B',
+                                                            mt: 0.75,
+                                                            mx: 0.5,
+                                                            fontSize: '0.75rem',
+                                                        },
+                                                    }}
+                                                    slotProps={{
+                                                        input: {
+                                                            startAdornment: (
+                                                                <InputAdornment position="start">
+                                                                    <EmailIcon sx={{ color: '#3B82F6', fontSize: 18 }} />
+                                                                </InputAdornment>
+                                                            ),
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
                                     </Stack>
 
                                     <Box
@@ -940,8 +1112,19 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                         type="submit"
                                         fullWidth
                                         variant="contained"
-                                        disabled={otpRequestLoading || !otpLoginInput.trim()}
-                                        startIcon={otpRequestLoading ? <CircularProgress size={18} color="inherit" /> : <WhatsAppIcon sx={{ color: '#0F172A' }} />}
+                                        disabled={
+                                            otpRequestLoading ||
+                                            (otpChannel === 'whatsapp' ? !otpPhoneInput.trim() : !otpEmailInput.trim())
+                                        }
+                                        startIcon={
+                                            otpRequestLoading ? (
+                                                <CircularProgress size={18} color="inherit" />
+                                            ) : otpChannel === 'whatsapp' ? (
+                                                <WhatsAppIcon sx={{ color: '#0F172A' }} />
+                                            ) : (
+                                                <EmailIcon sx={{ color: '#0F172A' }} />
+                                            )
+                                        }
                                         sx={{
                                             py: 1.4,
                                             borderRadius: 2.5,
@@ -957,7 +1140,11 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                             },
                                         }}
                                     >
-                                        {otpRequestLoading ? 'Sending Verification Code...' : 'Get OTP via WhatsApp & Email'}
+                                        {otpRequestLoading
+                                            ? 'Sending Verification Code...'
+                                            : otpChannel === 'whatsapp'
+                                            ? 'Send Code to WhatsApp'
+                                            : 'Send Code to Email'}
                                     </Button>
 
                                     {/* Switch to Register Prompt */}
@@ -1006,26 +1193,105 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                             border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
                                         }}
                                     >
-                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600, display: 'block', mb: 1 }}>
-                                            VERIFICATION CODE SENT TO:
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                color: isDark ? '#94A3B8' : '#64748B',
+                                                fontWeight: 700,
+                                                display: 'block',
+                                                mb: 1.25,
+                                                letterSpacing: '0.04em',
+                                            }}
+                                        >
+                                            LOGIN CODE SENT TO:
                                         </Typography>
 
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                             {otpData?.masked_phone && (
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <WhatsAppIcon sx={{ fontSize: 18, color: '#22C55E' }} />
-                                                    <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#1E293B' }}>
-                                                        WhatsApp: <Box component="span" sx={{ color: '#22C55E' }}>{otpData.masked_phone}</Box>
-                                                    </Typography>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1.25,
+                                                        p: 1,
+                                                        px: 1.5,
+                                                        borderRadius: 2,
+                                                        bgcolor:
+                                                            otpChannel === 'whatsapp'
+                                                                ? (isDark ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.1)')
+                                                                : 'transparent',
+                                                        border:
+                                                            otpChannel === 'whatsapp'
+                                                                ? '1px solid rgba(34, 197, 94, 0.4)'
+                                                                : '1px solid transparent',
+                                                    }}
+                                                >
+                                                    <WhatsAppIcon sx={{ fontSize: 20, color: '#22C55E' }} />
+                                                    <Box sx={{ flexGrow: 1 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#1E293B' }}>
+                                                            WhatsApp: <Box component="span" sx={{ color: '#22C55E' }}>{otpData.masked_phone}</Box>
+                                                        </Typography>
+                                                    </Box>
+                                                    {otpChannel === 'whatsapp' && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                bgcolor: '#22C55E',
+                                                                color: '#070D19',
+                                                                fontWeight: 800,
+                                                                px: 0.9,
+                                                                py: 0.25,
+                                                                borderRadius: 1,
+                                                                fontSize: '0.7rem',
+                                                            }}
+                                                        >
+                                                            PRIMARY
+                                                        </Typography>
+                                                    )}
                                                 </Box>
                                             )}
 
                                             {otpData?.masked_email && (
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    <EmailIcon sx={{ fontSize: 18, color: '#3B82F6' }} />
-                                                    <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#1E293B' }}>
-                                                        Email: <Box component="span" sx={{ color: '#3B82F6' }}>{otpData.masked_email}</Box>
-                                                    </Typography>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1.25,
+                                                        p: 1,
+                                                        px: 1.5,
+                                                        borderRadius: 2,
+                                                        bgcolor:
+                                                            otpChannel === 'email'
+                                                                ? (isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)')
+                                                                : 'transparent',
+                                                        border:
+                                                            otpChannel === 'email'
+                                                                ? '1px solid rgba(59, 130, 246, 0.4)'
+                                                                : '1px solid transparent',
+                                                    }}
+                                                >
+                                                    <EmailIcon sx={{ fontSize: 20, color: '#3B82F6' }} />
+                                                    <Box sx={{ flexGrow: 1 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#1E293B' }}>
+                                                            Email: <Box component="span" sx={{ color: '#3B82F6' }}>{otpData.masked_email}</Box>
+                                                        </Typography>
+                                                    </Box>
+                                                    {otpChannel === 'email' && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                bgcolor: '#3B82F6',
+                                                                color: '#FFFFFF',
+                                                                fontWeight: 800,
+                                                                px: 0.9,
+                                                                py: 0.25,
+                                                                borderRadius: 1,
+                                                                fontSize: '0.7rem',
+                                                            }}
+                                                        >
+                                                            PRIMARY
+                                                        </Typography>
+                                                    )}
                                                 </Box>
                                             )}
                                         </Box>
@@ -1124,13 +1390,53 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                         {otpVerifyLoading ? 'Verifying...' : 'Verify & Sign In'}
                                     </Button>
 
+                                    {/* Alternative Channel Switcher if not received */}
+                                    <Box sx={{ mt: 2, textAlign: 'center' }}>
+                                        {otpChannel === 'whatsapp' && otpData?.masked_email && (
+                                            <Typography
+                                                variant="caption"
+                                                onClick={() => handleResendOtp('email')}
+                                                sx={{
+                                                    color: '#3B82F6',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 0.5,
+                                                    '&:hover': { textDecoration: 'underline' },
+                                                }}
+                                            >
+                                                <EmailIcon sx={{ fontSize: 14 }} />
+                                                Didn't receive on WhatsApp? Send to Email instead
+                                            </Typography>
+                                        )}
+                                        {otpChannel === 'email' && otpData?.masked_phone && (
+                                            <Typography
+                                                variant="caption"
+                                                onClick={() => handleResendOtp('whatsapp')}
+                                                sx={{
+                                                    color: '#22C55E',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 0.5,
+                                                    '&:hover': { textDecoration: 'underline' },
+                                                }}
+                                            >
+                                                <WhatsAppIcon sx={{ fontSize: 14 }} />
+                                                Didn't receive on Email? Send to WhatsApp instead
+                                            </Typography>
+                                        )}
+                                    </Box>
+
                                     {/* Resend and Back Actions */}
                                     <Box
                                         sx={{
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'space-between',
-                                            mt: 2.5,
+                                            mt: 2,
                                         }}
                                     >
                                         <Button
@@ -1148,14 +1454,20 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                                 fontSize: '0.825rem',
                                             }}
                                         >
-                                            Change Number
+                                            Change {otpChannel === 'whatsapp' ? 'Number' : 'Email'}
                                         </Button>
 
                                         <Button
                                             size="small"
                                             disabled={resendTimer > 0 || otpRequestLoading}
-                                            onClick={handleResendOtp}
-                                            startIcon={<WhatsAppIcon sx={{ fontSize: 14, color: resendTimer > 0 ? '#94A3B8' : '#22C55E' }} />}
+                                            onClick={() => handleResendOtp()}
+                                            startIcon={
+                                                otpChannel === 'whatsapp' ? (
+                                                    <WhatsAppIcon sx={{ fontSize: 14, color: resendTimer > 0 ? '#94A3B8' : '#22C55E' }} />
+                                                ) : (
+                                                    <EmailIcon sx={{ fontSize: 14, color: resendTimer > 0 ? '#94A3B8' : '#3B82F6' }} />
+                                                )
+                                            }
                                             sx={{
                                                 color: resendTimer > 0 ? (isDark ? '#64748B' : '#94A3B8') : '#F59E0B',
                                                 textTransform: 'none',
