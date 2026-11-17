@@ -422,9 +422,11 @@ class AdminAuthController extends Controller
         }
 
         Auth::guard('web')->login($user, (bool) ($validated['remember'] ?? false));
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
-        $intended = session()->get('url.intended');
+        $intended = $request->hasSession() ? session()->get('url.intended') : null;
         $redirectUrl = ($intended && ! str_contains($intended, '/admin')) ? $intended : route('account.index');
 
         return response()->json([
