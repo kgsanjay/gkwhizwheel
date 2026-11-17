@@ -16,9 +16,9 @@ class PhonePeService
      *
      * @return array<string, mixed>
      */
-    public function createPayment(Booking $booking, ?string $redirectUrl = null): array
+    public function createPayment(Booking $booking, ?string $redirectUrl = null, ?float $overrideAmount = null): array
     {
-        $amount = BikeBookingPayments::expectedGatewayAmount($booking);
+        $amount = $overrideAmount !== null ? round($overrideAmount, 2) : BikeBookingPayments::expectedGatewayAmount($booking);
         $merchantTransactionId = 'TXN_BK_'.$booking->id.'_'.Str::random(8);
 
         return $this->initiateStandardPay(

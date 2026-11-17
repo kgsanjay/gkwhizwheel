@@ -184,6 +184,131 @@ class CustomerAccountWebController extends Controller
     }
 
     /**
+     * Initiate or resume PhonePe online payment from the customer account portal.
+     * Supports:
+     * 1) Completing/resuming payment on HELD / PENDING_PAYMENT bookings (even if payment tab closed).
+     * 2) Paying remaining rental balance online on CONFIRMED / HANDED_OVER bookings.
+     */
+    public function payBooking(
+        int $id,
+        Request $request,
+        \App\Services\PhonePeService $phonePeService,
+        BookingService $bookingService,
+        AvailabilityService $availabilityService
+    ): \Illuminate\Http\JsonResponse {
+        $user = $request->user();
+        abort_unless($user !== null, 401);
+
+        $booking = Booking::with(['bike', 'user', 'payments'])->findOrFail($id);
+        abort_unless((int) $booking->user_id === (int) $user->id, 403, 'You do not own this booking.');
+
+        $validated = $request->validate([
+            'payment_option' => ['nullable', 'string', 'in:advance,full,balance'],
+        ]);
+
+        $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
+
+        // Flow 1: Resume / complete initial payment on HELD or PENDING_PAYMENT booking
+        if (in_array($booking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true)) {
+            if ($booking->held_until !== null && $booking->held_until->lte(now())) {
+                $stillAvailable = $booking->bike !== null && $availabilityService->checkAvailability(
+                    bike: $booking->bike,
+                    startDate: $booking->start_date,
+                    endDate: $booking->end_date,
+                    excludeBookingId: $booking->id,
+                    pickupStoreId: $booking->pickup_store_id,
+                    returnStoreId: $booking->return_store_id,
+                );
+
+                if (! $stillAvailable) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This reservation hold expired and the vehicle is no longer available for those dates. Please book another available bike.',
+                    ], 422);
+                }
+
+                $booking->held_until = now()->addMinutes(15);
+                $booking->save();
+            }
+
+            $option = (string) ($breakdown['checkout_payment_option'] ?? ($validated['payment_option'] === 'full' ? 'full' : 'advance'));
+            $amount = isset($breakdown['checkout_amount'])
+                ? (float) $breakdown['checkout_amount']
+                : \App\Services\BikeBookingPayments::amountFor($booking, $option);
+
+            if ($amount <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No payable amount found for this reservation.',
+                ], 422);
+            }
+
+            $breakdown['checkout_payment_option'] = $option;
+            $breakdown['checkout_gateway'] = 'phonepe';
+            $breakdown['checkout_amount'] = $amount;
+            $breakdown['balance_due_on_pickup'] = round(max(0, (float) $booking->total_amount - $amount), 2);
+            if ($booking->status === BookingStatus::HELD) {
+                $booking = $bookingService->markPendingPayment($booking);
+            }
+            $booking->update(['price_breakdown_json' => $breakdown]);
+
+            $paymentData = $phonePeService->createPayment($booking, null, $amount);
+
+            $breakdown = is_array($booking->fresh()->price_breakdown_json) ? $booking->fresh()->price_breakdown_json : $breakdown;
+            $breakdown['phonepe_transaction_id'] = $paymentData['merchant_transaction_id'];
+            $breakdown['phonepe_redirect_url'] = $paymentData['redirect_url'];
+            $booking->update(['price_breakdown_json' => $breakdown]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'mode' => 'initial',
+                    'booking_id' => $booking->id,
+                    'amount' => $amount,
+                    'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
+                    'redirect_url' => $paymentData['redirect_url'],
+                ],
+                'message' => 'Redirecting to PhonePe secure checkout...',
+            ]);
+        }
+
+        // Flow 2: Pay remaining rental balance online on CONFIRMED or HANDED_OVER booking
+        if (in_array($booking->status, [BookingStatus::CONFIRMED, BookingStatus::HANDED_OVER], true)) {
+            $remainder = \App\Services\BikeBookingPayments::remainder($booking);
+            if ($remainder <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This booking is already paid in full.',
+                ], 422);
+            }
+
+            $paymentData = $phonePeService->createPayment($booking, null, $remainder);
+
+            $breakdown['balance_phonepe_transaction_id'] = $paymentData['merchant_transaction_id'];
+            $breakdown['balance_phonepe_amount'] = $remainder;
+            $breakdown['balance_phonepe_redirect_url'] = $paymentData['redirect_url'];
+            $booking->update(['price_breakdown_json' => $breakdown]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'mode' => 'balance',
+                    'booking_id' => $booking->id,
+                    'amount' => $remainder,
+                    'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
+                    'redirect_url' => $paymentData['redirect_url'],
+                ],
+                'message' => 'Redirecting to PhonePe to settle remaining balance...',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Online payment is not available for bookings with status: '.$booking->status->value,
+        ], 422);
+    }
+
+    /**
      * Cancel customer's own booking prior to pickup and process eligible refund.
      */
     public function cancelBooking(

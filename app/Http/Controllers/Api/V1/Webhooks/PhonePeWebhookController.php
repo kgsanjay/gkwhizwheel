@@ -105,6 +105,7 @@ class PhonePeWebhookController extends Controller
 
                 if (! $booking) {
                     $booking = Booking::where('price_breakdown_json->phonepe_transaction_id', $merchantTransactionId)
+                        ->orWhere('price_breakdown_json->balance_phonepe_transaction_id', $merchantTransactionId)
                         ->lockForUpdate()
                         ->first();
                 }
@@ -119,9 +120,14 @@ class PhonePeWebhookController extends Controller
                 }
 
                 $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
-                if ($gatewayTransactionId === '' || $merchantTransactionId === '' ||
-                    ! hash_equals((string) ($breakdown['phonepe_transaction_id'] ?? ''), $merchantTransactionId) ||
-                    (int) round($amount * 100) !== (int) round(BikeBookingPayments::expectedGatewayAmount($booking) * 100)) {
+                $isInitialTxn = hash_equals((string) ($breakdown['phonepe_transaction_id'] ?? ''), $merchantTransactionId);
+                $isBalanceTxn = ! $isInitialTxn && hash_equals((string) ($breakdown['balance_phonepe_transaction_id'] ?? ''), $merchantTransactionId);
+                $expectedAmount = $isBalanceTxn
+                    ? (float) ($breakdown['balance_phonepe_amount'] ?? BikeBookingPayments::remainder($booking))
+                    : BikeBookingPayments::expectedGatewayAmount($booking);
+
+                if ($gatewayTransactionId === '' || $merchantTransactionId === '' || (! $isInitialTxn && ! $isBalanceTxn) ||
+                    (int) round($amount * 100) !== (int) round($expectedAmount * 100)) {
                     return response()->json(['success' => false, 'message' => 'Payment does not match the checkout transaction.'], 422);
                 }
 
@@ -130,7 +136,7 @@ class PhonePeWebhookController extends Controller
                 if ($existingPayment && (int) $existingPayment->booking_id !== (int) $booking->id) {
                     return response()->json(['success' => false, 'message' => 'Payment reference belongs to another booking.'], 409);
                 }
-                if ($existingPayment && $booking->status === BookingStatus::CONFIRMED) {
+                if ($existingPayment && ($isBalanceTxn || $booking->status === BookingStatus::CONFIRMED)) {
                     return response()->json([
                         'success' => true,
                         'data' => [
@@ -153,19 +159,29 @@ class PhonePeWebhookController extends Controller
                         'method' => PaymentMethod::PHONEPE,
                         'status' => PaymentStatus::SUCCESS,
                         'collected_by' => null,
-                        'notes' => 'PhonePe online bike rental '.(($breakdown['checkout_payment_option'] ?? 'full') === 'advance' ? 'advance' : 'full').' payment via webhook',
+                        'notes' => $isBalanceTxn
+                            ? 'PhonePe online remaining rental balance payment via webhook'
+                            : 'PhonePe online bike rental '.(($breakdown['checkout_payment_option'] ?? 'full') === 'advance' ? 'advance' : 'full').' payment via webhook',
                     ]
                 );
 
-                // Transition booking status to CONFIRMED
-                if (in_array($booking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true)) {
+                if ($isBalanceTxn) {
+                    $breakdown['balance_due_on_pickup'] = BikeBookingPayments::remainder($booking);
+                    unset($breakdown['balance_phonepe_transaction_id'], $breakdown['balance_phonepe_amount'], $breakdown['balance_phonepe_redirect_url']);
+                    $booking->update(['price_breakdown_json' => $breakdown]);
+
+                    if ($booking->user !== null) {
+                        $booking->user->notify(new \App\Notifications\PaymentReceiptNotification($payment, $booking));
+                    }
+                } elseif (in_array($booking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true)) {
+                    // Transition booking status to CONFIRMED
                     $bookingService->confirmPayment($booking, $gatewayTransactionId);
                 }
 
                 ActivityLog::create([
                     'user_id' => $booking->user_id,
                     'store_id' => $booking->pickup_store_id,
-                    'action' => 'payment.phonepe_webhook_confirmed',
+                    'action' => $isBalanceTxn ? 'payment.phonepe_balance_confirmed' : 'payment.phonepe_webhook_confirmed',
                     'subject_type' => Booking::class,
                     'subject_id' => $booking->id,
                     'new_values' => [

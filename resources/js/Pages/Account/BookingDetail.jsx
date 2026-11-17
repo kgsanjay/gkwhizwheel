@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import apiClient from '../../api/client';
 import {
@@ -44,15 +44,27 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PrintIcon from '@mui/icons-material/Print';
 import DownloadIcon from '@mui/icons-material/Download';
 import StarIcon from '@mui/icons-material/Star';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { useColorMode } from '../../theme/ColorModeContext';
+
+const formatInr = (value) =>
+    `₹${Number(value || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
 
 export default function AccountBookingDetail({ booking, qrDataUri }) {
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
+    const { flash = {} } = usePage().props;
 
     const [bikeDocs, setBikeDocs] = useState([]);
     const [docsLoading, setDocsLoading] = useState(false);
     const [docsError, setDocsError] = useState(null);
+
+    // Online payment (resume hold or pay remaining balance) state
+    const [payLoading, setPayLoading] = useState(false);
+    const [payError, setPayError] = useState('');
 
     // Cancel modal state
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -83,10 +95,46 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
 
     const activeStatuses = ['held', 'pending_payment', 'confirmed', 'handed_over'];
     const isActive = activeStatuses.includes(booking.status);
+    const isConfirmed = ['confirmed', 'handed_over', 'returned', 'completed'].includes(booking.status);
+    const isAwaitingPayment = ['held', 'pending_payment'].includes(booking.status);
     const canCancel = ['held', 'pending_payment', 'confirmed'].includes(booking.status);
     const canExtend = ['confirmed', 'handed_over'].includes(booking.status);
     const isCompleted = ['returned', 'completed'].includes(booking.status);
     const hasReview = Boolean(booking.review);
+
+    const breakdown = booking.price_breakdown_json || {};
+    const gst = booking.bike_gst || breakdown.bike_gst || null;
+    const hasConfiguredGst = gst?.status === 'configured';
+    const gstRate = Number(gst?.gst_rate_percent || 18);
+    const totalAmount = Number(booking.total_amount || 0);
+    const paidAmount = Number(booking.paid_amount || 0);
+    const balanceDue = Number(booking.balance_due ?? Math.max(0, totalAmount - paidAmount));
+    const checkoutAmount = Number(booking.checkout_amount || breakdown.checkout_amount || Math.min(totalAmount, 100));
+    const canPayRemaining = ['confirmed', 'handed_over'].includes(booking.status) && balanceDue > 0;
+
+    const handlePayOnline = async (option = 'balance') => {
+        setPayLoading(true);
+        setPayError('');
+        try {
+            const res = await window.axios.post(`/account/bookings/${booking.id}/pay`, {
+                payment_option: option,
+            });
+            const redirectUrl = res.data?.data?.redirect_url;
+            if (redirectUrl && redirectUrl !== '#') {
+                window.location.href = redirectUrl;
+                return;
+            }
+            setPayError('Payment gateway did not return a checkout link. Please try again.');
+        } catch (err) {
+            setPayError(
+                err?.response?.data?.message
+                    || Object.values(err?.response?.data?.errors || {})[0]?.[0]
+                    || 'Could not initiate PhonePe payment. Please try again.'
+            );
+        } finally {
+            setPayLoading(false);
+        }
+    };
 
     // Fetch legal bike documents per Section 5
     useEffect(() => {
@@ -174,6 +222,22 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
             <Head title={`Booking #${booking.booking_reference} - GK WhizWheel`} />
 
             <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5 } }}>
+                {flash?.success && (
+                    <Alert severity="success" sx={{ mb: 2.5, borderRadius: 2.5, fontWeight: 650 }}>
+                        {flash.success}
+                    </Alert>
+                )}
+                {flash?.status && (
+                    <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2.5, fontWeight: 650 }}>
+                        {flash.status}
+                    </Alert>
+                )}
+                {payError && (
+                    <Alert severity="error" onClose={() => setPayError('')} sx={{ mb: 2.5, borderRadius: 2.5, fontWeight: 650 }}>
+                        {payError}
+                    </Alert>
+                )}
+
                 {/* Back Bar & Quick Actions */}
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                     <Button
@@ -183,29 +247,50 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                         sx={{
                             color: isDark ? '#94A3B8' : '#64748B',
                             fontWeight: 600,
+                            textTransform: 'none',
                             '&:hover': { color: isDark ? '#F8FAFC' : '#0F172A' },
                         }}
                     >
                         Back to My Bookings
                     </Button>
 
-                    <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
-                        {!isConfirmed && ['held', 'pending_payment'].includes(booking.status) && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                        {isAwaitingPayment && (
                             <Button
-                                component={Link}
-                                href={`/services/bikes/checkout?booking_id=${booking.id}`}
                                 variant="contained"
                                 size="small"
+                                disabled={payLoading}
+                                onClick={() => handlePayOnline(breakdown.checkout_payment_option || 'advance')}
+                                startIcon={payLoading ? <CircularProgress size={15} color="inherit" /> : <AccountBalanceWalletIcon />}
                                 sx={{
                                     fontWeight: 800,
                                     textTransform: 'none',
                                     borderRadius: 2,
                                     bgcolor: '#D97706',
-                                    color: '#FFF',
+                                    color: '#FFFFFF',
                                     '&:hover': { bgcolor: '#B45309' },
                                 }}
                             >
-                                Complete Payment & Confirm
+                                {payLoading ? 'Opening PhonePe…' : `Complete Payment (${formatInr(checkoutAmount)})`}
+                            </Button>
+                        )}
+                        {canPayRemaining && (
+                            <Button
+                                variant="contained"
+                                size="small"
+                                disabled={payLoading}
+                                onClick={() => handlePayOnline('balance')}
+                                startIcon={payLoading ? <CircularProgress size={15} color="inherit" /> : <AccountBalanceWalletIcon />}
+                                sx={{
+                                    fontWeight: 800,
+                                    textTransform: 'none',
+                                    borderRadius: 2,
+                                    bgcolor: '#10B981',
+                                    color: '#FFFFFF',
+                                    '&:hover': { bgcolor: '#059669' },
+                                }}
+                            >
+                                {payLoading ? 'Opening PhonePe…' : `Pay Balance (${formatInr(balanceDue)})`}
                             </Button>
                         )}
                         {isConfirmed && (
@@ -232,12 +317,12 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                                         fontWeight: 800,
                                         textTransform: 'none',
                                         borderRadius: 2,
-                                        bgcolor: '#0F172A',
-                                        color: '#FFF',
-                                        '&:hover': { bgcolor: '#1E293B' },
+                                        bgcolor: isDark ? '#38BDF8' : '#0F172A',
+                                        color: isDark ? '#0F172A' : '#FFFFFF',
+                                        '&:hover': { bgcolor: isDark ? '#7DD3FC' : '#1E293B' },
                                     }}
                                 >
-                                    Rental Agreement (PDF)
+                                    Rental Voucher (PDF)
                                 </Button>
                                 <Button
                                     component="a"
@@ -303,7 +388,7 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                                 }}
                             />
                         )}
-                    </Stack>
+                    </Box>
                 </Box>
 
                 {/* Top Status Header */}
@@ -410,8 +495,9 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                                         gap: 1,
                                         px: 1.5,
                                         py: 0.5,
-                                        bgcolor: '#ECFDF5',
-                                        color: '#065F46',
+                                        bgcolor: isDark ? 'rgba(16, 185, 129, 0.14)' : '#ECFDF5',
+                                        color: isDark ? '#34D399' : '#065F46',
+                                        border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : 'none',
                                         borderRadius: 2,
                                         mb: 1,
                                     }}
@@ -455,23 +541,57 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                 )}
 
                 {/* Held / Pending Payment Banner */}
-                {!isConfirmed && ['held', 'pending_payment'].includes(booking.status) && (
+                {isAwaitingPayment && (
                     <Alert
                         severity="warning"
-                        sx={{ mb: 4, borderRadius: 3, fontWeight: 600 }}
+                        sx={{ mb: 4, borderRadius: 3, fontWeight: 600, alignItems: 'center' }}
                         action={
                             <Button
-                                component={Link}
-                                href={`/services/bikes/checkout?booking_id=${booking.id}`}
-                                color="inherit"
+                                variant="contained"
                                 size="small"
-                                sx={{ fontWeight: 800 }}
+                                disabled={payLoading}
+                                onClick={() => handlePayOnline(breakdown.checkout_payment_option || 'advance')}
+                                sx={{
+                                    fontWeight: 800,
+                                    textTransform: 'none',
+                                    bgcolor: '#D97706',
+                                    color: '#FFFFFF',
+                                    '&:hover': { bgcolor: '#B45309' },
+                                }}
                             >
-                                Pay Advance Now
+                                {payLoading ? 'Opening…' : `Pay ${formatInr(checkoutAmount)} Now`}
                             </Button>
                         }
                     >
-                        This reservation is currently on hold. Complete payment to confirm your booking and unlock your vehicle pickup pass.
+                        Payment was not completed yet (or the payment window was closed). Resume checkout via PhonePe to lock your vehicle and unlock your Express Check-In Pass.
+                    </Alert>
+                )}
+
+                {/* Remaining Balance Banner for Confirmed Bookings */}
+                {canPayRemaining && (
+                    <Alert
+                        severity="info"
+                        icon={<AccountBalanceWalletIcon />}
+                        sx={{ mb: 4, borderRadius: 3, fontWeight: 600, alignItems: 'center' }}
+                        action={
+                            <Button
+                                variant="contained"
+                                size="small"
+                                disabled={payLoading}
+                                onClick={() => handlePayOnline('balance')}
+                                sx={{
+                                    fontWeight: 800,
+                                    textTransform: 'none',
+                                    bgcolor: '#10B981',
+                                    color: '#FFFFFF',
+                                    '&:hover': { bgcolor: '#059669' },
+                                }}
+                            >
+                                {payLoading ? 'Opening…' : `Pay ${formatInr(balanceDue)} Online`}
+                            </Button>
+                        }
+                    >
+                        You paid <strong>{formatInr(paidAmount)}</strong> online. Remaining balance of <strong>{formatInr(balanceDue)}</strong> can be paid online right now or via UPI/Cash at pickup.
                     </Alert>
                 )}
 
@@ -778,25 +898,109 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                                             </TableRow>
                                         )}
 
+                                        {hasConfiguredGst && (
+                                            <TableRow>
+                                                <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                                    GST ({gstRate}% — CGST {gstRate / 2}% + SGST {gstRate / 2}%)
+                                                </TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 600, color: isDark ? '#F8FAFC' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                                    {gst.price_mode === 'inclusive' ? '' : '+ '}₹{Number(gst.gst_amount || 0).toFixed(2)}
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
                                         <TableRow>
-                                            <TableCell sx={{ color: isDark ? '#94A3B8' : '#64748B', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
-                                                Refundable Deposit
+                                            <TableCell sx={{ color: Number(booking.deposit_amount || 0) > 0 ? (isDark ? '#94A3B8' : '#64748B') : '#10B981', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                                {Number(booking.deposit_amount || 0) > 0 ? 'Refundable Deposit' : 'Security Deposit (Waived)'}
                                             </TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 600, color: isDark ? '#F8FAFC' : '#0F172A', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
-                                                ₹{Number(booking.deposit_amount).toFixed(2)}
+                                            <TableCell align="right" sx={{ fontWeight: 600, color: Number(booking.deposit_amount || 0) > 0 ? (isDark ? '#F8FAFC' : '#0F172A') : '#10B981', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9' }}>
+                                                ₹{Number(booking.deposit_amount || 0).toFixed(2)}
                                             </TableCell>
                                         </TableRow>
 
                                         <TableRow>
-                                            <TableCell sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A', fontSize: '1rem', pt: 2, borderColor: 'transparent' }}>
-                                                Total Amount
+                                            <TableCell sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A', fontSize: '0.95rem', pt: 1.75, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0' }}>
+                                                Total Rental {hasConfiguredGst ? `(Incl. ${gstRate}% GST)` : ''}
                                             </TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 800, color: '#F59E0B', fontSize: '1.25rem', pt: 2, borderColor: 'transparent' }}>
-                                                ₹{Number(booking.total_amount).toFixed(2)}
+                                            <TableCell align="right" sx={{ fontWeight: 900, color: isDark ? '#F8FAFC' : '#0F172A', fontSize: '1.1rem', pt: 1.75, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0' }}>
+                                                {formatInr(totalAmount)}
+                                            </TableCell>
+                                        </TableRow>
+
+                                        <TableRow>
+                                            <TableCell sx={{ fontWeight: 700, color: '#10B981', borderColor: 'transparent' }}>
+                                                Paid Online
+                                            </TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 800, color: '#10B981', borderColor: 'transparent' }}>
+                                                - {formatInr(paidAmount)}
                                             </TableCell>
                                         </TableRow>
                                     </TableBody>
                                 </Table>
+
+                                {/* Balance Due & Quick Online Settlement Box */}
+                                <Box
+                                    sx={{
+                                        mt: 1.5,
+                                        p: 2,
+                                        borderRadius: 2.5,
+                                        bgcolor: balanceDue > 0
+                                            ? (isDark ? 'rgba(245, 158, 11, 0.12)' : '#FFFBEB')
+                                            : (isDark ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5'),
+                                        border: 1,
+                                        borderColor: balanceDue > 0
+                                            ? (isDark ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A')
+                                            : (isDark ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0'),
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                                        <Box>
+                                            <Typography
+                                                variant="subtitle2"
+                                                sx={{
+                                                    fontWeight: 850,
+                                                    color: balanceDue > 0 ? (isDark ? '#FBBF24' : '#B45309') : (isDark ? '#34D399' : '#065F46'),
+                                                }}
+                                            >
+                                                {balanceDue > 0 ? 'Remaining Balance' : 'Paid in Full'}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
+                                                {balanceDue > 0 ? 'Pay online now or at hub handover' : 'No rental balance due at pickup'}
+                                            </Typography>
+                                        </Box>
+                                        <Typography
+                                            variant="h5"
+                                            sx={{ fontWeight: 900, color: balanceDue > 0 ? '#F59E0B' : '#10B981' }}
+                                        >
+                                            {formatInr(balanceDue)}
+                                        </Typography>
+                                    </Box>
+                                    {(isAwaitingPayment || canPayRemaining) && (
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            size="medium"
+                                            disabled={payLoading}
+                                            onClick={() => handlePayOnline(isAwaitingPayment ? (breakdown.checkout_payment_option || 'advance') : 'balance')}
+                                            startIcon={payLoading ? <CircularProgress size={16} color="inherit" /> : <AccountBalanceWalletIcon />}
+                                            sx={{
+                                                mt: 1.5,
+                                                fontWeight: 800,
+                                                textTransform: 'none',
+                                                borderRadius: 2,
+                                                bgcolor: isAwaitingPayment ? '#D97706' : '#10B981',
+                                                color: '#FFFFFF',
+                                                '&:hover': { bgcolor: isAwaitingPayment ? '#B45309' : '#059669' },
+                                            }}
+                                        >
+                                            {payLoading
+                                                ? 'Connecting to PhonePe…'
+                                                : isAwaitingPayment
+                                                    ? `Complete Payment via PhonePe (${formatInr(checkoutAmount)})`
+                                                    : `Pay Remaining ${formatInr(balanceDue)} via PhonePe`}
+                                        </Button>
+                                    )}
+                                </Box>
 
                                 {/* Payment Records */}
                                 {payments.length > 0 && (

@@ -285,6 +285,7 @@ Route::match(['get', 'post'], '/payment/phonepe/callback', [\App\Http\Controller
 Route::get('/account', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'index'])->name('account.index');
 Route::get('/account/bookings', fn () => redirect()->route('account.index'))->name('account.bookings.index');
 Route::get('/account/bookings/{id}', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'show'])->name('account.bookings.show');
+Route::post('/account/bookings/{id}/pay', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'payBooking'])->middleware('auth')->name('account.bookings.pay');
 Route::post('/account/bookings/{id}/cancel', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'cancelBooking'])->middleware('auth')->name('account.bookings.cancel');
 Route::post('/account/bookings/{id}/extend', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'extendBooking'])->middleware('auth')->name('account.bookings.extend');
 Route::post('/account/bookings/{id}/review', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'reviewBooking'])->middleware('auth')->name('account.bookings.review');

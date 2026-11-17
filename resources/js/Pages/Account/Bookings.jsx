@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import { useColorMode } from '../../theme/ColorModeContext';
+import { getServicePlaceholder } from '../../utils/placeholder';
 import {
     Box,
     Typography,
@@ -15,6 +16,8 @@ import {
     Divider,
     Container,
     Avatar,
+    Alert,
+    CircularProgress,
 } from '@mui/material';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -40,12 +43,58 @@ import ExploreIcon from '@mui/icons-material/Explore';
 import LuggageIcon from '@mui/icons-material/Luggage';
 import PrintIcon from '@mui/icons-material/Print';
 import DownloadIcon from '@mui/icons-material/Download';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+
+const formatInr = (value) =>
+    `₹${Number(value || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+
+const resolveBikeThumb = (bike) => {
+    const raw = bike?.primary_image_path || bike?.images?.[0]?.image_path || '';
+    if (!raw) return null;
+    if (raw.startsWith('http') || raw.startsWith('/')) return raw;
+    return `/storage/${raw}`;
+};
 
 export default function AccountBookings({ bookings = [], serviceBookings = [], serviceEnquiries = [], stats = {}, user = null, featuredBikes = [] }) {
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
+    const { flash = {} } = usePage().props;
 
     const [activeTab, setActiveTab] = useState('all');
+    const [payingBookingId, setPayingBookingId] = useState(null);
+    const [payError, setPayError] = useState('');
+
+    const handlePayBookingOnline = async (bookingId, paymentOption = 'balance') => {
+        setPayingBookingId(bookingId);
+        setPayError('');
+        try {
+            const res = await window.axios.post(`/account/bookings/${bookingId}/pay`, {
+                payment_option: paymentOption,
+            });
+            const redirectUrl = res.data?.data?.redirect_url;
+            if (redirectUrl && redirectUrl !== '#') {
+                window.location.href = redirectUrl;
+                return;
+            }
+            setPayError('Payment gateway did not return a checkout link. Please try again.');
+        } catch (err) {
+            setPayError(
+                err?.response?.data?.message
+                    || Object.values(err?.response?.data?.errors || {})[0]?.[0]
+                    || 'Could not initiate PhonePe payment. Please try again.'
+            );
+        } finally {
+            setPayingBookingId(null);
+        }
+    };
+
+    const unpaidBookings = bookings.filter((b) => ['held', 'pending_payment'].includes(b.status));
+    const balanceDueBookings = bookings.filter(
+        (b) => ['confirmed', 'handed_over'].includes(b.status) && Number(b.balance_due ?? Math.max(0, Number(b.total_amount || 0) - Number(b.paid_amount || 0))) > 0
+    );
 
     const getServiceDetails = (type) => {
         switch (type) {
@@ -160,6 +209,22 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
             <Head title="My Rental Bookings - Customer Portal - GK WhizWheel" />
 
             <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 4.5 } }}>
+                {flash?.success && (
+                    <Alert severity="success" sx={{ mb: 2.5, borderRadius: 2.5, fontWeight: 650 }}>
+                        {flash.success}
+                    </Alert>
+                )}
+                {flash?.status && (
+                    <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2.5, fontWeight: 650 }}>
+                        {flash.status}
+                    </Alert>
+                )}
+                {payError && (
+                    <Alert severity="error" onClose={() => setPayError('')} sx={{ mb: 2.5, borderRadius: 2.5, fontWeight: 650 }}>
+                        {payError}
+                    </Alert>
+                )}
+
                 {/* Header Banner Section */}
                 <Box
                     sx={{
@@ -270,14 +335,14 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                         </Typography>
                                         <Chip
                                             size="small"
-                                            icon={<VerifiedUserIcon sx={{ fontSize: '13px !important', color: '#10B981 !important' }} />}
-                                            label="Verified Rider"
+                                            icon={<VerifiedUserIcon sx={{ fontSize: '13px !important', color: user.is_kyc_verified ? '#10B981 !important' : '#F59E0B !important' }} />}
+                                            label={user.is_kyc_verified ? 'KYC Verified' : user.has_kyc_uploaded ? 'KYC Under Review' : 'KYC Pending'}
                                             sx={{
                                                 height: 20,
                                                 fontSize: '0.65rem',
                                                 fontWeight: 800,
-                                                bgcolor: 'rgba(16, 185, 129, 0.1)',
-                                                color: '#10B981',
+                                                bgcolor: user.is_kyc_verified ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                                                color: user.is_kyc_verified ? '#10B981' : '#F59E0B',
                                                 borderRadius: 1,
                                             }}
                                         />
@@ -398,6 +463,69 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                             Sign In Now
                         </Button>
                     </Paper>
+                )}
+
+                {/* Actionable Payment Reminder Strip (Closed Window / Remaining Balance) */}
+                {user && (unpaidBookings.length > 0 || balanceDueBookings.length > 0) && (
+                    <Stack spacing={1.5} sx={{ mb: 3 }}>
+                        {unpaidBookings.length > 0 && (
+                            <Alert
+                                severity="warning"
+                                icon={<AccountBalanceWalletIcon />}
+                                sx={{ borderRadius: 3, fontWeight: 600, alignItems: 'center' }}
+                                action={
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        disabled={payingBookingId === unpaidBookings[0].id}
+                                        onClick={() => handlePayBookingOnline(unpaidBookings[0].id, unpaidBookings[0].payment_option || 'advance')}
+                                        sx={{
+                                            fontWeight: 800,
+                                            textTransform: 'none',
+                                            bgcolor: '#D97706',
+                                            color: '#FFFFFF',
+                                            '&:hover': { bgcolor: '#B45309' },
+                                        }}
+                                    >
+                                        {payingBookingId === unpaidBookings[0].id
+                                            ? 'Opening…'
+                                            : `Resume Payment (#${unpaidBookings[0].booking_reference})`}
+                                    </Button>
+                                }
+                            >
+                                You have <strong>{unpaidBookings.length}</strong> reservation{unpaidBookings.length > 1 ? 's' : ''} awaiting payment. Closed the payment window? Resume securely via PhonePe anytime below.
+                            </Alert>
+                        )}
+                        {balanceDueBookings.length > 0 && (
+                            <Alert
+                                severity="info"
+                                icon={<AccountBalanceWalletIcon />}
+                                sx={{ borderRadius: 3, fontWeight: 600, alignItems: 'center' }}
+                                action={
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        disabled={payingBookingId === balanceDueBookings[0].id}
+                                        onClick={() => handlePayBookingOnline(balanceDueBookings[0].id, 'balance')}
+                                        sx={{
+                                            fontWeight: 800,
+                                            textTransform: 'none',
+                                            bgcolor: '#10B981',
+                                            color: '#FFFFFF',
+                                            '&:hover': { bgcolor: '#059669' },
+                                        }}
+                                    >
+                                        {payingBookingId === balanceDueBookings[0].id
+                                            ? 'Opening…'
+                                            : `Pay ${formatInr(balanceDueBookings[0].balance_due)} Online`}
+                                    </Button>
+                                }
+                            >
+                                Confirmed booking <strong>#{balanceDueBookings[0].booking_reference}</strong> has a remaining balance of{' '}
+                                <strong>{formatInr(balanceDueBookings[0].balance_due)}</strong>. Settle it online now for even faster pickup or pay at handover.
+                            </Alert>
+                        )}
+                    </Stack>
                 )}
 
                 {/* 4 Sleek Integrated Filter Cards (Replaces bulky cards & redundant tabs) */}
@@ -549,6 +677,15 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                             const returnStore = b.return_store || {};
                             const isOneWay = pickupStore.id !== returnStore.id;
                             const statusBadge = getStatusBadge(b.status);
+                            const bikeThumb = resolveBikeThumb(bike);
+                            const totalAmt = Number(b.total_amount || 0);
+                            const paidAmt = Number(b.paid_amount || 0);
+                            const balanceDue = Number(b.balance_due ?? Math.max(0, totalAmt - paidAmt));
+                            const checkoutAmt = Number(b.checkout_amount || b.price_breakdown_json?.checkout_amount || Math.min(totalAmt, 100));
+                            const isAwaitingPayment = ['held', 'pending_payment'].includes(b.status);
+                            const isConfirmedBooking = ['confirmed', 'handed_over', 'returned', 'completed'].includes(b.status);
+                            const canPayBalance = ['confirmed', 'handed_over'].includes(b.status) && balanceDue > 0;
+                            const isPayingThis = payingBookingId === b.id;
 
                             return (
                                 <Card
@@ -558,7 +695,11 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                         borderRadius: 3.5,
                                         bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
                                         backdropFilter: 'blur(12px)',
-                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                        border: isAwaitingPayment
+                                            ? '1.5px solid rgba(245, 158, 11, 0.55)'
+                                            : isDark
+                                                ? '1px solid rgba(255, 255, 255, 0.08)'
+                                                : '1px solid #E2E8F0',
                                         boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.3)' : '0 3px 12px rgba(15, 23, 42, 0.04)',
                                         transition: 'all 0.2s ease',
                                         overflow: 'hidden',
@@ -588,11 +729,15 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                             overflow: 'hidden',
                                                         }}
                                                     >
-                                                        {bike.primary_image_path ? (
+                                                        {bikeThumb ? (
                                                             <Box
                                                                 component="img"
-                                                                src={`/storage/${bike.primary_image_path}`}
-                                                                alt={bike.model_name}
+                                                                src={bikeThumb}
+                                                                alt={bike.model_name || 'Rental Bike'}
+                                                                onError={(e) => {
+                                                                    e.currentTarget.onerror = null;
+                                                                    e.currentTarget.src = getServicePlaceholder('bikes');
+                                                                }}
                                                                 sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                             />
                                                         ) : (
@@ -737,62 +882,145 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
 
                                             {/* Price & Action Button */}
                                             <Grid size={{ xs: 12, sm: 5, md: 3 }} sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-                                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', fontSize: '0.75rem', fontWeight: 600 }}>
-                                                    Advance + Deposit
+                                                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', fontSize: '0.74rem', fontWeight: 650 }}>
+                                                    Total Rental {b.bike_gst?.status === 'configured' ? '(Incl. GST)' : ''}
                                                 </Typography>
                                                 <Typography
                                                     variant="h5"
                                                     sx={{
                                                         fontWeight: 900,
-                                                        color: '#F59E0B',
-                                                        fontSize: '1.4rem',
-                                                        mb: 1.25,
+                                                        color: isDark ? '#F8FAFC' : '#0F172A',
+                                                        fontSize: '1.35rem',
+                                                        lineHeight: 1.2,
+                                                        fontVariantNumeric: 'tabular-nums',
                                                     }}
                                                 >
-                                                    ₹{Number(b.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                    {formatInr(totalAmt)}
                                                 </Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, mt: 0.6, mb: 1.4 }}>
+                                                    {paidAmt > 0 && (
+                                                        <Chip
+                                                            size="small"
+                                                            label={`Paid ${formatInr(paidAmt)}`}
+                                                            sx={{
+                                                                height: 20,
+                                                                fontSize: '0.68rem',
+                                                                fontWeight: 750,
+                                                                bgcolor: 'rgba(16, 185, 129, 0.14)',
+                                                                color: '#10B981',
+                                                            }}
+                                                        />
+                                                    )}
+                                                    {isConfirmedBooking && balanceDue > 0 && (
+                                                        <Chip
+                                                            size="small"
+                                                            label={`Due ${formatInr(balanceDue)}`}
+                                                            sx={{
+                                                                height: 20,
+                                                                fontSize: '0.68rem',
+                                                                fontWeight: 750,
+                                                                bgcolor: 'rgba(245, 158, 11, 0.16)',
+                                                                color: '#F59E0B',
+                                                            }}
+                                                        />
+                                                    )}
+                                                    {isConfirmedBooking && balanceDue <= 0 && (
+                                                        <Chip
+                                                            size="small"
+                                                            label="Paid in Full"
+                                                            sx={{
+                                                                height: 20,
+                                                                fontSize: '0.68rem',
+                                                                fontWeight: 750,
+                                                                bgcolor: 'rgba(16, 185, 129, 0.14)',
+                                                                color: '#10B981',
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Box>
 
-                                                <Stack direction="column" spacing={1} alignItems={{ xs: 'flex-start', sm: 'flex-end' }}>
+                                                <Stack direction="column" spacing={0.9} alignItems={{ xs: 'stretch', sm: 'flex-end' }}>
+                                                    {isAwaitingPayment && (
+                                                        <Button
+                                                            variant="contained"
+                                                            size="small"
+                                                            disabled={isPayingThis}
+                                                            onClick={() => handlePayBookingOnline(b.id, b.payment_option || 'advance')}
+                                                            startIcon={isPayingThis ? <CircularProgress size={14} color="inherit" /> : <AccountBalanceWalletIcon sx={{ fontSize: 16 }} />}
+                                                            sx={{
+                                                                fontWeight: 850,
+                                                                borderRadius: 2,
+                                                                px: 2,
+                                                                py: 0.85,
+                                                                bgcolor: '#D97706',
+                                                                color: '#FFFFFF',
+                                                                textTransform: 'none',
+                                                                boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)',
+                                                                '&:hover': { bgcolor: '#B45309' },
+                                                            }}
+                                                        >
+                                                            {isPayingThis ? 'Opening PhonePe…' : `Complete Payment (${formatInr(checkoutAmt)})`}
+                                                        </Button>
+                                                    )}
+
+                                                    {canPayBalance && (
+                                                        <Button
+                                                            variant="contained"
+                                                            size="small"
+                                                            disabled={isPayingThis}
+                                                            onClick={() => handlePayBookingOnline(b.id, 'balance')}
+                                                            startIcon={isPayingThis ? <CircularProgress size={14} color="inherit" /> : <AccountBalanceWalletIcon sx={{ fontSize: 16 }} />}
+                                                            sx={{
+                                                                fontWeight: 850,
+                                                                borderRadius: 2,
+                                                                px: 2,
+                                                                py: 0.85,
+                                                                bgcolor: '#10B981',
+                                                                color: '#FFFFFF',
+                                                                textTransform: 'none',
+                                                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.28)',
+                                                                '&:hover': { bgcolor: '#059669' },
+                                                            }}
+                                                        >
+                                                            {isPayingThis ? 'Opening PhonePe…' : `Pay Balance (${formatInr(balanceDue)})`}
+                                                        </Button>
+                                                    )}
+
                                                     <Button
                                                         component={Link}
                                                         href={`/account/bookings/${b.id}`}
-                                                        variant="contained"
+                                                        variant={isAwaitingPayment || canPayBalance ? 'outlined' : 'contained'}
                                                         size="small"
                                                         endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
                                                         sx={{
                                                             fontWeight: 800,
                                                             borderRadius: 2,
-                                                            px: 2.2,
-                                                            py: 0.85,
-                                                            bgcolor: '#F59E0B',
-                                                            color: '#0F172A',
+                                                            px: 2,
+                                                            py: 0.8,
                                                             textTransform: 'none',
-                                                            boxShadow: '0 2px 10px rgba(245, 158, 11, 0.3)',
-                                                            '&:hover': {
-                                                                bgcolor: '#D97706',
-                                                            },
+                                                            ...(isAwaitingPayment || canPayBalance
+                                                                ? {
+                                                                    color: isDark ? '#F8FAFC' : '#0F172A',
+                                                                    borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#CBD5E1',
+                                                                }
+                                                                : {
+                                                                    bgcolor: '#F59E0B',
+                                                                    color: '#0F172A',
+                                                                    boxShadow: '0 2px 10px rgba(245, 158, 11, 0.3)',
+                                                                    '&:hover': { bgcolor: '#D97706' },
+                                                                }),
                                                         }}
                                                     >
-                                                        View Trip & Docs
+                                                        View Trip &amp; Docs
                                                     </Button>
-                                                    <Button
-                                                        component="a"
-                                                        href={`/bookings/${b.id}/billing-statement`}
-                                                        size="small"
-                                                        variant="outlined"
-                                                        startIcon={<ReceiptLongIcon sx={{ fontSize: 15 }} />}
-                                                        sx={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'none', borderRadius: 1.5 }}
-                                                    >
-                                                        Billing Statement
-                                                    </Button>
-                                                    <Stack direction="row" spacing={0.8}>
+
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
                                                         <Button
                                                             component="a"
-                                                            href={`/bookings/${b.id}/print`}
-                                                            target="_blank"
+                                                            href={`/bookings/${b.id}/billing-statement`}
                                                             size="small"
                                                             variant="outlined"
-                                                            startIcon={<PrintIcon sx={{ fontSize: 13 }} />}
+                                                            startIcon={<ReceiptLongIcon sx={{ fontSize: 13 }} />}
                                                             sx={{
                                                                 fontSize: '0.7rem',
                                                                 fontWeight: 700,
@@ -804,29 +1032,53 @@ export default function AccountBookings({ bookings = [], serviceBookings = [], s
                                                                 borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
                                                             }}
                                                         >
-                                                            Print
+                                                            Statement
                                                         </Button>
-                                                        <Button
-                                                            component="a"
-                                                            href={`/bookings/${b.id}/voucher`}
-                                                            target="_blank"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
-                                                            sx={{
-                                                                fontSize: '0.7rem',
-                                                                fontWeight: 700,
-                                                                textTransform: 'none',
-                                                                borderRadius: 1.5,
-                                                                py: 0.3,
-                                                                px: 1,
-                                                                color: isDark ? '#CBD5E1' : '#475569',
-                                                                borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
-                                                            }}
-                                                        >
-                                                            PDF Pass
-                                                        </Button>
-                                                    </Stack>
+                                                        {isConfirmedBooking && (
+                                                            <>
+                                                                <Button
+                                                                    component="a"
+                                                                    href={`/bookings/${b.id}/print`}
+                                                                    target="_blank"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    startIcon={<PrintIcon sx={{ fontSize: 13 }} />}
+                                                                    sx={{
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 700,
+                                                                        textTransform: 'none',
+                                                                        borderRadius: 1.5,
+                                                                        py: 0.3,
+                                                                        px: 1,
+                                                                        color: isDark ? '#CBD5E1' : '#475569',
+                                                                        borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
+                                                                    }}
+                                                                >
+                                                                    Print
+                                                                </Button>
+                                                                <Button
+                                                                    component="a"
+                                                                    href={`/bookings/${b.id}/voucher`}
+                                                                    target="_blank"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
+                                                                    sx={{
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 700,
+                                                                        textTransform: 'none',
+                                                                        borderRadius: 1.5,
+                                                                        py: 0.3,
+                                                                        px: 1,
+                                                                        color: isDark ? '#CBD5E1' : '#475569',
+                                                                        borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
+                                                                    }}
+                                                                >
+                                                                    Voucher
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                    </Box>
                                                 </Stack>
                                             </Grid>
                                         </Grid>

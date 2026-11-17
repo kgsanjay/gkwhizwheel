@@ -227,6 +227,67 @@ class BookingWebController extends Controller
                     }
                 }
 
+                $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
+                $isBalanceTxn = ! empty($breakdown['balance_phonepe_transaction_id'])
+                    && hash_equals((string) $breakdown['balance_phonepe_transaction_id'], $txnId);
+
+                if ($isBalanceTxn) {
+                    $expectedBalance = (float) ($breakdown['balance_phonepe_amount'] ?? \App\Services\BikeBookingPayments::remainder($booking));
+                    $expectedPaise = (int) round($expectedBalance * 100);
+                    $verified = false;
+                    $gatewayRef = $txnId;
+
+                    if (app()->environment('local', 'testing')) {
+                        $verified = $expectedPaise > 0;
+                    } else {
+                        $status = $phonePeService->checkPaymentStatus($txnId);
+                        $verified = $status['verified'] && $status['amount_paise'] === $expectedPaise;
+                        if ($status['transaction_id'] !== '') {
+                            $gatewayRef = $status['transaction_id'];
+                        }
+                    }
+
+                    if ($verified) {
+                        DB::transaction(function () use ($booking, $gatewayRef, $expectedBalance): void {
+                            $locked = Booking::with('user')->where('id', $booking->id)->lockForUpdate()->first();
+                            if (! $locked) {
+                                return;
+                            }
+
+                            $payment = Payment::firstOrCreate(
+                                ['gateway_reference' => $gatewayRef],
+                                [
+                                    'booking_id' => $locked->id,
+                                    'amount' => $expectedBalance,
+                                    'method' => PaymentMethod::PHONEPE,
+                                    'type' => PaymentType::ADVANCE,
+                                    'status' => PaymentStatus::SUCCESS,
+                                    'notes' => 'PhonePe online remaining rental balance payment verified via status API',
+                                ]
+                            );
+
+                            $updatedBreakdown = is_array($locked->price_breakdown_json) ? $locked->price_breakdown_json : [];
+                            $updatedBreakdown['balance_due_on_pickup'] = \App\Services\BikeBookingPayments::remainder($locked);
+                            unset(
+                                $updatedBreakdown['balance_phonepe_transaction_id'],
+                                $updatedBreakdown['balance_phonepe_amount'],
+                                $updatedBreakdown['balance_phonepe_redirect_url']
+                            );
+                            $locked->update(['price_breakdown_json' => $updatedBreakdown]);
+
+                            if ($payment->wasRecentlyCreated && $locked->user !== null) {
+                                $locked->user->notify(new PaymentReceiptNotification($payment, $locked));
+                            }
+                        });
+
+                        return redirect()->route('account.bookings.show', $bookingId)
+                            ->with('success', 'Remaining balance paid! Your booking is now paid in full.');
+                    }
+
+                    return redirect()->route('account.bookings.show', $bookingId)
+                        ->with('status', 'We are verifying your balance payment. Please refresh shortly.');
+                }
+
                 // In local/testing environments where webhooks cannot reach 127.0.0.1,
                 // auto-confirm the booking on successful callback from the UAT simulator.
                 if (app()->environment('local', 'testing') && $booking->status !== BookingStatus::CONFIRMED) {
