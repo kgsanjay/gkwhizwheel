@@ -26,6 +26,7 @@ import {
     Link as MuiLink,
     Grid,
     InputAdornment,
+    useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -74,6 +75,8 @@ export default function CheckoutModal({
     pickupTime = '09:00',
     returnTime = '09:00',
 }) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const { auth } = usePage().props;
     const [resolvedUser, setResolvedUser] = useState(currentUser || auth?.user || null);
     const activeUser = resolvedUser || currentUser || auth?.user || null;
@@ -506,11 +509,10 @@ export default function CheckoutModal({
                 ? {
                     sx: {
                         width: '100%',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
+                        bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                        color: isDark ? '#F8FAFC' : '#0F172A',
                         borderRadius: { xs: 2, md: 3 },
                         overflow: 'hidden',
-                        boxShadow: '0 14px 35px rgba(15, 23, 42, 0.06)',
                     },
                 }
                 : {
@@ -524,16 +526,20 @@ export default function CheckoutModal({
                             m: { xs: 0, sm: 2 },
                             width: { xs: '100%', sm: 'calc(100% - 32px)' },
                             maxHeight: { xs: '100dvh', sm: '90vh' },
+                            overflowX: 'hidden',
+                            bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                            backgroundImage: 'none',
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                         },
                     },
                 })}
         >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
                 <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                         Confirm & Pay Reservation
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#64748B' }}>
+                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                         {bike.brand} {bike.model_name} • {startDate} to {endDate}
                     </Typography>
                 </Box>
@@ -544,21 +550,55 @@ export default function CheckoutModal({
                 )}
             </DialogTitle>
 
-            <Box sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderTop: 1, borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 0.5 }}>
-                    <Chip size="small" label="1. Rider & Location" color={!heldBooking ? 'primary' : 'default'}
-                        variant={!heldBooking ? 'filled' : 'outlined'} sx={{ fontWeight: 750 }} />
-                    <Chip size="small" label="2. Pricing & GST" color={heldBooking ? 'primary' : 'default'}
-                        variant={heldBooking ? 'filled' : 'outlined'} sx={{ fontWeight: 750 }} />
-                    <Chip size="small" label="3. Secure Payment" color={heldBooking ? 'primary' : 'default'} variant="outlined" sx={{ fontWeight: 750 }} />
+            <Box sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderTop: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'divider' }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 0.75 }}>
+                    <Chip
+                        size="small"
+                        label="1. Rider & Location"
+                        color={!heldBooking ? 'primary' : 'default'}
+                        variant={!heldBooking ? 'filled' : 'outlined'}
+                        sx={{
+                            fontWeight: 750,
+                            ...(heldBooking && {
+                                color: isDark ? '#CBD5E1' : '#334155',
+                                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                            }),
+                        }}
+                    />
+                    <Chip
+                        size="small"
+                        label="2. Pricing & GST"
+                        color={heldBooking ? 'primary' : 'default'}
+                        variant={heldBooking ? 'filled' : 'outlined'}
+                        sx={{
+                            fontWeight: 750,
+                            ...(!heldBooking && {
+                                color: isDark ? '#CBD5E1' : '#334155',
+                                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                            }),
+                        }}
+                    />
+                    <Chip
+                        size="small"
+                        label="3. Secure Payment"
+                        color={heldBooking ? 'primary' : 'default'}
+                        variant="outlined"
+                        sx={{
+                            fontWeight: 750,
+                            ...(!heldBooking && {
+                                color: isDark ? '#CBD5E1' : '#334155',
+                                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : '#CBD5E1',
+                            }),
+                        }}
+                    />
                 </Box>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : 'text.secondary' }}>
                     {heldBooking
                         ? 'Bike held. Review the final total and payment details before paying.'
                         : 'Add rider, pickup and billing details to receive a confirmed rental quote.'}
                 </Typography>
             </Box>
-            <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+            <DialogContent dividers sx={{ p: { xs: 2, sm: 3 }, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'divider', overflowX: 'hidden' }}>
                 {/* Hold Timer Alert if already held */}
                 {heldBooking && (
                     <Alert
@@ -590,9 +630,9 @@ export default function CheckoutModal({
                             mb: 3,
                             p: 2,
                             borderRadius: 3,
-                            borderColor: '#99F6E4',
-                            bgcolor: '#F0FDFA',
-                            boxShadow: '0 2px 10px rgba(13, 148, 136, 0.06)',
+                            borderColor: isDark ? 'rgba(45, 212, 191, 0.3)' : '#99F6E4',
+                            bgcolor: isDark ? 'rgba(13, 148, 136, 0.12)' : '#F0FDFA',
+                            boxShadow: isDark ? 'none' : '0 2px 10px rgba(13, 148, 136, 0.06)',
                         }}
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
@@ -613,7 +653,7 @@ export default function CheckoutModal({
                                 </Box>
                                 <Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                                             {activeUser.name || 'Verified Rider'}
                                         </Typography>
                                         <Chip
@@ -624,7 +664,7 @@ export default function CheckoutModal({
                                             sx={{ height: 20, fontSize: '0.68rem', fontWeight: 750 }}
                                         />
                                     </Box>
-                                    <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 600 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#5EEAD4' : '#0F766E', fontWeight: 600 }}>
                                         +91 {activeUser.phone} {activeUser.email ? `• ${activeUser.email}` : ''}
                                     </Typography>
                                 </Box>
@@ -636,7 +676,7 @@ export default function CheckoutModal({
                                     setResolvedUser(null);
                                     setRiderPhone('');
                                 }}
-                                sx={{ textTransform: 'none', fontSize: '0.75rem', color: '#64748B' }}
+                                sx={{ textTransform: 'none', fontSize: '0.75rem', color: isDark ? '#94A3B8' : '#64748B' }}
                             >
                                 Switch Account
                             </Button>
@@ -650,9 +690,10 @@ export default function CheckoutModal({
                         sx={{
                             mb: 3,
                             borderRadius: 3,
-                            borderColor: '#0D9488',
+                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.55)' : '#FFFFFF',
+                            borderColor: isDark ? 'rgba(45, 212, 191, 0.45)' : '#0D9488',
                             borderWidth: 1.5,
-                            boxShadow: '0 4px 20px -2px rgba(13, 148, 136, 0.08)',
+                            boxShadow: isDark ? 'none' : '0 4px 20px -2px rgba(13, 148, 136, 0.08)',
                             overflow: 'hidden',
                         }}
                     >
@@ -661,8 +702,8 @@ export default function CheckoutModal({
                             sx={{
                                 px: 2.5,
                                 py: 1.5,
-                                bgcolor: 'rgba(13, 148, 136, 0.06)',
-                                borderBottom: '1px solid rgba(13, 148, 136, 0.15)',
+                                bgcolor: isDark ? 'rgba(13, 148, 136, 0.16)' : 'rgba(13, 148, 136, 0.06)',
+                                borderBottom: isDark ? '1px solid rgba(45, 212, 191, 0.22)' : '1px solid rgba(13, 148, 136, 0.15)',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
@@ -688,24 +729,24 @@ export default function CheckoutModal({
                                     1
                                 </Box>
                                 <Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A', lineHeight: 1.2 }}>
                                         Rider &amp; Booking Account
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 600 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#5EEAD4' : '#0F766E', fontWeight: 600 }}>
                                         Instant booking setup • No password needed
                                     </Typography>
                                 </Box>
                             </Box>
                             <Chip
                                 size="small"
-                                icon={<WhatsAppIcon sx={{ fontSize: '16px !important', color: '#16A34A !important' }} />}
+                                icon={<WhatsAppIcon sx={{ fontSize: '16px !important', color: isDark ? '#4ADE80 !important' : '#16A34A !important' }} />}
                                 label="Instant WhatsApp Voucher"
                                 sx={{
-                                    bgcolor: '#DCFCE7',
-                                    color: '#15803D',
+                                    bgcolor: isDark ? 'rgba(34, 197, 94, 0.14)' : '#DCFCE7',
+                                    color: isDark ? '#4ADE80' : '#15803D',
                                     fontWeight: 750,
                                     fontSize: '0.75rem',
-                                    border: '1px solid #BBF7D0',
+                                    border: isDark ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid #BBF7D0',
                                 }}
                             />
                         </Box>
@@ -716,17 +757,35 @@ export default function CheckoutModal({
                                 <Chip
                                     size="small"
                                     label="⚡ Fast OTP Verification"
-                                    sx={{ bgcolor: '#F1F5F9', color: '#334155', fontWeight: 650, fontSize: '0.75rem' }}
+                                    sx={{
+                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F1F5F9',
+                                        color: isDark ? '#E2E8F0' : '#334155',
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                                        fontWeight: 650,
+                                        fontSize: '0.75rem',
+                                    }}
                                 />
                                 <Chip
                                     size="small"
                                     label="🛡️ Zero Security Deposit"
-                                    sx={{ bgcolor: '#F0FDFA', color: '#0F766E', fontWeight: 650, fontSize: '0.75rem' }}
+                                    sx={{
+                                        bgcolor: isDark ? 'rgba(45, 212, 191, 0.12)' : '#F0FDFA',
+                                        color: isDark ? '#5EEAD4' : '#0F766E',
+                                        border: isDark ? '1px solid rgba(45, 212, 191, 0.25)' : 'none',
+                                        fontWeight: 650,
+                                        fontSize: '0.75rem',
+                                    }}
                                 />
                                 <Chip
                                     size="small"
                                     label="📄 Paperless Digital KYC"
-                                    sx={{ bgcolor: '#F8FAFC', color: '#475569', fontWeight: 650, fontSize: '0.75rem' }}
+                                    sx={{
+                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#F8FAFC',
+                                        color: isDark ? '#CBD5E1' : '#475569',
+                                        border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                                        fontWeight: 650,
+                                        fontSize: '0.75rem',
+                                    }}
                                 />
                             </Box>
 
@@ -750,7 +809,7 @@ export default function CheckoutModal({
                                         InputProps={{
                                             startAdornment: (
                                                 <InputAdornment position="start">
-                                                    <PersonOutlinedIcon fontSize="small" sx={{ color: '#64748B' }} />
+                                                    <PersonOutlinedIcon fontSize="small" sx={{ color: isDark ? '#94A3B8' : '#64748B' }} />
                                                 </InputAdornment>
                                             ),
                                         }}
@@ -774,7 +833,7 @@ export default function CheckoutModal({
                                             startAdornment: (
                                                 <InputAdornment position="start">
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                        <Typography component="span" sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                                                        <Typography component="span" sx={{ fontSize: '0.85rem', fontWeight: 700, color: isDark ? '#E2E8F0' : '#334155' }}>
                                                             🇮🇳 +91
                                                         </Typography>
                                                     </Box>
@@ -804,7 +863,7 @@ export default function CheckoutModal({
                                         InputProps={{
                                             startAdornment: (
                                                 <InputAdornment position="start">
-                                                    <EmailOutlinedIcon fontSize="small" sx={{ color: '#64748B' }} />
+                                                    <EmailOutlinedIcon fontSize="small" sx={{ color: isDark ? '#94A3B8' : '#64748B' }} />
                                                 </InputAdornment>
                                             ),
                                         }}
@@ -816,9 +875,9 @@ export default function CheckoutModal({
 
                             {/* 1-Tap Google Login Alternative */}
                             {!activeUser && (
-                                <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px dashed #E2E8F0' }}>
+                                <Box sx={{ mt: 2.5, pt: 2, borderTop: isDark ? '1px dashed rgba(255, 255, 255, 0.14)' : '1px dashed #E2E8F0' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-                                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 500 }}>
+                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 500 }}>
                                             Already have a Google account?
                                         </Typography>
                                         <GoogleButton
@@ -835,9 +894,17 @@ export default function CheckoutModal({
                 )}
 
                 {/* Booking Route Summary Card */}
-                <Card variant="outlined" sx={{ mb: 3, bgcolor: '#F8FAFC', borderRadius: 2 }}>
+                <Card
+                    variant="outlined"
+                    sx={{
+                        mb: 3,
+                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0',
+                        borderRadius: 2,
+                    }}
+                >
                     <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#0F172A' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                             Trip Details
                         </Typography>
                         <Stack spacing={0.8}>
@@ -845,7 +912,7 @@ export default function CheckoutModal({
                                 <Typography variant="caption" color="text.secondary">
                                     Pickup Location:
                                 </Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: isDark ? '#E2E8F0' : '#0F172A' }}>
                                     {pickupStore.name} ({startDate})
                                 </Typography>
                             </Box>
@@ -853,7 +920,7 @@ export default function CheckoutModal({
                                 <Typography variant="caption" color="text.secondary">
                                     Return Location:
                                 </Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: isDark ? '#E2E8F0' : '#0F172A' }}>
                                     {returnStore.name} ({endDate})
                                 </Typography>
                             </Box>
@@ -862,7 +929,7 @@ export default function CheckoutModal({
                                     <Typography variant="caption" color="text.secondary">
                                         Add-ons:
                                     </Typography>
-                                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: isDark ? '#E2E8F0' : '#0F172A' }}>
                                         {selectedAddons.map((a) => `${a.addon_type} (${a.quantity})`).join(', ')}
                                     </Typography>
                                 </Box>
@@ -871,7 +938,16 @@ export default function CheckoutModal({
                     </CardContent>
                 </Card>
 
-                <Card variant="outlined" sx={{ borderRadius: 2, mb: 2, p: 2 }}>
+                <Card
+                    variant="outlined"
+                    sx={{
+                        borderRadius: 2,
+                        mb: 2,
+                        p: 2,
+                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0',
+                    }}
+                >
                     <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
                         Pickup and return locations
                     </Typography>
@@ -914,7 +990,16 @@ export default function CheckoutModal({
                     These are included in the confirmed booking total alongside any inter-branch fee.
                 </Alert>}
                 {/* Capture billing details before gateway initiation; server locks these on first checkout. */}
-                <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2 }}>
+                <Card
+                    variant="outlined"
+                    sx={{
+                        mb: 3,
+                        p: 2,
+                        borderRadius: 2,
+                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0',
+                    }}
+                >
                     <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1 }}>
                         Billing details
                     </Typography>
@@ -953,13 +1038,20 @@ export default function CheckoutModal({
                 <Alert severity="success" sx={{ mb: 2 }}>
                     No refundable deposit for this online reservation. Choose an advance or full rental payment.
                 </Alert>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#0F172A' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                     Choose payment option
                 </Typography>
                 <RadioGroup row value={paymentOption} onChange={(e) => setPaymentOption(e.target.value)}
                     sx={{ gap: 1.5, mb: 3 }}>
-                    <Card variant="outlined" sx={{ flex: '1 1 190px', borderRadius: 2,
-                        borderColor: paymentOption === 'advance' ? '#C66A42' : '#E2E8F0' }}>
+                    <Card
+                        variant="outlined"
+                        sx={{
+                            flex: '1 1 190px',
+                            borderRadius: 2,
+                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                            borderColor: paymentOption === 'advance' ? (isDark ? '#F59E0B' : '#C66A42') : (isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'),
+                        }}
+                    >
                         <FormControlLabel value="advance" control={<Radio color="secondary" />}
                             sx={{ m: 0, p: 1.5, alignItems: 'flex-start', width: '100%' }}
                             label={<Box>
@@ -967,13 +1059,20 @@ export default function CheckoutModal({
                                 <Typography variant="body2" color="text.secondary">
                                     Reserve your bike now. Pay the remaining rental amount at pickup.
                                 </Typography>
-                                <Typography fontWeight={800} sx={{ mt: 1, color: '#C66A42' }}>
+                                <Typography fontWeight={800} sx={{ mt: 1, color: isDark ? '#F59E0B' : '#C66A42' }}>
                                     {total === null ? '₹100' : `Pay now ₹${advance.toLocaleString('en-IN')}`}
                                 </Typography>
                             </Box>} />
                     </Card>
-                    <Card variant="outlined" sx={{ flex: '1 1 190px', borderRadius: 2,
-                        borderColor: paymentOption === 'full' ? '#C66A42' : '#E2E8F0' }}>
+                    <Card
+                        variant="outlined"
+                        sx={{
+                            flex: '1 1 190px',
+                            borderRadius: 2,
+                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF',
+                            borderColor: paymentOption === 'full' ? (isDark ? '#F59E0B' : '#C66A42') : (isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'),
+                        }}
+                    >
                         <FormControlLabel value="full" control={<Radio color="secondary" />}
                             sx={{ m: 0, p: 1.5, alignItems: 'flex-start', width: '100%' }}
                             label={<Box>
@@ -981,7 +1080,7 @@ export default function CheckoutModal({
                                 <Typography variant="body2" color="text.secondary">
                                     Pay the full rental amount online. No rental balance at pickup.
                                 </Typography>
-                                <Typography fontWeight={800} sx={{ mt: 1, color: '#C66A42' }}>
+                                <Typography fontWeight={800} sx={{ mt: 1, color: isDark ? '#F59E0B' : '#C66A42' }}>
                                     {total === null ? 'See total after reservation' : `Pay now ₹${total.toLocaleString('en-IN')}`}
                                 </Typography>
                             </Box>} />
@@ -996,7 +1095,7 @@ export default function CheckoutModal({
                 )}
 
                 {/* Payment Gateway Selection */}
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#0F172A' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                     Select Payment Gateway
                 </Typography>
 
@@ -1007,8 +1106,10 @@ export default function CheckoutModal({
                         sx={{
                             mb: 1.5,
                             borderRadius: 2,
-                            borderColor: gateway === 'phonepe' ? '#F59E0B' : '#E2E8F0',
-                            bgcolor: gateway === 'phonepe' ? 'rgba(245, 158, 11, 0.04)' : '#FFFFFF',
+                            borderColor: gateway === 'phonepe' ? '#F59E0B' : (isDark ? 'rgba(255, 255, 255, 0.12)' : '#E2E8F0'),
+                            bgcolor: gateway === 'phonepe'
+                                ? (isDark ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.04)')
+                                : (isDark ? 'rgba(255, 255, 255, 0.03)' : '#FFFFFF'),
                             cursor: 'pointer',
                         }}
                     >
@@ -1018,12 +1119,12 @@ export default function CheckoutModal({
                                 control={<Radio color="secondary" />}
                                 label={
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <AccountBalanceWalletIcon sx={{ color: '#6739B7' }} />
+                                        <AccountBalanceWalletIcon sx={{ color: isDark ? '#A78BFA' : '#6739B7' }} />
                                         <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                                                 PhonePe Direct Payment
                                             </Typography>
-                                            <Typography variant="caption" sx={{ color: '#64748B' }}>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                                                 PhonePe UPI, QR Intent, Credit/Debit Cards &amp; NetBanking
                                             </Typography>
                                         </Box>
@@ -1037,8 +1138,17 @@ export default function CheckoutModal({
 
                 {/* Tax display is entirely server derived; never calculate GST in the browser. */}
                 {finalQuote && (
-                    <Box sx={{ mt: 3, mb: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: 2 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, color: '#0F172A' }}>
+                    <Box
+                        sx={{
+                            mt: 3,
+                            mb: 1,
+                            p: 2,
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0',
+                            bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                            borderRadius: 2,
+                        }}
+                    >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                             Rental price breakdown
                         </Typography>
                         {finalQuote.price_breakdown_json?.bike_gst?.status === 'configured' ? (
@@ -1066,7 +1176,7 @@ export default function CheckoutModal({
                                 GST details are not configured for bike bookings. The displayed quote does not claim a GST tax amount or constitute a tax invoice.
                             </Alert>
                         )}
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 1.5, pt: 1, borderTop: '1px solid #E2E8F0' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 1.5, pt: 1, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0' }}>
                             <Typography variant="body1" fontWeight={800}>Final rental total</Typography>
                             <Typography variant="body1" fontWeight={800}>
                                 ₹{Number(total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -1095,17 +1205,17 @@ export default function CheckoutModal({
                 />
 
                 {/* Amount Due Summary */}
-                <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid #E2E8F0' }}>
+                <Box sx={{ mt: 3, pt: 2, borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #E2E8F0' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                         <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A' }}>
                                 Amount to Pay Now
                             </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B' }}>
+                            <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                                 No security deposit · Total rental {total === null ? 'calculated at reservation' : `₹${total.toLocaleString('en-IN')}`}
                             </Typography>
                         </Box>
-                        <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                        <Typography variant="h4" sx={{ fontWeight: 800, color: isDark ? '#38BDF8' : 'primary.main' }}>
                             {payNow === null ? 'After reservation' : `₹${payNow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
                         </Typography>
                     </Box>
@@ -1164,8 +1274,8 @@ export default function CheckoutModal({
                 )}
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
-                    <SecurityIcon sx={{ fontSize: 14, color: '#64748B' }} />
-                    <Typography variant="caption" sx={{ color: '#64748B' }}>
+                    <SecurityIcon sx={{ fontSize: 14, color: isDark ? '#94A3B8' : '#64748B' }} />
+                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B' }}>
                         Secure checkout • Concurrency-safe reservation • No security deposit
                     </Typography>
                 </Box>
@@ -1186,7 +1296,10 @@ export default function CheckoutModal({
                     borderRadius: 3,
                     p: 1,
                     overflowX: 'hidden',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    bgcolor: isDark ? '#131D2F' : '#FFFFFF',
+                    backgroundImage: 'none',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
                 },
             }}
         >
@@ -1197,8 +1310,8 @@ export default function CheckoutModal({
                             width: 40,
                             height: 40,
                             borderRadius: 2,
-                            bgcolor: 'rgba(13, 148, 136, 0.12)',
-                            color: '#0D9488',
+                            bgcolor: isDark ? 'rgba(45, 212, 191, 0.14)' : 'rgba(13, 148, 136, 0.12)',
+                            color: isDark ? '#2DD4BF' : '#0D9488',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1207,10 +1320,10 @@ export default function CheckoutModal({
                         <VerifiedUserIcon />
                     </Box>
                     <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isDark ? '#F8FAFC' : '#0F172A', lineHeight: 1.2 }}>
                             Verify Your Account
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 650 }}>
+                        <Typography variant="caption" sx={{ color: isDark ? '#5EEAD4' : '#0F766E', fontWeight: 650 }}>
                             Get OTP on WhatsApp or Email
                         </Typography>
                     </Box>
@@ -1230,7 +1343,7 @@ export default function CheckoutModal({
 
             <DialogContent sx={{ overflowX: 'hidden', pt: 1, pb: 2 }}>
                 <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ color: '#475569', mb: 1.5, fontSize: '0.85rem' }}>
+                    <Typography variant="body2" sx={{ color: isDark ? '#CBD5E1' : '#475569', mb: 1.5, fontSize: '0.85rem' }}>
                         Enter the 6-digit verification code sent to your contact details:
                     </Typography>
 
@@ -1242,16 +1355,16 @@ export default function CheckoutModal({
                                 gap: 1.5,
                                 p: 1.25,
                                 borderRadius: 2,
-                                bgcolor: '#F0FDF4',
-                                border: '1px solid #BBF7D0',
+                                bgcolor: isDark ? 'rgba(34, 197, 94, 0.1)' : '#F0FDF4',
+                                border: isDark ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid #BBF7D0',
                             }}
                         >
-                            <WhatsAppIcon sx={{ color: '#16A34A', fontSize: 22 }} />
+                            <WhatsAppIcon sx={{ color: isDark ? '#4ADE80' : '#16A34A', fontSize: 22 }} />
                             <Box>
-                                <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 750, display: 'block', lineHeight: 1.2 }}>
+                                <Typography variant="caption" sx={{ color: isDark ? '#4ADE80' : '#15803D', fontWeight: 750, display: 'block', lineHeight: 1.2 }}>
                                     WhatsApp
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 750, fontSize: '0.875rem' }}>
+                                <Typography variant="body2" sx={{ color: isDark ? '#F8FAFC' : '#0F172A', fontWeight: 750, fontSize: '0.875rem' }}>
                                     +91 {otpChallenge?.masked_phone || (riderPhone ? `${riderPhone.slice(0, 2)}******${riderPhone.slice(-2)}` : 'your mobile')}
                                 </Typography>
                             </Box>
@@ -1265,16 +1378,16 @@ export default function CheckoutModal({
                                     gap: 1.5,
                                     p: 1.25,
                                     borderRadius: 2,
-                                    bgcolor: '#F8FAFC',
-                                    border: '1px solid #E2E8F0',
+                                    bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : '#F8FAFC',
+                                    border: isDark ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #E2E8F0',
                                 }}
                             >
-                                <EmailOutlinedIcon sx={{ color: '#0284C7', fontSize: 22 }} />
+                                <EmailOutlinedIcon sx={{ color: isDark ? '#38BDF8' : '#0284C7', fontSize: 22 }} />
                                 <Box>
-                                    <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 750, display: 'block', lineHeight: 1.2 }}>
+                                    <Typography variant="caption" sx={{ color: isDark ? '#38BDF8' : '#0369A1', fontWeight: 750, display: 'block', lineHeight: 1.2 }}>
                                         Email Inbox
                                     </Typography>
-                                    <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 750, fontSize: '0.875rem' }}>
+                                    <Typography variant="body2" sx={{ color: isDark ? '#F8FAFC' : '#0F172A', fontWeight: 750, fontSize: '0.875rem' }}>
                                         {otpChallenge?.masked_email || (riderEmail ? `${riderEmail.slice(0, 2)}***@${riderEmail.split('@')[1] || ''}` : 'your email')}
                                     </Typography>
                                 </Box>
@@ -1282,7 +1395,7 @@ export default function CheckoutModal({
                         )}
                     </Stack>
 
-                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1, fontSize: '0.72rem' }}>
+                    <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block', mt: 1, fontSize: '0.72rem' }}>
                         Check your WhatsApp or Email inbox (including spam/junk folder) for the 6-digit code.
                     </Typography>
                 </Box>
@@ -1294,14 +1407,14 @@ export default function CheckoutModal({
                         sx={{
                             mb: 2,
                             borderRadius: 2,
-                            bgcolor: '#F0FDFA',
-                            borderColor: '#99F6E4',
+                            bgcolor: isDark ? 'rgba(13, 148, 136, 0.15)' : '#F0FDFA',
+                            borderColor: isDark ? 'rgba(45, 212, 191, 0.35)' : '#99F6E4',
                             border: 1,
                             '& .MuiAlert-message': { width: '100%' },
                         }}
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                            <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 600 }}>
+                            <Typography variant="caption" sx={{ color: isDark ? '#5EEAD4' : '#0F766E', fontWeight: 600 }}>
                                 Test Mode OTP: <strong>{otpChallenge.debug_otp}</strong>
                             </Typography>
                             <Button
@@ -1313,8 +1426,8 @@ export default function CheckoutModal({
                                     px: 1,
                                     fontSize: '0.75rem',
                                     fontWeight: 750,
-                                    borderColor: '#0D9488',
-                                    color: '#0D9488',
+                                    borderColor: isDark ? '#2DD4BF' : '#0D9488',
+                                    color: isDark ? '#2DD4BF' : '#0D9488',
                                     minWidth: 'auto',
                                     textTransform: 'none',
                                 }}
@@ -1381,7 +1494,7 @@ export default function CheckoutModal({
                             setOtpChallenge(null);
                             setOtpCode('');
                         }}
-                        sx={{ textTransform: 'none', color: '#64748B', fontSize: '0.8rem' }}
+                        sx={{ textTransform: 'none', color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.8rem' }}
                     >
                         Change mobile number
                     </Button>
