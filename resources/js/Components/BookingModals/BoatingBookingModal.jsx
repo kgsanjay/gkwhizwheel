@@ -31,6 +31,7 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import GoogleButton from '../Auth/GoogleButton';
 import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP, resolveGuestAccount } from './bookingUtils';
+import { getIstDate } from '../../utils/istDate';
 
 const BOATING_SAFARIS = [
     { id: 'mangrove_backwater', title: 'Sharavathi Mangrove Forest Safari (1 - 1.5 Hrs)', rate: 1500 },
@@ -58,7 +59,7 @@ export default function BoatingBookingModal({
     const { auth } = usePage().props;
 
     const [safariType, setSafariType] = useState(initialSafariId);
-    const [boatingDate, setBoatingDate] = useState(new Date().toISOString().slice(0, 10));
+    const [boatingDate, setBoatingDate] = useState(getIstDate(0));
     const [timeSlot, setTimeSlot] = useState(TIME_SLOTS[3]);
     const [adults, setAdults] = useState(2);
     const [children, setChildren] = useState(0);

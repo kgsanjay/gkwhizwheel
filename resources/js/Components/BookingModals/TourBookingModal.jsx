@@ -35,6 +35,7 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import GoogleButton from '../Auth/GoogleButton';
 import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP, resolveGuestAccount } from './bookingUtils';
+import { getIstDate } from '../../utils/istDate';
 
 const TOUR_PACKAGES = [
     { id: '2d1n_karavali', title: '2D/1N Coastal Karavali Explorer', duration: '2 Days / 1 Night', basePrice: 4999 },
@@ -56,7 +57,7 @@ export default function TourBookingModal({
 
     const [selectedPackage, setSelectedPackage] = useState(initialPackageId);
     const [travelers, setTravelers] = useState(2);
-    const [startDate, setStartDate] = useState(new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 10));
+    const [startDate, setStartDate] = useState(getIstDate(2));
     const [transportType, setTransportType] = useState('cab_sedan'); // cab_sedan, cab_innova, bikes, own
     const [stayType, setStayType] = useState('riverfront_homestay'); // riverfront_homestay, coastal_resort, beachside_villa
     const [includeBoating, setIncludeBoating] = useState(true);

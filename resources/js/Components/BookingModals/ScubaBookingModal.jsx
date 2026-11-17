@@ -33,6 +33,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import GoogleButton from '../Auth/GoogleButton';
 import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP, resolveGuestAccount } from './bookingUtils';
+import { getIstDate } from '../../utils/istDate';
 
 const DIVE_PROGRAMS = [
     { id: 'discovery_scuba', title: 'Beginner Discovery Scuba Dive (Non-Swimmers Welcome)', rate: 3499, desc: '1-on-1 PADI Instructor • 4K GoPro Video & Photos • Island Boat Cruise' },
@@ -51,7 +52,7 @@ export default function ScubaBookingModal({
     const { auth } = usePage().props;
 
     const [diveProgram, setDiveProgram] = useState(initialProgramId);
-    const [diveDate, setDiveDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+    const [diveDate, setDiveDate] = useState(getIstDate(1));
     const [paxCount, setPaxCount] = useState(2);
     const [hotelTransfer, setHotelTransfer] = useState(false);
     const [medicalConfirmed, setMedicalConfirmed] = useState(true);

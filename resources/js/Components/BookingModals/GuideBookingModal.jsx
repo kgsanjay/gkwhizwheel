@@ -32,6 +32,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import TranslateIcon from '@mui/icons-material/Translate';
 import GoogleButton from '../Auth/GoogleButton';
 import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP, resolveGuestAccount } from './bookingUtils';
+import { getIstDate } from '../../utils/istDate';
 
 const GUIDE_TRAILS = [
     { id: 'mirjan_heritage', title: 'Mirjan Fort & Pepper Queen Citadel Walk', duration: 'half_day', rateHalf: 800, rateFull: 1500 },
@@ -53,7 +54,7 @@ export default function GuideBookingModal({
 
     const [selectedTrail, setSelectedTrail] = useState(initialTrailId);
     const [duration, setDuration] = useState('half_day'); // half_day, full_day
-    const [guideDate, setGuideDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+    const [guideDate, setGuideDate] = useState(getIstDate(1));
     const [timeSlot, setTimeSlot] = useState('morning'); // morning, afternoon, full_day
     const [groupSize, setGroupSize] = useState(2);
     const [language, setLanguage] = useState('Kannada & English');

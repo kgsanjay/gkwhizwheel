@@ -62,6 +62,7 @@ import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ServiceBookingModal from '../Components/ServiceBookingModal';
+import { getIstDate } from '../utils/istDate';
 
 const HERO_SLIDES = [
     {
@@ -330,9 +331,9 @@ export default function Welcome({ categories = [], stores = [] , availableItems 
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
-    // Quick search form state
-    const today = new Date().toISOString().split('T')[0];
-    const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+    // Quick search form state (IST to match server timezone)
+    const today = getIstDate(0);
+    const dayAfter = getIstDate(2);
 
     const branchList = (publicBranches.length > 0 ? publicBranches : stores)
         .slice()

@@ -3,6 +3,7 @@ import { useTheme } from '@mui/material/styles';
 import { router, usePage } from '@inertiajs/react';
 import AuthModal from './Auth/AuthModal';
 import apiClient, { setAuthToken } from '../api/client';
+import { getIstDate, getIstDateTime } from '../utils/istDate';
 import {
     Dialog,
     DialogTitle,
@@ -162,25 +163,25 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
     const [taxiPickupCustom, setTaxiPickupCustom] = useState('Honnavar Railway Station');
     const [taxiDropCustom, setTaxiDropCustom] = useState('Eco Beach, Honnavar');
     const [taxiVehicle, setTaxiVehicle] = useState('Swift Dzire Sedan (4 Pax)');
-    const [taxiPickupDatetime, setTaxiPickupDatetime] = useState(new Date().toISOString().slice(0, 16));
+    const [taxiPickupDatetime, setTaxiPickupDatetime] = useState(getIstDateTime(0));
 
     // BOATING
     const [boatingType, setBoatingType] = useState('honnavar_backwater_boating');
     const [boatingSlot, setBoatingSlot] = useState('04:30 PM - Golden Hour Sunset (Recommended)');
-    const [boatingDate, setBoatingDate] = useState(new Date().toISOString().slice(0, 10));
+    const [boatingDate, setBoatingDate] = useState(getIstDate(0));
     const [boatingAdults, setBoatingAdults] = useState(2);
     const [boatingChildren, setBoatingChildren] = useState(0);
 
     // SCUBA
     const [scubaTier, setScubaTier] = useState('discovery_scuba'); // discovery_scuba, island_snorkeling, certified_dive
-    const [scubaDate, setScubaDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+    const [scubaDate, setScubaDate] = useState(getIstDate(1));
     const [scubaPax, setScubaPax] = useState(2);
     const [scubaMedicalConfirmed, setScubaMedicalConfirmed] = useState(true);
     const [scubaPickupRequired, setScubaPickupRequired] = useState(false);
 
     // HOMESTAY
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const tomorrowStr = new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 10);
+    const todayStr = getIstDate(0);
+    const tomorrowStr = getIstDate(2);
     const [stayCheckin, setStayCheckin] = useState(todayStr);
     const [stayCheckout, setStayCheckout] = useState(tomorrowStr);
     const [stayRoomType, setStayRoomType] = useState('riverfront_cottage'); // riverfront_cottage, beachside_room, private_villa
@@ -191,7 +192,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
     // GUIDE
     const [guideTrail, setGuideTrail] = useState('hidden_waterfalls'); // hidden_waterfalls, mirjan_heritage, sunset_photo
     const [guideDuration, setGuideDuration] = useState('half_day'); // half_day, full_day
-    const [guideDate, setGuideDate] = useState(new Date().toISOString().slice(0, 10));
+    const [guideDate, setGuideDate] = useState(getIstDate(0));
     const [guideLanguage, setGuideLanguage] = useState('Kannada & English');
 
     // TWO-WHEELERS (Direct rental shortcut)
@@ -249,12 +250,12 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
 
     // Compute active start datetime for live dynamic quote calculation
     const currentStartDatetime = useMemo(() => {
-        if (selectedService === 'taxi') return taxiPickupDatetime || new Date().toISOString().slice(0, 16);
+        if (selectedService === 'taxi') return taxiPickupDatetime || getIstDateTime(0);
         if (selectedService === 'boating') return `${boatingDate}T${boatingSlot.slice(0, 5)}:00`;
         if (selectedService === 'scuba') return `${scubaDate}T06:30:00`;
         if (selectedService === 'homestay') return `${stayCheckin}T12:00:00`;
         if (selectedService === 'guide') return `${guideDate}T09:00:00`;
-        return new Date().toISOString().slice(0, 16);
+        return getIstDateTime(0);
     }, [selectedService, taxiPickupDatetime, boatingDate, boatingSlot, scubaDate, stayCheckin, guideDate]);
 
     // Live Dynamic Pricing & Surge Quote
@@ -311,13 +312,13 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
         let details = {};
         let pickupLoc = 'Palya Main Rd Hub, Honnavar';
         let dropLoc = null;
-        let startDt = new Date().toISOString().slice(0, 16);
+        let startDt = getIstDateTime(0);
         let endDt = null;
         let qty = 1;
 
         if (selectedService === 'two_wheelers') {
             pickupLoc = bikePickupHub;
-            startDt = new Date().toISOString().slice(0, 16);
+            startDt = getIstDateTime(0);
             qty = bikeDays;
             details = { model: bikeCategory, days: bikeDays, hub: bikePickupHub };
         } else if (selectedService === 'taxi') {
@@ -371,7 +372,7 @@ export default function ServiceBookingModal({ open, onClose, initialServiceId = 
             details = { trail: guideTrail, duration: guideDuration, language: guideLanguage };
         } else if (selectedService === 'tours') {
             pickupLoc = 'Honnavar Railway Station (All-Inclusive)';
-            startDt = new Date().toISOString().slice(0, 16);
+            startDt = getIstDateTime(0);
             qty = pkgTravelers;
             details = {
                 bundleDuration: pkgDays,

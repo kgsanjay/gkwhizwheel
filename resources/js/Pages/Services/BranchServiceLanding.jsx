@@ -22,6 +22,7 @@ import {
     DialogActions,
     IconButton,
     InputAdornment,
+    Alert,
     useTheme,
 } from '@mui/material';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
@@ -54,6 +55,7 @@ import AppLayout from '../../Layouts/AppLayout';
 import PageHead from '../../Components/SEO/PageHead';
 import { useColorMode } from '../../theme/ColorModeContext';
 import { getServicePlaceholder } from '../../utils/placeholder';
+import { getIstDate } from '../../utils/istDate';
 
 export default function BranchServiceLanding({
     branch = {},
@@ -69,13 +71,10 @@ export default function BranchServiceLanding({
     const theme = useTheme();
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
-    const { siteSettings = {} } = usePage().props;
+    const { siteSettings = {}, errors = {} } = usePage().props;
 
-    // Formatting date helpers
-    const getFormattedDate = (offsetDays = 0) => {
-        const d = new Date(Date.now() + offsetDays * 86400000);
-        return d.toISOString().split('T')[0];
-    };
+    // Formatting date helpers (IST to match Laravel app.timezone)
+    const getFormattedDate = (offsetDays = 0) => getIstDate(offsetDays);
 
     const today = getFormattedDate(0);
     const tomorrow = getFormattedDate(1);
@@ -320,17 +319,20 @@ export default function BranchServiceLanding({
     };
 
     const handleProceedToCheckout = (model) => {
+        const minToday = getIstDate(0);
+        const safeStartDate = pickupDate && pickupDate >= minToday ? pickupDate : minToday;
+        const safeEndDate = returnDate && returnDate >= safeStartDate ? returnDate : getIstDate(1);
         const queryParams = new URLSearchParams({
             bike_model_id: model.id,
-            start_date: pickupDate,
-            end_date: returnDate,
+            start_date: safeStartDate,
+            end_date: safeEndDate,
             pickup_store_id: branch.id,
             return_store_id: branch.id,
-            pickup_point_id: selectedPickupPointId || '',
-            return_point_id: selectedReturnPointId || '',
             pickup_time: pickupTime,
             return_time: returnTime,
         });
+        if (selectedPickupPointId) queryParams.set('pickup_point_id', selectedPickupPointId);
+        if (selectedReturnPointId) queryParams.set('return_point_id', selectedReturnPointId);
         router.visit(`/services/bikes/checkout?${queryParams.toString()}`);
     };
 
@@ -1079,6 +1081,11 @@ export default function BranchServiceLanding({
                 }}
             >
                 <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
+                    {Object.keys(errors).length > 0 && (
+                        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                            {Object.values(errors)[0]}
+                        </Alert>
+                    )}
                     {/* Catalog Header */}
                     <Box
                         sx={{

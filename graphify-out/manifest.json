@@ -366,8 +366,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminAuthController.php": {
-    "mtime": 1794938529.0872984,
-    "seen": 1794938783.816639,
+    "mtime": 1794939068.780634,
+    "seen": 1794941130.001722,
     "ast_hash": "aca32c6962ff7c585b8588e36e22c50b",
     "semantic_hash": ""
   },
@@ -2250,9 +2250,9 @@
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/BoatingBookingModal.jsx": {
-    "mtime": 1794505718.467708,
-    "seen": 1794723023.0711858,
-    "ast_hash": "f8d083f4c65909ab329a705e0617f660",
+    "mtime": 1794941076.1467068,
+    "seen": 1794941130.0019462,
+    "ast_hash": "794d4721ea14e5a1030963a351acc952",
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/CabsBookingModal.jsx": {
@@ -2262,9 +2262,9 @@
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/GuideBookingModal.jsx": {
-    "mtime": 1794505718.5080938,
-    "seen": 1794723023.071187,
-    "ast_hash": "cee0ef54d19eadb45d666d2fddb49bc5",
+    "mtime": 1794941076.2748299,
+    "seen": 1794941130.001947,
+    "ast_hash": "92dd4ac61a10a683db7f8de16975f691",
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/HandoverWizardModal.jsx": {
@@ -2274,9 +2274,9 @@
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/HomestayBookingModal.jsx": {
-    "mtime": 1794505718.5343015,
-    "seen": 1794723023.071188,
-    "ast_hash": "5a03ae13f01fc7bd06bb7787627c6e30",
+    "mtime": 1794941076.402373,
+    "seen": 1794941130.0019488,
+    "ast_hash": "e4963481b0e9ce07599860bc893dc474",
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/ReturnInspectionWizardModal.jsx": {
@@ -2286,15 +2286,15 @@
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/ScubaBookingModal.jsx": {
-    "mtime": 1794505718.5875435,
-    "seen": 1794723023.071189,
-    "ast_hash": "80cf2f3bbf2f223e0fab27a546b2ec17",
+    "mtime": 1794941076.5332317,
+    "seen": 1794941130.00195,
+    "ast_hash": "56d5058f25cdb665bc0992cee76c42df",
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/TourBookingModal.jsx": {
-    "mtime": 1794505718.6134748,
-    "seen": 1794723023.07119,
-    "ast_hash": "3d5b64d8f85d76b8a45e5c00d01c9078",
+    "mtime": 1794941076.6869202,
+    "seen": 1794941130.001951,
+    "ast_hash": "1e8b1965cac956ddffb2dbec23053bfc",
     "semantic_hash": ""
   },
   "resources/js/Components/BookingModals/bookingUtils.js": {
@@ -2322,9 +2322,9 @@
     "semantic_hash": ""
   },
   "resources/js/Components/ServiceBookingModal.jsx": {
-    "mtime": 1794505718.6671014,
-    "seen": 1794723023.071193,
-    "ast_hash": "a66ef6b680e9993ac588daa12b038440",
+    "mtime": 1794941109.4790056,
+    "seen": 1794941130.001954,
+    "ast_hash": "566db0093411c0b8309d294b2526c39d",
     "semantic_hash": ""
   },
   "resources/js/Components/ServiceGalleryModal.jsx": {
@@ -2580,8 +2580,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Auth/Login.jsx": {
-    "mtime": 1794938715.165925,
-    "seen": 1794938783.8169038,
+    "mtime": 1794939068.8591185,
+    "seen": 1794941130.001985,
     "ast_hash": "a4bedda3e4bc7ac2d81d1362c9c716fc",
     "semantic_hash": ""
   },
@@ -2706,9 +2706,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Services/BranchServiceLanding.jsx": {
-    "mtime": 1794765760.1870272,
-    "seen": 1794767509.056293,
-    "ast_hash": "d8293ac10a1b29c6dffa2c4685b38a64",
+    "mtime": 1794941035.1456687,
+    "seen": 1794941130.0019999,
+    "ast_hash": "1c2e287ab5a6377e57b2ea3266b23841",
     "semantic_hash": ""
   },
   "resources/js/Pages/Terms.jsx": {
@@ -2724,9 +2724,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Welcome.jsx": {
-    "mtime": 1794740103.1350687,
-    "seen": 1794748668.04823,
-    "ast_hash": "9116331cd206275f90425a5cb3d40589",
+    "mtime": 1794941057.0009892,
+    "seen": 1794941130.002002,
+    "ast_hash": "ed7e89a1352dc903955149424027940a",
     "semantic_hash": ""
   },
   "resources/js/api/client.js": {
@@ -4647,6 +4647,12 @@
     "mtime": 1794936797.4918747,
     "seen": 1794937198.9124548,
     "ast_hash": "bb0cb46e222a7a577784e7b7cd6ca4cd",
+    "semantic_hash": ""
+  },
+  "resources/js/utils/istDate.js": {
+    "mtime": 1794940974.617619,
+    "seen": 1794941130.0020092,
+    "ast_hash": "af2575f12f46cb8b25045f1cf6cfbcad",
     "semantic_hash": ""
   },
   "package-lock.json": {

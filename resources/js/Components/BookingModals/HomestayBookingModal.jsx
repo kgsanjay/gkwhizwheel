@@ -31,6 +31,7 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import GoogleButton from '../Auth/GoogleButton';
 import { validatePhone, sanitizePhone, formatWhatsAppUrl, SUPPORT_WHATSAPP, resolveGuestAccount } from './bookingUtils';
+import { getIstDate } from '../../utils/istDate';
 
 const STAY_ROOMS = [
     { id: 'riverfront_cottage', title: 'Sharavathi Riverfront Wooden Cottage', ratePerNight: 2200, paxLimit: 3 },
@@ -48,8 +49,8 @@ export default function HomestayBookingModal({
     const isDark = theme.palette.mode === 'dark';
     const { auth } = usePage().props;
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const tomorrowStr = new Date(Date.now() + 86400000 * 2).toISOString().slice(0, 10);
+    const todayStr = getIstDate(0);
+    const tomorrowStr = getIstDate(2);
 
     const [roomType, setRoomType] = useState(initialRoomId);
     const [checkin, setCheckin] = useState(todayStr);
