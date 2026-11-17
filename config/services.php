@@ -43,8 +43,8 @@ return [
         'salt_index' => env('PHONEPE_SALT_INDEX', '1'),
         'env' => env('PHONEPE_ENV', 'UAT'),
         'base_url' => env('PHONEPE_BASE_URL', 'https://api-preprod.phonepe.com/apis/pg-sandbox'),
-        'callback_url' => env('PHONEPE_CALLBACK_URL', 'http://127.0.0.1:8000/webhooks/phonepe'),
-        'redirect_url' => env('PHONEPE_REDIRECT_URL', 'http://127.0.0.1:8000/payment/phonepe/callback'),
+        'callback_url' => env('PHONEPE_CALLBACK_URL', rtrim((string) env('APP_URL', 'http://127.0.0.1:8000'), '/').'/webhooks/phonepe'),
+        'redirect_url' => env('PHONEPE_REDIRECT_URL', rtrim((string) env('APP_URL', 'http://127.0.0.1:8000'), '/').'/payment/phonepe/callback'),
     ],
 
     'whatsapp' => [

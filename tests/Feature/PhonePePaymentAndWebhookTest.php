@@ -375,3 +375,31 @@ test('PhonePe rejects a signed callback whose paid amount differs from the check
     expect($booking->fresh()->status)->toBe(BookingStatus::PENDING_PAYMENT);
     expect(Payment::where('booking_id', $booking->id)->count())->toBe(0);
 });
+
+test('PhonePeService checkPaymentStatus sends valid X-VERIFY header and parses COMPLETED status', function (): void {
+    \Illuminate\Support\Facades\Http::fake([
+        'https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/PGTESTPAYUAT/TXN_BK_99_status1' => \Illuminate\Support\Facades\Http::response([
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'data' => [
+                'merchantId' => 'PGTESTPAYUAT',
+                'merchantTransactionId' => 'TXN_BK_99_status1',
+                'transactionId' => 'T26111800001',
+                'amount' => 10000,
+                'state' => 'COMPLETED',
+            ],
+        ], 200),
+    ]);
+
+    $service = app(\App\Services\PhonePeService::class);
+    $result = $service->checkPaymentStatus('TXN_BK_99_status1');
+
+    expect($result['verified'])->toBeTrue();
+    expect($result['code'])->toBe('PAYMENT_SUCCESS');
+    expect($result['amount_paise'])->toBe(10000);
+    expect($result['transaction_id'])->toBe('T26111800001');
+
+    $expectedHeader = hash('sha256', '/pg/v1/status/PGTESTPAYUAT/TXN_BK_99_status1test_phonepe_salt_key_123').'###1';
+    \Illuminate\Support\Facades\Http::assertSent(fn ($request) => $request->hasHeader('X-VERIFY', $expectedHeader)
+        && $request->hasHeader('X-MERCHANT-ID', 'PGTESTPAYUAT'));
+});

@@ -187,6 +187,65 @@ class PhonePeService
     }
 
     /**
+     * Query PhonePe's Check Status API (GET /pg/v1/status/{merchantId}/{merchantTransactionId})
+     * to verify a transaction server-to-server when the browser returns to the callback URL.
+     *
+     * @return array{verified: bool, code: string, state: string, amount_paise: int, transaction_id: string, raw: ?array<string, mixed>}
+     */
+    public function checkPaymentStatus(string $merchantTransactionId): array
+    {
+        $merchantId = (string) config('services.phonepe.merchant_id', 'PGTESTPAYUAT');
+        $saltKey = (string) config('services.phonepe.salt_key', '');
+        $saltIndex = (string) config('services.phonepe.salt_index', '1');
+        $baseUrl = (string) config('services.phonepe.base_url', 'https://api-preprod.phonepe.com/apis/pg-sandbox');
+
+        $endpoint = '/pg/v1/status/'.$merchantId.'/'.$merchantTransactionId;
+        $checksum = hash('sha256', $endpoint.$saltKey).'###'.$saltIndex;
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'X-VERIFY' => $checksum,
+                'X-MERCHANT-ID' => $merchantId,
+                'accept' => 'application/json',
+            ])->timeout(8)->get($baseUrl.$endpoint);
+
+            /** @var array<string, mixed>|null $json */
+            $json = $response->json();
+            $code = strtoupper((string) ($json['code'] ?? ''));
+            $state = strtoupper((string) ($json['data']['state'] ?? ''));
+            $amountPaise = (int) ($json['data']['amount'] ?? 0);
+            $gatewayTxnId = (string) ($json['data']['transactionId'] ?? $merchantTransactionId);
+            $verified = $response->successful()
+                && ($json['success'] ?? false) === true
+                && ($code === 'PAYMENT_SUCCESS' || $state === 'COMPLETED');
+
+            return [
+                'verified' => $verified,
+                'code' => $code,
+                'state' => $state,
+                'amount_paise' => $amountPaise,
+                'transaction_id' => $gatewayTxnId,
+                'raw' => is_array($json) ? $json : null,
+            ];
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('PhonePe status check failed', [
+                'merchant_transaction_id' => $merchantTransactionId,
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'verified' => false,
+                'code' => 'STATUS_CHECK_ERROR',
+                'state' => 'UNKNOWN',
+                'amount_paise' => 0,
+                'transaction_id' => '',
+                'raw' => null,
+            ];
+        }
+    }
+
+    /**
      * Issue a refund via PhonePe PG API (POST /pg/v1/refund).
      *
      * @return array{success: bool, refund_id: ?string, status: string, error: ?string, data?: array<string, mixed>}

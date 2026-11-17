@@ -203,8 +203,11 @@ class BookingWebController extends Controller
     /**
      * Handle browser redirect callback from PhonePe payment gateway.
      */
-    public function handlePhonePeCallback(Request $request): \Illuminate\Http\RedirectResponse
-    {
+    public function handlePhonePeCallback(
+        Request $request,
+        \App\Services\PhonePeService $phonePeService,
+        \App\Services\BookingService $bookingService
+    ): \Illuminate\Http\RedirectResponse {
         $txnId = (string) ($request->input('transactionId')
             ?? $request->input('merchantTransactionId')
             ?? $request->query('transactionId')
@@ -250,11 +253,50 @@ class BookingWebController extends Controller
                             $booking->user->notify(new BookingConfirmationNotification($booking));
                         }
                     });
+                } elseif ($booking->status !== BookingStatus::CONFIRMED) {
+                    // Server-to-server fallback verification via PhonePe Check Status API
+                    // in case the async webhook is delayed or blocked by a WAF/proxy.
+                    $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
+                    $storedTxnId = (string) ($breakdown['phonepe_transaction_id'] ?? '');
+                    if ($storedTxnId !== '' && hash_equals($storedTxnId, $txnId)) {
+                        $status = $phonePeService->checkPaymentStatus($txnId);
+                        $expectedPaise = (int) round(\App\Services\BikeBookingPayments::expectedGatewayAmount($booking) * 100);
+                        if ($status['verified'] && $status['amount_paise'] === $expectedPaise) {
+                            $gatewayRef = $status['transaction_id'] !== '' ? $status['transaction_id'] : $txnId;
+                            DB::transaction(function () use ($booking, $gatewayRef, $bookingService, $breakdown): void {
+                                $locked = Booking::where('id', $booking->id)->lockForUpdate()->first();
+                                if (! $locked || $locked->status === BookingStatus::CONFIRMED) {
+                                    return;
+                                }
+
+                                Payment::firstOrCreate(
+                                    ['gateway_reference' => $gatewayRef],
+                                    [
+                                        'booking_id' => $locked->id,
+                                        'amount' => \App\Services\BikeBookingPayments::expectedGatewayAmount($locked),
+                                        'method' => PaymentMethod::PHONEPE,
+                                        'type' => PaymentType::ADVANCE,
+                                        'status' => PaymentStatus::SUCCESS,
+                                        'notes' => 'PhonePe online bike rental '.(($breakdown['checkout_payment_option'] ?? 'full') === 'advance' ? 'advance' : 'full').' payment verified via status API',
+                                    ]
+                                );
+
+                                if (in_array($locked->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true)) {
+                                    $bookingService->confirmPayment($locked, $gatewayRef);
+                                }
+                            });
+                            $booking->refresh();
+                        }
+                    }
                 }
             }
 
+            $isConfirmed = $booking && $booking->status === BookingStatus::CONFIRMED;
+
             return redirect()->route('bookings.confirmation', $bookingId)
-                ->with('status', 'Payment successful! Your booking is confirmed.');
+                ->with('status', $isConfirmed
+                    ? 'Payment successful! Your booking is confirmed.'
+                    : 'We are verifying your PhonePe payment. Your status will update shortly.');
         }
 
         if (preg_match('/^TXN_SRV_(\d+)_/', $txnId, $m)) {
