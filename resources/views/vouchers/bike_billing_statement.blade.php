@@ -277,11 +277,19 @@
                 <div class="split-card">
                     <div class="split-title">Customer Billing Details</div>
                     <div><strong>Customer Name:</strong> {{ $billing['name'] ?? $booking->user?->name ?? 'Valued Customer' }}</div>
-                    <div><strong>Address:</strong> {{ $billing['address'] ?? 'Palya, Honnavar, Karnataka' }}</div>
+                    <div><strong>Address:</strong> {{ $billing['address'] ?? 'Honnavar, Karnataka' }}@if(!empty($billing['state_code'])) (State Code: {{ $billing['state_code'] }})@endif</div>
                     @if(!empty($billing['gstin']))
                         <div><strong>Customer GSTIN:</strong> {{ $billing['gstin'] }}</div>
                     @endif
-                    <div><strong>Contact:</strong> {{ $booking->user?->phone ?? '+91 86609 89586' }} &bull; {{ $booking->user?->email ?? '' }}</div>
+                    @php
+                        $contactParts = array_filter([
+                            !empty($booking->user?->phone) ? '+91 '.$booking->user->phone : null,
+                            $booking->user?->email ?? null,
+                        ]);
+                    @endphp
+                    @if(!empty($contactParts))
+                        <div><strong>Contact:</strong> {{ implode(' • ', $contactParts) }}</div>
+                    @endif
                 </div>
             </td>
         </tr>
@@ -332,9 +340,14 @@
                 </tr>
             @endif
             @if(($tax['status'] ?? null) === 'configured')
+                @php
+                    $gstRate = (float) ($tax['gst_rate_percent'] ?? 18);
+                    $halfRate = $gstRate / 2;
+                    $isInclusive = ($tax['price_mode'] ?? 'exclusive') === 'inclusive';
+                @endphp
                 <tr>
-                    <td>GST Included ({{ $tax['gst_rate_percent'] }}% &mdash; CGST + SGST)</td>
-                    <td class="right">₹{{ number_format((float) $tax['gst_amount'], 2) }}</td>
+                    <td>GST ({{ $gstRate }}% &mdash; CGST {{ $halfRate }}% + SGST {{ $halfRate }}%{{ $isInclusive ? ', Included' : '' }})</td>
+                    <td class="right">{{ $isInclusive ? '' : '+' }}₹{{ number_format((float) $tax['gst_amount'], 2) }}</td>
                 </tr>
             @endif
             @if((float) $booking->deposit_amount != 0)
@@ -349,17 +362,24 @@
                 </tr>
             @endif
             <tr class="row-total">
-                <td>Total Booking Tariff (Incl. 18% GST)</td>
+                <td>Total Booking Tariff @if(($tax['status'] ?? null) === 'configured')(Incl. {{ $tax['gst_rate_percent'] }}% GST)@endif</td>
                 <td class="right">₹{{ number_format((float) $booking->total_amount, 2) }}</td>
             </tr>
             <tr class="row-paid">
-                <td>Online Advance Payment Received</td>
-                <td class="right">₹{{ number_format((float) $paid, 2) }}</td>
+                <td>Online Payment Received</td>
+                <td class="right">-₹{{ number_format((float) $paid, 2) }}</td>
             </tr>
-            <tr class="row-balance">
-                <td>NET BALANCE DUE AT HUB HANDOVER</td>
-                <td class="right" style="font-size: 12px; font-weight: bold; color: #B45309;">₹{{ number_format((float) $balance, 2) }}</td>
-            </tr>
+            @if((float) $balance > 0)
+                <tr class="row-balance">
+                    <td>NET BALANCE DUE AT HUB HANDOVER</td>
+                    <td class="right" style="font-size: 12px; font-weight: bold; color: #B45309;">₹{{ number_format((float) $balance, 2) }}</td>
+                </tr>
+            @else
+                <tr style="background: #ECFDF5; font-size: 10.5px; font-weight: bold; color: #065F46; border-top: 1px solid #A7F3D0; border-bottom: 1px solid #A7F3D0;">
+                    <td>NET BALANCE DUE (PAID IN FULL)</td>
+                    <td class="right" style="font-size: 11.5px; font-weight: bold; color: #15803D;">₹0.00</td>
+                </tr>
+            @endif
         </tbody>
     </table>
 
