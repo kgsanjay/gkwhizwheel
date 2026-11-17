@@ -636,7 +636,7 @@
                 @if(!empty($booking->addons) && count($booking->addons) > 0)
                     @foreach($booking->addons as $addon)
                     <tr>
-                        <td>Addon: {{ ucwords(str_replace('_', ' ', $addon->addon_type ?? 'Accessory')) }} (x{{ $addon->quantity ?? 1 }})</td>
+                        <td>Addon: {{ ucwords(str_replace('_', ' ', ($addon->addon_type instanceof \BackedEnum ? $addon->addon_type->value : (string)($addon->addon_type ?? 'Accessory')))) }} (x{{ $addon->quantity ?? 1 }})</td>
                         <td class="tar-right">₹{{ number_format((float)($addon->unit_price ?? 0), 2) }}</td>
                         <td class="tar-right">₹{{ number_format((float)($addon->total ?? $addon->unit_price ?? 0), 2) }}</td>
                     </tr>
