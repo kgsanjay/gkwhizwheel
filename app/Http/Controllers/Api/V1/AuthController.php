@@ -330,6 +330,11 @@ class AuthController extends Controller
             if (! empty($validated['name']) && (empty($existing->name) || str_starts_with($existing->name, 'Customer '))) {
                 $existing->update(['name' => $validated['name']]);
             }
+
+            if (! empty($email) && (empty($existing->email) || str_ends_with($existing->email, '@whizwheels.local'))) {
+                $existing->update(['email' => $email]);
+            }
+
             if ($existing->status === UserStatus::BLACKLISTED) {
                 return response()->json([
                     'success' => false,
@@ -343,28 +348,17 @@ class AuthController extends Controller
             Cache::put("checkout_otp:{$existing->id}", $otp, now()->addMinutes(10));
             \Illuminate\Support\Facades\Log::info("Checkout OTP generated for user {$existing->id} ({$cleanPhone}): {$otp}");
 
-            // Deliver via Mail if email available
-            if ($existing->email && filter_var($existing->email, FILTER_VALIDATE_EMAIL)) {
-                try {
-                    Notification::route('mail', $existing->email)->notify(new OtpNotification($otp));
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning("Could not send OTP email to {$existing->email}: " . $e->getMessage());
-                }
-            }
-
-            // Deliver via WhatsApp if phone available
-            if ($existing->phone) {
-                try {
-                    Notification::route(\App\Channels\WhatsAppChannel::class, $existing->phone)->notify(new OtpNotification($otp));
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning("Could not send OTP WhatsApp to {$existing->phone}: " . $e->getMessage());
-                }
+            try {
+                $existing->notify(new OtpNotification($otp));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Could not dispatch OTP notification for user {$existing->id}: " . $e->getMessage());
             }
 
             $maskedPhone = substr($existing->phone ?? $cleanPhone, 0, 2).'******'.substr($existing->phone ?? $cleanPhone, -2);
+            $effectiveEmail = (! empty($existing->email) && ! str_ends_with($existing->email, '@whizwheels.local')) ? $existing->email : $email;
             $maskedEmail = null;
-            if ($existing->email) {
-                $parts = explode('@', $existing->email);
+            if ($effectiveEmail && ! str_ends_with($effectiveEmail, '@whizwheels.local')) {
+                $parts = explode('@', $effectiveEmail);
                 $maskedEmail = substr($parts[0], 0, 2).'***@'.($parts[1] ?? '');
             }
 
@@ -378,10 +372,12 @@ class AuthController extends Controller
                 'status' => 'otp_required',
                 'user_id' => $existing->id,
                 'is_new_user' => false,
+                'phone' => $existing->phone ?? $cleanPhone,
+                'email' => $effectiveEmail,
                 'masked_phone' => $maskedPhone,
                 'masked_email' => $maskedEmail,
                 'debug_otp' => $exposeDebugOtp ? $otp : null,
-                'message' => 'Welcome back! We found your existing account. Please enter the 6-digit verification code sent to your phone/email to continue.',
+                'message' => 'Please enter the 6-digit verification code sent to your WhatsApp or Email.',
             ]);
         }
 
@@ -403,24 +399,15 @@ class AuthController extends Controller
             Cache::put("checkout_otp:{$newUser->id}", $otp, now()->addMinutes(10));
             \Illuminate\Support\Facades\Log::info("Checkout OTP generated for new user {$newUser->id} ({$cleanPhone}): {$otp}");
 
-            if ($newUser->email && filter_var($newUser->email, FILTER_VALIDATE_EMAIL)) {
-                try {
-                    Notification::route('mail', $newUser->email)->notify(new OtpNotification($otp));
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning("Could not send OTP email to {$newUser->email}: " . $e->getMessage());
-                }
-            }
-
-            if ($newUser->phone) {
-                try {
-                    Notification::route(\App\Channels\WhatsAppChannel::class, $newUser->phone)->notify(new OtpNotification($otp));
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::warning("Could not send OTP WhatsApp to {$newUser->phone}: " . $e->getMessage());
-                }
+            try {
+                $newUser->notify(new OtpNotification($otp));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Could not dispatch OTP notification for new user {$newUser->id}: " . $e->getMessage());
             }
 
             $maskedPhone = substr($cleanPhone, 0, 2).'******'.substr($cleanPhone, -2);
-            $maskedEmail = $email ? substr(explode('@', $email)[0], 0, 2).'***@'.(explode('@', $email)[1] ?? '') : null;
+            $effectiveEmail = $email && ! str_ends_with($email, '@whizwheels.local') ? $email : null;
+            $maskedEmail = $effectiveEmail ? substr(explode('@', $effectiveEmail)[0], 0, 2).'***@'.(explode('@', $effectiveEmail)[1] ?? '') : null;
             $exposeDebugOtp = app()->environment('local', 'testing')
                 || config('app.debug')
                 || empty(config('services.whatsapp.token'))
@@ -431,10 +418,12 @@ class AuthController extends Controller
                 'status' => 'otp_required',
                 'user_id' => $newUser->id,
                 'is_new_user' => true,
+                'phone' => $cleanPhone,
+                'email' => $effectiveEmail,
                 'masked_phone' => $maskedPhone,
                 'masked_email' => $maskedEmail,
                 'debug_otp' => $exposeDebugOtp ? $otp : null,
-                'message' => 'Please enter the 6-digit verification code sent to your mobile number to complete your account setup.',
+                'message' => 'Please enter the 6-digit verification code sent to your WhatsApp or Email.',
             ]);
         }
 
@@ -467,13 +456,15 @@ class AuthController extends Controller
         ]);
 
         $userId = (int) $validated['user_id'];
-        $otp = $validated['otp'];
+        $otp = trim((string) $validated['otp']);
         $cachedOtp = Cache::get("checkout_otp:{$userId}");
 
         if (! $cachedOtp || (string) $cachedOtp !== (string) $otp) {
+            \Illuminate\Support\Facades\Log::warning("Checkout OTP mismatch for user {$userId}: provided={$otp}, cached=" . ($cachedOtp ?? 'null'));
+
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid or expired verification code. Please try again.',
+                'message' => 'Invalid or expired verification code. Please check your WhatsApp or Email, or click Resend Code.',
                 'errors' => [
                     'otp' => ['Invalid or expired verification code.'],
                 ],
@@ -501,6 +492,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'status' => 'authenticated',
+            'csrf_token' => csrf_token(),
             'data' => [
                 'user' => new UserResource($user),
                 'token' => $token,

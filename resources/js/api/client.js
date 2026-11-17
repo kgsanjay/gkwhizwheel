@@ -24,9 +24,9 @@ apiClient.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // Read CSRF token from meta tag
+        // Read CSRF token from meta tag if not sending Bearer token
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (csrfToken) {
+        if (csrfToken && !config.headers.Authorization) {
             config.headers['X-CSRF-TOKEN'] = csrfToken;
         }
 

@@ -55,6 +55,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'webhooks/*',
+        ]);
         $middleware->statefulApi();
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin') || $request->is('admin/*') ? route('admin.login') : route('login'));
         $middleware->priority([

@@ -1,17 +1,17 @@
 # Graph Report - gkwhizwheel  (2026-11-17)
 
 ## Corpus Check
-- 670 files · ~526,284 words
+- 670 files · ~526,549 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 26 file(s) not represented in the graph (top: (none) 18, .ico 3, .xml 2)
 
 ## Summary
-- 5039 nodes · 11827 edges · 312 communities (166 shown, 146 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 352 edges (avg confidence: 0.87)
+- 5039 nodes · 11828 edges · 312 communities (166 shown, 146 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 350 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `619c7afd`
+- Built from commit: `69636b71`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -291,12 +291,12 @@
   docs/requirements/ISSUE-48-BIKE-COMPLIANCE-HANDOVER.md → app/Services/BikeComplianceGate.php
 - `4.4 Multi-Store Return & Settlement Wizard (`ReturnInspectionWizardModal.jsx`)` --references--> `RefundService`  [INFERRED]
   FULL_FEATURE_LIST.md → app/Services/RefundService.php
-- `5.3 Notifications & Communications Engine` --references--> `NotificationLog`  [INFERRED]
-  FULL_FEATURE_LIST.md → app/Models/NotificationLog.php
-- `Security, Multi-Tenant Scoping & Data Integrity` --references--> `ActivityLog`  [INFERRED]
-  AGENTS.md → app/Models/ActivityLog.php
-- `6.8 Immutable System Audit Trails & Activity Logging` --references--> `ActivityLog`  [INFERRED]
-  DETAILED_FEATURE_SPECIFICATION.md → app/Models/ActivityLog.php
+- `1. PHP / Laravel Standards` --references--> `BookingService`  [INFERRED]
+  docs/04-CODING-STANDARDS-AND-STRUCTURE.md → app/Services/BookingService.php
+- `Remaining explicit work` --references--> `ServiceBooking`  [INFERRED]
+  docs/requirements/SERVICE-RESOURCE-ARCHITECTURE.md → app/Models/ServiceBooking.php
+- `Slice 1: pre-start cancellation reasons (this PR)` --references--> `CabDispatchService`  [INFERRED]
+  docs/requirements/ISSUE-56-CAB-CANCELLATION-SETTLEMENT.md → app/Services/CabDispatchService.php
 
 ## Import Cycles
 - None detected.
@@ -336,8 +336,8 @@ Cohesion: 0.04
 Nodes (49): cab55Booking(), {closure#11}(), {closure#14}(), {closure#16}(), {closure#17}(), {closure#19}(), {closure#2}(), {closure#20}() (+41 more)
 
 ### Community 8 - "useColorMode"
-Cohesion: 0.10
-Nodes (21): queryClient, setup(), AccountBookingDetail(), AccountBookings(), AccountKyc(), DOCUMENT_TYPES, CabOperations(), format() (+13 more)
+Cohesion: 0.08
+Nodes (23): axios@^1.7.4, axios, queryClient, setup(), AccountBookingDetail(), AccountBookings(), AccountKyc(), DOCUMENT_TYPES (+15 more)
 
 ### Community 9 - "AdminServiceEnquiryWebController.php"
 Cohesion: 0.05
@@ -384,12 +384,12 @@ Cohesion: 0.13
 Nodes (6): {closure#1}(), {closure#3}(), {closure#6}(), {closure#7}(), {closure#2}(), BikeModel
 
 ### Community 21 - "package.json"
-Cohesion: 0.05
-Nodes (42): dependencies, @emotion/react@^11.14.0, @emotion/styled@^11.14.1, @inertiajs/react@^3.7.0, leaflet@^1.9.4, @mui/icons-material@^9.4.0, @mui/material@^9.4.0, react@^19.2.8 (+34 more)
+Cohesion: 0.06
+Nodes (40): dependencies, @emotion/react@^11.14.0, @emotion/styled@^11.14.1, @inertiajs/react@^3.7.0, leaflet@^1.9.4, @mui/icons-material@^9.4.0, @mui/material@^9.4.0, react@^19.2.8 (+32 more)
 
 ### Community 22 - "GuidePage.jsx"
 Cohesion: 0.06
-Nodes (59): RelatedGuidesStrip(), PageHead(), getServiceItemMedia(), ServiceGalleryModal(), AppLayout(), servicesList, SITE_CONTAINER_SX, About() (+51 more)
+Nodes (58): RelatedGuidesStrip(), PageHead(), ServiceBookingModal(), getServiceItemMedia(), ServiceGalleryModal(), AppLayout(), servicesList, SITE_CONTAINER_SX (+50 more)
 
 ### Community 23 - "AdminBikeWebController.php"
 Cohesion: 0.05
@@ -432,8 +432,8 @@ Cohesion: 0.11
 Nodes (22): BookingStatus, CANCELLED, COMPLETED, CONFIRMED, EXPIRED, HANDED_OVER, HELD, NO_SHOW (+14 more)
 
 ### Community 39 - "GoogleButton"
-Cohesion: 0.19
-Nodes (28): apiClient, setAuthToken(), AuthModal(), GoogleButton(), GoogleIcon(), BOATING_SAFARIS, BoatingBookingModal(), TIME_SLOTS (+20 more)
+Cohesion: 0.22
+Nodes (24): AuthModal(), GoogleButton(), GoogleIcon(), BOATING_SAFARIS, BoatingBookingModal(), TIME_SLOTS, formatWhatsAppUrl(), resolveGuestAccount() (+16 more)
 
 ### Community 41 - "ServiceResource"
 Cohesion: 0.09
@@ -460,8 +460,8 @@ Cohesion: 0.13
 Nodes (4): StoreController, StoreStoreRequest, UpdateStoreRequest, StoreResource
 
 ### Community 49 - "Welcome.jsx"
-Cohesion: 0.12
-Nodes (15): RFC-4122, @tanstack/react-query, ModelRentalCatalog(), AddonsSelector(), AVAILABLE_ADDONS, CheckoutModal(), generateIdempotencyKey(), BikeCheckout() (+7 more)
+Cohesion: 0.11
+Nodes (20): RFC-4122, @tanstack/react-query, apiClient, setAuthToken(), ModelRentalCatalog(), AddonsSelector(), AVAILABLE_ADDONS, CheckoutModal() (+12 more)
 
 ### Community 50 - "ActivityLog"
 Cohesion: 0.09
@@ -976,15 +976,15 @@ Nodes (6): ADR 0001: Integration of Everything Claude Code (ECC) in Google Antig
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `User` connect `User` to `Bike`, `User`, `ArchTech\Enums\InvokableCases`, `Illuminate\Database\Seeder`, `Inertia\Response`, `CabDispatchFlowTest.php`, `AdminServiceEnquiryWebController.php`, `AuthController.php`, `UserRole`, `BikeModelBookingAllocationTest.php`, `AdminStaffWebController.php`, `ServiceBookingApprovalTest.php`, `TwoFactorService`, `AdminBookingsWebTest.php`, `ServiceBooking`, `RefundServiceTest.php`, `CabDispatch`, `Payment`, `HandleInertiaRequests.php`, `AdminGroundCheckInTest`, `BranchAdminOperationalTest`, `AvailabilityServiceTest.php`, `BookingStatus`, `BikeAndPricingMigrationsTest.php`, `ServiceResource`, `UserStatus`, `CustomerAccountWebTest.php`, `Illuminate\Database\Eloquent\Relations\HasMany`, `ServiceItemAndBookingApiTest.php`, `Illuminate\Http\JsonResponse`, `PublicBikeModelAvailabilityTest.php`, `CustomerServiceBookingSecurityTest.php`, `.isAdmin`, `Inertia\Testing\AssertableInertia`, `AdminBikesWebTest.php`, `BikeBookingPickupPointsTest.php`, `PhonePeWebhookController.php`, `BikePolicy`, `CabFareQuoteEngineTest.php`, `AdminAuthAndPanelTest.php`, `ServiceBookingConfirmedNotification`, `.isSuperAdmin`, `ServiceRoleBasedAccessTest.php`, `AdminStaffWebTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `AdminPricingWebTest.php`, `PublicBikesEndpointsTest.php`, `BikeRelocationResolutionTest.php`, `Illuminate\Console\Command`, `FuelType`, `AdminServiceCategoryTest.php`, `ServicePaymentEligibilityTest.php`, `CheckBikeDocumentExpiryCommandTest.php`, `PricingRulePolicy`, `AuthEndpointsTest.php`, `AdminCouponsWebTest.php`, `SensitiveDataLoggingAuditTest.php`, `CustomerAdminStaffRouteAccessDenialTest.php`, `ServiceQuoteSnapshotTest.php`, `AdminCouponsEndpointsTest.php`, `SchemaMigrationsTest.php`, `BranchAccessIsolationTest.php`, `CabInventoryFoundationTest.php`, `CabInventoryFoundationTest.php`, `AdminStaffEndpointsTest.php`, `DynamicServicePricingTest.php`, `ServiceAvailabilityServiceTest.php`, `StaffBookingReturnEndpointsTest.php`, `Illuminate\Http\RedirectResponse`, `ServiceBookingConcurrencyTest.php`, `IdorTest.php`, `AdminServiceItemDocumentsTest.php`, `WhizWheelV2StandardizationTest.php`, `AdminDispatchWebTest`, `WhatsAppNotificationAndWebhookTest.php`, `Primary Abstractions (Identified by Graphify Degree Centrality)`, `MultiGuardAuthenticationTest`, `HtmlEscapingAndXssAuditTest`, `LogsAndSyncMigrationsTest.php`, `ServiceBookingAlertRecipients.php`, `TwoFactorEnforcementTest.php`?**
-  _High betweenness centrality (0.111) - this node is a cross-community bridge._
+  _High betweenness centrality (0.113) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `User` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`User` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `RFC-4122`, `EMISSION_CERTIFICATE`, `INSURANCE` to the rest of the system?**
   _72 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Bike` be split into smaller, more focused modules?**
   _Cohesion score 0.05384150030248034 - nodes in this community are weakly interconnected._
-- **Why does `Store` connect `User` to `Bike`, `{closure#5}`, `ArchTech\Enums\InvokableCases`, `Illuminate\Database\Eloquent\Model`, `Illuminate\Database\Seeder`, `CabInventoryFoundationTest.php`, `BranchAccessIsolationTest.php`, `AdminStaffEndpointsTest.php`, `AdminServiceEnquiryWebController.php`, `Controller`, `CabDispatchFlowTest.php`, `AdminReportWebController.php`, `UserRole`, `StaffBookingReturnEndpointsTest.php`, `Illuminate\Http\RedirectResponse`, `AdminStaffWebController.php`, `BikeModelBookingAllocationTest.php`, `ServiceBookingApprovalTest.php`, `AdminBookingsWebTest.php`, `BikeModel`, `AdminBikeWebController.php`, `IdorTest.php`, `RefundServiceTest.php`, `AdminServiceItemDocumentsTest.php`, `PickupPoint`, `Payment`, `AdminGroundCheckInTest`, `ServiceItemController.php`, `AvailabilityServiceTest.php`, `BranchAdminOperationalTest`, `BookingStatus`, `BikeAndPricingMigrationsTest.php`, `CabInventoryFoundationTest.php`, `ServiceResource`, `AdminBookingWebController.php`, `UserStatus`, `CustomerAccountWebTest.php`, `Illuminate\Database\Eloquent\Relations\HasMany`, `Illuminate\Http\Resources\Json\JsonResource`, `AdminStoreWebController.php`, `ActivityLog`, `ServiceItemAndBookingApiTest.php`, `Illuminate\Http\JsonResponse`, `PublicBikeModelAvailabilityTest.php`, `CustomerServiceBookingSecurityTest.php`, `ServiceAvailabilityServiceTest.php`, `WhizWheelV2StandardizationTest.php`, `Inertia\Testing\AssertableInertia`, `BranchBikeRentalLandingTest.php`, `AdminBikesWebTest.php`, `BikeBookingPickupPointsTest.php`, `CabMySqlConcurrencyTest.php`, `AdminBikeModelWebController.php`, `AdminDispatchWebTest`, `WhatsAppNotificationAndWebhookTest.php`, `CabFareQuoteEngineTest.php`, `Primary Abstractions (Identified by Graphify Degree Centrality)`, `AdminAuthAndPanelTest.php`, `ServiceBookingConfirmedNotification`, `.isSuperAdmin`, `ServiceRoleBasedAccessTest.php`, `ActivityLog`, `AdminStaffWebTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `AdminDashboardController.php`, `AdminPricingWebTest.php`, `PublicBikesEndpointsTest.php`, `BikeFrontendPagesTest.php`, `BikeRelocationResolutionTest.php`, `FuelType`, `AdminServiceCategoryTest.php`, `CheckBikeDocumentExpiryCommandTest.php`, `BikeDirectionalPickupReturnFeeTest.php`?**
-  _High betweenness centrality (0.071) - this node is a cross-community bridge._
+- **Why does `Booking` connect `Booking` to `Bike`, `User`, `ArchTech\Enums\InvokableCases`, `Illuminate\Database\Eloquent\Model`, `Inertia\Response`, `Controller`, `AdminReportWebController.php`, `AvailabilityService`, `BikeModelBookingAllocationTest.php`, `StaffBookingReturnEndpointsTest.php`, `AdminBookingsWebTest.php`, `IdorTest.php`, `RefundServiceTest.php`, `PickupPoint`, `Payment`, `AdminBookingWebController`, `LogsNotification`, `AdminGroundCheckInTest`, `AvailabilityServiceTest.php`, `BookingStatus`, `AdminBikeModelWebController.php`, `AdminBookingWebController.php`, `UserStatus`, `CustomerAccountWebTest.php`, `Illuminate\Database\Eloquent\Relations\HasMany`, `Illuminate\Http\JsonResponse`, `BookingResource`, `PublicBikeModelAvailabilityTest.php`, `WhizWheelV2StandardizationTest.php`, `WhatsAppMessage`, `BikeBookingPickupPointsTest.php`, `PhonePeWebhookController.php`, `WhatsAppNotificationAndWebhookTest.php`, `Primary Abstractions (Identified by Graphify Degree Centrality)`, `AdminAuthAndPanelTest.php`, `.isSuperAdmin`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `AdminDashboardController.php`, `PublicBikesEndpointsTest.php`, `App\Models\Booking`, `BikeRelocationResolutionTest.php`, `Illuminate\Bus\Queueable`, `PaymentReceiptNotification`, `Refund`, `BikeLocationSchedule.php`, `FuelType`, `BikeDirectionalPickupReturnFeeTest.php`, `CustomerAccountWebController.php`?**
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Store` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`Store` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `User` be split into smaller, more focused modules?**

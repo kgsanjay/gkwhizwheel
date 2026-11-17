@@ -284,7 +284,8 @@ export default function CheckoutModal({
     };
 
     const handleVerifyOtpAndPay = async () => {
-        if (!otpChallenge?.user_id || otpCode.trim().length !== 6) return;
+        const cleanOtp = otpCode.trim();
+        if (!otpChallenge?.user_id || cleanOtp.length !== 6) return;
         setIsSubmitting(true);
         setErrorMessage('');
         setStatusMessage('Verifying code...');
@@ -292,17 +293,30 @@ export default function CheckoutModal({
         try {
             const verifyRes = await apiClient.post('/auth/checkout-verify-otp', {
                 user_id: otpChallenge.user_id,
-                otp: otpCode.trim(),
+                otp: cleanOtp,
             });
             if (verifyRes.status === 'authenticated') {
                 if (verifyRes.data?.token) setAuthToken(verifyRes.data.token);
                 if (verifyRes.data?.user) setResolvedUser(verifyRes.data.user);
+                if (verifyRes.csrf_token) {
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    if (meta) meta.setAttribute('content', verifyRes.csrf_token);
+                }
                 setOtpChallenge(null);
                 setOtpCode('');
-                await proceedWithHoldAndPay();
+            } else {
+                throw new Error(verifyRes.message || 'Verification could not be completed.');
             }
         } catch (err) {
-            setErrorMessage(err.message || 'Invalid or expired OTP. Please try again.');
+            setErrorMessage(err.message || 'Invalid or expired verification code. Please check your WhatsApp or Email.');
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            await proceedWithHoldAndPay();
+        } catch (err) {
+            setErrorMessage(err.message || 'Could not reserve vehicle. Please retry.');
             setIsSubmitting(false);
         }
     };
@@ -1194,10 +1208,10 @@ export default function CheckoutModal({
                     </Box>
                     <Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
-                            Verify Mobile Number
+                            Verify Your Account
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            Quick 1-time verification
+                        <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 650 }}>
+                            Get OTP on WhatsApp or Email
                         </Typography>
                     </Box>
                 </Box>
@@ -1215,12 +1229,63 @@ export default function CheckoutModal({
             </DialogTitle>
 
             <DialogContent sx={{ overflowX: 'hidden', pt: 1, pb: 2 }}>
-                <Typography variant="body2" sx={{ color: '#334155', mb: 2 }}>
-                    We sent a 6-digit verification code to{' '}
-                    <strong style={{ color: '#0F172A' }}>
-                        +91 {otpChallenge?.masked_phone || riderPhone || 'your mobile'}
-                    </strong>
-                </Typography>
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: '#475569', mb: 1.5, fontSize: '0.85rem' }}>
+                        Enter the 6-digit verification code sent to your contact details:
+                    </Typography>
+
+                    <Stack spacing={1}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5,
+                                p: 1.25,
+                                borderRadius: 2,
+                                bgcolor: '#F0FDF4',
+                                border: '1px solid #BBF7D0',
+                            }}
+                        >
+                            <WhatsAppIcon sx={{ color: '#16A34A', fontSize: 22 }} />
+                            <Box>
+                                <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 750, display: 'block', lineHeight: 1.2 }}>
+                                    WhatsApp
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 750, fontSize: '0.875rem' }}>
+                                    +91 {otpChallenge?.masked_phone || (riderPhone ? `${riderPhone.slice(0, 2)}******${riderPhone.slice(-2)}` : 'your mobile')}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        {(otpChallenge?.masked_email || riderEmail) && (
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1.5,
+                                    p: 1.25,
+                                    borderRadius: 2,
+                                    bgcolor: '#F8FAFC',
+                                    border: '1px solid #E2E8F0',
+                                }}
+                            >
+                                <EmailOutlinedIcon sx={{ color: '#0284C7', fontSize: 22 }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 750, display: 'block', lineHeight: 1.2 }}>
+                                        Email Inbox
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 750, fontSize: '0.875rem' }}>
+                                        {otpChallenge?.masked_email || (riderEmail ? `${riderEmail.slice(0, 2)}***@${riderEmail.split('@')[1] || ''}` : 'your email')}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        )}
+                    </Stack>
+
+                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1, fontSize: '0.72rem' }}>
+                        Check your WhatsApp or Email inbox (including spam/junk folder) for the 6-digit code.
+                    </Typography>
+                </Box>
 
                 {otpChallenge?.debug_otp && (
                     <Alert
@@ -1292,7 +1357,7 @@ export default function CheckoutModal({
                                 padding: '12px 14px',
                             },
                         }}
-                        helperText="Enter 6-digit OTP received via SMS / WhatsApp"
+                        helperText="Enter 6-digit OTP received on WhatsApp or Email"
                     />
                 </Box>
 
