@@ -310,7 +310,7 @@ class AuthController extends Controller
         $email = ! empty($validated['email']) ? strtolower(trim($validated['email'])) : null;
 
         // 1. Search for existing user by phone or email
-        $existing = User::where(function ($q) use ($cleanPhone): void {
+        $existing = User::withTrashed()->where(function ($q) use ($cleanPhone): void {
                 $q->where('phone', $cleanPhone)
                     ->orWhere('phone', '91'.$cleanPhone)
                     ->orWhere('phone', '+91'.$cleanPhone);
@@ -323,6 +323,13 @@ class AuthController extends Controller
             ->first();
 
         if ($existing) {
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+
+            if (! empty($validated['name']) && (empty($existing->name) || str_starts_with($existing->name, 'Customer '))) {
+                $existing->update(['name' => $validated['name']]);
+            }
             if ($existing->status === UserStatus::BLACKLISTED) {
                 return response()->json([
                     'success' => false,
@@ -361,13 +368,19 @@ class AuthController extends Controller
                 $maskedEmail = substr($parts[0], 0, 2).'***@'.($parts[1] ?? '');
             }
 
+            $exposeDebugOtp = app()->environment('local', 'testing')
+                || config('app.debug')
+                || empty(config('services.whatsapp.token'))
+                || str_contains($request->getHost(), 'staging');
+
             return response()->json([
                 'success' => true,
                 'status' => 'otp_required',
                 'user_id' => $existing->id,
+                'is_new_user' => false,
                 'masked_phone' => $maskedPhone,
                 'masked_email' => $maskedEmail,
-                'debug_otp' => app()->environment('local', 'testing') ? $otp : null,
+                'debug_otp' => $exposeDebugOtp ? $otp : null,
                 'message' => 'Welcome back! We found your existing account. Please enter the 6-digit verification code sent to your phone/email to continue.',
             ]);
         }
@@ -384,6 +397,46 @@ class AuthController extends Controller
             'whatsapp_opt_in' => true,
             'email_verified_at' => $email ? now() : null,
         ]);
+
+        if ($request->boolean('verify_phone')) {
+            $otp = (string) random_int(100000, 999999);
+            Cache::put("checkout_otp:{$newUser->id}", $otp, now()->addMinutes(10));
+            \Illuminate\Support\Facades\Log::info("Checkout OTP generated for new user {$newUser->id} ({$cleanPhone}): {$otp}");
+
+            if ($newUser->email && filter_var($newUser->email, FILTER_VALIDATE_EMAIL)) {
+                try {
+                    Notification::route('mail', $newUser->email)->notify(new OtpNotification($otp));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Could not send OTP email to {$newUser->email}: " . $e->getMessage());
+                }
+            }
+
+            if ($newUser->phone) {
+                try {
+                    Notification::route(\App\Channels\WhatsAppChannel::class, $newUser->phone)->notify(new OtpNotification($otp));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Could not send OTP WhatsApp to {$newUser->phone}: " . $e->getMessage());
+                }
+            }
+
+            $maskedPhone = substr($cleanPhone, 0, 2).'******'.substr($cleanPhone, -2);
+            $maskedEmail = $email ? substr(explode('@', $email)[0], 0, 2).'***@'.(explode('@', $email)[1] ?? '') : null;
+            $exposeDebugOtp = app()->environment('local', 'testing')
+                || config('app.debug')
+                || empty(config('services.whatsapp.token'))
+                || str_contains($request->getHost(), 'staging');
+
+            return response()->json([
+                'success' => true,
+                'status' => 'otp_required',
+                'user_id' => $newUser->id,
+                'is_new_user' => true,
+                'masked_phone' => $maskedPhone,
+                'masked_email' => $maskedEmail,
+                'debug_otp' => $exposeDebugOtp ? $otp : null,
+                'message' => 'Please enter the 6-digit verification code sent to your mobile number to complete your account setup.',
+            ]);
+        }
 
         if ($request->hasSession()) {
             Auth::guard('web')->login($newUser);

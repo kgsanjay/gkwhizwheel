@@ -24,12 +24,20 @@ import {
     MenuItem,
     Checkbox,
     Link as MuiLink,
+    Grid,
+    InputAdornment,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PaymentIcon from '@mui/icons-material/Payment';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SecurityIcon from '@mui/icons-material/Security';
 import TimerIcon from '@mui/icons-material/Timer';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import apiClient, { setAuthToken } from '../../api/client';
 import GoogleButton from '../Auth/GoogleButton';
 
@@ -76,6 +84,40 @@ export default function CheckoutModal({
     const [riderEmail, setRiderEmail] = useState(activeUser?.email || '');
     const [otpChallenge, setOtpChallenge] = useState(null);
     const [otpCode, setOtpCode] = useState('');
+    const [resendCountdown, setResendCountdown] = useState(0);
+
+    useEffect(() => {
+        if (resendCountdown <= 0) return;
+        const interval = setInterval(() => {
+            setResendCountdown((prev) => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [resendCountdown]);
+
+    const handleResendOtp = async () => {
+        if (resendCountdown > 0 || isSubmitting) return;
+        setIsSubmitting(true);
+        setErrorMessage('');
+        try {
+            const finalName = (riderName || activeUser?.name || '').trim();
+            const cleanPhone = (riderPhone || '').replace(/\D/g, '');
+            const res = await apiClient.post('/auth/checkout-resolve', {
+                name: finalName,
+                phone: cleanPhone,
+                email: (riderEmail || activeUser?.email || '').trim() || undefined,
+                verify_phone: true,
+            });
+            if (res.status === 'otp_required') {
+                setOtpChallenge(res);
+                setResendCountdown(30);
+                setStatusMessage('New verification code sent successfully.');
+            }
+        } catch (err) {
+            setErrorMessage(err.message || 'Failed to resend verification code.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     const [billingType, setBillingType] = useState('personal');
     const [billingName, setBillingName] = useState(activeUser?.name || '');
     const [billingAddress, setBillingAddress] = useState('');
@@ -216,10 +258,12 @@ export default function CheckoutModal({
                     name: finalName,
                     phone: cleanPhone,
                     email: (riderEmail || activeUser?.email || '').trim() || undefined,
+                    verify_phone: true,
                 });
 
                 if (resolveRes.status === 'otp_required') {
                     setOtpChallenge(resolveRes);
+                    setResendCountdown(30);
                     setStatusMessage('');
                     setIsSubmitting(false);
                     return;
@@ -442,7 +486,8 @@ export default function CheckoutModal({
     const Shell = isPage ? Box : Dialog;
 
     return (
-        <Shell
+        <>
+            <Shell
             {...(isPage
                 ? {
                     sx: {
@@ -524,104 +569,254 @@ export default function CheckoutModal({
                     </Alert>
                 )}
 
-                {otpChallenge && (
-                    <Card variant="outlined" sx={{ mb: 3, p: 2.5, borderRadius: 2, borderColor: '#F59E0B', bgcolor: '#FFFBEB' }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
-                            Verify Existing Account
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>
-                            Welcome back! An account matching <strong>{otpChallenge.masked_phone || otpChallenge.masked_email}</strong> already exists. Enter the 6-digit OTP sent to your WhatsApp/Email to continue checkout safely.
-                            {otpChallenge.debug_otp && (
-                                <Box component="span" sx={{ display: 'block', mt: 1, color: '#B45309', fontWeight: 800 }}>
-                                    (Test Mode OTP: <strong>{otpChallenge.debug_otp}</strong>)
+                {activeUser && activeUser.phone && !heldBooking && (
+                    <Card
+                        variant="outlined"
+                        sx={{
+                            mb: 3,
+                            p: 2,
+                            borderRadius: 3,
+                            borderColor: '#99F6E4',
+                            bgcolor: '#F0FDFA',
+                            boxShadow: '0 2px 10px rgba(13, 148, 136, 0.06)',
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box
+                                    sx={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: '50%',
+                                        bgcolor: '#0D9488',
+                                        color: '#FFFFFF',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <VerifiedUserIcon fontSize="small" />
                                 </Box>
-                            )}
-                        </Typography>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="stretch">
-                            <TextField
-                                fullWidth
-                                label="6-Digit OTP"
-                                placeholder="123456"
-                                value={otpCode}
-                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                inputProps={{ maxLength: 6, inputMode: 'numeric' }}
-                                size="small"
-                            />
+                                <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                            {activeUser.name || 'Verified Rider'}
+                                        </Typography>
+                                        <Chip
+                                            size="small"
+                                            label="Account Verified"
+                                            color="success"
+                                            variant="filled"
+                                            sx={{ height: 20, fontSize: '0.68rem', fontWeight: 750 }}
+                                        />
+                                    </Box>
+                                    <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 600 }}>
+                                        +91 {activeUser.phone} {activeUser.email ? `• ${activeUser.email}` : ''}
+                                    </Typography>
+                                </Box>
+                            </Box>
                             <Button
-                                variant="contained"
-                                color="secondary"
-                                onClick={handleVerifyOtpAndPay}
-                                disabled={isSubmitting || otpCode.length !== 6}
-                                sx={{ fontWeight: 800, minWidth: 160 }}
+                                size="small"
+                                variant="text"
+                                onClick={() => {
+                                    setResolvedUser(null);
+                                    setRiderPhone('');
+                                }}
+                                sx={{ textTransform: 'none', fontSize: '0.75rem', color: '#64748B' }}
                             >
-                                Verify & Pay
+                                Switch Account
                             </Button>
-                        </Stack>
+                        </Box>
                     </Card>
                 )}
 
-                {needsRiderContact && !heldBooking && !otpChallenge && (
-                    <Card variant="outlined" sx={{ mb: 3, p: 2, borderRadius: 2, borderColor: '#CBD5E1' }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
-                            <Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                                    Lead Rider Details (Auto-Account & WhatsApp Voucher)
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    No password needed — we create your booking account automatically.
-                                </Typography>
-                            </Box>
-                            {!activeUser && (
-                                <GoogleButton
-                                    size="small"
-                                    fullWidth={false}
-                                    label="1-Tap Google"
-                                    redirect={typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/services/bikes'}
-                                />
-                            )}
-                        </Stack>
-                        <Stack spacing={1.5}>
-                            {!activeUser?.name && (
-                                <TextField
-                                    fullWidth
-                                    required
-                                    size="small"
-                                    label="Full Name (As on Driving License)"
-                                    placeholder="e.g. Rahul Sharma"
-                                    value={riderName}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setRiderName(val);
-                                        if (!billingName || billingName === riderName) {
-                                            setBillingName(val);
-                                        }
+                {needsRiderContact && !heldBooking && (
+                    <Card
+                        variant="outlined"
+                        sx={{
+                            mb: 3,
+                            borderRadius: 3,
+                            borderColor: '#0D9488',
+                            borderWidth: 1.5,
+                            boxShadow: '0 4px 20px -2px rgba(13, 148, 136, 0.08)',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        {/* Section Header Banner */}
+                        <Box
+                            sx={{
+                                px: 2.5,
+                                py: 1.5,
+                                bgcolor: 'rgba(13, 148, 136, 0.06)',
+                                borderBottom: '1px solid rgba(13, 148, 136, 0.15)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                gap: 1,
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Box
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: '50%',
+                                        bgcolor: '#0D9488',
+                                        color: '#FFFFFF',
+                                        fontWeight: 800,
+                                        fontSize: '0.85rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}
-                                />
-                            )}
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                                <TextField
-                                    fullWidth
-                                    required
+                                >
+                                    1
+                                </Box>
+                                <Box>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
+                                        Rider &amp; Booking Account
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 600 }}>
+                                        Instant booking setup • No password needed
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Chip
+                                size="small"
+                                icon={<WhatsAppIcon sx={{ fontSize: '16px !important', color: '#16A34A !important' }} />}
+                                label="Instant WhatsApp Voucher"
+                                sx={{
+                                    bgcolor: '#DCFCE7',
+                                    color: '#15803D',
+                                    fontWeight: 750,
+                                    fontSize: '0.75rem',
+                                    border: '1px solid #BBF7D0',
+                                }}
+                            />
+                        </Box>
+
+                        <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+                            {/* Trust & Policy Assurance Pills */}
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
+                                <Chip
                                     size="small"
-                                    label="10-Digit WhatsApp Mobile"
-                                    placeholder="9845123456"
-                                    value={riderPhone}
-                                    onChange={(e) => setRiderPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                    inputProps={{ maxLength: 10, inputMode: 'tel' }}
+                                    label="⚡ Fast OTP Verification"
+                                    sx={{ bgcolor: '#F1F5F9', color: '#334155', fontWeight: 650, fontSize: '0.75rem' }}
                                 />
-                                {!activeUser?.email && (
+                                <Chip
+                                    size="small"
+                                    label="🛡️ Zero Security Deposit"
+                                    sx={{ bgcolor: '#F0FDFA', color: '#0F766E', fontWeight: 650, fontSize: '0.75rem' }}
+                                />
+                                <Chip
+                                    size="small"
+                                    label="📄 Paperless Digital KYC"
+                                    sx={{ bgcolor: '#F8FAFC', color: '#475569', fontWeight: 650, fontSize: '0.75rem' }}
+                                />
+                            </Box>
+
+                            <Grid container spacing={2}>
+                                {/* Full Name */}
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        size="small"
+                                        label="Full Name (Lead Rider)"
+                                        placeholder="e.g. Rahul Sharma"
+                                        value={riderName}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setRiderName(val);
+                                            if (!billingName || billingName === riderName) {
+                                                setBillingName(val);
+                                            }
+                                        }}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <PersonOutlinedIcon fontSize="small" sx={{ color: '#64748B' }} />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                        helperText="As printed on Government ID / Driving License"
+                                        FormHelperTextProps={{ sx: { fontSize: '0.72rem' } }}
+                                    />
+                                </Grid>
+
+                                {/* WhatsApp Mobile */}
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        size="small"
+                                        label="WhatsApp Mobile Number"
+                                        placeholder="98765 43210"
+                                        value={riderPhone}
+                                        onChange={(e) => setRiderPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                        inputProps={{ maxLength: 10, inputMode: 'tel' }}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                        <Typography component="span" sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                                                            🇮🇳 +91
+                                                        </Typography>
+                                                    </Box>
+                                                </InputAdornment>
+                                            ),
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <WhatsAppIcon fontSize="small" sx={{ color: '#25D366' }} />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                        helperText="Voucher, PIN & pickup location sent here"
+                                        FormHelperTextProps={{ sx: { fontSize: '0.72rem' } }}
+                                    />
+                                </Grid>
+
+                                {/* Email Address */}
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         size="small"
                                         type="email"
                                         label="Email Address (Optional)"
-                                        placeholder="rahul@example.com"
+                                        placeholder="rahul.sharma@example.com"
                                         value={riderEmail}
                                         onChange={(e) => setRiderEmail(e.target.value)}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <EmailOutlinedIcon fontSize="small" sx={{ color: '#64748B' }} />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                        helperText="For GST tax invoice receipt & backup reservation copy"
+                                        FormHelperTextProps={{ sx: { fontSize: '0.72rem' } }}
                                     />
-                                )}
-                            </Stack>
-                        </Stack>
+                                </Grid>
+                            </Grid>
+
+                            {/* 1-Tap Google Login Alternative */}
+                            {!activeUser && (
+                                <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px dashed #E2E8F0' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
+                                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 500 }}>
+                                            Already have a Google account?
+                                        </Typography>
+                                        <GoogleButton
+                                            size="small"
+                                            fullWidth={false}
+                                            label="1-Tap Google Sign-In"
+                                            redirect={typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/services/bikes'}
+                                        />
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
                     </Card>
                 )}
 
@@ -962,5 +1157,194 @@ export default function CheckoutModal({
                 </Box>
             </DialogActions>
         </Shell>
-    );
+
+        {/* Dedicated OTP Verification Popup Modal */}
+        <Dialog
+            open={Boolean(otpChallenge)}
+            onClose={isSubmitting ? undefined : () => {
+                setOtpChallenge(null);
+                setOtpCode('');
+            }}
+            maxWidth="xs"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: 3,
+                    p: 1,
+                    overflowX: 'hidden',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                },
+            }}
+        >
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            bgcolor: 'rgba(13, 148, 136, 0.12)',
+                            color: '#0D9488',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <VerifiedUserIcon />
+                    </Box>
+                    <Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
+                            Verify Mobile Number
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>
+                            Quick 1-time verification
+                        </Typography>
+                    </Box>
+                </Box>
+                {!isSubmitting && (
+                    <IconButton
+                        size="small"
+                        onClick={() => {
+                            setOtpChallenge(null);
+                            setOtpCode('');
+                        }}
+                    >
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                )}
+            </DialogTitle>
+
+            <DialogContent sx={{ overflowX: 'hidden', pt: 1, pb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#334155', mb: 2 }}>
+                    We sent a 6-digit verification code to{' '}
+                    <strong style={{ color: '#0F172A' }}>
+                        +91 {otpChallenge?.masked_phone || riderPhone || 'your mobile'}
+                    </strong>
+                </Typography>
+
+                {otpChallenge?.debug_otp && (
+                    <Alert
+                        severity="info"
+                        icon={<SecurityIcon fontSize="inherit" />}
+                        sx={{
+                            mb: 2,
+                            borderRadius: 2,
+                            bgcolor: '#F0FDFA',
+                            borderColor: '#99F6E4',
+                            border: 1,
+                            '& .MuiAlert-message': { width: '100%' },
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                            <Typography variant="caption" sx={{ color: '#0F766E', fontWeight: 600 }}>
+                                Test Mode OTP: <strong>{otpChallenge.debug_otp}</strong>
+                            </Typography>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => setOtpCode(String(otpChallenge.debug_otp))}
+                                sx={{
+                                    py: 0.2,
+                                    px: 1,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 750,
+                                    borderColor: '#0D9488',
+                                    color: '#0D9488',
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                }}
+                            >
+                                Auto-fill
+                            </Button>
+                        </Box>
+                    </Alert>
+                )}
+
+                {errorMessage && (
+                    <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+                        {errorMessage}
+                    </Alert>
+                )}
+
+                <Box sx={{ my: 2 }}>
+                    <TextField
+                        fullWidth
+                        autoFocus
+                        placeholder="• • • • • •"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && otpCode.length === 6 && !isSubmitting) {
+                                e.preventDefault();
+                                handleVerifyOtpAndPay();
+                            }
+                        }}
+                        inputProps={{
+                            maxLength: 6,
+                            inputMode: 'numeric',
+                            autoComplete: 'one-time-code',
+                            style: {
+                                textAlign: 'center',
+                                fontSize: '1.75rem',
+                                fontWeight: 800,
+                                letterSpacing: '0.35em',
+                                fontFamily: 'monospace',
+                                padding: '12px 14px',
+                            },
+                        }}
+                        helperText="Enter 6-digit OTP received via SMS / WhatsApp"
+                    />
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                    <Button
+                        size="small"
+                        variant="text"
+                        disabled={resendCountdown > 0 || isSubmitting}
+                        onClick={handleResendOtp}
+                        startIcon={<RestartAltIcon fontSize="small" />}
+                        sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem' }}
+                    >
+                        {resendCountdown > 0 ? `Resend in ${resendCountdown}s` : 'Resend Code'}
+                    </Button>
+
+                    <Button
+                        size="small"
+                        variant="text"
+                        disabled={isSubmitting}
+                        onClick={() => {
+                            setOtpChallenge(null);
+                            setOtpCode('');
+                        }}
+                        sx={{ textTransform: 'none', color: '#64748B', fontSize: '0.8rem' }}
+                    >
+                        Change mobile number
+                    </Button>
+                </Box>
+            </DialogContent>
+
+            <DialogActions sx={{ px: 3, pb: 2, pt: 0 }}>
+                <Button
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    disabled={isSubmitting || otpCode.trim().length !== 6}
+                    onClick={handleVerifyOtpAndPay}
+                    startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <CheckCircleIcon />}
+                    sx={{
+                        py: 1.25,
+                        fontWeight: 800,
+                        borderRadius: 2,
+                        fontSize: '1rem',
+                        textTransform: 'none',
+                        boxShadow: '0 4px 14px rgba(13, 148, 136, 0.3)',
+                    }}
+                >
+                    {isSubmitting ? 'Verifying & Reserving…' : 'Verify & Continue to Reserve'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    </>
+);
 }

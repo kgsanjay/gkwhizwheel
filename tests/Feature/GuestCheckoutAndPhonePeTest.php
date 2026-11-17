@@ -101,6 +101,51 @@ test('existing customer triggers 6-digit OTP challenge at checkout to protect ac
         ]);
 });
 
+test('new guest with verify_phone triggers 6-digit OTP popup flow and verifies successfully', function () {
+    Notification::fake();
+
+    $response = $this->postJson('/api/v1/auth/checkout-resolve', [
+        'name' => 'Kiran Kumar',
+        'phone' => '9845998877',
+        'email' => 'kiran@example.com',
+        'verify_phone' => true,
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'status' => 'otp_required',
+            'is_new_user' => true,
+        ]);
+
+    $userId = $response->json('user_id');
+    expect($userId)->not->toBeNull();
+
+    $cachedOtp = Cache::get("checkout_otp:{$userId}");
+    expect($cachedOtp)->not->toBeNull()
+        ->and(strlen((string) $cachedOtp))->toBe(6);
+
+    $verifyRes = $this->postJson('/api/v1/auth/checkout-verify-otp', [
+        'user_id' => $userId,
+        'otp' => $cachedOtp,
+    ]);
+
+    $verifyRes->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'status' => 'authenticated',
+            'data' => [
+                'user' => [
+                    'id' => $userId,
+                    'phone' => '9845998877',
+                    'email' => 'kiran@example.com',
+                ],
+            ],
+        ]);
+
+    expect($verifyRes->json('data.token'))->not->toBeNull();
+});
+
 test('phonepe payment can be initiated for travel service bookings', function () {
     $store = Store::create([
         'name' => 'Honnavar Hub',
