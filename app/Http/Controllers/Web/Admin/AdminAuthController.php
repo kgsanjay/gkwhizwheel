@@ -8,11 +8,15 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\OtpNotification;
 use App\Services\TwoFactorService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -260,6 +264,176 @@ class AdminAuthController extends Controller
         }
 
         return redirect()->route('account.index');
+    }
+
+    /**
+     * Request an OTP for customer login via WhatsApp & Email.
+     */
+    public function requestCustomerOtp(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'login' => ['required', 'string'],
+        ]);
+
+        $input = trim((string) $validated['login']);
+        $cleanPhone = preg_replace('/[^0-9]/', '', $input);
+        if (strlen($cleanPhone) === 12 && str_starts_with($cleanPhone, '91')) {
+            $cleanPhone = substr($cleanPhone, 2);
+        } elseif (strlen($cleanPhone) === 11 && str_starts_with($cleanPhone, '0')) {
+            $cleanPhone = substr($cleanPhone, 1);
+        }
+
+        $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL) !== false;
+        $isPhone = ! empty($cleanPhone) && strlen($cleanPhone) === 10;
+
+        if (! $isEmail && ! $isPhone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please enter a valid 10-digit mobile number or email address.',
+                'errors' => [
+                    'login' => ['Please enter a valid 10-digit mobile number or email address.'],
+                ],
+            ], 422);
+        }
+
+        // Throttle OTP generation per identifier / IP
+        $throttleKey = 'customer_otp_req:' . ($isPhone ? $cleanPhone : Str::lower($input));
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return response()->json([
+                'success' => false,
+                'message' => "Too many OTP requests. Please wait {$seconds} seconds before requesting another code.",
+            ], 429);
+        }
+
+        // Search user by phone or email
+        $user = User::withTrashed()->where(function ($q) use ($isPhone, $cleanPhone, $isEmail, $input): void {
+            if ($isPhone) {
+                $q->where('phone', $cleanPhone)
+                    ->orWhere('phone', '91' . $cleanPhone)
+                    ->orWhere('phone', '+91' . $cleanPhone);
+            }
+            if ($isEmail) {
+                $q->orWhere('email', strtolower($input));
+            }
+        })->first();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'not_found' => true,
+                'message' => 'No customer account found with this mobile number or email. You can create an account in 30 seconds.',
+                'errors' => [
+                    'login' => ['No customer account found with this mobile number or email.'],
+                ],
+            ], 422);
+        }
+
+        if ($user->trashed()) {
+            $user->restore();
+        }
+
+        if ($user->status === UserStatus::BLACKLISTED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account has been suspended or deactivated.',
+            ], 403);
+        }
+
+        RateLimiter::hit($throttleKey, 300);
+
+        // Generate 6-digit OTP cached for 10 minutes
+        $otp = (string) random_int(100000, 999999);
+        Cache::put("login_otp:{$user->id}", $otp, now()->addMinutes(10));
+        Log::info("Customer Login OTP generated for user {$user->id} ({$user->phone}): {$otp}");
+
+        try {
+            $user->notify(new OtpNotification($otp));
+        } catch (\Throwable $e) {
+            Log::warning("Could not dispatch customer login OTP notification for user {$user->id}: " . $e->getMessage());
+        }
+
+        $phone = $user->phone ? preg_replace('/[^0-9]/', '', $user->phone) : null;
+        if ($phone && strlen($phone) === 12 && str_starts_with($phone, '91')) {
+            $phone = substr($phone, 2);
+        }
+        $maskedPhone = $phone && strlen($phone) >= 10
+            ? '+91 ' . substr($phone, 0, 2) . '******' . substr($phone, -2)
+            : null;
+
+        $effectiveEmail = (! empty($user->email) && ! str_ends_with($user->email, '@whizwheels.local')) ? $user->email : null;
+        $maskedEmail = null;
+        if ($effectiveEmail) {
+            $parts = explode('@', $effectiveEmail);
+            $maskedEmail = substr($parts[0], 0, 2) . '***@' . ($parts[1] ?? '');
+        }
+
+        $exposeDebugOtp = app()->environment('local', 'testing')
+            || config('app.debug')
+            || empty(config('services.whatsapp.token'))
+            || str_contains($request->getHost(), 'staging');
+
+        return response()->json([
+            'success' => true,
+            'user_id' => $user->id,
+            'masked_phone' => $maskedPhone,
+            'masked_email' => $maskedEmail,
+            'debug_otp' => $exposeDebugOtp ? $otp : null,
+            'message' => 'Verification code sent to your WhatsApp and Email.',
+        ]);
+    }
+
+    /**
+     * Verify customer OTP and log them into the web guard.
+     */
+    public function verifyCustomerOtp(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'otp' => ['required', 'string', 'size:6'],
+            'remember' => ['nullable', 'boolean'],
+        ]);
+
+        $userId = (int) $validated['user_id'];
+        $otp = trim((string) $validated['otp']);
+        $cachedOtp = Cache::get("login_otp:{$userId}");
+
+        if (! $cachedOtp || (string) $cachedOtp !== (string) $otp) {
+            Log::warning("Customer Login OTP mismatch for user {$userId}: provided={$otp}, cached=" . ($cachedOtp ?? 'null'));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired verification code. Please check your WhatsApp or Email, or click Resend Code.',
+                'errors' => [
+                    'otp' => ['Invalid or expired verification code.'],
+                ],
+            ], 422);
+        }
+
+        Cache::forget("login_otp:{$userId}");
+
+        $user = User::findOrFail($userId);
+        if ($user->status === UserStatus::BLACKLISTED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This account has been suspended or deactivated.',
+            ], 403);
+        }
+
+        Auth::guard('web')->login($user, (bool) ($validated['remember'] ?? false));
+        $request->session()->regenerate();
+
+        $intended = session()->get('url.intended');
+        $redirectUrl = ($intended && ! str_contains($intended, '/admin')) ? $intended : route('account.index');
+
+        return response()->json([
+            'success' => true,
+            'status' => 'authenticated',
+            'redirect_url' => $redirectUrl,
+            'csrf_token' => csrf_token(),
+            'message' => 'Verified and signed in successfully.',
+        ]);
     }
 
     /**

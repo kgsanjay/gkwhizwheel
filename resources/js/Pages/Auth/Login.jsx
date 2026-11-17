@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { useColorMode } from '../../theme/ColorModeContext';
 import {
@@ -80,6 +81,124 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
     const handleRegisterSubmit = (e) => {
         e.preventDefault();
         registerForm.post('/register');
+    };
+
+    // Customer OTP Login State
+    const [loginMethod, setLoginMethod] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('method') === 'otp' || params.get('tab') === 'otp') {
+                return 'otp';
+            }
+        }
+        return 'password';
+    });
+    const [otpStep, setOtpStep] = useState('input'); // 'input' | 'verify'
+    const [otpLoginInput, setOtpLoginInput] = useState('');
+    const [otpRemember, setOtpRemember] = useState(true);
+    const [otpValue, setOtpValue] = useState('');
+    const [otpData, setOtpData] = useState(null);
+    const [otpRequestLoading, setOtpRequestLoading] = useState(false);
+    const [otpVerifyLoading, setOtpVerifyLoading] = useState(false);
+    const [otpError, setOtpError] = useState(null);
+    const [otpSuccess, setOtpSuccess] = useState(null);
+    const [userNotFound, setUserNotFound] = useState(false);
+    const [resendTimer, setResendTimer] = useState(0);
+
+    // Resend countdown timer effect
+    useEffect(() => {
+        let interval = null;
+        if (otpStep === 'verify' && resendTimer > 0) {
+            interval = setInterval(() => {
+                setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
+            }, 1000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [otpStep, resendTimer]);
+
+    const handleRequestOtp = async (e) => {
+        if (e) e.preventDefault();
+        const input = (otpLoginInput || loginForm.data.login || '').trim();
+        if (!input) {
+            setOtpError('Please enter your mobile number or email address.');
+            return;
+        }
+
+        setOtpRequestLoading(true);
+        setOtpError(null);
+        setUserNotFound(false);
+
+        try {
+            const res = await axios.post('/login/otp/request', { login: input });
+            if (res.data?.success) {
+                setOtpData(res.data);
+                setOtpStep('verify');
+                setResendTimer(30);
+                if (res.data.debug_otp) {
+                    setOtpValue(res.data.debug_otp);
+                }
+            } else {
+                setOtpError(res.data?.message || 'Failed to send verification code.');
+            }
+        } catch (err) {
+            const data = err.response?.data;
+            if (data?.not_found) {
+                setUserNotFound(true);
+            }
+            setOtpError(data?.message || data?.errors?.login?.[0] || 'Failed to send verification code. Please check your number or email.');
+        } finally {
+            setOtpRequestLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async (e) => {
+        if (e) e.preventDefault();
+        if (!otpValue || otpValue.trim().length !== 6) {
+            setOtpError('Please enter the 6-digit verification code.');
+            return;
+        }
+
+        setOtpVerifyLoading(true);
+        setOtpError(null);
+
+        try {
+            const res = await axios.post('/login/otp/verify', {
+                user_id: otpData?.user_id,
+                otp: otpValue.trim(),
+                remember: otpRemember,
+            });
+
+            if (res.data?.success) {
+                setOtpSuccess('Verified! Signing in to your account...');
+                setTimeout(() => {
+                    window.location.href = res.data.redirect_url || '/account';
+                }, 400);
+            } else {
+                setOtpError(res.data?.message || 'Invalid or expired verification code.');
+            }
+        } catch (err) {
+            const data = err.response?.data;
+            setOtpError(data?.message || data?.errors?.otp?.[0] || 'Verification failed. Please check the code and try again.');
+        } finally {
+            setOtpVerifyLoading(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (resendTimer > 0 || otpRequestLoading) return;
+        await handleRequestOtp();
+    };
+
+    const handleSwitchToRegisterWithPhone = () => {
+        const clean = (otpLoginInput || loginForm.data.login || '').replace(/[^0-9]/g, '');
+        if (clean.length >= 10) {
+            registerForm.setData('phone', clean.slice(-10));
+        } else if ((otpLoginInput || loginForm.data.login || '').includes('@')) {
+            registerForm.setData('email', (otpLoginInput || loginForm.data.login || '').trim());
+        }
+        setCurrentTab(1);
     };
 
     return (
@@ -413,207 +532,642 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                         TAB 0: CUSTOMER SIGN IN
                     ========================================================================== */}
                     {currentTab === 0 && (
-                        <Box component="form" onSubmit={handleLoginSubmit} noValidate>
-                            {loginForm.errors.login && (
-                                <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2.5 }}>
-                                    {loginForm.errors.login}
-                                </Alert>
-                            )}
-
-                            <Stack spacing={2.25} sx={{ mt: 1 }}>
-                                <Box>
-                                    <Typography
-                                        component="label"
-                                        htmlFor="login"
-                                        sx={{
-                                            display: 'block',
-                                            fontSize: '0.825rem',
-                                            fontWeight: 700,
-                                            color: isDark ? '#E2E8F0' : '#1E293B',
-                                            mb: 0.75,
-                                        }}
-                                    >
-                                        Mobile Number or Email <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
-                                    </Typography>
-                                    <TextField
-                                        fullWidth
-                                        id="login"
-                                        name="login"
-                                        autoComplete="username"
-                                        autoFocus
-                                        value={loginForm.data.login}
-                                        onChange={(e) => loginForm.setData('login', e.target.value)}
-                                        error={Boolean(loginForm.errors.login)}
-                                        placeholder="e.g. 9876543210 or your@email.com"
-                                        helperText="Use the mobile number or email you booked with"
-                                        FormHelperTextProps={{
-                                            sx: {
-                                                color: isDark ? '#94A3B8' : '#64748B',
-                                                mt: 0.75,
-                                                mx: 0.5,
-                                                fontSize: '0.75rem',
-                                            },
-                                        }}
-                                        slotProps={{
-                                            input: {
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                                    </InputAdornment>
-                                                ),
-                                            },
-                                        }}
-                                    />
-                                </Box>
-
-                                <Box>
-                                    <Typography
-                                        component="label"
-                                        htmlFor="password"
-                                        sx={{
-                                            display: 'block',
-                                            fontSize: '0.825rem',
-                                            fontWeight: 700,
-                                            color: isDark ? '#E2E8F0' : '#1E293B',
-                                            mb: 0.75,
-                                        }}
-                                    >
-                                        Password <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
-                                    </Typography>
-                                    <TextField
-                                        fullWidth
-                                        name="password"
-                                        type={showLoginPassword ? 'text' : 'password'}
-                                        id="password"
-                                        autoComplete="current-password"
-                                        value={loginForm.data.password}
-                                        onChange={(e) => loginForm.setData('password', e.target.value)}
-                                        error={Boolean(loginForm.errors.password)}
-                                        helperText={loginForm.errors.password}
-                                        placeholder="••••••••"
-                                        FormHelperTextProps={{
-                                            sx: {
-                                                color: isDark ? '#F87171' : '#DC2626',
-                                                mt: 0.75,
-                                                mx: 0.5,
-                                                fontSize: '0.75rem',
-                                            },
-                                        }}
-                                        slotProps={{
-                                            input: {
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
-                                                    </InputAdornment>
-                                                ),
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <IconButton
-                                                            aria-label="toggle password visibility"
-                                                            onClick={() => setShowLoginPassword(!showLoginPassword)}
-                                                            edge="end"
-                                                            sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
-                                                        >
-                                                            {showLoginPassword ? <VisibilityOff /> : <Visibility />}
-                                                        </IconButton>
-                                                    </InputAdornment>
-                                                ),
-                                            },
-                                        }}
-                                    />
-                                </Box>
-                            </Stack>
-
+                        <Box>
+                            {/* Sub-Switch: Password Login vs OTP Login */}
                             <Box
                                 sx={{
                                     display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    mt: 1.5,
+                                    bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F1F5F9',
+                                    p: 0.5,
+                                    borderRadius: 2.5,
                                     mb: 2.5,
+                                    border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #E2E8F0',
                                 }}
                             >
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={loginForm.data.remember}
-                                            onChange={(e) => loginForm.setData('remember', e.target.checked)}
-                                            sx={{
-                                                color: isDark ? '#475569' : '#CBD5E1',
-                                                '&.Mui-checked': { color: '#F59E0B' },
-                                            }}
-                                        />
-                                    }
-                                    label={
-                                        <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.85rem' }}>
-                                            Remember me
-                                        </Typography>
-                                    }
-                                />
-
-                                <Box
-                                    component="a"
-                                    href="https://wa.me/918660989586?text=Hi%20G.K.%20WhizWheel,%20I%20need%20help%20with%20my%20customer%20account%20login"
-                                    target="_blank"
-                                    rel="noreferrer"
+                                <Button
+                                    fullWidth
+                                    size="small"
+                                    onClick={() => {
+                                        setLoginMethod('password');
+                                        setOtpError(null);
+                                    }}
+                                    startIcon={<LockOutlinedIcon sx={{ fontSize: 16 }} />}
                                     sx={{
-                                        color: '#F59E0B',
+                                        borderRadius: 2,
+                                        py: 0.8,
+                                        fontWeight: 700,
                                         fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        textDecoration: 'none',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        '&:hover': { textDecoration: 'underline' },
+                                        textTransform: 'none',
+                                        bgcolor: loginMethod === 'password' ? (isDark ? '#1E293B' : '#FFFFFF') : 'transparent',
+                                        color: loginMethod === 'password' ? '#F59E0B' : (isDark ? '#94A3B8' : '#64748B'),
+                                        boxShadow: loginMethod === 'password' ? (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.06)') : 'none',
+                                        transition: 'all 0.2s ease',
                                     }}
                                 >
-                                    <WhatsAppIcon sx={{ fontSize: 16, color: '#22C55E' }} />
-                                    Need Help?
-                                </Box>
+                                    Password Login
+                                </Button>
+                                <Button
+                                    fullWidth
+                                    size="small"
+                                    onClick={() => {
+                                        setLoginMethod('otp');
+                                        if (loginForm.data.login && !otpLoginInput) {
+                                            setOtpLoginInput(loginForm.data.login);
+                                        }
+                                        setOtpError(null);
+                                    }}
+                                    startIcon={<WhatsAppIcon sx={{ fontSize: 16, color: '#22C55E' }} />}
+                                    sx={{
+                                        borderRadius: 2,
+                                        py: 0.8,
+                                        fontWeight: 700,
+                                        fontSize: '0.85rem',
+                                        textTransform: 'none',
+                                        bgcolor: loginMethod === 'otp' ? (isDark ? '#1E293B' : '#FFFFFF') : 'transparent',
+                                        color: loginMethod === 'otp' ? '#F59E0B' : (isDark ? '#94A3B8' : '#64748B'),
+                                        boxShadow: loginMethod === 'otp' ? (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.06)') : 'none',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    WhatsApp / OTP
+                                </Button>
                             </Box>
 
-                            <Button
-                                type="submit"
-                                fullWidth
-                                variant="contained"
-                                disabled={loginForm.processing}
-                                startIcon={loginForm.processing ? <CircularProgress size={18} color="inherit" /> : <TwoWheelerIcon />}
-                                sx={{
-                                    py: 1.4,
-                                    borderRadius: 2.5,
-                                    fontWeight: 800,
-                                    fontSize: '0.95rem',
-                                    textTransform: 'none',
-                                    bgcolor: '#F59E0B',
-                                    color: '#0F172A',
-                                    boxShadow: '0 6px 18px rgba(245, 158, 11, 0.35)',
-                                    '&:hover': {
-                                        bgcolor: '#D97706',
-                                        boxShadow: '0 8px 24px rgba(245, 158, 11, 0.45)',
-                                    },
-                                }}
-                            >
-                                {loginForm.processing ? 'Signing In...' : 'Sign In to Account'}
-                            </Button>
+                            {/* ================= METHOD 1: PASSWORD LOGIN ================= */}
+                            {loginMethod === 'password' && (
+                                <Box component="form" onSubmit={handleLoginSubmit} noValidate>
+                                    {loginForm.errors.login && (
+                                        <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2.5 }}>
+                                            {loginForm.errors.login}
+                                        </Alert>
+                                    )}
 
-                            {/* Switch to Register Prompt */}
-                            <Box sx={{ textAlign: 'center', mt: 2.5 }}>
-                                <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.875rem' }}>
-                                    New to G.K. WhizWheel?{' '}
+                                    <Stack spacing={2.25} sx={{ mt: 1 }}>
+                                        <Box>
+                                            <Typography
+                                                component="label"
+                                                htmlFor="login"
+                                                sx={{
+                                                    display: 'block',
+                                                    fontSize: '0.825rem',
+                                                    fontWeight: 700,
+                                                    color: isDark ? '#E2E8F0' : '#1E293B',
+                                                    mb: 0.75,
+                                                }}
+                                            >
+                                                Mobile Number or Email <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                            </Typography>
+                                            <TextField
+                                                fullWidth
+                                                id="login"
+                                                name="login"
+                                                autoComplete="username"
+                                                autoFocus
+                                                value={loginForm.data.login}
+                                                onChange={(e) => {
+                                                    loginForm.setData('login', e.target.value);
+                                                    setOtpLoginInput(e.target.value);
+                                                }}
+                                                error={Boolean(loginForm.errors.login)}
+                                                placeholder="e.g. 9876543210 or your@email.com"
+                                                helperText="Use the mobile number or email you booked with"
+                                                FormHelperTextProps={{
+                                                    sx: {
+                                                        color: isDark ? '#94A3B8' : '#64748B',
+                                                        mt: 0.75,
+                                                        mx: 0.5,
+                                                        fontSize: '0.75rem',
+                                                    },
+                                                }}
+                                                slotProps={{
+                                                    input: {
+                                                        startAdornment: (
+                                                            <InputAdornment position="start">
+                                                                <PersonIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                            </InputAdornment>
+                                                        ),
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+
+                                        <Box>
+                                            <Typography
+                                                component="label"
+                                                htmlFor="password"
+                                                sx={{
+                                                    display: 'block',
+                                                    fontSize: '0.825rem',
+                                                    fontWeight: 700,
+                                                    color: isDark ? '#E2E8F0' : '#1E293B',
+                                                    mb: 0.75,
+                                                }}
+                                            >
+                                                Password <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                            </Typography>
+                                            <TextField
+                                                fullWidth
+                                                name="password"
+                                                type={showLoginPassword ? 'text' : 'password'}
+                                                id="password"
+                                                autoComplete="current-password"
+                                                value={loginForm.data.password}
+                                                onChange={(e) => loginForm.setData('password', e.target.value)}
+                                                error={Boolean(loginForm.errors.password)}
+                                                helperText={loginForm.errors.password}
+                                                placeholder="••••••••"
+                                                FormHelperTextProps={{
+                                                    sx: {
+                                                        color: isDark ? '#F87171' : '#DC2626',
+                                                        mt: 0.75,
+                                                        mx: 0.5,
+                                                        fontSize: '0.75rem',
+                                                    },
+                                                }}
+                                                slotProps={{
+                                                    input: {
+                                                        startAdornment: (
+                                                            <InputAdornment position="start">
+                                                                <LockOutlinedIcon sx={{ color: isDark ? '#64748B' : '#94A3B8' }} />
+                                                            </InputAdornment>
+                                                        ),
+                                                        endAdornment: (
+                                                            <InputAdornment position="end">
+                                                                <IconButton
+                                                                    aria-label="toggle password visibility"
+                                                                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                                                                    edge="end"
+                                                                    sx={{ color: isDark ? '#94A3B8' : '#64748B' }}
+                                                                >
+                                                                    {showLoginPassword ? <VisibilityOff /> : <Visibility />}
+                                                                </IconButton>
+                                                            </InputAdornment>
+                                                        ),
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+                                    </Stack>
+
                                     <Box
-                                        component="span"
-                                        onClick={() => setCurrentTab(1)}
                                         sx={{
-                                            color: '#F59E0B',
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                            '&:hover': { textDecoration: 'underline' },
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            mt: 1.5,
+                                            mb: 2.5,
                                         }}
                                     >
-                                        Create an account in 30 seconds
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={loginForm.data.remember}
+                                                    onChange={(e) => loginForm.setData('remember', e.target.checked)}
+                                                    sx={{
+                                                        color: isDark ? '#475569' : '#CBD5E1',
+                                                        '&.Mui-checked': { color: '#F59E0B' },
+                                                    }}
+                                                />
+                                            }
+                                            label={
+                                                <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.85rem' }}>
+                                                    Remember me
+                                                </Typography>
+                                            }
+                                        />
+
+                                        <Box
+                                            component="a"
+                                            href="https://wa.me/918660989586?text=Hi%20G.K.%20WhizWheel,%20I%20need%20help%20with%20my%20customer%20account%20login"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            sx={{
+                                                color: '#F59E0B',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                textDecoration: 'none',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 0.5,
+                                                '&:hover': { textDecoration: 'underline' },
+                                            }}
+                                        >
+                                            <WhatsAppIcon sx={{ fontSize: 16, color: '#22C55E' }} />
+                                            Need Help?
+                                        </Box>
                                     </Box>
-                                </Typography>
-                            </Box>
+
+                                    <Button
+                                        type="submit"
+                                        fullWidth
+                                        variant="contained"
+                                        disabled={loginForm.processing}
+                                        startIcon={loginForm.processing ? <CircularProgress size={18} color="inherit" /> : <TwoWheelerIcon />}
+                                        sx={{
+                                            py: 1.4,
+                                            borderRadius: 2.5,
+                                            fontWeight: 800,
+                                            fontSize: '0.95rem',
+                                            textTransform: 'none',
+                                            bgcolor: '#F59E0B',
+                                            color: '#0F172A',
+                                            boxShadow: '0 6px 18px rgba(245, 158, 11, 0.35)',
+                                            '&:hover': {
+                                                bgcolor: '#D97706',
+                                                boxShadow: '0 8px 24px rgba(245, 158, 11, 0.45)',
+                                            },
+                                        }}
+                                    >
+                                        {loginForm.processing ? 'Signing In...' : 'Sign In to Account'}
+                                    </Button>
+
+                                    {/* Switch to Register Prompt */}
+                                    <Box sx={{ textAlign: 'center', mt: 2.5 }}>
+                                        <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.875rem' }}>
+                                            New to G.K. WhizWheel?{' '}
+                                            <Box
+                                                component="span"
+                                                onClick={() => setCurrentTab(1)}
+                                                sx={{
+                                                    color: '#F59E0B',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    '&:hover': { textDecoration: 'underline' },
+                                                }}
+                                            >
+                                                Create an account in 30 seconds
+                                            </Box>
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* ================= METHOD 2: OTP / WHATSAPP LOGIN ================= */}
+                            {loginMethod === 'otp' && otpStep === 'input' && (
+                                <Box component="form" onSubmit={handleRequestOtp} noValidate>
+                                    {otpError && (
+                                        <Alert
+                                            severity={userNotFound ? 'info' : 'error'}
+                                            sx={{ mb: 2.5, borderRadius: 2.5 }}
+                                            action={
+                                                userNotFound ? (
+                                                    <Button
+                                                        size="small"
+                                                        color="inherit"
+                                                        onClick={handleSwitchToRegisterWithPhone}
+                                                        sx={{ fontWeight: 700, textTransform: 'none' }}
+                                                    >
+                                                        Sign Up Now →
+                                                    </Button>
+                                                ) : null
+                                            }
+                                        >
+                                            {otpError}
+                                        </Alert>
+                                    )}
+
+                                    <Stack spacing={2.25} sx={{ mt: 1 }}>
+                                        <Box>
+                                            <Typography
+                                                component="label"
+                                                htmlFor="otp-login-input"
+                                                sx={{
+                                                    display: 'block',
+                                                    fontSize: '0.825rem',
+                                                    fontWeight: 700,
+                                                    color: isDark ? '#E2E8F0' : '#1E293B',
+                                                    mb: 0.75,
+                                                }}
+                                            >
+                                                Mobile Number or Email <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                            </Typography>
+                                            <TextField
+                                                fullWidth
+                                                id="otp-login-input"
+                                                name="otp-login-input"
+                                                autoComplete="tel"
+                                                autoFocus
+                                                value={otpLoginInput}
+                                                onChange={(e) => {
+                                                    setOtpLoginInput(e.target.value);
+                                                    setOtpError(null);
+                                                    setUserNotFound(false);
+                                                }}
+                                                placeholder="e.g. 9876543210 or your@email.com"
+                                                helperText="We'll send a 6-digit verification code to your WhatsApp and Email"
+                                                FormHelperTextProps={{
+                                                    sx: {
+                                                        color: isDark ? '#94A3B8' : '#64748B',
+                                                        mt: 0.75,
+                                                        mx: 0.5,
+                                                        fontSize: '0.75rem',
+                                                    },
+                                                }}
+                                                slotProps={{
+                                                    input: {
+                                                        startAdornment: (
+                                                            <InputAdornment position="start">
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                                                    <WhatsAppIcon sx={{ color: '#22C55E', fontSize: 18 }} />
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        sx={{
+                                                                            fontWeight: 700,
+                                                                            color: isDark ? '#CBD5E1' : '#475569',
+                                                                            fontSize: '0.85rem',
+                                                                        }}
+                                                                    >
+                                                                        +91
+                                                                    </Typography>
+                                                                </Box>
+                                                            </InputAdornment>
+                                                        ),
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+                                    </Stack>
+
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            mt: 1.5,
+                                            mb: 2.5,
+                                        }}
+                                    >
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={otpRemember}
+                                                    onChange={(e) => setOtpRemember(e.target.checked)}
+                                                    sx={{
+                                                        color: isDark ? '#475569' : '#CBD5E1',
+                                                        '&.Mui-checked': { color: '#F59E0B' },
+                                                    }}
+                                                />
+                                            }
+                                            label={
+                                                <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.85rem' }}>
+                                                    Remember me
+                                                </Typography>
+                                            }
+                                        />
+
+                                        <Box
+                                            component="a"
+                                            href="https://wa.me/918660989586?text=Hi%20G.K.%20WhizWheel,%20I%20need%20help%20with%20my%20customer%20account%20login"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            sx={{
+                                                color: '#F59E0B',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                textDecoration: 'none',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 0.5,
+                                                '&:hover': { textDecoration: 'underline' },
+                                            }}
+                                        >
+                                            <WhatsAppIcon sx={{ fontSize: 16, color: '#22C55E' }} />
+                                            Need Help?
+                                        </Box>
+                                    </Box>
+
+                                    <Button
+                                        type="submit"
+                                        fullWidth
+                                        variant="contained"
+                                        disabled={otpRequestLoading || !otpLoginInput.trim()}
+                                        startIcon={otpRequestLoading ? <CircularProgress size={18} color="inherit" /> : <WhatsAppIcon sx={{ color: '#0F172A' }} />}
+                                        sx={{
+                                            py: 1.4,
+                                            borderRadius: 2.5,
+                                            fontWeight: 800,
+                                            fontSize: '0.95rem',
+                                            textTransform: 'none',
+                                            bgcolor: '#F59E0B',
+                                            color: '#0F172A',
+                                            boxShadow: '0 6px 18px rgba(245, 158, 11, 0.35)',
+                                            '&:hover': {
+                                                bgcolor: '#D97706',
+                                                boxShadow: '0 8px 24px rgba(245, 158, 11, 0.45)',
+                                            },
+                                        }}
+                                    >
+                                        {otpRequestLoading ? 'Sending Verification Code...' : 'Get OTP via WhatsApp & Email'}
+                                    </Button>
+
+                                    {/* Switch to Register Prompt */}
+                                    <Box sx={{ textAlign: 'center', mt: 2.5 }}>
+                                        <Typography variant="body2" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: '0.875rem' }}>
+                                            New to G.K. WhizWheel?{' '}
+                                            <Box
+                                                component="span"
+                                                onClick={() => setCurrentTab(1)}
+                                                sx={{
+                                                    color: '#F59E0B',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    '&:hover': { textDecoration: 'underline' },
+                                                }}
+                                            >
+                                                Create an account in 30 seconds
+                                            </Box>
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* ================= METHOD 2 (STEP 2): VERIFY OTP ================= */}
+                            {loginMethod === 'otp' && otpStep === 'verify' && (
+                                <Box component="form" onSubmit={handleVerifyOtp} noValidate>
+                                    {otpError && (
+                                        <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2.5 }}>
+                                            {otpError}
+                                        </Alert>
+                                    )}
+
+                                    {otpSuccess && (
+                                        <Alert severity="success" sx={{ mb: 2.5, borderRadius: 2.5 }}>
+                                            {otpSuccess}
+                                        </Alert>
+                                    )}
+
+                                    {/* Delivery badges: WhatsApp & Email */}
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            mb: 2.5,
+                                            borderRadius: 2.5,
+                                            bgcolor: isDark ? 'rgba(30, 41, 59, 0.6)' : '#F8FAFC',
+                                            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #E2E8F0',
+                                        }}
+                                    >
+                                        <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', fontWeight: 600, display: 'block', mb: 1 }}>
+                                            VERIFICATION CODE SENT TO:
+                                        </Typography>
+
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {otpData?.masked_phone && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <WhatsAppIcon sx={{ fontSize: 18, color: '#22C55E' }} />
+                                                    <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#1E293B' }}>
+                                                        WhatsApp: <Box component="span" sx={{ color: '#22C55E' }}>{otpData.masked_phone}</Box>
+                                                    </Typography>
+                                                </Box>
+                                            )}
+
+                                            {otpData?.masked_email && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <EmailIcon sx={{ fontSize: 18, color: '#3B82F6' }} />
+                                                    <Typography variant="body2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#1E293B' }}>
+                                                        Email: <Box component="span" sx={{ color: '#3B82F6' }}>{otpData.masked_email}</Box>
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    </Box>
+
+                                    {/* Staging / Test OTP Auto-Fill Chip */}
+                                    {otpData?.debug_otp && (
+                                        <Box sx={{ mb: 2, textAlign: 'center' }}>
+                                            <Box
+                                                onClick={() => setOtpValue(otpData.debug_otp)}
+                                                sx={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 1,
+                                                    py: 0.6,
+                                                    px: 1.5,
+                                                    borderRadius: 99,
+                                                    bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
+                                                    border: '1px dashed #F59E0B',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgba(245, 158, 11, 0.25)',
+                                                    },
+                                                }}
+                                            >
+                                                <Typography variant="caption" sx={{ fontWeight: 700, color: '#F59E0B' }}>
+                                                    Staging Test Code: <strong>{otpData.debug_otp}</strong> (Click to Auto-Fill)
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    {/* 6-digit OTP Field */}
+                                    <Box sx={{ mb: 2.5 }}>
+                                        <Typography
+                                            component="label"
+                                            htmlFor="otp-code-input"
+                                            sx={{
+                                                display: 'block',
+                                                fontSize: '0.825rem',
+                                                fontWeight: 700,
+                                                color: isDark ? '#E2E8F0' : '#1E293B',
+                                                mb: 0.75,
+                                            }}
+                                        >
+                                            Enter 6-Digit Code <Box component="span" sx={{ color: '#EF4444' }}>*</Box>
+                                        </Typography>
+                                        <TextField
+                                            fullWidth
+                                            id="otp-code-input"
+                                            name="otp-code-input"
+                                            autoFocus
+                                            value={otpValue}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                                                setOtpValue(val);
+                                                setOtpError(null);
+                                            }}
+                                            placeholder="• • • • • •"
+                                            slotProps={{
+                                                input: {
+                                                    sx: {
+                                                        fontSize: '1.4rem',
+                                                        fontWeight: 800,
+                                                        letterSpacing: '0.35em',
+                                                        textAlign: 'center',
+                                                        input: { textAlign: 'center' },
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    </Box>
+
+                                    <Button
+                                        type="submit"
+                                        fullWidth
+                                        variant="contained"
+                                        disabled={otpVerifyLoading || otpValue.length !== 6}
+                                        startIcon={otpVerifyLoading ? <CircularProgress size={18} color="inherit" /> : <TwoWheelerIcon />}
+                                        sx={{
+                                            py: 1.4,
+                                            borderRadius: 2.5,
+                                            fontWeight: 800,
+                                            fontSize: '0.95rem',
+                                            textTransform: 'none',
+                                            bgcolor: '#F59E0B',
+                                            color: '#0F172A',
+                                            boxShadow: '0 6px 18px rgba(245, 158, 11, 0.35)',
+                                            '&:hover': {
+                                                bgcolor: '#D97706',
+                                                boxShadow: '0 8px 24px rgba(245, 158, 11, 0.45)',
+                                            },
+                                        }}
+                                    >
+                                        {otpVerifyLoading ? 'Verifying...' : 'Verify & Sign In'}
+                                    </Button>
+
+                                    {/* Resend and Back Actions */}
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            mt: 2.5,
+                                        }}
+                                    >
+                                        <Button
+                                            size="small"
+                                            onClick={() => {
+                                                setOtpStep('input');
+                                                setOtpValue('');
+                                                setOtpError(null);
+                                            }}
+                                            startIcon={<ArrowBackIcon sx={{ fontSize: 14 }} />}
+                                            sx={{
+                                                color: isDark ? '#94A3B8' : '#64748B',
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                fontSize: '0.825rem',
+                                            }}
+                                        >
+                                            Change Number
+                                        </Button>
+
+                                        <Button
+                                            size="small"
+                                            disabled={resendTimer > 0 || otpRequestLoading}
+                                            onClick={handleResendOtp}
+                                            startIcon={<WhatsAppIcon sx={{ fontSize: 14, color: resendTimer > 0 ? '#94A3B8' : '#22C55E' }} />}
+                                            sx={{
+                                                color: resendTimer > 0 ? (isDark ? '#64748B' : '#94A3B8') : '#F59E0B',
+                                                textTransform: 'none',
+                                                fontWeight: 700,
+                                                fontSize: '0.825rem',
+                                            }}
+                                        >
+                                            {resendTimer > 0 ? `Resend Code (${resendTimer}s)` : 'Resend Code'}
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
                     )}
 

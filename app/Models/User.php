@@ -74,6 +74,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the name of the "remember me" token column.
+     * Disabled as users schema does not have a remember_token column.
+     */
+    public function getRememberTokenName(): string
+    {
+        return '';
+    }
+
+    /**
      * Customer bookings.
      */
     public function bookings(): HasMany

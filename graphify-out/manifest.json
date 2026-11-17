@@ -366,9 +366,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminAuthController.php": {
-    "mtime": 1794836134.7452333,
-    "seen": 1794837172.562312,
-    "ast_hash": "41fdd662c1d4241ccc7be42db8c2f9c6",
+    "mtime": 1794936778.6253996,
+    "seen": 1794937198.912071,
+    "ast_hash": "f7042984e9c090ec439df474d0ca9f42",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminBikeModelWebController.php": {
@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   "app/Models/User.php": {
-    "mtime": 1794836134.7988355,
-    "seen": 1794837172.562399,
-    "ast_hash": "5c7c8134e3b87539efdc4b11eb0c773d",
+    "mtime": 1794936879.7320938,
+    "seen": 1794937198.9121711,
+    "ast_hash": "5eacb9ce70cf1d8926f9688cbdbae9b7",
     "semantic_hash": ""
   },
   "app/Notifications/BikeDocumentExpiryAlertNotification.php": {
@@ -1554,9 +1554,9 @@
     "semantic_hash": ""
   },
   "bootstrap/app.php": {
-    "mtime": 1794936041.6341867,
-    "seen": 1794936280.187989,
-    "ast_hash": "be7a5176336d59893a6f0bea7859534b",
+    "mtime": 1794936715.2895894,
+    "seen": 1794937198.912212,
+    "ast_hash": "3aaf65f314cdb753a04645171f85576d",
     "semantic_hash": ""
   },
   "bootstrap/providers.php": {
@@ -2580,9 +2580,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Auth/Login.jsx": {
-    "mtime": 1794715526.044725,
-    "seen": 1794723023.071218,
-    "ast_hash": "8c686d2d8af81ed40a28f864220daf70",
+    "mtime": 1794937135.1216545,
+    "seen": 1794937198.912371,
+    "ast_hash": "4731b14ae62c052d04fbccd0f6dd8818",
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/BranchLanding.jsx": {
@@ -2832,9 +2832,9 @@
     "semantic_hash": ""
   },
   "routes/web.php": {
-    "mtime": 1794836983.5248768,
-    "seen": 1794837172.562568,
-    "ast_hash": "a40173645f537f3be101352c07c74083",
+    "mtime": 1794936724.8583229,
+    "seen": 1794937198.912402,
+    "ast_hash": "0b209aa28605acf7f25af94b6b89ba7c",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -4641,6 +4641,12 @@
     "mtime": 1794796463.1210883,
     "seen": 1794797127.3656461,
     "ast_hash": "b12398ebcb216cb44e3dac7373909176",
+    "semantic_hash": ""
+  },
+  "tests/Feature/CustomerOtpLoginTest.php": {
+    "mtime": 1794936797.4918747,
+    "seen": 1794937198.9124548,
+    "ast_hash": "bb0cb46e222a7a577784e7b7cd6ca4cd",
     "semantic_hash": ""
   },
   "package-lock.json": {

@@ -296,6 +296,8 @@ Route::get('/account/kyc/{id}/download', [\App\Http\Controllers\Api\V1\Customer\
 // Authentication
 Route::get('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('login');
 Route::post('/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeCustomer'])->middleware('throttle:auth')->name('login.store');
+Route::post('/login/otp/request', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'requestCustomerOtp'])->middleware('throttle:auth')->name('login.otp.request');
+Route::post('/login/otp/verify', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'verifyCustomerOtp'])->middleware('throttle:auth')->name('login.otp.verify');
 Route::get('/signup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister'])->name('register');
 Route::get('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister']);
 Route::post('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeRegister'])->middleware('throttle:auth')->name('register.store');
