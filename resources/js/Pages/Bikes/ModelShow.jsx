@@ -57,6 +57,30 @@ function formatLabel(val) {
         .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function FieldLabel({ children, required = false, isDark = false }) {
+    return (
+        <Typography
+            component="label"
+            variant="caption"
+            sx={{
+                display: 'block',
+                fontWeight: 750,
+                fontSize: '0.75rem',
+                color: isDark ? '#CBD5E1' : '#334155',
+                mb: 0.6,
+                letterSpacing: '0.01em',
+            }}
+        >
+            {children}
+            {required && (
+                <Box component="span" sx={{ color: '#EF4444', ml: 0.35 }}>
+                    *
+                </Box>
+            )}
+        </Typography>
+    );
+}
+
 export default function ModelShow({ model, stores = [], initialFilters = {} }) {
     const { mode } = useColorMode();
     const isDark = mode === 'dark';
@@ -143,6 +167,13 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
         }
     };
 
+    const activePreset = useMemo(() => {
+        if (startDate === getIstDate(0) && endDate === getIstDate(1) && pickupTime === '09:00' && returnTime === '08:00') return '23h';
+        if (startDate === getIstDate(0) && endDate === getIstDate(2) && pickupTime === '09:00' && returnTime === '08:00') return '48h';
+        if (startDate === getIstDate(0) && endDate === getIstDate(3) && pickupTime === '08:00' && returnTime === '19:00') return '3d';
+        return null;
+    }, [startDate, endDate, pickupTime, returnTime]);
+
     const rentalSlot = useMemo(
         () => computeRentalSlot(startDate, endDate, pickupTime, returnTime),
         [startDate, endDate, pickupTime, returnTime]
@@ -217,12 +248,23 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                         ? `${availability.available_units} unit${availability.available_units === 1 ? '' : 's'} available for your selected slot`
                         : 'No units available for these dates. Try different dates or branch.';
 
-    const surfaceBg = isDark ? 'rgba(15, 23, 42, 0.85)' : '#FFFFFF';
+    const surfaceBg = isDark ? 'rgba(15, 23, 42, 0.9)' : '#FFFFFF';
     const subtleBg = isDark ? 'rgba(11, 17, 32, 0.65)' : '#F8FAFC';
-    const borderCol = isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0';
+    const borderCol = isDark ? 'rgba(255, 255, 255, 0.09)' : '#E2E8F0';
+    const accentText = isDark ? '#FBBF24' : '#B45309';
+    const priceText = isDark ? '#FBBF24' : '#D97706';
     const liveUnitsBadge = datesValid && !isLoading && availability
         ? availability.available_units
         : (model.available_units_now ?? model.total_units);
+
+    const inputSx = {
+        '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+            bgcolor: isDark ? 'rgba(15, 23, 42, 0.75)' : '#FFFFFF',
+            fontSize: '0.88rem',
+            fontWeight: 600,
+        },
+    };
 
     return (
         <AppLayout>
@@ -268,14 +310,14 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
             <Box
                 component="main"
                 sx={{
-                    maxWidth: 1360,
+                    maxWidth: 1320,
                     mx: 'auto',
                     px: { xs: 2, md: 4 },
-                    pt: { xs: 2.5, md: 4 },
+                    pt: { xs: 2.5, md: 3.5 },
                     pb: { xs: 12, md: 6 },
                 }}
             >
-                {/* Breadcrumb & Back */}
+                {/* Top Navigation Bar */}
                 <Box
                     sx={{
                         display: 'flex',
@@ -291,15 +333,15 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                         href="/services/bikes"
                         startIcon={<ArrowBackIcon />}
                         size="small"
-                        sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
+                        sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2, color: 'text.primary' }}
                     >
                         Back to bike rentals
                     </Button>
                     <Breadcrumbs aria-label="breadcrumb" sx={{ fontSize: '0.82rem' }}>
-                        <Link href="/" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.75 }}>
+                        <Link href="/" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.72 }}>
                             Home
                         </Link>
-                        <Link href="/services/bikes" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.75 }}>
+                        <Link href="/services/bikes" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.72 }}>
                             Bike Rentals
                         </Link>
                         <Typography variant="body2" fontWeight={700} color="text.primary">
@@ -308,9 +350,9 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                     </Breadcrumbs>
                 </Box>
 
-                <Grid container spacing={4} alignItems="flex-start">
+                <Grid container spacing={3.5} alignItems="flex-start">
                     {/* LEFT COLUMN: Vehicle Showcase, Specs & Trust Highlights */}
-                    <Grid size={{ xs: 12, md: 7 }}>
+                    <Grid size={{ xs: 12, lg: 7 }}>
                         <Card
                             variant="outlined"
                             sx={{
@@ -320,31 +362,35 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                 borderColor: borderCol,
                                 boxShadow: isDark
                                     ? '0 18px 40px rgba(0, 0, 0, 0.35)'
-                                    : '0 12px 32px rgba(15, 23, 42, 0.06)',
+                                    : '0 10px 30px rgba(15, 23, 42, 0.06)',
                             }}
                         >
-                            {/* Showcase Image Container */}
+                            {/* Full-Bleed Vehicle Stage */}
                             <Box
                                 sx={{
                                     position: 'relative',
-                                    background: isDark
-                                        ? 'radial-gradient(circle at 50% 35%, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.95) 75%)'
-                                        : 'radial-gradient(circle at 50% 35%, rgba(245, 158, 11, 0.12), #F8FAFC 75%)',
-                                    minHeight: { xs: 240, sm: 340 },
-                                    display: 'grid',
-                                    placeItems: 'center',
-                                    p: { xs: 2.5, sm: 4 },
+                                    width: '100%',
+                                    aspectRatio: { xs: '16 / 11', sm: '16 / 10' },
+                                    maxHeight: 430,
+                                    bgcolor: isDark ? '#1E293B' : '#DFE3E8',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                 }}
                             >
+                                {/* Top Floating Badges inside safe padding */}
                                 <Box
                                     sx={{
                                         position: 'absolute',
                                         top: 16,
                                         left: 16,
                                         right: 16,
+                                        zIndex: 2,
                                         display: 'flex',
                                         flexWrap: 'wrap',
                                         justifyContent: 'space-between',
+                                        alignItems: 'center',
                                         gap: 1,
                                     }}
                                 >
@@ -354,8 +400,9 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                         sx={{
                                             fontWeight: 800,
                                             bgcolor: isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.94)',
-                                            border: 1,
-                                            borderColor: borderCol,
+                                            color: isDark ? '#F8FAFC' : '#0F172A',
+                                            backdropFilter: 'blur(8px)',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                                         }}
                                     />
                                     <Chip
@@ -365,8 +412,12 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                                 : 'Currently Booked Out'
                                         }
                                         size="small"
-                                        color={liveUnitsBadge > 0 ? 'success' : 'error'}
-                                        sx={{ fontWeight: 800 }}
+                                        sx={{
+                                            fontWeight: 800,
+                                            bgcolor: liveUnitsBadge > 0 ? '#059669' : '#DC2626',
+                                            color: '#FFFFFF',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                                        }}
                                     />
                                 </Box>
 
@@ -377,9 +428,10 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                         src={model.primary_image_url}
                                         sx={{
                                             width: '100%',
-                                            maxHeight: 380,
-                                            objectFit: 'contain',
-                                            filter: 'drop-shadow(0 14px 24px rgba(15, 23, 42, 0.22))',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            objectPosition: 'center',
+                                            display: 'block',
                                         }}
                                     />
                                 ) : (
@@ -395,35 +447,68 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                     sx={{
                                         display: 'flex',
                                         flexWrap: 'wrap',
-                                        alignItems: 'baseline',
+                                        alignItems: 'flex-start',
                                         justifyContent: 'space-between',
-                                        gap: 1.5,
+                                        gap: 2,
                                         mb: 2,
                                     }}
                                 >
                                     <Box>
-                                        <Typography variant="overline" sx={{ color: '#F59E0B', fontWeight: 800, letterSpacing: '0.08em' }}>
+                                        <Typography
+                                            variant="overline"
+                                            sx={{
+                                                color: accentText,
+                                                fontWeight: 850,
+                                                letterSpacing: '0.09em',
+                                                display: 'block',
+                                                lineHeight: 1.4,
+                                            }}
+                                        >
                                             {model.brand} · {model.category_name || 'Two-Wheeler'}
                                         </Typography>
                                         <Typography
                                             component="h1"
                                             variant="h3"
-                                            sx={{ fontWeight: 900, fontSize: { xs: '1.75rem', sm: '2.25rem' }, lineHeight: 1.15 }}
+                                            sx={{
+                                                fontWeight: 900,
+                                                fontSize: { xs: '1.75rem', sm: '2.15rem' },
+                                                lineHeight: 1.15,
+                                                mt: 0.25,
+                                            }}
                                         >
                                             {model.brand} {model.name}
                                         </Typography>
                                     </Box>
+
                                     {weekdayRate !== null && (
-                                        <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-                                            <Typography variant="h4" fontWeight={900} sx={{ color: '#F59E0B', lineHeight: 1 }}>
+                                        <Box
+                                            sx={{
+                                                textAlign: { xs: 'left', sm: 'right' },
+                                                px: 2,
+                                                py: 1,
+                                                borderRadius: 2.5,
+                                                bgcolor: isDark ? 'rgba(245, 158, 11, 0.12)' : '#FFFBEB',
+                                                border: 1,
+                                                borderColor: isDark ? 'rgba(245, 158, 11, 0.28)' : '#FDE68A',
+                                            }}
+                                        >
+                                            <Typography variant="h5" fontWeight={900} sx={{ color: priceText, lineHeight: 1.1 }}>
                                                 ₹{Number(weekdayRate).toLocaleString('en-IN')}
-                                                <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 0.5, fontWeight: 600 }}>
+                                                <Typography
+                                                    component="span"
+                                                    variant="caption"
+                                                    sx={{ ml: 0.5, fontWeight: 700, color: 'text.secondary' }}
+                                                >
                                                     / 23 hr
                                                 </Typography>
                                             </Typography>
                                             {weekendRate !== null && weekendRate !== weekdayRate && (
-                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                                                    Weekend rate: ₹{Number(weekendRate).toLocaleString('en-IN')} / day
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    sx={{ display: 'block', mt: 0.25, fontWeight: 600 }}
+                                                >
+                                                    Weekend: ₹{Number(weekendRate).toLocaleString('en-IN')}/day
                                                 </Typography>
                                             )}
                                         </Box>
@@ -470,7 +555,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                     />
                                 </Box>
 
-                                <Typography color="text.secondary" sx={{ lineHeight: 1.7, mb: 3 }}>
+                                <Typography color="text.secondary" sx={{ lineHeight: 1.7, mb: 3, fontSize: '0.95rem' }}>
                                     {description}
                                 </Typography>
 
@@ -478,87 +563,78 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
 
                                 {/* Included Benefits Strip */}
                                 <Grid container spacing={2}>
-                                    <Grid size={{ xs: 12, sm: 4 }}>
-                                        <Paper
-                                            elevation={0}
-                                            sx={{
-                                                p: 2,
-                                                height: '100%',
-                                                borderRadius: 2.5,
-                                                bgcolor: subtleBg,
-                                                border: 1,
-                                                borderColor: borderCol,
-                                            }}
-                                        >
-                                            <QrCode2Icon sx={{ color: '#F59E0B', mb: 0.75 }} />
-                                            <Typography variant="subtitle2" fontWeight={800}>
-                                                Express QR Handover
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Show your confirmation QR at the hub for instant key & helmet pickup.
-                                            </Typography>
-                                        </Paper>
-                                    </Grid>
-                                    <Grid size={{ xs: 12, sm: 4 }}>
-                                        <Paper
-                                            elevation={0}
-                                            sx={{
-                                                p: 2,
-                                                height: '100%',
-                                                borderRadius: 2.5,
-                                                bgcolor: subtleBg,
-                                                border: 1,
-                                                borderColor: borderCol,
-                                            }}
-                                        >
-                                            <VerifiedUserIcon sx={{ color: '#10B981', mb: 0.75 }} />
-                                            <Typography variant="subtitle2" fontWeight={800}>
-                                                Road-Ready Fleet
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Active RC, Insurance & PUC verified before every handover.
-                                            </Typography>
-                                        </Paper>
-                                    </Grid>
-                                    <Grid size={{ xs: 12, sm: 4 }}>
-                                        <Paper
-                                            elevation={0}
-                                            sx={{
-                                                p: 2,
-                                                height: '100%',
-                                                borderRadius: 2.5,
-                                                bgcolor: subtleBg,
-                                                border: 1,
-                                                borderColor: borderCol,
-                                            }}
-                                        >
-                                            <CheckCircleIcon sx={{ color: '#38BDF8', mb: 0.75 }} />
-                                            <Typography variant="subtitle2" fontWeight={800}>
-                                                Book with ₹100 Advance
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Reserve your vehicle online now and pay the balance before pickup.
-                                            </Typography>
-                                        </Paper>
-                                    </Grid>
+                                    {[
+                                        {
+                                            icon: <QrCode2Icon sx={{ fontSize: 20, color: priceText }} />,
+                                            bg: isDark ? 'rgba(245, 158, 11, 0.14)' : '#FEF3C7',
+                                            title: 'Express QR Handover',
+                                            desc: 'Show your confirmation QR at the hub for instant key & helmet pickup.',
+                                        },
+                                        {
+                                            icon: <VerifiedUserIcon sx={{ fontSize: 20, color: '#059669' }} />,
+                                            bg: isDark ? 'rgba(16, 185, 129, 0.14)' : '#D1FAE5',
+                                            title: 'Road-Ready Fleet',
+                                            desc: 'Active RC, Insurance & PUC verified before every handover.',
+                                        },
+                                        {
+                                            icon: <CheckCircleIcon sx={{ fontSize: 20, color: '#0284C7' }} />,
+                                            bg: isDark ? 'rgba(14, 165, 233, 0.14)' : '#E0F2FE',
+                                            title: 'Book with ₹100 Advance',
+                                            desc: 'Lock your bike online now and settle the balance before pickup.',
+                                        },
+                                    ].map((item) => (
+                                        <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: 2,
+                                                    height: '100%',
+                                                    borderRadius: 2.5,
+                                                    bgcolor: subtleBg,
+                                                    border: 1,
+                                                    borderColor: borderCol,
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        width: 36,
+                                                        height: 36,
+                                                        borderRadius: 2,
+                                                        bgcolor: item.bg,
+                                                        display: 'grid',
+                                                        placeItems: 'center',
+                                                        mb: 1.25,
+                                                    }}
+                                                >
+                                                    {item.icon}
+                                                </Box>
+                                                <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.4 }}>
+                                                    {item.title}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block' }}>
+                                                    {item.desc}
+                                                </Typography>
+                                            </Paper>
+                                        </Grid>
+                                    ))}
                                 </Grid>
 
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2.5 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2.5, lineHeight: 1.5 }}>
                                     Exact rental breakdown (including 18% GST and any inter-branch or doorstep delivery charges) is calculated on the next step before payment.
                                 </Typography>
                             </CardContent>
                         </Card>
                     </Grid>
 
-                    {/* RIGHT COLUMN: Enhanced Availability & Trip Time Booking Form */}
-                    <Grid size={{ xs: 12, md: 5 }}>
+                    {/* RIGHT COLUMN: Clean Grouped Booking Form */}
+                    <Grid size={{ xs: 12, lg: 5 }}>
                         <Card
                             id="availability-booking-card"
                             variant="outlined"
                             sx={{
                                 borderRadius: 4,
-                                position: { md: 'sticky' },
-                                top: { md: 92 },
+                                position: { lg: 'sticky' },
+                                top: { lg: 92 },
                                 bgcolor: surfaceBg,
                                 borderColor: borderCol,
                                 boxShadow: isDark
@@ -567,7 +643,8 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                             }}
                         >
                             <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.75 }}>
+                                {/* Card Header */}
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                     <Typography variant="h5" fontWeight={900}>
                                         Configure Your Trip
                                     </Typography>
@@ -576,200 +653,52 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                         size="small"
                                         sx={{
                                             fontWeight: 800,
-                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.16)' : 'rgba(245, 158, 11, 0.14)',
-                                            color: '#D97706',
+                                            bgcolor: isDark ? 'rgba(245, 158, 11, 0.16)' : '#FEF3C7',
+                                            color: accentText,
+                                            border: 1,
+                                            borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A',
                                         }}
                                     />
                                 </Box>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                                     Choose pickup/return hubs, dates, and exact times to check live availability.
                                 </Typography>
 
-                                <Stack spacing={2.25}>
+                                <Stack spacing={2}>
                                     {/* Quick Presets */}
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75 }}>
                                         <Typography variant="caption" fontWeight={750} color="text.secondary" sx={{ mr: 0.5 }}>
                                             Quick slots:
                                         </Typography>
-                                        <Chip
-                                            label="23h Day Trip"
-                                            size="small"
-                                            variant="outlined"
-                                            clickable
-                                            onClick={() => handlePreset('23h')}
-                                            sx={{ fontWeight: 700, fontSize: '0.73rem' }}
-                                        />
-                                        <Chip
-                                            label="48h 2-Day"
-                                            size="small"
-                                            variant="outlined"
-                                            clickable
-                                            onClick={() => handlePreset('48h')}
-                                            sx={{ fontWeight: 700, fontSize: '0.73rem' }}
-                                        />
-                                        <Chip
-                                            label="3-Day Coastal"
-                                            size="small"
-                                            variant="outlined"
-                                            clickable
-                                            onClick={() => handlePreset('3d')}
-                                            sx={{ fontWeight: 700, fontSize: '0.73rem' }}
-                                        />
+                                        {[
+                                            { id: '23h', label: '23h Day Trip' },
+                                            { id: '48h', label: '48h 2-Day' },
+                                            { id: '3d', label: '3-Day Coastal' },
+                                        ].map((preset) => {
+                                            const isActive = activePreset === preset.id;
+                                            return (
+                                                <Chip
+                                                    key={preset.id}
+                                                    label={preset.label}
+                                                    size="small"
+                                                    clickable
+                                                    onClick={() => handlePreset(preset.id)}
+                                                    sx={{
+                                                        fontWeight: 750,
+                                                        fontSize: '0.75rem',
+                                                        bgcolor: isActive
+                                                            ? (isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7')
+                                                            : 'transparent',
+                                                        color: isActive ? accentText : 'text.primary',
+                                                        border: 1,
+                                                        borderColor: isActive ? '#F59E0B' : borderCol,
+                                                    }}
+                                                />
+                                            );
+                                        })}
                                     </Box>
 
-                                    {/* Branches */}
-                                    <Grid container spacing={1.5}>
-                                        <Grid size={{ xs: 12, sm: 6 }}>
-                                            <TextField
-                                                select
-                                                fullWidth
-                                                required
-                                                size="small"
-                                                label="Pickup branch"
-                                                value={pickupId}
-                                                onChange={(e) => handlePickupStoreChange(e.target.value)}
-                                            >
-                                                {stores.map((s) => (
-                                                    <MenuItem key={s.id} value={String(s.id)}>
-                                                        {s.name} ({s.city})
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                        <Grid size={{ xs: 12, sm: 6 }}>
-                                            <TextField
-                                                select
-                                                fullWidth
-                                                required
-                                                size="small"
-                                                label="Return branch"
-                                                value={returnId}
-                                                onChange={(e) => handleReturnStoreChange(e.target.value)}
-                                            >
-                                                {stores.map((s) => (
-                                                    <MenuItem key={s.id} value={String(s.id)}>
-                                                        {s.name} ({s.city})
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Grid>
-                                    </Grid>
-
-                                    {/* Optional Landmark Pickup / Return Points */}
-                                    {(pickupPoints.length > 0 || returnPoints.length > 0) && (
-                                        <Grid container spacing={1.5}>
-                                            {pickupPoints.length > 0 && (
-                                                <Grid size={{ xs: 12, sm: returnPoints.length > 0 ? 6 : 12 }}>
-                                                    <TextField
-                                                        select
-                                                        fullWidth
-                                                        size="small"
-                                                        label="Pickup point"
-                                                        value={pickupPointId}
-                                                        onChange={(e) => setPickupPointId(e.target.value)}
-                                                    >
-                                                        <MenuItem value="">Main Hub (Free)</MenuItem>
-                                                        {pickupPoints.map((pt) => (
-                                                            <MenuItem key={pt.id} value={String(pt.id)}>
-                                                                {pt.name}
-                                                                {pt.pickup_fee > 0 ? ` (+₹${pt.pickup_fee})` : ' (Free)'}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </TextField>
-                                                </Grid>
-                                            )}
-                                            {returnPoints.length > 0 && (
-                                                <Grid size={{ xs: 12, sm: pickupPoints.length > 0 ? 6 : 12 }}>
-                                                    <TextField
-                                                        select
-                                                        fullWidth
-                                                        size="small"
-                                                        label="Return point"
-                                                        value={returnPointId}
-                                                        onChange={(e) => setReturnPointId(e.target.value)}
-                                                    >
-                                                        <MenuItem value="">Main Hub (Free)</MenuItem>
-                                                        {returnPoints.map((pt) => (
-                                                            <MenuItem key={pt.id} value={String(pt.id)}>
-                                                                {pt.name}
-                                                                {pt.return_fee > 0 ? ` (+₹${pt.return_fee})` : ' (Free)'}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </TextField>
-                                                </Grid>
-                                            )}
-                                        </Grid>
-                                    )}
-
-                                    {/* Pickup Date + Time */}
-                                    <Grid container spacing={1.5}>
-                                        <Grid size={{ xs: 7 }}>
-                                            <TextField
-                                                type="date"
-                                                fullWidth
-                                                required
-                                                size="small"
-                                                label="Pickup date"
-                                                value={startDate}
-                                                onChange={(e) => {
-                                                    const next = e.target.value;
-                                                    setStartDate(next);
-                                                    if (endDate && next && endDate < next) {
-                                                        setEndDate(next);
-                                                    }
-                                                }}
-                                                slotProps={{
-                                                    inputLabel: { shrink: true },
-                                                    htmlInput: { min: today },
-                                                }}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 5 }}>
-                                            <TextField
-                                                type="time"
-                                                fullWidth
-                                                required
-                                                size="small"
-                                                label="Pickup time"
-                                                value={pickupTime}
-                                                onChange={(e) => setPickupTime(e.target.value)}
-                                                slotProps={{ inputLabel: { shrink: true } }}
-                                            />
-                                        </Grid>
-                                    </Grid>
-
-                                    {/* Return Date + Time */}
-                                    <Grid container spacing={1.5}>
-                                        <Grid size={{ xs: 7 }}>
-                                            <TextField
-                                                type="date"
-                                                fullWidth
-                                                required
-                                                size="small"
-                                                label="Return date"
-                                                value={endDate}
-                                                onChange={(e) => setEndDate(e.target.value)}
-                                                slotProps={{
-                                                    inputLabel: { shrink: true },
-                                                    htmlInput: { min: startDate || today },
-                                                }}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 5 }}>
-                                            <TextField
-                                                type="time"
-                                                fullWidth
-                                                required
-                                                size="small"
-                                                label="Return time"
-                                                value={returnTime}
-                                                onChange={(e) => setReturnTime(e.target.value)}
-                                                slotProps={{ inputLabel: { shrink: true } }}
-                                            />
-                                        </Grid>
-                                    </Grid>
-
-                                    {/* Live Schedule & Fare Summary */}
+                                    {/* PICK-UP BLOCK */}
                                     <Paper
                                         elevation={0}
                                         sx={{
@@ -780,10 +709,211 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                             borderColor: borderCol,
                                         }}
                                     >
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1.25 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1.5 }}>
+                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
+                                            <Typography
+                                                variant="caption"
+                                                fontWeight={850}
+                                                sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: isDark ? '#34D399' : '#047857' }}
+                                            >
+                                                Pick-up Details
+                                            </Typography>
+                                        </Box>
+
+                                        <Stack spacing={1.5}>
+                                            <Box>
+                                                <FieldLabel required isDark={isDark}>Pickup Branch</FieldLabel>
+                                                <TextField
+                                                    select
+                                                    fullWidth
+                                                    size="small"
+                                                    hiddenLabel
+                                                    value={pickupId}
+                                                    onChange={(e) => handlePickupStoreChange(e.target.value)}
+                                                    sx={inputSx}
+                                                >
+                                                    {stores.map((s) => (
+                                                        <MenuItem key={s.id} value={String(s.id)}>
+                                                            {s.name} ({s.city})
+                                                        </MenuItem>
+                                                    ))}
+                                                </TextField>
+                                            </Box>
+
+                                            {pickupPoints.length > 0 && (
+                                                <Box>
+                                                    <FieldLabel isDark={isDark}>Pickup Point</FieldLabel>
+                                                    <TextField
+                                                        select
+                                                        fullWidth
+                                                        size="small"
+                                                        hiddenLabel
+                                                        value={pickupPointId}
+                                                        onChange={(e) => setPickupPointId(e.target.value)}
+                                                        sx={inputSx}
+                                                    >
+                                                        <MenuItem value="">Main Hub (Free)</MenuItem>
+                                                        {pickupPoints.map((pt) => (
+                                                            <MenuItem key={pt.id} value={String(pt.id)}>
+                                                                {pt.name}
+                                                                {pt.pickup_fee > 0 ? ` (+₹${pt.pickup_fee})` : ' (Free)'}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </TextField>
+                                                </Box>
+                                            )}
+
+                                            <Grid container spacing={1.5}>
+                                                <Grid size={{ xs: 7 }}>
+                                                    <FieldLabel required isDark={isDark}>Pickup Date</FieldLabel>
+                                                    <TextField
+                                                        type="date"
+                                                        fullWidth
+                                                        size="small"
+                                                        hiddenLabel
+                                                        value={startDate}
+                                                        onChange={(e) => {
+                                                            const next = e.target.value;
+                                                            setStartDate(next);
+                                                            if (endDate && next && endDate < next) {
+                                                                setEndDate(next);
+                                                            }
+                                                        }}
+                                                        slotProps={{ htmlInput: { min: today } }}
+                                                        sx={inputSx}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 5 }}>
+                                                    <FieldLabel required isDark={isDark}>Pickup Time</FieldLabel>
+                                                    <TextField
+                                                        type="time"
+                                                        fullWidth
+                                                        size="small"
+                                                        hiddenLabel
+                                                        value={pickupTime}
+                                                        onChange={(e) => setPickupTime(e.target.value)}
+                                                        sx={inputSx}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                        </Stack>
+                                    </Paper>
+
+                                    {/* RETURN BLOCK */}
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 2.5,
+                                            bgcolor: subtleBg,
+                                            border: 1,
+                                            borderColor: borderCol,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1.5 }}>
+                                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#F59E0B' }} />
+                                            <Typography
+                                                variant="caption"
+                                                fontWeight={850}
+                                                sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: accentText }}
+                                            >
+                                                Return Details
+                                            </Typography>
+                                        </Box>
+
+                                        <Stack spacing={1.5}>
+                                            <Box>
+                                                <FieldLabel required isDark={isDark}>Return Branch</FieldLabel>
+                                                <TextField
+                                                    select
+                                                    fullWidth
+                                                    size="small"
+                                                    hiddenLabel
+                                                    value={returnId}
+                                                    onChange={(e) => handleReturnStoreChange(e.target.value)}
+                                                    sx={inputSx}
+                                                >
+                                                    {stores.map((s) => (
+                                                        <MenuItem key={s.id} value={String(s.id)}>
+                                                            {s.name} ({s.city})
+                                                        </MenuItem>
+                                                    ))}
+                                                </TextField>
+                                            </Box>
+
+                                            {returnPoints.length > 0 && (
+                                                <Box>
+                                                    <FieldLabel isDark={isDark}>Return Point</FieldLabel>
+                                                    <TextField
+                                                        select
+                                                        fullWidth
+                                                        size="small"
+                                                        hiddenLabel
+                                                        value={returnPointId}
+                                                        onChange={(e) => setReturnPointId(e.target.value)}
+                                                        sx={inputSx}
+                                                    >
+                                                        <MenuItem value="">Main Hub (Free)</MenuItem>
+                                                        {returnPoints.map((pt) => (
+                                                            <MenuItem key={pt.id} value={String(pt.id)}>
+                                                                {pt.name}
+                                                                {pt.return_fee > 0 ? ` (+₹${pt.return_fee})` : ' (Free)'}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </TextField>
+                                                </Box>
+                                            )}
+
+                                            <Grid container spacing={1.5}>
+                                                <Grid size={{ xs: 7 }}>
+                                                    <FieldLabel required isDark={isDark}>Return Date</FieldLabel>
+                                                    <TextField
+                                                        type="date"
+                                                        fullWidth
+                                                        size="small"
+                                                        hiddenLabel
+                                                        value={endDate}
+                                                        onChange={(e) => setEndDate(e.target.value)}
+                                                        slotProps={{ htmlInput: { min: startDate || today } }}
+                                                        sx={inputSx}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 5 }}>
+                                                    <FieldLabel required isDark={isDark}>Return Time</FieldLabel>
+                                                    <TextField
+                                                        type="time"
+                                                        fullWidth
+                                                        size="small"
+                                                        hiddenLabel
+                                                        value={returnTime}
+                                                        onChange={(e) => setReturnTime(e.target.value)}
+                                                        sx={inputSx}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                        </Stack>
+                                    </Paper>
+
+                                    {/* Live Schedule & Fare Summary */}
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 2.5,
+                                            bgcolor: isDark ? 'rgba(15, 23, 42, 0.7)' : '#FFFBEB',
+                                            border: 1,
+                                            borderColor: isDark ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A',
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 1.25 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                                <CalendarMonthIcon sx={{ fontSize: 17, color: '#F59E0B' }} />
-                                                <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                <CalendarMonthIcon sx={{ fontSize: 17, color: priceText }} />
+                                                <Typography
+                                                    variant="caption"
+                                                    fontWeight={800}
+                                                    color="text.secondary"
+                                                    sx={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}
+                                                >
                                                     Selected Schedule
                                                 </Typography>
                                             </Box>
@@ -792,7 +922,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                             </Typography>
                                         </Box>
 
-                                        <Grid container spacing={1} sx={{ mb: estimatedRental !== null ? 1.5 : 0 }}>
+                                        <Grid container spacing={1.5} sx={{ mb: estimatedRental !== null ? 1.5 : 0 }}>
                                             <Grid size={{ xs: 6 }}>
                                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                                                     Pick-up
@@ -800,7 +930,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                                 <Typography variant="body2" fontWeight={800}>
                                                     {formatShortDate(startDate)}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800 }}>
+                                                <Typography variant="caption" sx={{ color: accentText, fontWeight: 800 }}>
                                                     {rentalSlot.pickupTime12}
                                                 </Typography>
                                             </Grid>
@@ -811,7 +941,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                                 <Typography variant="body2" fontWeight={800}>
                                                     {formatShortDate(endDate)}
                                                 </Typography>
-                                                <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 800 }}>
+                                                <Typography variant="caption" sx={{ color: accentText, fontWeight: 800 }}>
                                                     {rentalSlot.returnTime12}
                                                 </Typography>
                                             </Grid>
@@ -819,21 +949,21 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
 
                                         {estimatedRental !== null && (
                                             <>
-                                                <Divider sx={{ my: 1.25, borderColor: borderCol }} />
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <Divider sx={{ my: 1.25, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#FDE68A' }} />
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
                                                     <Box>
-                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 600 }}>
                                                             Estimated Base Rental ({rentalSlot.days} day{rentalSlot.days > 1 ? 's' : ''})
                                                         </Typography>
                                                         {locationSurcharge > 0 && (
-                                                            <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700 }}>
+                                                            <Typography variant="caption" sx={{ color: accentText, fontWeight: 700 }}>
                                                                 Includes +₹{locationSurcharge} point fee
                                                             </Typography>
                                                         )}
                                                     </Box>
-                                                    <Typography variant="h6" fontWeight={900} sx={{ color: '#F59E0B' }}>
+                                                    <Typography variant="h6" fontWeight={900} sx={{ color: priceText, whiteSpace: 'nowrap' }}>
                                                         ₹{Number(estimatedRental).toLocaleString('en-IN')}
-                                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.4 }}>
+                                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.4, fontWeight: 700 }}>
                                                             + GST
                                                         </Typography>
                                                     </Typography>
@@ -859,15 +989,15 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                                         : 'info'
                                         }
                                         icon={isLoading ? <CircularProgress size={18} aria-label="Checking bike availability" /> : undefined}
-                                        sx={{ borderRadius: 2.5, fontWeight: 650 }}
+                                        sx={{ borderRadius: 2.5, fontWeight: 700 }}
                                     >
                                         {availabilityText}
                                     </Alert>
 
                                     <Button
                                         variant="contained"
-                                        color="secondary"
                                         size="large"
+                                        fullWidth
                                         endIcon={<ArrowForwardIcon />}
                                         disabled={!datesValid || isLoading || !availability?.is_available || isError}
                                         onClick={beginBooking}
@@ -877,7 +1007,13 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                                             fontWeight: 850,
                                             fontSize: '0.98rem',
                                             textTransform: 'none',
+                                            color: '#0F172A',
+                                            background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
                                             boxShadow: '0 8px 20px rgba(245, 158, 11, 0.35)',
+                                            '&:hover': {
+                                                background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                                                boxShadow: '0 10px 24px rgba(217, 119, 6, 0.42)',
+                                            },
                                         }}
                                     >
                                         Continue to Secure Checkout
@@ -898,7 +1034,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                 {/* Mobile Sticky Booking Dock */}
                 <Box
                     sx={{
-                        display: { xs: 'flex', md: 'none' },
+                        display: { xs: 'flex', lg: 'none' },
                         position: 'fixed',
                         bottom: 0,
                         left: 0,
@@ -920,7 +1056,7 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.7rem', fontWeight: 700 }}>
                             {model.brand} {model.name} · {rentalSlot.slotLabel}
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} sx={{ color: '#D97706', lineHeight: 1.15 }}>
+                        <Typography variant="subtitle1" fontWeight={900} sx={{ color: priceText, lineHeight: 1.15 }}>
                             {estimatedRental !== null
                                 ? `₹${Number(estimatedRental).toLocaleString('en-IN')}`
                                 : weekdayRate !== null
@@ -934,7 +1070,6 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
 
                     <Button
                         variant="contained"
-                        color="secondary"
                         size="medium"
                         onClick={() => {
                             if (datesValid && availability?.is_available) {
@@ -950,6 +1085,8 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                             px: 2.5,
                             py: 1,
                             textTransform: 'none',
+                            color: '#0F172A',
+                            background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
                             boxShadow: '0 4px 14px rgba(245, 158, 11, 0.4)',
                         }}
                     >

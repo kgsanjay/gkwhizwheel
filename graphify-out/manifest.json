@@ -546,8 +546,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BikeModelWebController.php": {
-    "mtime": 1795013678.4997015,
-    "seen": 1795013723.4996638,
+    "mtime": 1795013785.9290547,
+    "seen": 1795013917.183983,
     "ast_hash": "1c95c70bdb069ba38c1e093f6e37b2c1",
     "semantic_hash": ""
   },
@@ -2604,9 +2604,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/ModelShow.jsx": {
-    "mtime": 1795013710.6812665,
-    "seen": 1795013723.499906,
-    "ast_hash": "eb79b6deab970288687e8aeb7d2bd46a",
+    "mtime": 1795013898.3299131,
+    "seen": 1795013917.184225,
+    "ast_hash": "5ca9c4189a0593e9f79cd1bbdb79f836",
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/Show.jsx": {
