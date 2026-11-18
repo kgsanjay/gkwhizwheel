@@ -11,7 +11,9 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
 
@@ -62,6 +64,8 @@ class GoogleAuthController extends Controller
             $emailVerified = (bool) ($rawUser['email_verified'] ?? $rawUser['verified_email'] ?? false);
 
             if (! $email || ! $emailVerified) {
+                Log::warning('Google OAuth rejected: email missing or unverified by Google');
+
                 return redirect()->route('login')->withErrors([
                     'login' => 'Your Google account email must be verified to sign in.',
                 ]);
@@ -75,21 +79,27 @@ class GoogleAuthController extends Controller
                 $existingByEmail = User::where('email', strtolower($email))->first();
                 if ($existingByEmail) {
                     if ($existingByEmail->role !== UserRole::CUSTOMER) {
+                        Log::warning('Google OAuth rejected: non-customer account', ['user_id' => $existingByEmail->id]);
+
                         return redirect()->route('login')->withErrors([
                             'login' => 'Staff and Admin accounts must sign in through the Staff Portal with password and 2FA.',
                         ]);
                     }
-                    // Prevent pre-hijacking of an unverified password-protected account
-                    if ($existingByEmail->email_verified_at === null && ! empty($existingByEmail->password)) {
-                        return redirect()->route('login')->withErrors([
-                            'login' => 'An account with this email already exists. Please sign in with your password or OTP to verify your email first.',
-                        ]);
-                    }
-                    $existingByEmail->update([
+
+                    // OWASP pre-hijacking defense: if an existing customer account never verified
+                    // its email, invalidate any pre-set password and active tokens before linking
+                    // the Google-verified identity so an attacker who pre-registered cannot retain access.
+                    $wasUnverified = $existingByEmail->email_verified_at === null;
+                    $updates = [
                         'google_id' => $googleId,
                         'avatar' => $avatar ?: $existingByEmail->avatar,
-                    ]);
-                    if ($existingByEmail->email_verified_at === null) {
+                    ];
+                    if ($wasUnverified && ! empty($existingByEmail->password)) {
+                        $updates['password'] = Hash::make(Str::random(40));
+                    }
+                    $existingByEmail->update($updates);
+                    if ($wasUnverified) {
+                        $existingByEmail->tokens()->delete();
                         $existingByEmail->forceFill(['email_verified_at' => now()])->save();
                     }
                     $user = $existingByEmail;

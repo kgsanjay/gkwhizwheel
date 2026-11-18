@@ -452,6 +452,10 @@ class AdminAuthController extends Controller
             ], 403);
         }
 
+        if ($user->email_verified_at === null && ! empty($user->email) && ! str_ends_with((string) $user->email, '@whizwheels.local')) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
         Auth::guard('web')->login($user, (bool) ($validated['remember'] ?? false));
         if ($request->hasSession()) {
             $request->session()->regenerate();

@@ -634,6 +634,10 @@ class AuthController extends Controller
             }
         }
 
+        if ($user->email_verified_at === null && ! empty($user->email) && ! str_ends_with((string) $user->email, '@whizwheels.local')) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
         if ($request->hasSession()) {
             Auth::guard('web')->login($user);
             $request->session()->regenerate();

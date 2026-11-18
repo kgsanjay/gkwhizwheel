@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, usePage, Link } from '@inertiajs/react';
 import { useColorMode } from '../../theme/ColorModeContext';
 import {
     Box,
@@ -38,8 +38,10 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 
 export default function CustomerLogin({ status = null, initialTab = 0 }) {
+    const { errors: pageErrors = {}, flash = {} } = usePage().props;
     const { mode, toggleColorMode } = useColorMode();
     const isDark = mode === 'dark';
+    const redirectedError = pageErrors?.login || flash?.error || null;
 
     // Current active tab: 0 = Sign In, 1 = Sign Up
     const [currentTab, setCurrentTab] = useState(initialTab);
@@ -482,6 +484,13 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                             sx={{ mb: 2.5, borderRadius: 2.5 }}
                         >
                             {status}
+                        </Alert>
+                    )}
+
+                    {/* Redirected / OAuth Error Alert */}
+                    {redirectedError && redirectedError !== loginForm.errors.login && (
+                        <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2.5 }}>
+                            {redirectedError}
                         </Alert>
                     )}
 
