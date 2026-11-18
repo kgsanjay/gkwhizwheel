@@ -38,6 +38,7 @@ import CheckoutModal from '../../Components/Booking/CheckoutModal';
 import apiClient from '../../api/client';
 import { useColorMode } from '../../theme/ColorModeContext';
 import { getServicePlaceholder } from '../../utils/placeholder';
+import { computeRentalSlot } from '../../utils/rentalSlot';
 
 /**
  * Dedicated, authoritative bike rental checkout page.
@@ -64,23 +65,16 @@ export default function BikeCheckout({
 
     const isModel = Boolean(bikeModelId);
 
-    // Rental duration calculation
+    // Rental duration calculation (23-hour operational slot)
     const tripDuration = useMemo(() => {
-        try {
-            const start = new Date(`${startDate}T${pickupTime || '09:00'}`);
-            const end = new Date(`${endDate}T${returnTime || '09:00'}`);
-            const diffMs = end - start;
-            if (diffMs <= 0) return { days: 1, hours: 24, label: '1 Day (24 Hours)' };
-            const hours = Math.ceil(diffMs / (1000 * 60 * 60));
-            const days = Math.max(1, Math.ceil(hours / 24));
-            return {
-                days,
-                hours,
-                label: `${days} Day${days > 1 ? 's' : ''} (${hours} Hours)`,
-            };
-        } catch {
-            return { days: 1, hours: 24, label: '1 Day' };
-        }
+        const slot = computeRentalSlot(startDate, endDate, pickupTime, returnTime);
+        return {
+            days: slot.days,
+            hours: slot.hours,
+            pickupTime12: slot.pickupTime12,
+            returnTime12: slot.returnTime12,
+            label: slot.durationLabel,
+        };
     }, [startDate, endDate, pickupTime, returnTime]);
 
     // Query quote for individual bike units
@@ -430,7 +424,7 @@ export default function BikeCheckout({
                                                         {pickupStore.name} ({pickupStore.city})
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 650 }}>
-                                                        {startDate} at {pickupTime}
+                                                        {startDate} at {tripDuration.pickupTime12}
                                                     </Typography>
                                                 </Box>
                                             </Box>
@@ -445,7 +439,7 @@ export default function BikeCheckout({
                                                         {returnStore.name} ({returnStore.city})
                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: isDark ? '#CBD5E1' : '#475569', fontWeight: 650 }}>
-                                                        {endDate} at {returnTime}
+                                                        {endDate} at {tripDuration.returnTime12}
                                                     </Typography>
                                                 </Box>
                                             </Box>

@@ -45,7 +45,17 @@ import PrintIcon from '@mui/icons-material/Print';
 import DownloadIcon from '@mui/icons-material/Download';
 import StarIcon from '@mui/icons-material/Star';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { useColorMode } from '../../theme/ColorModeContext';
+import { computeRentalSlot } from '../../utils/rentalSlot';
+
+const formatStoreAddr = (store) => {
+    const addr = store?.address_line || '';
+    const city = store?.city || '';
+    if (!addr) return city || 'Honnavar, Karnataka';
+    if (!city || addr.toLowerCase().includes(city.toLowerCase())) return addr;
+    return `${addr}, ${city}`;
+};
 
 const formatInr = (value) =>
     `₹${Number(value || 0).toLocaleString('en-IN', {
@@ -103,6 +113,12 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
     const hasReview = Boolean(booking.review);
 
     const breakdown = booking.price_breakdown_json || {};
+    const rentalSlot = computeRentalSlot(
+        booking.start_date,
+        booking.end_date,
+        breakdown.pickup_time || '09:00',
+        breakdown.return_time || '08:00'
+    );
     const gst = booking.bike_gst || breakdown.bike_gst || null;
     const hasConfiguredGst = gst?.status === 'configured';
     const gstRate = Number(gst?.gst_rate_percent || 18);
@@ -609,9 +625,23 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                             }}
                         >
                             <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: isDark ? '#F8FAFC' : '#0F172A' }}>
-                                    Reserved Two-Wheeler
-                                </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? '#F8FAFC' : '#0F172A' }}>
+                                        Reserved Two-Wheeler
+                                    </Typography>
+                                    <Chip
+                                        size="small"
+                                        icon={<AccessTimeIcon sx={{ fontSize: '15px !important', color: isDark ? '#38BDF8 !important' : '#0F766E !important' }} />}
+                                        label={rentalSlot.durationLabel}
+                                        sx={{
+                                            fontWeight: 800,
+                                            fontSize: '0.74rem',
+                                            bgcolor: isDark ? 'rgba(56, 189, 248, 0.14)' : '#F0FDFA',
+                                            color: isDark ? '#38BDF8' : '#0F766E',
+                                            border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #99F6E4',
+                                        }}
+                                    />
+                                </Box>
 
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 2.5 }}>
                                     <Box
@@ -677,10 +707,10 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                                                 {pickupStore.name}
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
-                                                {pickupStore.address_line}, {pickupStore.city}
+                                                {formatStoreAddr(pickupStore)}
                                             </Typography>
                                             <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? '#F59E0B' : '#0F172A', display: 'block', mt: 1 }}>
-                                                Date: {booking.start_date}
+                                                Pickup: {booking.start_date} • {rentalSlot.pickupTime12}
                                             </Typography>
                                         </Paper>
                                     </Grid>
@@ -705,10 +735,13 @@ export default function AccountBookingDetail({ booking, qrDataUri }) {
                                                 {returnStore.name}
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: isDark ? '#94A3B8' : '#64748B', display: 'block' }}>
-                                                {returnStore.address_line}, {returnStore.city}
+                                                {formatStoreAddr(returnStore)}
                                             </Typography>
                                             <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? '#F59E0B' : '#0F172A', display: 'block', mt: 1 }}>
-                                                Date: {booking.end_date}
+                                                Drop-off: {booking.end_date} • {rentalSlot.returnTime12}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: isDark ? '#38BDF8' : '#0F766E', fontWeight: 700, display: 'block', mt: 0.35, fontSize: '0.7rem' }}>
+                                                {rentalSlot.slotLabel} (includes 1 hr turnaround buffer)
                                             </Typography>
                                         </Paper>
                                     </Grid>

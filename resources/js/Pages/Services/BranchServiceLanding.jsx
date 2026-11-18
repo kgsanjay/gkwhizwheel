@@ -85,7 +85,7 @@ export default function BranchServiceLanding({
     const [pickupDate, setPickupDate] = useState(today);
     const [returnDate, setReturnDate] = useState(tomorrow);
     const [pickupTime, setPickupTime] = useState('09:00');
-    const [returnTime, setReturnTime] = useState('09:00');
+    const [returnTime, setReturnTime] = useState('08:00');
     const [selectedPickupPointId, setSelectedPickupPointId] = useState(pickupPoints[0]?.id || '');
     const [selectedReturnPointId, setSelectedReturnPointId] = useState(pickupPoints[0]?.id || '');
 
@@ -296,12 +296,12 @@ export default function BranchServiceLanding({
             setPickupDate(today);
             setReturnDate(tomorrow);
             setPickupTime('09:00');
-            setReturnTime('09:00');
+            setReturnTime('08:00');
         } else if (presetType === '48h') {
             setPickupDate(today);
             setReturnDate(dayAfterTomorrow);
             setPickupTime('09:00');
-            setReturnTime('09:00');
+            setReturnTime('08:00');
         } else if (presetType === 'weekend') {
             // Next Friday to Sunday or 3 days
             setPickupDate(today);
@@ -985,7 +985,7 @@ export default function BranchServiceLanding({
                                             Presets:
                                         </Typography>
                                         <Chip
-                                            label="24h Day Trip"
+                                            label="23h Day Trip"
                                             size="small"
                                             onClick={() => handlePresetSelection('24h')}
                                             clickable

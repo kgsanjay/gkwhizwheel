@@ -276,8 +276,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Api/V1/AuthController.php": {
-    "mtime": 1794966609.4586062,
-    "seen": 1794966624.6668942,
+    "mtime": 1794966726.8700542,
+    "seen": 1794966959.0642428,
     "ast_hash": "125d8d55805001c5fa52cb8f75e5516b",
     "semantic_hash": ""
   },
@@ -366,8 +366,8 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/Admin/AdminAuthController.php": {
-    "mtime": 1794966609.387039,
-    "seen": 1794966624.666904,
+    "mtime": 1794966726.9495761,
+    "seen": 1794966959.064255,
     "ast_hash": "1d59c2bcc4da4c015955a47d3466245a",
     "semantic_hash": ""
   },
@@ -2244,8 +2244,8 @@
     "semantic_hash": ""
   },
   "resources/js/Components/Booking/CheckoutModal.jsx": {
-    "mtime": 1794966609.7062223,
-    "seen": 1794966624.667122,
+    "mtime": 1794966727.0689507,
+    "seen": 1794966959.064481,
     "ast_hash": "95bc8e176cded4b23ec9e90358c12bc8",
     "semantic_hash": ""
   },
@@ -2352,9 +2352,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Account/BookingDetail.jsx": {
-    "mtime": 1794966452.1635375,
-    "seen": 1794966624.667135,
-    "ast_hash": "95d04e575d5f0c336bce7f0f47f64cf5",
+    "mtime": 1794966900.3939075,
+    "seen": 1794966959.064495,
+    "ast_hash": "02f8781cd881e38ab7788adf3439ae91",
     "semantic_hash": ""
   },
   "resources/js/Pages/Account/Bookings.jsx": {
@@ -2580,8 +2580,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Auth/Login.jsx": {
-    "mtime": 1794966609.6178615,
-    "seen": 1794966624.6671622,
+    "mtime": 1794966727.1452894,
+    "seen": 1794966959.064523,
     "ast_hash": "98496a9f13b2312821a95baa13931594",
     "semantic_hash": ""
   },
@@ -2592,9 +2592,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/Checkout.jsx": {
-    "mtime": 1794764397.506327,
-    "seen": 1794764544.361572,
-    "ast_hash": "b5586cc8d5eadd2db464312a173f0bc2",
+    "mtime": 1794966942.017724,
+    "seen": 1794966959.064524,
+    "ast_hash": "92c97d83189b53ad0f43ddfde1255fa4",
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/Index.jsx": {
@@ -2634,9 +2634,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bookings/Confirmation.jsx": {
-    "mtime": 1794945106.1835186,
-    "seen": 1794945640.678369,
-    "ast_hash": "597ff9ec23d60ca7adc54e584cddc7db",
+    "mtime": 1794966921.5058527,
+    "seen": 1794966959.064529,
+    "ast_hash": "55895c695ca782d60355eb4aa006e29c",
     "semantic_hash": ""
   },
   "resources/js/Pages/CabsPage.jsx": {
@@ -2706,9 +2706,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Services/BranchServiceLanding.jsx": {
-    "mtime": 1794943222.7230878,
-    "seen": 1794943532.3571,
-    "ast_hash": "1c2e287ab5a6377e57b2ea3266b23841",
+    "mtime": 1794966941.9296184,
+    "seen": 1794966959.064538,
+    "ast_hash": "93f15896b0d437456a0bf4801ca9b8f6",
     "semantic_hash": ""
   },
   "resources/js/Pages/Terms.jsx": {
@@ -4659,6 +4659,12 @@
     "mtime": 1794945620.8916807,
     "seen": 1794945640.678391,
     "ast_hash": "a8a6d414364642fac4b37970bb0eb45e",
+    "semantic_hash": ""
+  },
+  "resources/js/utils/rentalSlot.js": {
+    "mtime": 1794966862.8077846,
+    "seen": 1794966959.0645509,
+    "ast_hash": "8a659f9ffa37e430f83ba889ed6cc5ed",
     "semantic_hash": ""
   },
   "package-lock.json": {

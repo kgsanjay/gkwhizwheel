@@ -37,6 +37,7 @@ import DirectionsIcon from '@mui/icons-material/Directions';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
+import { computeRentalSlot } from '../../utils/rentalSlot';
 
 const formatInr = (value) =>
     `₹${Number(value || 0).toLocaleString('en-IN', {
@@ -92,10 +93,16 @@ export default function BookingConfirmation({ booking, qrDataUri }) {
     const isOneWay = pickupStore.id && returnStore.id && pickupStore.id !== returnStore.id;
     const isElectric = bike.fuel_type === 'electric';
 
-    const days = Number(breakdown.days || 1);
-    const hours = Number(breakdown.hours || days * 24);
-    const pickupTime = breakdown.pickup_time || '09:00';
-    const returnTime = breakdown.return_time || '09:00';
+    const rentalSlot = computeRentalSlot(
+        booking.start_date,
+        booking.end_date,
+        breakdown.pickup_time || '09:00',
+        breakdown.return_time || '08:00'
+    );
+    const days = rentalSlot.days;
+    const hours = rentalSlot.hours;
+    const pickupTime = rentalSlot.pickupTime12;
+    const returnTime = rentalSlot.returnTime12;
     const locationFee = Number(booking.location_fee_amount ?? breakdown.location_fee_amount ?? 0);
     const totalAmount = Number(booking.total_amount || 0);
     const paidAmount = Number(booking.paid_amount || 0);
@@ -540,7 +547,7 @@ export default function BookingConfirmation({ booking, qrDataUri }) {
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Chip
                                             size="small"
-                                            label={`${days} Day${days > 1 ? 's' : ''} (${hours}h)`}
+                                            label={rentalSlot.durationLabel}
                                             sx={{
                                                 bgcolor: 'rgba(56, 189, 248, 0.16)',
                                                 color: '#38BDF8',
