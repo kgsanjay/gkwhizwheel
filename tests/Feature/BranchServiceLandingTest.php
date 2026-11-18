@@ -226,4 +226,106 @@ class BranchServiceLandingTest extends TestCase
         $this->get('/unknown-city/services/bikes')->assertNotFound();
         $this->get('/honnavar/services/nonexistent-service')->assertNotFound();
     }
+
+    public function test_confirmed_bike_booking_locks_bike_and_decrements_remaining_inventory_until_admin_marks_available(): void
+    {
+        $secondBike = Bike::create([
+            'home_store_id' => $this->honnavarStore->id,
+            'current_store_id' => $this->honnavarStore->id,
+            'category_id' => $this->activaModel->category_id,
+            'bike_model_id' => $this->activaModel->id,
+            'registration_number' => 'KA-47-EA-1002',
+            'brand' => 'Honda',
+            'model_name' => 'Activa 6G',
+            'fuel_type' => 'petrol',
+            'transmission' => 'automatic',
+            'status' => BikeStatus::AVAILABLE,
+        ]);
+
+        // Initially 2 of 2 units available
+        $this->get('/honnavar/services/bikes')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('inventory.0.physical_units', 2)
+                ->where('inventory.0.available_now', 2)
+                ->where('inventory.0.booked_units', 0)
+            );
+
+        $customer = \App\Models\User::factory()->create([
+            'role' => \App\Enums\UserRole::CUSTOMER,
+            'status' => \App\Enums\UserStatus::ACTIVE,
+        ]);
+
+        $bookedBike = Bike::where('registration_number', 'KA-47-EA-1001')->firstOrFail();
+
+        $booking = \App\Models\Booking::create([
+            'booking_reference' => 'BK-INV-LOCK-01',
+            'bike_id' => $bookedBike->id,
+            'bike_model_id' => $this->activaModel->id,
+            'user_id' => $customer->id,
+            'pickup_store_id' => $this->honnavarStore->id,
+            'return_store_id' => $this->honnavarStore->id,
+            'channel' => \App\Enums\BookingChannel::ONLINE,
+            'status' => \App\Enums\BookingStatus::PENDING_PAYMENT,
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addDay()->toDateString(),
+            'base_amount' => 450.00,
+            'deposit_amount' => 0.00,
+            'total_amount' => 531.00,
+            'price_breakdown_json' => ['checkout_payment_option' => 'advance'],
+            'idempotency_key' => 'inv-lock-001',
+        ]);
+
+        // Confirming payment locks the physical bike out of rentable inventory
+        app(\App\Services\BookingService::class)->confirmPayment($booking, 'pay_inv_001');
+
+        $this->assertSame(BikeStatus::ON_RENT, $bookedBike->fresh()->status);
+
+        // Landing page now shows 1 of 2 remaining available
+        $this->get('/honnavar/services/bikes')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('inventory.0.physical_units', 2)
+                ->where('inventory.0.available_now', 1)
+                ->where('inventory.0.booked_units', 1)
+            );
+
+        // That locked bike cannot be booked for future dates until admin updates its status
+        $this->expectException(\App\Exceptions\BikeNotAvailableException::class);
+        try {
+            app(\App\Services\AvailabilityService::class)->holdBooking([
+                'bike_id' => $bookedBike->id,
+                'bike_model_id' => $this->activaModel->id,
+                'user_id' => $customer->id,
+                'pickup_store_id' => $this->honnavarStore->id,
+                'return_store_id' => $this->honnavarStore->id,
+                'start_date' => now()->addDays(10)->toDateString(),
+                'end_date' => now()->addDays(11)->toDateString(),
+                'channel' => \App\Enums\BookingChannel::ONLINE,
+                'idempotency_key' => 'inv-lock-future-attempt',
+            ]);
+        } finally {
+            // Once admin explicitly marks the bike available again, inventory count restores
+            $admin = \App\Models\User::factory()->create([
+                'role' => \App\Enums\UserRole::SUPER_ADMIN,
+                'status' => \App\Enums\UserStatus::ACTIVE,
+            ]);
+
+            $this->actingAs($admin, 'admin')
+                ->put("/admin/bikes/{$bookedBike->id}", ['status' => BikeStatus::AVAILABLE->value])
+                ->assertRedirect(route('admin.bikes.index'));
+
+            $this->assertSame(BikeStatus::AVAILABLE, $bookedBike->fresh()->status);
+
+            $this->get('/honnavar/services/bikes')
+                ->assertOk()
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('inventory.0.physical_units', 2)
+                    ->where('inventory.0.available_now', 2)
+                    ->where('inventory.0.booked_units', 0)
+                );
+
+            $this->assertNotNull($secondBike->id);
+        }
+    }
 }

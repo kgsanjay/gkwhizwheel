@@ -341,6 +341,10 @@ class BranchServiceLandingWebController extends Controller
                     ? (float) $configuredPrice->weekend_rate
                     : round($weekdayRate * 1.15, 2);
 
+                $activeUnits = $atBranch->where('status', '!=', BikeStatus::RETIRED);
+                $availableCount = $activeUnits->where('status', BikeStatus::AVAILABLE)->count();
+                $bookedCount = $activeUnits->where('status', BikeStatus::ON_RENT)->count();
+
                 return [
                     'id' => $model->id,
                     'brand' => $model->brand,
@@ -349,8 +353,9 @@ class BranchServiceLandingWebController extends Controller
                     'category_name' => $model->category?->name,
                     'fuel_type' => $model->fuel_type->value ?? 'Petrol',
                     'transmission' => $model->transmission->value ?? 'Automatic',
-                    'physical_units' => $atBranch->count(),
-                    'available_now' => $atBranch->where('status', BikeStatus::AVAILABLE)->count(),
+                    'physical_units' => $activeUnits->count(),
+                    'available_now' => $availableCount,
+                    'booked_units' => $bookedCount,
                     'weekday_rate' => $weekdayRate,
                     'weekend_rate' => $weekendRate,
                     'indicative_daily_rate' => $weekdayRate,

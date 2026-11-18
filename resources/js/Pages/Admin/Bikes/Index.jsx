@@ -267,8 +267,10 @@ export default function BikesIndex({
         switch (bikeStatus) {
             case 'available':
                 return <Chip label="Available" color="success" size="small" sx={{ fontWeight: 700 }} />;
+            case 'on_rent':
             case 'rented':
-                return <Chip label="On Road" color="primary" size="small" sx={{ fontWeight: 700 }} />;
+                return <Chip label="Booked / On Rent" color="primary" size="small" sx={{ fontWeight: 700 }} />;
+            case 'maintenance':
             case 'in_service':
                 return <Chip label="In Service" color="warning" size="small" sx={{ fontWeight: 700 }} />;
             case 'reserved':
@@ -551,9 +553,8 @@ export default function BikesIndex({
                         >
                             <MenuItem value="">All Statuses</MenuItem>
                             <MenuItem value="available">Available</MenuItem>
-                            <MenuItem value="rented">On Road</MenuItem>
-                            <MenuItem value="in_service">In Service</MenuItem>
-                            <MenuItem value="reserved">Reserved</MenuItem>
+                            <MenuItem value="on_rent">Booked / On Rent</MenuItem>
+                            <MenuItem value="maintenance">In Service</MenuItem>
                             <MenuItem value="retired">Retired</MenuItem>
                         </TextField>
                     </Grid>
@@ -802,7 +803,18 @@ export default function BikesIndex({
                                             </TableCell>
                                             <TableCell align="right">
                                                 <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                                                    {bike.status !== 'rented' && (
+                                                    {bike.status === 'on_rent' && !isManager && (
+                                                        <Tooltip title="Mark Available for Rent">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="success"
+                                                                onClick={() => router.put(`/admin/bikes/${bike.id}`, { status: 'available' }, { preserveScroll: true })}
+                                                            >
+                                                                <CheckIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    )}
+                                                    {bike.status !== 'on_rent' && bike.status !== 'rented' && (
                                                         <Tooltip title={bike.status === 'in_service' || bike.status === 'maintenance' ? 'Set as Available' : 'Set as In Service'}>
                                                             <IconButton
                                                                 size="small"
@@ -931,7 +943,19 @@ export default function BikesIndex({
                                         </Box>
 
                                         <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-                                            {bike.status !== 'rented' && (
+                                            {bike.status === 'on_rent' && !isManager && (
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    color="success"
+                                                    startIcon={<CheckIcon />}
+                                                    onClick={() => router.put(`/admin/bikes/${bike.id}`, { status: 'available' }, { preserveScroll: true })}
+                                                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, flex: 1 }}
+                                                >
+                                                    Mark Available
+                                                </Button>
+                                            )}
+                                            {bike.status !== 'on_rent' && bike.status !== 'rented' && (
                                                 <Button
                                                     variant="outlined"
                                                     size="small"
@@ -948,7 +972,7 @@ export default function BikesIndex({
                                                 variant="outlined"
                                                 size="small"
                                                 color="info"
-                                                fullWidth={isManager && bike.status === 'rented'}
+                                                fullWidth={isManager && (bike.status === 'on_rent' || bike.status === 'rented')}
                                                 startIcon={<CloudUploadIcon />}
                                                 onClick={() => {
                                                     setSelectedBikeForDoc(bike);

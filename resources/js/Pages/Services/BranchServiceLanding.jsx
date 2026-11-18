@@ -243,6 +243,12 @@ export default function BranchServiceLanding({
         return ['all', ...cats];
     }, [inventory]);
 
+    const fleetInventorySummary = useMemo(() => {
+        const availableUnits = inventory.reduce((sum, item) => sum + Number(item.available_now || 0), 0);
+        const totalUnits = inventory.reduce((sum, item) => sum + Number(item.physical_units || 0), 0);
+        return { availableUnits, totalUnits };
+    }, [inventory]);
+
     // Filtered & Sorted Inventory
     const filteredInventory = useMemo(() => {
         let result = [...inventory];
@@ -607,7 +613,11 @@ export default function BranchServiceLanding({
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                     <Chip
                                         icon={<TwoWheelerIcon sx={{ fontSize: '1.1rem !important' }} />}
-                                        label={`${branch.city || branch.name} Fleet Hub • ${inventory.length} Models Ready`}
+                                        label={
+                                            service.slug === 'bikes' && fleetInventorySummary.totalUnits > 0
+                                                ? `${branch.city || branch.name} Fleet Hub • ${fleetInventorySummary.availableUnits} of ${fleetInventorySummary.totalUnits} Bikes Available`
+                                                : `${branch.city || branch.name} Fleet Hub • ${inventory.length} Models Ready`
+                                        }
                                         sx={{
                                             fontWeight: 800,
                                             fontSize: '0.8rem',
@@ -1358,7 +1368,7 @@ export default function BranchServiceLanding({
                                                     }}
                                                 />
 
-                                                {/* Top Right: Availability Indicator */}
+                                                {/* Top Right: Live Remaining Inventory Indicator */}
                                                 <Chip
                                                     icon={
                                                         <Box
@@ -1366,12 +1376,26 @@ export default function BranchServiceLanding({
                                                                 width: 7,
                                                                 height: 7,
                                                                 borderRadius: '50%',
-                                                                bgcolor: isAvailable ? '#10B981' : '#F59E0B',
-                                                                boxShadow: isAvailable ? '0 0 8px #10B981' : 'none',
+                                                                bgcolor: !isAvailable
+                                                                    ? '#EF4444'
+                                                                    : item.available_now === 1
+                                                                        ? '#F59E0B'
+                                                                        : '#10B981',
+                                                                boxShadow: isAvailable
+                                                                    ? (item.available_now === 1 ? '0 0 8px #F59E0B' : '0 0 8px #10B981')
+                                                                    : 'none',
                                                             }}
                                                         />
                                                     }
-                                                    label={isAvailable ? `${item.available_now} Available` : 'Waitlist Only'}
+                                                    label={
+                                                        isAvailable
+                                                            ? (item.physical_units > 0
+                                                                ? `${item.available_now} of ${item.physical_units} Available`
+                                                                : `${item.available_now} Available`)
+                                                            : (item.physical_units > 0
+                                                                ? `0 of ${item.physical_units} Available • Booked`
+                                                                : 'Currently Booked')
+                                                    }
                                                     size="small"
                                                     sx={{
                                                         position: 'absolute',
@@ -1381,11 +1405,17 @@ export default function BranchServiceLanding({
                                                         fontSize: '0.72rem',
                                                         bgcolor: isDark ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.94)',
                                                         backdropFilter: 'blur(8px)',
-                                                        color: isAvailable ? (isDark ? '#34D399' : '#059669') : '#D97706',
+                                                        color: !isAvailable
+                                                            ? (isDark ? '#F87171' : '#DC2626')
+                                                            : item.available_now === 1
+                                                                ? (isDark ? '#FBBF24' : '#D97706')
+                                                                : (isDark ? '#34D399' : '#059669'),
                                                         border: 1,
-                                                        borderColor: isAvailable
-                                                            ? (isDark ? 'rgba(52, 211, 153, 0.3)' : 'rgba(5, 150, 105, 0.25)')
-                                                            : 'rgba(245, 158, 11, 0.3)',
+                                                        borderColor: !isAvailable
+                                                            ? 'rgba(239, 68, 68, 0.35)'
+                                                            : item.available_now === 1
+                                                                ? 'rgba(245, 158, 11, 0.35)'
+                                                                : (isDark ? 'rgba(52, 211, 153, 0.3)' : 'rgba(5, 150, 105, 0.25)'),
                                                         boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                                                     }}
                                                 />
@@ -1634,8 +1664,9 @@ export default function BranchServiceLanding({
                                                         <Button
                                                             fullWidth
                                                             variant="contained"
+                                                            disabled={!isAvailable}
                                                             onClick={() => handleProceedToCheckout(item)}
-                                                            endIcon={<ArrowForwardIcon />}
+                                                            endIcon={isAvailable ? <ArrowForwardIcon /> : null}
                                                             sx={{
                                                                 py: 1.25,
                                                                 borderRadius: 2.5,
@@ -1653,9 +1684,14 @@ export default function BranchServiceLanding({
                                                                         ? '0 6px 20px 0 rgba(56, 189, 248, 0.5)'
                                                                         : '0 6px 20px 0 rgba(15, 118, 110, 0.45)',
                                                                 },
+                                                                '&.Mui-disabled': {
+                                                                    bgcolor: isDark ? 'rgba(148, 163, 184, 0.14)' : '#E2E8F0',
+                                                                    color: isDark ? '#94A3B8' : '#64748B',
+                                                                    boxShadow: 'none',
+                                                                },
                                                             }}
                                                         >
-                                                            Book This Bike
+                                                            {isAvailable ? 'Book This Bike' : 'Currently Booked (0 Available)'}
                                                         </Button>
 
                                                         <Button
@@ -2235,6 +2271,7 @@ export default function BranchServiceLanding({
                             <Button
                                 fullWidth
                                 variant="contained"
+                                disabled={(selectedModelForModal.available_now || 0) <= 0}
                                 onClick={() => {
                                     const m = selectedModelForModal;
                                     setSelectedModelForModal(null);
@@ -2249,7 +2286,9 @@ export default function BranchServiceLanding({
                                     '&:hover': { bgcolor: isDark ? '#7DD3FC' : '#0D9488' },
                                 }}
                             >
-                                Proceed to Book {selectedModelForModal.name} →
+                                {(selectedModelForModal.available_now || 0) > 0
+                                    ? `Proceed to Book ${selectedModelForModal.name} →`
+                                    : 'Currently Booked (0 Available)'}
                             </Button>
                         </DialogActions>
                     </>

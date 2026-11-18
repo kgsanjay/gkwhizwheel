@@ -56,6 +56,15 @@ class BookingService
             'status' => BookingStatus::CONFIRMED,
         ]);
 
+        // Lock the physical bike out of rentable inventory as soon as advance
+        // or full payment confirms the booking; it stays unavailable until an
+        // admin explicitly updates the bike's status or processes its return.
+        if ($booking->bike_id !== null) {
+            \App\Models\Bike::whereKey($booking->bike_id)
+                ->where('status', BikeStatus::AVAILABLE)
+                ->update(['status' => BikeStatus::ON_RENT]);
+        }
+
         // Notify only after payment and booking state have been committed.
         DB::afterCommit(static function () use ($booking): void {
             try {
@@ -162,7 +171,7 @@ class BookingService
             $bike = \App\Models\Bike::where('id', $booking->bike_id)->lockForUpdate()->firstOrFail();
 
             if (! $complianceOverride) {
-                app(BikeComplianceGate::class)->assertReadyForHandover($bike);
+                app(BikeComplianceGate::class)->assertReadyForHandover($bike, $booking->id);
             } else {
                 \App\Models\ActivityLog::create([
                     'user_id' => $staffId,

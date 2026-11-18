@@ -100,6 +100,12 @@ class BookingWebController extends Controller
                 'status' => BookingStatus::CONFIRMED,
             ]);
 
+            if ($booking->bike_id !== null) {
+                \App\Models\Bike::whereKey($booking->bike_id)
+                    ->where('status', \App\Enums\BikeStatus::AVAILABLE)
+                    ->update(['status' => \App\Enums\BikeStatus::ON_RENT]);
+            }
+
             $payment = Payment::create([
                 'booking_id' => $booking->id,
                 'amount' => \App\Services\BikeBookingPayments::expectedGatewayAmount($booking),
@@ -295,6 +301,12 @@ class BookingWebController extends Controller
                         $booking->update([
                             'status' => BookingStatus::CONFIRMED,
                         ]);
+
+                        if ($booking->bike_id !== null) {
+                            \App\Models\Bike::whereKey($booking->bike_id)
+                                ->where('status', \App\Enums\BikeStatus::AVAILABLE)
+                                ->update(['status' => \App\Enums\BikeStatus::ON_RENT]);
+                        }
 
                         Payment::firstOrCreate(
                             [

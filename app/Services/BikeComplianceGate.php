@@ -59,9 +59,16 @@ final class BikeComplianceGate
         return $issues;
     }
 
-    public function assertReadyForHandover(Bike $bike): void
+    public function assertReadyForHandover(Bike $bike, ?int $forBookingId = null): void
     {
-        if ($bike->status !== BikeStatus::AVAILABLE) {
+        $reservedForThisBooking = $forBookingId !== null
+            && $bike->status === BikeStatus::ON_RENT
+            && ! \App\Models\Booking::where('bike_id', $bike->id)
+                ->where('id', '!=', $forBookingId)
+                ->where('status', \App\Enums\BookingStatus::HANDED_OVER)
+                ->exists();
+
+        if ($bike->status !== BikeStatus::AVAILABLE && ! $reservedForThisBooking) {
             throw ValidationException::withMessages([
                 'bike' => 'The bike is not in an approved available condition.',
             ]);

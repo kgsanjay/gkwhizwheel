@@ -1,45 +1,46 @@
 # Graph Report - gkwhizwheel  (2026-11-18)
 
 ## Corpus Check
-- 674 files · ~535,301 words
+- 674 files · ~535,937 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 26 file(s) not represented in the graph (top: (none) 18, .ico 3, .xml 2)
 
 ## Summary
-- 5080 nodes · 11956 edges · 305 communities (151 shown, 154 thin omitted)
+- 5084 nodes · 11963 edges · 323 communities (158 shown, 165 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 370 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6a67ec57`
+- Built from commit: `68bfc813`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- Carbon\Carbon
-- Illuminate\Foundation\Testing\RefreshDatabase
+- BikeDocumentType
+- TestCase
 - ArchTech\Enums\InvokableCases
 - Illuminate\Database\Seeder
+- Illuminate\Notifications\Notification
 - @mui/material
 - Illuminate\Http\RedirectResponse
 - CabDispatchFlowTest.php
 - AppLayout
-- Store
+- BikeCategory
 - User
 - Illuminate\Database\Eloquent\Model
-- IdorTest.php
+- UserStatus
 - Staff/BookingController.php
-- Inertia\Response
+- Admin/BikeController.php
 - BikeModelBookingAllocationTest.php
-- CabRescheduleRequest
+- cab55Booking
 - ServiceBookingApprovalTest.php
 - TwoFactorService
-- AdminBookingsWebTest.php
+- App\Models\Booking
 - App\Http\Resources\BookingResource
 - package.json
 - GuidePage.jsx
 - AdminBikeWebController.php
-- BikeGstQuoteTest.php
+- RefundService
 - RefundServiceTest.php
 - App\Services\PricingService
 - 3. Module 1: Customer & Public Web Portal
@@ -49,34 +50,34 @@
 - BookingLifecycleReplayProtectionTest.php
 - AdminServiceEnquiryWebController.php
 - HandleInertiaRequests.php
-- AdminGroundCheckInTest
-- ActivityLog
+- Booking
+- UserRole
 - BranchAdminOperationalTest
 - BookingStatus
 - GoogleButton
+- Laravel\Sanctum\Sanctum
 - ServiceResource
 - api.php
 - AdminBookingWebController.php
-- UserStatus
 - ServiceBooking
 - CabDriver
-- ActivityLog
+- CouponController.php
 - Pages/Bikes/Index.jsx
 - PricingRule
-- Symfony\Component\HttpFoundation\Response
+- Illuminate\Foundation\Http\FormRequest
 - BikeModelAdminWebTest.php
-- Coupon
+- WhatsAppMessage
 - CustomerServiceBookingSecurityTest.php
 - Illuminate\Database\Eloquent\Model
 - .stores
 - VoucherService
 - Refund
-- Inertia\Testing\AssertableInertia
+- CustomerAccountWebTest.php
 - Illuminate\Support\Facades\Schema
 - Illuminate\Console\Command
 - ServiceEnquiryProposalLinkTest
 - CabFareQuoteEngine
-- AdminBikesWebTest.php
+- Inertia\Testing\AssertableInertia
 - steps
 - BikeBookingPickupPointsTest.php
 - PhonePeWebhookController.php
@@ -90,39 +91,38 @@
 - Illuminate\Http\Resources\Json\JsonResource
 - Bike Rental Platform — Complete Requirement & Architecture Document
 - Sequential work order
-- AdminAuthAndPanelTest.php
+- GuestCheckoutAndPhonePeTest.php
 - ServiceBookingConfirmedNotification
 - GK WhizWheel — Implemented API Reference
 - .isSuperAdmin
 - ServiceRoleBasedAccessTest.php
-- ServiceItemController.php
+- PublicBikeModelAvailabilityTest.php
 - AppServiceProvider.php
 - GK WhizWheels — Complete Platform Features & Capabilities Matrix
-- AdminStaffWebTest.php
 - ServiceLifecycleTransitionsTest.php
-- AdminLogWebController.php
+- ActivityLog
 - GK WhizWheel — Environment Variables Reference
 - ServiceResourceMySqlRecoveryTest.php
 - Issue #56 — Cab cancellation, rescheduling, settlement and QA
 - PricingServiceTest.php
 - 4. Running Tests Locally Before Pushing
 - AdminPricingWebTest.php
-- PhonePeWebhookController.php
+- PhonePeService
 - App\Models\Bike
-- BikeFrontendPagesTest.php
+- BikeRelocationController.php
 - BikeComplianceGate.php
 - BikeRelocationResolutionTest.php
 - ServiceResourceSchemaPreflightTest.php
 - 2026_11_07_000003_create_bike_models_table.php
 - require
-- ServiceBookingApproval.php
-- AdminReportsWebTest.php
+- BranchBikeRentalLandingTest.php
+- Illuminate\Console\Command
 - AdminStoresWebTest.php
 - Bike
 - CabMySqlConcurrencyTest.php
 - ServicePaymentEligibilityTest.php
 - BikeDirectionalPickupReturnFeeTest.php
-- CustomerServiceEnquiryAccountTest.php
+- BikeLocationSchedule.php
 - README.md
 - AuthEndpointsTest.php
 - G.K. WhizWheel — Multi-branch staging acceptance runbook
@@ -137,9 +137,9 @@
 - UserFactory.php
 - manifest.json
 - CheckIn/Index.jsx
-- SiteSetting
+- UserSeeder.php
 - BranchAccessIsolationTest.php
-- AdminPricingRuleWebController.php
+- Illuminate\Validation\Rules\Enum
 - ServiceAvailabilityService.php
 - ProductionReadinessCheck.php
 - Module 2: Super Admin Operations Console
@@ -151,15 +151,16 @@
 - composer.json
 - Prompt Playbook — Full Build, Start to End
 - PHASE 11 — GitHub, README & Documentation
-- ServiceItemDocument
+- CorsConfigurationTest
 - Illuminate\Support\Facades\Route
 - ViteCodeSplittingTest
-- UserRole
-- Illuminate\Support\Facades\DB
+- StoreBikeRequest.php
+- Controller
 - Added
 - AdminAccountLockoutAndComplexityTest
+- AdminServiceItemDocumentsTest.php
 - 6. Module 4: Super Admin Operations & Platform Governance
-- Illuminate\Notifications\Notification
+- Illuminate\Bus\Queueable
 - WhizWheelCspPreset.php
 - config
 - ServiceEnquiryContractTest.php
@@ -173,7 +174,7 @@
 - ContentSecurityPolicyTest
 - 2026_11_14_000001_standardize_roles_and_add_site_settings_and_branch_services.php
 - 2026_11_14_000003_drop_legacy_sync_queue_and_expo_push_columns.php
-- CustomerAccountWebController.php
+- AvailabilityService
 - PHASE 2 — Core Business Logic (Services)
 - PHASE 6 — Payments & Notifications
 - PHASE 8 — Admin Web Panel Frontend
@@ -181,16 +182,16 @@
 - Phase 3 — future bike location safeguards
 - Issue #49 — Bike customer checkout and full staging acceptance
 - 2026_11_07_000011_create_service_resources_and_allocations.php
-- BikeModelPublicWebTest.php
-- RateLimitingSecurityTest
-- HtmlEscapingAndXssAuditTest
+- CustomerOtpLoginTest
+- RateLimitingSecurityTest.php
+- HandoverBookingRequest
 - 2026_09_05_000001_create_stores_table.php
 - psr-4
 - 2026_09_05_000002_create_bike_categories_table.php
 - 2026_09_06_000001_add_weekend_rate_to_bikes_table.php
 - 2026_09_06_000002_add_google_auth_to_users_table.php
 - 2026_09_07_190329_create_service_items_and_bookings_tables.php
-- SitemapTest
+- Illuminate\Foundation\Testing\RefreshDatabase
 - 2026_09_10_000001_add_service_fields_to_pricing_rules_table.php
 - 2026_09_11_210000_add_unique_index_to_payments_gateway_reference.php
 - 2026_09_12_000001_add_two_factor_columns_to_users_table.php
@@ -224,7 +225,7 @@
 - 2026_09_05_000005_create_bike_images_table.php
 - 2026_09_05_000006_create_bike_documents_table.php
 - 2026_09_05_000007_create_pricing_rules_table.php
-- AvailabilityService
+- App\Services\AvailabilityService
 - 2026_09_05_000010_create_bookings_table.php
 - AdminStaffWebController.php
 - 2026_09_05_000012_create_payments_table.php
@@ -232,9 +233,9 @@
 - 2026_09_05_000014_create_kyc_documents_table.php
 - 2026_09_05_000016_create_bike_condition_photos_table.php
 - 2026_09_05_161711_create_personal_access_tokens_table.php
-- BranchBikeModelPrice
+- Store
 - 2026_09_11_250000_create_service_item_documents_table.php
-- 5. Module 3: Store & Branch Manager Console
+- StoreCustomerRequest.php
 - 2026_09_11_220000_create_service_item_images_table.php
 - MultiGuardAuthenticationTest
 - 2026_11_07_000002_create_bike_relocation_tasks_table.php
@@ -244,128 +245,152 @@
 - 2026_11_07_000012_create_service_quote_snapshots.php
 - 2026_11_07_000013_create_service_payment_receipts_table.php
 - 2026_11_08_000002_create_cab_fare_rules_table.php
+- ReturnReminderNotification
 - 2026_11_08_000010_create_cab_dispute_events_table.php
 - Issue #105 — Private document controls and rollout gates
 - Issues #41 / #43 / #51 — Resource-backed customer confirmation and payment
 - Issue #54 — Cab customer trip request and verified checkout readiness
-- Issue #48 — Bike compliance, maintenance and handover
+- Module 1: Customer Portal & Public Web Experience
 - autoload-dev
 - extra
 - deploy.sh
 - sw.js
-- Module 5: Cross-Cutting & Technical Infrastructure
-- ServiceBookingAlertRecipients.php
+- AuditFleetRelocations.php
+- HoldBookingRequest
 - ADR 0001: Integration of Everything Claude Code (ECC) in Google Antigravity
 - 2026_11_07_000004_add_bike_model_id_to_bookings_table.php
 - App\Http\Requests\Public\BikeListRequest
 - BikePriceQuoteRequest
 - ServiceBookingSeeder.php
-- NotificationLog
+- BikeManagerBookingAlertNotification
+- RefundStatusNotification
+- 4. Module 2: Ground Staff & Jetty Counter Operations
+- AdminDispatchWebTest
+- NotificationStatus
+- .requestOtp
 - 2026_09_09_100001_create_service_user_table.php
 - 2026_11_08_000003_create_cab_enquiry_details_table.php
+- .returnBike
+- CabDisputeEvent
+- HoldBikeModelRequest
+- ReturnBookingRequest
+- ImageOptimizationTest
 - 2026_11_08_000004_link_service_enquiries_to_bookings.php
+- RawSqlInjectionSecurityTest.php
+- UpdateBookingAdminRequest
+- UpdateBookingOverrideRequest
+- UploadBikeDocumentRequest
 - 2026_09_05_000004_create_bikes_table.php
+- App\Http\Requests\Auth\LoginRequest
+- ToggleBikeMaintenanceRequest
+- CancelBookingRequest
+- ConfirmPaymentRequest
+- ExtendBookingRequest
 
 ## God Nodes (most connected - your core abstractions)
 1. `User` - 254 edges
-2. `Store` - 170 edges
-3. `Booking` - 161 edges
-4. `UserRole` - 155 edges
-5. `Bike` - 140 edges
+2. `Store` - 168 edges
+3. `UserRole` - 155 edges
+4. `Booking` - 148 edges
+5. `Bike` - 136 edges
 6. `ServiceBooking` - 123 edges
 7. `UserStatus` - 115 edges
-8. `StoreStatus` - 111 edges
-9. `BookingStatus` - 108 edges
+8. `StoreStatus` - 110 edges
+9. `BookingStatus` - 106 edges
 10. `Controller` - 105 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `1. PHP / Laravel Standards` --references--> `BookingService`  [INFERRED]
+  docs/04-CODING-STANDARDS-AND-STRUCTURE.md → app/Services/BookingService.php
+- `5.3 Notifications & Communications Engine` --references--> `NotificationLog`  [INFERRED]
+  FULL_FEATURE_LIST.md → app/Models/NotificationLog.php
 - `Security, Multi-Tenant Scoping & Data Integrity` --references--> `ActivityLog`  [INFERRED]
   AGENTS.md → app/Models/ActivityLog.php
 - `6.8 Immutable System Audit Trails & Activity Logging` --references--> `ActivityLog`  [INFERRED]
   DETAILED_FEATURE_SPECIFICATION.md → app/Models/ActivityLog.php
 - `Field Specifications:` --references--> `ActivityLog`  [INFERRED]
   docs/03-API-SPECIFICATION.md → app/Models/ActivityLog.php
-- `Offline IndexedDB Sync Contract (`POST /admin/check-in/sync`)` --references--> `ActivityLog`  [INFERRED]
-  docs/API.md → app/Models/ActivityLog.php
-- `Implemented in this PR` --references--> `BikeComplianceGate`  [INFERRED]
-  docs/requirements/ISSUE-48-BIKE-COMPLIANCE-HANDOVER.md → app/Services/BikeComplianceGate.php
 
 ## Import Cycles
 - None detected.
 
-## Communities (305 total, 154 thin omitted)
+## Communities (323 total, 165 thin omitted)
 
-### Community 0 - "Carbon\Carbon"
-Cohesion: 0.04
-Nodes (22): BikeDocumentType, EMISSION_CERTIFICATE, INSURANCE, RC, BikeDocument, {closure#2}(), {closure#4}(), {closure#5}() (+14 more)
+### Community 0 - "BikeDocumentType"
+Cohesion: 0.19
+Nodes (11): BikeDocumentType, EMISSION_CERTIFICATE, INSURANCE, RC, {closure#2}(), {closure#4}(), {closure#5}(), {closure#7}() (+3 more)
 
-### Community 1 - "Illuminate\Foundation\Testing\RefreshDatabase"
-Cohesion: 0.03
-Nodes (14): CorsConfigurationTest, CustomerRegistrationAndLoginTest, FileUploadSecurityTest, FontOptimizationTest, HeadingHierarchyTest, ImageAltAttributesTest, ImageLazyLoadingTest, ImageOptimizationTest (+6 more)
+### Community 1 - "TestCase"
+Cohesion: 0.07
+Nodes (7): CustomerRegistrationAndLoginTest, HeadingHierarchyTest, HtmlEscapingAndXssAuditTest, ImageAltAttributesTest, ImageLazyLoadingTest, SecurityHeadersTest, TestCase
 
 ### Community 2 - "ArchTech\Enums\InvokableCases"
-Cohesion: 0.04
-Nodes (52): AddonType, EXTRA_RIDER, GPS, HELMET, INSURANCE, BikeConditionStage, HANDOVER, RETURN (+44 more)
+Cohesion: 0.07
+Nodes (43): AddonType, EXTRA_RIDER, GPS, HELMET, INSURANCE, BikeConditionStage, HANDOVER, RETURN (+35 more)
 
 ### Community 3 - "Illuminate\Database\Seeder"
-Cohesion: 0.08
-Nodes (8): BikeCategorySeeder, BikeSeeder, DatabaseSeeder, MultiServiceDemoSeeder, PricingRuleSeeder, StoreSeeder, SuperAdminSeeder, UserSeeder
+Cohesion: 0.17
+Nodes (5): BikeCategorySeeder, BikeSeeder, DatabaseSeeder, MultiServiceDemoSeeder, PricingRuleSeeder
+
+### Community 4 - "Illuminate\Notifications\Notification"
+Cohesion: 0.23
+Nodes (3): WhatsAppChannel, WhatsAppService, {closure#7}()
 
 ### Community 5 - "@mui/material"
 Cohesion: 0.07
 Nodes (51): @inertiajs/react, @mui/icons-material, @mui/material, react, HandoverWizardModal(), STEPS, ReturnInspectionWizardModal(), STEPS (+43 more)
 
 ### Community 6 - "Illuminate\Http\RedirectResponse"
-Cohesion: 0.07
-Nodes (8): AdminBikeModelWebController, {closure#8}(), AdminPickupPointWebController, AdminServiceCategoryWebController, {closure#1}(), AdminServiceWebController, GoogleAuthController, ServiceItemCategory
+Cohesion: 0.06
+Nodes (8): AdminAuthController, AdminBikeModelWebController, AdminCouponWebController, AdminPickupPointWebController, AdminServiceCategoryWebController, {closure#1}(), AdminServiceWebController, ServiceItemCategory
 
 ### Community 7 - "CabDispatchFlowTest.php"
-Cohesion: 0.04
-Nodes (49): cab55Booking(), {closure#11}(), {closure#14}(), {closure#16}(), {closure#17}(), {closure#19}(), {closure#2}(), {closure#20}() (+41 more)
+Cohesion: 0.05
+Nodes (9): {closure#26}(), {closure#27}(), {closure#31}(), {closure#36}(), {closure#52}(), {closure#54}(), {closure#62}(), {closure#66}() (+1 more)
 
 ### Community 8 - "AppLayout"
 Cohesion: 0.07
 Nodes (42): AddonsSelector(), AVAILABLE_ADDONS, AppLayout(), servicesList, SITE_CONTAINER_SX, About(), AccountBookingDetail(), formatInr() (+34 more)
 
-### Community 9 - "Store"
-Cohesion: 0.04
-Nodes (8): Primary Abstractions (Identified by Graphify Degree Centrality), {closure#3}(), {closure#6}(), BikeCategory, BikeConditionLog, Payment, Store, Relationship Summary (for ORM setup)
+### Community 9 - "BikeCategory"
+Cohesion: 0.03
+Nodes (11): PaymentStatus, FAILED, PENDING, REFUNDED, SUCCESS, {closure#3}(), {closure#6}(), BikeCategory (+3 more)
 
 ### Community 10 - "User"
-Cohesion: 0.06
-Nodes (4): {closure#6}(), User, ServiceBookingApproval, {closure#1}()
+Cohesion: 0.09
+Nodes (3): User, CouponPolicy, {closure#1}()
 
 ### Community 11 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.09
-Nodes (7): {closure#1}(), BikeConditionPhoto, BikeImage, CabDispatchEvent, CabDisputeEvent, CabFareRule, ServiceItemImage
+Cohesion: 0.06
+Nodes (13): {closure#1}(), {closure#2}(), BikeConditionLog, BikeConditionPhoto, BikeDocument, BikeImage, BookingAddon, Coupon (+5 more)
 
-### Community 13 - "Staff/BookingController.php"
-Cohesion: 0.09
-Nodes (6): BookingController, CollectStaffPaymentRequest, HandoverBookingRequest, ReturnBookingRequest, StoreStaffBookingRequest, BookingResource
+### Community 12 - "UserStatus"
+Cohesion: 0.03
+Nodes (11): UserStatus, ACTIVE, BLACKLISTED, KycDocumentResource, {closure#2}(), {closure#3}(), {closure#6}(), {closure#5}() (+3 more)
 
-### Community 14 - "Inertia\Response"
-Cohesion: 0.05
-Nodes (11): AdminDispatchWebController, AdminStoreWebController, {closure#5}(), BikeCheckoutWebController, BikeModelWebController, BikeWebController, BlogController, BranchBikeRentalController (+3 more)
+### Community 14 - "Admin/BikeController.php"
+Cohesion: 0.09
+Nodes (6): BikeController, {closure#1}(), BikeCheckoutWebController, BikeWebController, BulkImportBikesRequest, BikeResource
 
 ### Community 15 - "BikeModelBookingAllocationTest.php"
-Cohesion: 0.07
-Nodes (41): {closure#1}(), {closure#3}(), {closure#6}(), {closure#7}(), {closure#2}(), BikeModel, allocationBike(), allocationPayload() (+33 more)
+Cohesion: 0.09
+Nodes (30): {closure#1}(), {closure#3}(), {closure#6}(), {closure#7}(), {closure#2}(), BikeModel, allocationBike(), allocationPayload() (+22 more)
 
-### Community 16 - "CabRescheduleRequest"
-Cohesion: 0.11
-Nodes (9): {closure#4}(), {closure#9}(), {closure#1}(), CabNotificationEvent, CabRescheduleRequest, CabDispatchEligibility, CabNotificationEventRecorder, CabRescheduleService (+1 more)
+### Community 16 - "cab55Booking"
+Cohesion: 0.05
+Nodes (40): cab55Booking(), {closure#11}(), {closure#14}(), {closure#16}(), {closure#17}(), {closure#19}(), {closure#2}(), {closure#20}() (+32 more)
 
 ### Community 17 - "ServiceBookingApprovalTest.php"
 Cohesion: 0.05
-Nodes (11): ServiceBookingCancelledNotification, {closure#18}(), {closure#25}(), {closure#27}(), {closure#30}(), {closure#33}(), {closure#36}(), {closure#37}() (+3 more)
+Nodes (9): ServiceBookingCancelledNotification, {closure#25}(), {closure#27}(), {closure#30}(), {closure#33}(), {closure#36}(), {closure#37}(), {closure#38}() (+1 more)
 
-### Community 19 - "AdminBookingsWebTest.php"
-Cohesion: 0.14
-Nodes (5): {closure#10}(), {closure#4}(), {closure#6}(), {closure#7}(), {closure#8}()
+### Community 19 - "App\Models\Booking"
+Cohesion: 0.23
+Nodes (3): BookingService, {closure#3}(), {closure#4}()
 
 ### Community 20 - "App\Http\Resources\BookingResource"
-Cohesion: 0.09
-Nodes (7): {closure#10}(), {closure#12}(), {closure#14}(), {closure#2}(), {closure#8}(), BookingAddon, 3.5 Rental Add-Ons Allocation System
+Cohesion: 0.11
+Nodes (5): {closure#10}(), {closure#12}(), {closure#14}(), {closure#2}(), {closure#8}()
 
 ### Community 21 - "package.json"
 Cohesion: 0.04
@@ -376,20 +401,24 @@ Cohesion: 0.06
 Nodes (45): RelatedGuidesStrip(), PageHead(), getServiceItemMedia(), ServiceGalleryModal(), BlogShow(), BOATING_FAQS, boatingFaqSchema, BoatingPage() (+37 more)
 
 ### Community 23 - "AdminBikeWebController.php"
-Cohesion: 0.05
-Nodes (8): BikeController, {closure#1}(), AdminBikeWebController, {closure#11}(), {closure#18}(), {closure#23}(), BulkImportBikesRequest, UploadBikeDocumentRequest
+Cohesion: 0.07
+Nodes (4): AdminBikeWebController, {closure#11}(), {closure#18}(), {closure#23}()
+
+### Community 24 - "RefundService"
+Cohesion: 0.18
+Nodes (4): AdminBookingWebController, {closure#21}(), ProcessRefundAdminRequest, RefundService
 
 ### Community 26 - "App\Services\PricingService"
 Cohesion: 0.14
 Nodes (3): {closure#1}(), {closure#5}(), {closure#6}()
 
 ### Community 27 - "3. Module 1: Customer & Public Web Portal"
-Cohesion: 0.14
-Nodes (14): 3.10 Universal Service Booking Modal, 3.11 Customer Authentication & Social Sign-In, 3.12 Digital KYC Document Verification Portal, 3.13 Customer Bookings Dashboard & Trip Lifecycle Tracker, 3.14 Automated WhatsApp & Email Notifications, 3.1 Landing Page & Coastal Experience Engine, 3.2 Bike Fleet Catalog & Live Filter System, 3.3 Real-Time Availability & Race-Condition Safe Booking Engine (+6 more)
+Cohesion: 0.15
+Nodes (13): 3.10 Universal Service Booking Modal, 3.11 Customer Authentication & Social Sign-In, 3.12 Digital KYC Document Verification Portal, 3.13 Customer Bookings Dashboard & Trip Lifecycle Tracker, 3.14 Automated WhatsApp & Email Notifications, 3.1 Landing Page & Coastal Experience Engine, 3.2 Bike Fleet Catalog & Live Filter System, 3.4 Transparent Pricing Calculator & Dynamic Rate Breakdown (+5 more)
 
 ### Community 28 - "CabDispatch"
-Cohesion: 0.14
-Nodes (8): AdminCabDispatchController, CabDispatch, CabDispatchService, {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), ServiceBookingLifecycle
+Cohesion: 0.11
+Nodes (12): CabDispatch, CabDispatchEligibility, CabDispatchService, {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), CabNotificationEventRecorder (+4 more)
 
 ### Community 29 - "Illuminate\Database\Schema\Blueprint"
 Cohesion: 0.07
@@ -400,20 +429,24 @@ Cohesion: 0.05
 Nodes (43): APP_ENV, CAB_REQUIRE_MYSQL_RACE, CACHE_STORE, DB_CONNECTION, DB_DATABASE, DB_HOST, DB_PASSWORD, DB_PORT (+35 more)
 
 ### Community 31 - "BookingLifecycleReplayProtectionTest.php"
-Cohesion: 0.07
-Nodes (6): {closure#1}(), {closure#1}(), {closure#1}(), FullUserJourneysTest, {closure#1}(), {closure#1}()
+Cohesion: 0.06
+Nodes (8): {closure#1}(), {closure#3}(), {closure#1}(), {closure#1}(), FullUserJourneysTest, {closure#1}(), {closure#1}(), VerifiedBikeDocuments
 
 ### Community 32 - "AdminServiceEnquiryWebController.php"
 Cohesion: 0.14
 Nodes (6): {closure#1}(), {closure#2}(), {closure#9}(), ServiceEnquiry, ServiceEnquiryLifecycle, {closure#1}()
 
 ### Community 33 - "HandleInertiaRequests.php"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (3): {closure#1}(), {closure#5}(), HandleInertiaRequests
 
+### Community 35 - "UserRole"
+Cohesion: 0.05
+Nodes (5): UserRole, CUSTOMER, STAFF, STORE_MANAGER, SUPER_ADMIN
+
 ### Community 38 - "BookingStatus"
-Cohesion: 0.11
-Nodes (23): BookingStatus, CANCELLED, COMPLETED, CONFIRMED, EXPIRED, HANDED_OVER, HELD, NO_SHOW (+15 more)
+Cohesion: 0.13
+Nodes (19): BookingStatus, CANCELLED, COMPLETED, CONFIRMED, EXPIRED, HANDED_OVER, HELD, NO_SHOW (+11 more)
 
 ### Community 39 - "GoogleButton"
 Cohesion: 0.14
@@ -427,93 +460,85 @@ Nodes (8): ServiceResource, ServiceResourceAllocation, {closure#1}(), ServiceRes
 Cohesion: 0.06
 Nodes (4): GET /pickup-points(), GET /public/bootstrap(), GET /services(), GET /user()
 
-### Community 43 - "AdminBookingWebController.php"
-Cohesion: 0.06
-Nodes (4): {closure#11}(), {closure#8}(), ProcessRefundAdminRequest, UpdateBookingAdminRequest
-
-### Community 44 - "UserStatus"
-Cohesion: 0.06
-Nodes (6): UserStatus, ACTIVE, BLACKLISTED, {closure#1}(), {closure#2}(), {closure#3}()
-
 ### Community 45 - "ServiceBooking"
-Cohesion: 0.13
-Nodes (9): {closure#3}(), ServiceBooking, ServicePaymentEligibility, ServiceReservationReadiness, {closure#4}(), {closure#1}(), {closure#18}(), gkwAllocatePaymentFixture() (+1 more)
+Cohesion: 0.09
+Nodes (8): {closure#3}(), ServiceBooking, ServiceBookingAlertRecipients, {closure#5}(), {closure#6}(), ServiceBookingApproval, ServicePaymentEligibility, ServiceReservationReadiness
 
 ### Community 46 - "CabDriver"
 Cohesion: 0.11
 Nodes (7): {closure#1}(), {closure#2}(), CabDriver, CabVehicle, Delivered in this PR, Important remaining work, Issue #55 — Cab dispatch, driver assignment and trip timeline
 
-### Community 47 - "ActivityLog"
-Cohesion: 0.09
-Nodes (5): CouponController, AdminCouponWebController, StoreCouponRequest, UpdateCouponRequest, CouponResource
+### Community 47 - "CouponController.php"
+Cohesion: 0.19
+Nodes (3): CouponController, StoreCouponRequest, CouponResource
 
 ### Community 49 - "Pages/Bikes/Index.jsx"
 Cohesion: 0.27
 Nodes (8): RFC-4122, apiClient, ModelRentalCatalog(), CheckoutModal(), generateIdempotencyKey(), BIKE_FAQS, bikeFaqSchema, BikesIndex()
 
-### Community 51 - "Symfony\Component\HttpFoundation\Response"
-Cohesion: 0.09
-Nodes (10): CustomerKycController, BikeDocumentDownloadController, KycDocumentDownloadController, AdminSessionTimeout, EnsureRole, EnsureServiceAccess, SecurityHeaders, UploadKycDocumentRequest (+2 more)
+### Community 50 - "PricingRule"
+Cohesion: 0.10
+Nodes (3): AdminPricingRuleWebController, {closure#3}(), PricingRule
 
-### Community 54 - "Coupon"
-Cohesion: 0.23
-Nodes (3): {closure#2}(), Coupon, CouponPolicy
+### Community 51 - "Illuminate\Foundation\Http\FormRequest"
+Cohesion: 0.11
+Nodes (5): ProcessBookingRefundRequest, OtpVerifyRequest, RegisterRequest, UploadKycDocumentRequest, BikeAvailabilityRequest
 
-### Community 55 - "CustomerServiceBookingSecurityTest.php"
-Cohesion: 0.13
-Nodes (3): {closure#3}(), ServicePaymentReceivedNotification, {closure#5}()
+### Community 52 - "BikeModelAdminWebTest.php"
+Cohesion: 0.11
+Nodes (3): {closure#3}(), {closure#7}(), {closure#9}()
 
 ### Community 56 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.13
-Nodes (7): {closure#2}(), {closure#2}(), {closure#6}(), {closure#7}(), {closure#1}(), CabDispute, CabRefundReview
+Cohesion: 0.08
+Nodes (12): {closure#2}(), {closure#2}(), {closure#4}(), {closure#6}(), {closure#7}(), {closure#9}(), {closure#1}(), {closure#1}() (+4 more)
 
 ### Community 58 - "VoucherService"
-Cohesion: 0.06
-Nodes (7): WhatsAppWebhookController, BookingWebController, CustomerServiceBookingController, SitemapController, BikeBillingStatementService, QrCodeService, VoucherService
+Cohesion: 0.05
+Nodes (9): WhatsAppWebhookController, BlogController, BookingWebController, CustomerServiceBookingController, SitemapController, {closure#13}(), BikeBillingStatementService, QrCodeService (+1 more)
 
 ### Community 59 - "Refund"
-Cohesion: 0.09
-Nodes (11): AdminBookingWebController, {closure#21}(), ProcessBookingRefundRequest, UpdateBookingOverrideRequest, RefundResource, Refund, {closure#1}(), {closure#2}() (+3 more)
+Cohesion: 0.31
+Nodes (4): Refund, {closure#1}(), {closure#2}(), {closure#3}()
 
-### Community 60 - "Inertia\Testing\AssertableInertia"
-Cohesion: 0.07
-Nodes (21): {closure#3}(), {closure#1}(), {closure#2}(), {closure#4}(), {closure#5}(), {closure#8}(), {closure#1}(), {closure#1}() (+13 more)
+### Community 60 - "CustomerAccountWebTest.php"
+Cohesion: 0.16
+Nodes (12): {closure#10}(), {closure#12}(), {closure#16}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}() (+4 more)
 
 ### Community 61 - "Illuminate\Support\Facades\Schema"
 Cohesion: 0.08
 Nodes (7): BranchReleasePreflight, {closure#1}(), {closure#1}(), {closure#2}(), {closure#1}(), {closure#1}(), {closure#1}()
 
-### Community 62 - "Illuminate\Console\Command"
-Cohesion: 0.39
-Nodes (3): CheckBikeDocumentExpiry, ReleaseExpiredHolds, DocumentComplianceService
-
 ### Community 64 - "CabFareQuoteEngine"
 Cohesion: 0.25
 Nodes (5): CabFareQuoteEngine, Development foundation, Integrity considerations, Issue #53 — Cab fare rules and server-authoritative quote preview, Remaining blockers / acceptance
 
-### Community 65 - "AdminBikesWebTest.php"
-Cohesion: 0.08
-Nodes (8): {closure#11}(), {closure#14}(), {closure#21}(), {closure#24}(), {closure#5}(), {closure#7}(), {closure#8}(), {closure#9}()
+### Community 65 - "Inertia\Testing\AssertableInertia"
+Cohesion: 0.02
+Nodes (49): {closure#10}(), {closure#12}(), {closure#14}(), {closure#19}(), {closure#4}(), {closure#11}(), {closure#14}(), {closure#21}() (+41 more)
 
 ### Community 66 - "steps"
 Cohesion: 0.08
 Nodes (23): DB_CONNECTION, DB_DATABASE, MAIL_FROM_ADDRESS, jobs, test-laravel, name, on, pull_request (+15 more)
 
 ### Community 67 - "BikeBookingPickupPointsTest.php"
-Cohesion: 0.13
-Nodes (11): PickupPoint, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+3 more)
+Cohesion: 0.33
+Nodes (9): {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}(), {closure#9}() (+1 more)
 
 ### Community 68 - "PhonePeWebhookController.php"
-Cohesion: 0.03
-Nodes (11): PhonePeWebhookController, {closure#3}(), AdminCheckInWebController, BranchServiceLandingWebController, ContactWebController, {closure#2}(), LoginRequest, OtpVerifyRequest (+3 more)
+Cohesion: 0.07
+Nodes (5): AdminCheckInWebController, GoogleAuthController, BranchServiceLandingWebController, ContactWebController, {closure#2}()
+
+### Community 69 - "WhizWheelV2StandardizationTest.php"
+Cohesion: 0.11
+Nodes (3): SuperAdminOperationalPerfectionTest, {closure#2}(), {closure#6}()
 
 ### Community 70 - "Database Schema — Full Field-Level Spec"
 Cohesion: 0.09
 Nodes (23): activity_logs, bike_categories, bike_condition_logs, bike_condition_photos, bike_documents, bike_images, bikes, booking_addons (+15 more)
 
 ### Community 73 - "bootstrap/app.php"
-Cohesion: 0.12
-Nodes (10): {closure#1}(), {closure#10}(), {closure#11}(), {closure#12}(), {closure#2}(), {closure#3}(), {closure#5}(), {closure#7}() (+2 more)
+Cohesion: 0.11
+Nodes (11): {closure#1}(), {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#2}(), {closure#3}(), {closure#5}() (+3 more)
 
 ### Community 75 - "CabFareQuoteEngineTest.php"
 Cohesion: 0.18
@@ -525,7 +550,7 @@ Nodes (5): {closure#1}(), {closure#1}(), {closure#1}(), {closure#1}(), {closure#
 
 ### Community 77 - "Illuminate\Http\Resources\Json\JsonResource"
 Cohesion: 0.06
-Nodes (8): PricingRuleController, StoreController, StoreStoreRequest, UpdateStoreRequest, ActivityLogResource, BikeImageResource, PricingRuleResource, StoreResource
+Nodes (9): PricingRuleController, StoreController, AdminStoreWebController, {closure#5}(), UpdateStoreRequest, ActivityLogResource, BikeImageResource, PricingRuleResource (+1 more)
 
 ### Community 78 - "Bike Rental Platform — Complete Requirement & Architecture Document"
 Cohesion: 0.05
@@ -535,21 +560,25 @@ Nodes (38): 10. Database Schema — Key Tables (high level), 11. Rollout Plan (s
 Cohesion: 0.10
 Nodes (19): Confirmed context and outstanding business decisions, Definition of DONE for *every* individual task, G.K. WhizWheel — 7-Service Requirements and Delivery Backlog, How to work on the next task, Phase 0 — blocking architecture and integrity, Phase 10 — finance, WhatsApp, privacy and reporting, Phase 11 — SEO, content, media and staging release, Phase 1 — physical bike inventory, checkout, and handover (+11 more)
 
-### Community 80 - "AdminAuthAndPanelTest.php"
-Cohesion: 0.10
-Nodes (5): {closure#10}(), {closure#12}(), {closure#14}(), {closure#19}(), {closure#4}()
-
 ### Community 81 - "ServiceBookingConfirmedNotification"
-Cohesion: 0.19
-Nodes (8): ServiceBookingConfirmedNotification, {closure#37}(), {closure#38}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}()
+Cohesion: 0.18
+Nodes (9): {closure#1}(), ServiceBookingConfirmedNotification, {closure#37}(), {closure#38}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}() (+1 more)
 
 ### Community 82 - "GK WhizWheel — Implemented API Reference"
 Cohesion: 0.05
 Nodes (36): Admin — Bookings, Refunds, Reports, Admin — Pricing, Admin — Stores & Staff, API Specification, Auth, Bikes (Public + Admin), Bookings — Customer (Website + App), Bookings — Staff/Store Manager App (Offline) (+28 more)
 
+### Community 83 - ".isSuperAdmin"
+Cohesion: 0.16
+Nodes (3): {closure#6}(), BookingPolicy, StorePolicy
+
 ### Community 84 - "ServiceRoleBasedAccessTest.php"
 Cohesion: 0.11
 Nodes (3): {closure#12}(), {closure#16}(), {closure#9}()
+
+### Community 85 - "PublicBikeModelAvailabilityTest.php"
+Cohesion: 0.30
+Nodes (11): availabilityQuery(), {closure#10}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#8}() (+3 more)
 
 ### Community 86 - "AppServiceProvider.php"
 Cohesion: 0.19
@@ -557,15 +586,15 @@ Nodes (11): AppServiceProvider, {closure#1}(), {closure#10}(), {closure#2}(), {c
 
 ### Community 87 - "GK WhizWheels — Complete Platform Features & Capabilities Matrix"
 Cohesion: 0.12
-Nodes (16): 1.1 Landing Page & Coastal Hero Experience (`/`), 1.2 Bike Fleet Explorer (`/bikes`), 1.3 Bike Detail & Multi-Step Booking Flow (`/bikes/{id}`), 1.4 Multi-Service Tourism Marketplace (`/services/*`), 1.5 Customer Authentication & Digital Identity, 1.6 Payment Gateways & Secure Transactions, 3.1 Store-Scoped Unified Bookings & Calendar (`/admin/bookings`), 3.2 Manual Booking Modifications & Conflict Prevention (`/admin/bookings/{id}/edit`) (+8 more)
-
-### Community 88 - "AdminStaffWebTest.php"
-Cohesion: 0.12
-Nodes (4): {closure#10}(), {closure#5}(), {closure#7}(), {closure#8}()
+Nodes (15): 3.1 Store-Scoped Unified Bookings & Calendar (`/admin/bookings`), 3.2 Manual Booking Modifications & Conflict Prevention (`/admin/bookings/{id}/edit`), 3.3 Dispatch & Fleet Turnaround Board (`/admin/dispatch`), 3.4 Multi-Service Operations Desk (`/admin/services/{serviceType}/*`), 5.1 Concurrency Safety & Availability Engine, 5.2 Progressive Web App (PWA) Capabilities, 5.3 Notifications & Communications Engine, 5.4 Staff REST API (Mobile App Ready) (`/api/v1/staff/*`) (+7 more)
 
 ### Community 90 - "ServiceLifecycleTransitionsTest.php"
 Cohesion: 0.20
 Nodes (8): {closure#10}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}(), {closure#9}(), lifecycleBooking()
+
+### Community 91 - "ActivityLog"
+Cohesion: 0.07
+Nodes (7): ActivityLogController, AdminLogWebController, AdminSettingsWebController, ActivityLog, SiteSetting, {closure#18}(), {closure#9}()
 
 ### Community 92 - "GK WhizWheel — Environment Variables Reference"
 Cohesion: 0.12
@@ -577,27 +606,31 @@ Nodes (5): {closure#2}(), {closure#3}(), {closure#7}(), recovery44Fixture(), rec
 
 ### Community 95 - "Issue #56 — Cab cancellation, rescheduling, settlement and QA"
 Cohesion: 0.14
-Nodes (12): Before staging, Issue #56 — Cab cancellation, rescheduling, settlement and QA, Slice 10: read-only settlement reconciliation (no transfers), Slice 1: pre-start cancellation reasons (this PR), Slice 2: cab rescheduling proposal intake, Slice 3: guarded reschedule approval and rejection, Slice 5: cab staff operations desk, Slice 6: internal dispute and incident register (+4 more)
+Nodes (12): Before staging, Issue #56 — Cab cancellation, rescheduling, settlement and QA, Slice 10: read-only settlement reconciliation (no transfers), Slice 2: cab rescheduling proposal intake, Slice 3: guarded reschedule approval and rejection, Slice 4: cab-specific refund review intake (no refund execution), Slice 5: cab staff operations desk, Slice 6: internal dispute and incident register (+4 more)
+
+### Community 96 - "PricingServiceTest.php"
+Cohesion: 0.10
+Nodes (3): {closure#14}(), PricingService, {closure#1}()
 
 ### Community 97 - "4. Running Tests Locally Before Pushing"
 Cohesion: 0.15
 Nodes (13): 1. Coding Standards, 1. Run Laravel Backend Tests (Pest), 2. Branch Naming Conventions, 2. Verify Code Formatting, 3. Commit Message Format (Conventional Commits), 3. Verify Frontend Build, 4. Run Mobile Self-Check Scripts, 4. Running Tests Locally Before Pushing (+5 more)
 
-### Community 99 - "PhonePeWebhookController.php"
-Cohesion: 0.07
-Nodes (13): {closure#1}(), {closure#1}(), {closure#3}(), {closure#4}(), {closure#5}(), Booking, PaymentReceiptNotification, BikeBookingPayments (+5 more)
+### Community 99 - "PhonePeService"
+Cohesion: 0.11
+Nodes (9): {closure#1}(), PhonePeWebhookController, {closure#1}(), {closure#3}(), {closure#4}(), {closure#5}(), BikeBookingPayments, PhonePeService (+1 more)
 
 ### Community 100 - "App\Models\Bike"
-Cohesion: 0.22
-Nodes (6): {closure#1}(), {closure#2}(), {closure#6}(), {closure#6}(), BikeAvailabilityRequest, {closure#9}()
+Cohesion: 0.07
+Nodes (5): {closure#1}(), {closure#2}(), {closure#3}(), {closure#6}(), {closure#8}()
 
-### Community 101 - "BikeFrontendPagesTest.php"
-Cohesion: 0.13
-Nodes (4): {closure#10}(), {closure#4}(), {closure#6}(), {closure#8}()
+### Community 101 - "BikeRelocationController.php"
+Cohesion: 0.21
+Nodes (5): {closure#3}(), {closure#5}(), {closure#6}(), {closure#7}(), BikeRelocationTask
 
 ### Community 102 - "BikeComplianceGate.php"
-Cohesion: 0.27
-Nodes (3): AuditBikeCompliance, {closure#1}(), BikeComplianceGate
+Cohesion: 0.19
+Nodes (8): AuditBikeCompliance, {closure#1}(), BikeComplianceGate, Implemented in this PR, Issue #48 — Bike compliance, maintenance and handover, Staging procedure (after approved backup), Still required before full acceptance, Verified requirements and existing implementation
 
 ### Community 105 - "2026_11_07_000003_create_bike_models_table.php"
 Cohesion: 0.33
@@ -607,13 +640,13 @@ Nodes (3): {closure#1}(), {closure#2}(), {closure#3}()
 Cohesion: 0.14
 Nodes (14): require, archtechx/enums, barryvdh/laravel-dompdf, chillerlan/php-qrcode, inertiajs/inertia-laravel, laravel/framework, laravel/sanctum, laravel/socialite (+6 more)
 
-### Community 107 - "ServiceBookingApproval.php"
-Cohesion: 0.18
-Nodes (3): {closure#1}(), ServicePaymentReceipt, {closure#6}()
+### Community 107 - "BranchBikeRentalLandingTest.php"
+Cohesion: 0.20
+Nodes (8): branchLandingVehicle(), {closure#10}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#8}(), {closure#9}()
 
-### Community 108 - "AdminReportsWebTest.php"
-Cohesion: 0.18
-Nodes (4): {closure#10}(), {closure#5}(), {closure#7}(), {closure#9}()
+### Community 108 - "Illuminate\Console\Command"
+Cohesion: 0.25
+Nodes (3): ReleaseExpiredHolds, ReleaseExpiredServiceHolds, SendBookingReminders
 
 ### Community 109 - "AdminStoresWebTest.php"
 Cohesion: 0.11
@@ -621,43 +654,39 @@ Nodes (3): {closure#11}(), {closure#5}(), {closure#7}()
 
 ### Community 110 - "Bike"
 Cohesion: 0.03
-Nodes (25): BikeStatus, AVAILABLE, MAINTENANCE, ON_RENT, RETIRED, BookingChannel, OFFLINE, ONLINE (+17 more)
+Nodes (20): BikeStatus, AVAILABLE, MAINTENANCE, ON_RENT, RETIRED, BookingChannel, OFFLINE, ONLINE (+12 more)
 
 ### Community 113 - "ServicePaymentEligibilityTest.php"
-Cohesion: 0.27
-Nodes (10): {closure#10}(), {closure#11}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}() (+2 more)
+Cohesion: 0.11
+Nodes (16): {closure#5}(), {closure#4}(), {closure#1}(), {closure#10}(), {closure#11}(), {closure#2}(), {closure#3}(), {closure#4}() (+8 more)
 
 ### Community 115 - "BikeDirectionalPickupReturnFeeTest.php"
-Cohesion: 0.13
-Nodes (11): BookingLocationFees, BookingPickupPoints, bike47FeeRule(), bike47Route(), {closure#11}(), {closure#12}(), {closure#2}(), {closure#5}() (+3 more)
-
-### Community 116 - "CustomerServiceEnquiryAccountTest.php"
-Cohesion: 0.22
-Nodes (7): accountStatusEnquiry(), {closure#2}(), {closure#3}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#9}()
+Cohesion: 0.07
+Nodes (15): PickupPoint, BikeGstQuote, BookingLocationFees, BookingPickupPoints, bike47FeeRule(), bike47Route(), {closure#11}(), {closure#12}() (+7 more)
 
 ### Community 117 - "README.md"
-Cohesion: 0.17
+Cohesion: 0.18
 Nodes (7): 1. Local Development Environment, 2. .env.example Template, 3. Deployment Steps (Serverbyt Shared Hosting via cPanel), 4. Backup Strategy (No Extra Cost), 5. Mobile App Distribution (Android APK), 6. Deployment preflight and staging gate, Environment Setup & Deployment (Serverbyt Shared Hosting)
 
 ### Community 118 - "AuthEndpointsTest.php"
-Cohesion: 0.06
-Nodes (5): OtpRequestRequest, OtpNotification, {closure#7}(), {closure#8}(), CustomerOtpLoginTest
+Cohesion: 0.12
+Nodes (3): OtpNotification, {closure#7}(), {closure#8}()
 
 ### Community 119 - "G.K. WhizWheel — Multi-branch staging acceptance runbook"
 Cohesion: 0.17
 Nodes (11): 0. Release protection, 1. Baseline smoke checks, 2. Database ownership audit — read only, 3. Explicit legacy assignment — dry run first, 4. Role and privacy acceptance, 5. Booking and vehicle operations, 6. Relocation task acceptance and obsolete-alert closure, 7. Fleet location readiness audit — read only (+3 more)
 
 ### Community 121 - "SensitiveDataLoggingAuditTest.php"
-Cohesion: 0.18
-Nodes (4): MaskSensitiveDataProcessor, {closure#1}(), {closure#5}(), {closure#3}()
+Cohesion: 0.20
+Nodes (3): MaskSensitiveDataProcessor, {closure#1}(), {closure#3}()
 
 ### Community 122 - "BranchServiceLandingWebController.php"
-Cohesion: 0.10
-Nodes (8): {closure#2}(), {closure#4}(), {closure#2}(), {closure#1}(), {closure#10}(), {closure#2}(), {closure#5}(), {closure#9}()
+Cohesion: 0.06
+Nodes (17): {closure#2}(), {closure#4}(), {closure#2}(), {closure#1}(), {closure#10}(), {closure#2}(), {closure#5}(), {closure#6}() (+9 more)
 
 ### Community 123 - "CustomerAdminStaffRouteAccessDenialTest.php"
-Cohesion: 0.09
-Nodes (3): EnsureAdminOrStaff, {closure#13}(), {closure#5}()
+Cohesion: 0.08
+Nodes (5): EnsureAdminOrStaff, EnsureServiceAccess, 2. Role-Based Access Control (RBAC) Matrix, {closure#13}(), {closure#5}()
 
 ### Community 124 - "ServiceQuoteSnapshotTest.php"
 Cohesion: 0.39
@@ -668,8 +697,8 @@ Cohesion: 0.23
 Nodes (5): {closure#2}(), {closure#4}(), {closure#5}(), {closure#8}(), resourceTestBooking()
 
 ### Community 126 - "Illuminate\Http\JsonResponse"
-Cohesion: 0.04
-Nodes (23): ActivityLogController, BikeModelController, BookingController, ReportController, StaffController, AuthController, BikeModelAvailabilityController, ReviewController (+15 more)
+Cohesion: 0.06
+Nodes (12): ReportController, StaffController, AuthController, BikeController, {closure#4}(), CustomerController, AdminCabDispatchController, AdminServiceApprovalController (+4 more)
 
 ### Community 127 - "CabCustomerEnquiryTest.php"
 Cohesion: 0.39
@@ -687,9 +716,13 @@ Nodes (9): CheckInIndex(), SERVICE_THEMES, clearOfflineActions(), getPendingCoun
 Cohesion: 0.38
 Nodes (10): branchForIsolation(), {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}() (+2 more)
 
+### Community 134 - "Illuminate\Validation\Rules\Enum"
+Cohesion: 0.12
+Nodes (3): StoreStoreRequest, UpdateCouponRequest, UpdatePricingRuleRequest
+
 ### Community 135 - "ServiceAvailabilityService.php"
-Cohesion: 0.13
-Nodes (9): ReleaseExpiredServiceHolds, ServiceItemNotAvailableException, {closure#13}(), {closure#14}(), {closure#1}(), {closure#2}(), {closure#3}(), {closure#5}() (+1 more)
+Cohesion: 0.09
+Nodes (6): ServiceItemNotAvailableException, {closure#1}(), {closure#2}(), {closure#3}(), {closure#5}(), ServiceAvailabilityService
 
 ### Community 138 - "Module 2: Super Admin Operations Console"
 Cohesion: 0.22
@@ -708,8 +741,8 @@ Cohesion: 0.22
 Nodes (8): Core invariants, Entities and cardinality, Issue #42 — Service resource inventory and availability architecture, Multi-Tenant Store Scoping (`store_id`), Remaining explicit work, Resource types and next-service ownership, Rollout and rollback, Staff Vertical Permissions (`service_user`)
 
 ### Community 143 - "Illuminate\Http\Request"
-Cohesion: 0.09
-Nodes (6): ServiceBookingController, AdminAuthController, AdminCabFareController, AdminCabInventoryController, AdminReportWebController, AdminServiceEnquiryWebController
+Cohesion: 0.07
+Nodes (11): CustomerKycController, KycDocumentDownloadController, ServiceBookingController, AdminCabFareController, AdminCabInventoryController, AdminReportWebController, AdminServiceEnquiryWebController, CustomerAccountWebController (+3 more)
 
 ### Community 145 - "composer.json"
 Cohesion: 0.22
@@ -723,25 +756,25 @@ Nodes (8): 0.1 — Initialize the Laravel project, 0.2 — Install and configure
 Cohesion: 0.22
 Nodes (9): 11.1 — Git setup and .gitignore, 11.2 — Repository structure check, 11.3 — Main README.md, 11.4 — API documentation from the spec, 11.5 — Environment variables documentation, 11.6 — Contribution/setup notes for future-you or other devs, 11.7 — License and repo metadata, 11.8 — First commit and push to GitHub (+1 more)
 
-### Community 152 - "UserRole"
-Cohesion: 0.05
-Nodes (16): StoreStatus, ACTIVE, INACTIVE, UserRole, CUSTOMER, STAFF, STORE_MANAGER, SUPER_ADMIN (+8 more)
+### Community 152 - "StoreBikeRequest.php"
+Cohesion: 0.13
+Nodes (5): ValidatesBikeModelAssignment, {closure#1}(), StoreBikeRequest, {closure#1}(), UpdateBikeRequest
 
-### Community 153 - "Illuminate\Support\Facades\DB"
-Cohesion: 0.06
-Nodes (8): AdminCabRescheduleController, {closure#8}(), {closure#3}(), {closure#5}(), {closure#6}(), {closure#7}(), BikeRelocationTask, {closure#4}()
+### Community 153 - "Controller"
+Cohesion: 0.04
+Nodes (17): BikeModelController, BikeDocumentDownloadController, ReviewController, Controller, AdminCabDisputeController, AdminCabOperationsController, AdminCabRefundReviewController, AdminCabRescheduleController (+9 more)
 
 ### Community 154 - "Added"
-Cohesion: 0.29
-Nodes (6): [0.1.0] - 2026-09-06, [1.0.0] - 2026-09-10, Added, Changelog, Initial MVP Release, Major Production Release & Multi-Service Expansion
+Cohesion: 0.25
+Nodes (7): [0.1.0] - 2026-09-06, [1.0.0] - 2026-09-10, Added, Added, Changelog, Initial MVP Release, Major Production Release & Multi-Service Expansion
 
 ### Community 157 - "6. Module 4: Super Admin Operations & Platform Governance"
 Cohesion: 0.22
 Nodes (9): 6.1 Executive KPI & Revenue Analytics Dashboard, 6.2 Fleet Lifecycle, Compliance & Maintenance Management, 6.3 Multi-Store Hub Network Setup, 6.4 Staff Accounts & RBAC Assignment, 6.5 Dynamic Pricing & Surge Rule Engine, 6.6 Coupon & Promotional Rule Management, 6.7 Financial Control & Manual Refund Center, 6.8 Immutable System Audit Trails & Activity Logging (+1 more)
 
-### Community 160 - "Illuminate\Notifications\Notification"
-Cohesion: 0.06
-Nodes (11): SendBookingReminders, BikeDocumentExpiryAlertNotification, BikeManagerBookingAlertNotification, LogsNotification, LateFeeAlertNotification, WhatsAppMessage, PickupReminderNotification, RefundStatusNotification (+3 more)
+### Community 160 - "Illuminate\Bus\Queueable"
+Cohesion: 0.08
+Nodes (6): BikeDocumentExpiryAlertNotification, LogsNotification, LateFeeAlertNotification, PaymentReceiptNotification, PickupReminderNotification, ServiceManagerBookingAlertNotification
 
 ### Community 162 - "config"
 Cohesion: 0.29
@@ -751,6 +784,10 @@ Nodes (7): pestphp/pest-plugin, php-http/discovery, config, allow-plugins, optim
 Cohesion: 0.48
 Nodes (5): {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), enquiryPayload()
 
+### Community 164 - "ServiceItemController"
+Cohesion: 0.21
+Nodes (3): {closure#4}(), {closure#6}(), ServiceItemController
+
 ### Community 165 - "PHASE 1 — Database Layer"
 Cohesion: 0.29
 Nodes (7): 1.1 — Core migrations (no dependencies), 1.2 — Bike-related migrations, 1.3 — Booking-related migrations, 1.4 — Supporting/logging migrations, 1.5 — Eloquent models + relationships, 1.6 — Seeders for local development, PHASE 1 — Database Layer
@@ -758,6 +795,10 @@ Nodes (7): 1.1 — Core migrations (no dependencies), 1.2 — Bike-related migra
 ### Community 166 - "PHASE 9 — Store Manager Mobile App (React Native, Android-only)"
 Cohesion: 0.29
 Nodes (7): 9.1 — Project setup, 9.2 — Login & store switcher, 9.3 — Walk-in booking flow screens, 9.4 — Return flow screens, 9.5 — Offline queue & sync UI, 9.6 — In-app version check, PHASE 9 — Store Manager Mobile App (React Native, Android-only)
+
+### Community 169 - "ServiceItem"
+Cohesion: 0.11
+Nodes (3): ServiceItem, ServiceQuoteSnapshot, ServiceQuoteSnapshots
 
 ### Community 170 - "scripts"
 Cohesion: 0.33
@@ -771,9 +812,9 @@ Nodes (3): {closure#1}(), {closure#2}(), {closure#3}()
 Cohesion: 0.33
 Nodes (3): {closure#1}(), {closure#2}(), {closure#3}()
 
-### Community 174 - "CustomerAccountWebController.php"
+### Community 174 - "AvailabilityService"
 Cohesion: 0.05
-Nodes (8): BookingController, {closure#1}(), {closure#1}(), CustomerAccountWebController, CancelBookingRequest, ConfirmPaymentRequest, ExtendBookingRequest, HoldBookingRequest
+Nodes (9): BookingController, BookingController, {closure#1}(), BikeController, BikeModelAvailabilityController, BookingResource, RefundResource, AvailabilityService (+1 more)
 
 ### Community 175 - "PHASE 2 — Core Business Logic (Services)"
 Cohesion: 0.33
@@ -803,21 +844,25 @@ Nodes (5): Implemented in PR, Issue #49 — Bike customer checkout and full stag
 Cohesion: 0.40
 Nodes (5): autoload, psr-4, App\\, Database\\Factories\\, Database\\Seeders\\
 
+### Community 193 - "Illuminate\Foundation\Testing\RefreshDatabase"
+Cohesion: 0.06
+Nodes (3): FileUploadSecurityTest, FontOptimizationTest, SitemapTest
+
 ### Community 202 - "NotificationsAndLogsTest.php"
-Cohesion: 0.08
-Nodes (17): WhatsAppChannel, BookingConfirmationNotification, WhatsAppService, {closure#5}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}() (+9 more)
+Cohesion: 0.11
+Nodes (14): BookingConfirmationNotification, {closure#5}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}() (+6 more)
 
 ### Community 204 - "Coding Standards & Project Structure"
-Cohesion: 0.20
-Nodes (8): 1. PHP / Laravel Standards, 2. Folder Structure (Laravel app/ directory), 3. Frontend (Website) Standards, 4. Mobile App (Store Manager App) Standards, 5. Git Workflow, 7. Code Review Checklist (even if it's just you + an AI tool reviewing itself), 8. Authorization House Standard, Coding Standards & Project Structure
+Cohesion: 0.18
+Nodes (9): 1. PHP / Laravel Standards, 2. Folder Structure (Laravel app/ directory), 3. Frontend (Website) Standards, 4. Mobile App (Store Manager App) Standards, 5. Git Workflow, 6. Testing Expectations, 7. Code Review Checklist (even if it's just you + an AI tool reviewing itself), 8. Authorization House Standard (+1 more)
 
 ### Community 205 - "CabInventoryFoundationTest.php"
 Cohesion: 0.33
 Nodes (7): cabDriverPayload(), cabVehiclePayload(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}()
 
 ### Community 208 - "Primary Abstractions (Identified by Graphify Degree Centrality)"
-Cohesion: 0.13
-Nodes (14): 1. Primary Codebase Understanding System: Graphify, 2. Core Architecture & Key Abstractions (God Nodes), 3. Engineering Rules & Best Practices, 4. Everything Claude Code (ECC) System Integration, AGENTS.md — GK WhizWheel Agent Architecture & Engineering Guide, Frontend & MUI v6/v7 Standards, Harness Compatibility & Boundaries, Installed Components & Native Topology (+6 more)
+Cohesion: 0.11
+Nodes (15): 1. Primary Codebase Understanding System: Graphify, 2. Core Architecture & Key Abstractions (God Nodes), 3. Engineering Rules & Best Practices, 4. Everything Claude Code (ECC) System Integration, AGENTS.md — GK WhizWheel Agent Architecture & Engineering Guide, Frontend & MUI v6/v7 Standards, Harness Compatibility & Boundaries, Installed Components & Native Topology (+7 more)
 
 ### Community 209 - "PHASE 3 — Public & Customer APIs"
 Cohesion: 0.40
@@ -849,23 +894,19 @@ Nodes (6): 4.1 Ground Pass Scanner & Fast Check-In (`/admin/check-in`), 4.2 Offl
 
 ### Community 218 - "Illuminate\Database\Eloquent\Relations\BelongsTo"
 Cohesion: 0.05
-Nodes (6): {closure#1}(), CabEnquiryDetail, CouponUsage, Review, ServiceQuoteSnapshot, StaffStore
+Nodes (9): {closure#1}(), BranchBikeModelPrice, CabDispatchEvent, CabEnquiryDetail, CabFareRule, CouponUsage, NotificationLog, ServicePaymentReceipt (+1 more)
 
 ### Community 219 - "DETAILED_FEATURE_SPECIFICATION.md"
 Cohesion: 0.11
-Nodes (18): 1.1 Single Source of Truth, 1.2 Concurrency & Race-Condition Elimination, 1.3 State Machine Flow, 1. Architecture & Concurrency Philosophy, 4.1 Fast Pass Scanner & QR Code Boarding Console, 4.2 Offline Pass Verification Queue (PWA + IndexedDB), 4.3 Interactive Bike Handover Inspection Wizard, 4.4 Multi-Store Bike Return & Settlement Wizard (+10 more)
+Nodes (18): 1.1 Single Source of Truth, 1.2 Concurrency & Race-Condition Elimination, 1.3 State Machine Flow, 1. Architecture & Concurrency Philosophy, 5.1 Store-Scoped Bookings Management & Interactive Month Calendar, 5.2 Manual Booking Rescheduling & Collision Prevention, 5.3 Dispatch & Fleet Turnaround Board, 5.4 Multi-Service Operations & Passenger Manifests (+10 more)
 
-### Community 228 - "AvailabilityService"
+### Community 228 - "App\Services\AvailabilityService"
+Cohesion: 0.10
+Nodes (8): BikeNotAvailableException, InvalidBookingTransitionException, {closure#12}(), {closure#7}(), {closure#8}(), {closure#5}(), {closure#6}(), 3.3 Real-Time Availability & Race-Condition Safe Booking Engine
+
+### Community 236 - "Store"
 Cohesion: 0.05
-Nodes (19): AuditFleetRelocations, {closure#1}(), {closure#2}(), BikeNotAvailableException, InvalidBookingTransitionException, BikeController, HoldBikeModelRequest, AvailabilityService (+11 more)
-
-### Community 230 - "AdminStaffWebController.php"
-Cohesion: 0.11
-Nodes (4): AdminStaffWebController, {closure#7}(), AssignStaffStoresRequest, StoreStaffRequest
-
-### Community 238 - "5. Module 3: Store & Branch Manager Console"
-Cohesion: 0.33
-Nodes (6): 5.1 Store-Scoped Bookings Management & Interactive Month Calendar, 5.2 Manual Booking Rescheduling & Collision Prevention, 5.3 Dispatch & Fleet Turnaround Board, 5.4 Multi-Service Operations & Passenger Manifests, 5.5 Store Fleet Inventory & Parking Allocation, 5. Module 3: Store & Branch Manager Console
+Nodes (8): {closure#10}(), {closure#3}(), {closure#4}(), Bike, Store, BranchBikePricing, MassAssignmentProtectionTest, SecurityAuditComplianceTest
 
 ### Community 250 - "Issue #105 — Private document controls and rollout gates"
 Cohesion: 0.50
@@ -879,9 +920,9 @@ Nodes (3): Development scope, Issues #41 / #43 / #51 — Resource-backed custome
 Cohesion: 0.50
 Nodes (3): Implemented foundation, Issue #54 — Cab customer trip request and verified checkout readiness, Remaining required work before closing #54
 
-### Community 253 - "Issue #48 — Bike compliance, maintenance and handover"
-Cohesion: 0.33
-Nodes (5): Implemented in this PR, Issue #48 — Bike compliance, maintenance and handover, Staging procedure (after approved backup), Still required before full acceptance, Verified requirements and existing implementation
+### Community 253 - "Module 1: Customer Portal & Public Web Experience"
+Cohesion: 0.29
+Nodes (7): 1.1 Landing Page & Coastal Hero Experience (`/`), 1.2 Bike Fleet Explorer (`/bikes`), 1.3 Bike Detail & Multi-Step Booking Flow (`/bikes/{id}`), 1.4 Multi-Service Tourism Marketplace (`/services/*`), 1.5 Customer Authentication & Digital Identity, 1.6 Payment Gateways & Secure Transactions, Module 1: Customer Portal & Public Web Experience
 
 ### Community 254 - "autoload-dev"
 Cohesion: 0.67
@@ -891,33 +932,41 @@ Nodes (3): autoload-dev, psr-4, Tests\\
 Cohesion: 0.67
 Nodes (3): extra, laravel, dont-discover
 
-### Community 289 - "Module 5: Cross-Cutting & Technical Infrastructure"
-Cohesion: 0.33
-Nodes (6): 5.1 Concurrency Safety & Availability Engine, 5.2 Progressive Web App (PWA) Capabilities, 5.3 Notifications & Communications Engine, 5.4 Staff REST API (Mobile App Ready) (`/api/v1/staff/*`), 5.5 Quality Assurance & Test Coverage, Module 5: Cross-Cutting & Technical Infrastructure
+### Community 288 - "AuditFleetRelocations.php"
+Cohesion: 0.40
+Nodes (3): AuditFleetRelocations, {closure#1}(), {closure#2}()
 
 ### Community 292 - "ADR 0001: Integration of Everything Claude Code (ECC) in Google Antigravity"
 Cohesion: 0.29
 Nodes (6): ADR 0001: Integration of Everything Claude Code (ECC) in Google Antigravity, Consequences, Context, Date, Decision, Status
 
+### Community 300 - "4. Module 2: Ground Staff & Jetty Counter Operations"
+Cohesion: 0.33
+Nodes (6): 4.1 Fast Pass Scanner & QR Code Boarding Console, 4.2 Offline Pass Verification Queue (PWA + IndexedDB), 4.3 Interactive Bike Handover Inspection Wizard, 4.4 Multi-Store Bike Return & Settlement Wizard, 4.5 Instant Counter Cash Balance Collection, 4. Module 2: Ground Staff & Jetty Counter Operations
+
+### Community 302 - "NotificationStatus"
+Cohesion: 0.16
+Nodes (5): NotificationStatus, DELIVERED, FAILED, SENT, LogNotificationAttempt
+
 ## Knowledge Gaps
-- **72 isolated node(s):** `EMISSION_CERTIFICATE`, `INSURANCE`, `RC`, `DRIVING_LICENSE`, `NATIONAL_ID` (+67 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2406 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **154 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **72 isolated node(s):** `EMISSION_CERTIFICATE`, `INSURANCE`, `RC`, `AVAILABLE`, `MAINTENANCE` (+67 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2407 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **165 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `User` connect `User` to `Carbon\Carbon`, `Illuminate\Foundation\Testing\RefreshDatabase`, `ArchTech\Enums\InvokableCases`, `Illuminate\Database\Seeder`, `AdminBookingsEndpointsTest.php`, `Illuminate\Http\RedirectResponse`, `CabDispatchFlowTest.php`, `Store`, `IdorTest.php`, `BikeModelBookingAllocationTest.php`, `CabRescheduleRequest`, `ServiceBookingApprovalTest.php`, `TwoFactorService`, `AdminBookingsWebTest.php`, `RefundServiceTest.php`, `CabDispatch`, `BookingLifecycleReplayProtectionTest.php`, `HandleInertiaRequests.php`, `AdminGroundCheckInTest`, `ActivityLog`, `BranchAdminOperationalTest`, `BookingStatus`, `Laravel\Sanctum\Sanctum`, `UserStatus`, `CabDriver`, `BikeAndPricingMigrationsTest.php`, `Coupon`, `CustomerServiceBookingSecurityTest.php`, `.stores`, `Inertia\Testing\AssertableInertia`, `Illuminate\Console\Command`, `ServiceEnquiryProposalLinkTest`, `AdminBikesWebTest.php`, `BikeBookingPickupPointsTest.php`, `PhonePeWebhookController.php`, `WhizWheelV2StandardizationTest.php`, `.isAdmin`, `ServiceItemAndBookingApiTest.php`, `CabFareQuoteEngineTest.php`, `AdminAuthAndPanelTest.php`, `ServiceBookingConfirmedNotification`, `.isSuperAdmin`, `ServiceRoleBasedAccessTest.php`, `AdminStaffWebTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `ServiceLifecycleTransitionsTest.php`, `ServiceAvailabilityServiceTest.php`, `AdminPricingWebTest.php`, `BikeRelocationResolutionTest.php`, `ServiceBookingApproval.php`, `AdminReportsWebTest.php`, `Bike`, `AdminServiceCategoryTest.php`, `ServicePaymentEligibilityTest.php`, `CustomerServiceEnquiryAccountTest.php`, `AuthEndpointsTest.php`, `AdminCouponsWebTest.php`, `SensitiveDataLoggingAuditTest.php`, `CustomerAdminStaffRouteAccessDenialTest.php`, `ServiceQuoteSnapshotTest.php`, `Illuminate\Http\JsonResponse`, `CabCustomerEnquiryTest.php`, `SchemaMigrationsTest.php`, `BranchAccessIsolationTest.php`, `ServiceAvailabilityService.php`, `DynamicServicePricingTest.php`, `PricingRulePolicy`, `Illuminate\Http\Request`, `ServiceBookingConcurrencyTest.php`, `AvailabilityServiceTest.php`, `UserRole`, `Illuminate\Support\Facades\DB`, `AdminServiceItemDocumentsTest.php`, `AdminCouponsEndpointsTest.php`, `ServiceEnquiryContractTest.php`, `HtmlEscapingAndXssAuditTest`, `NotificationsAndLogsTest.php`, `CabInventoryFoundationTest.php`, `AdminStaffWebController.php`, `MultiGuardAuthenticationTest`, `LogsAndSyncMigrationsTest.php`, `ServiceBookingAlertRecipients.php`, `TwoFactorEnforcementTest.php`, `ServiceBookingSeeder.php`, `SanctumApiTest.php`?**
-  _High betweenness centrality (0.098) - this node is a cross-community bridge._
+- **Why does `User` connect `User` to `TestCase`, `ArchTech\Enums\InvokableCases`, `Illuminate\Database\Seeder`, `Illuminate\Http\RedirectResponse`, `CabDispatchFlowTest.php`, `BikeCategory`, `Illuminate\Database\Eloquent\Model`, `UserStatus`, `BikeModelBookingAllocationTest.php`, `ServiceBookingApprovalTest.php`, `TwoFactorService`, `RefundServiceTest.php`, `CabDispatch`, `BookingLifecycleReplayProtectionTest.php`, `AdminServiceEnquiryWebController.php`, `HandleInertiaRequests.php`, `Booking`, `UserRole`, `BranchAdminOperationalTest`, `BookingStatus`, `Laravel\Sanctum\Sanctum`, `PublicBikesEndpointsTest.php`, `ServiceBooking`, `CabDriver`, `BikeAndPricingMigrationsTest.php`, `.stores`, `CustomerAccountWebTest.php`, `Illuminate\Console\Command`, `ServiceEnquiryProposalLinkTest`, `Inertia\Testing\AssertableInertia`, `BikeBookingPickupPointsTest.php`, `PhonePeWebhookController.php`, `WhizWheelV2StandardizationTest.php`, `.isAdmin`, `ServiceItemAndBookingApiTest.php`, `CabFareQuoteEngineTest.php`, `GuestCheckoutAndPhonePeTest.php`, `ServiceBookingConfirmedNotification`, `.isSuperAdmin`, `ServiceRoleBasedAccessTest.php`, `PublicBikeModelAvailabilityTest.php`, `IdorTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `ServiceLifecycleTransitionsTest.php`, `AdminPricingWebTest.php`, `BikeRelocationResolutionTest.php`, `Bike`, `AdminServiceCategoryTest.php`, `ServicePaymentEligibilityTest.php`, `AuthEndpointsTest.php`, `AdminCouponsWebTest.php`, `SensitiveDataLoggingAuditTest.php`, `CustomerAdminStaffRouteAccessDenialTest.php`, `ServiceQuoteSnapshotTest.php`, `Illuminate\Http\JsonResponse`, `CabCustomerEnquiryTest.php`, `SchemaMigrationsTest.php`, `UserSeeder.php`, `BranchAccessIsolationTest.php`, `ServiceAvailabilityService.php`, `DynamicServicePricingTest.php`, `PricingRulePolicy`, `ServiceBookingConcurrencyTest.php`, `AvailabilityServiceTest.php`, `Controller`, `AdminServiceItemDocumentsTest.php`, `AdminCouponsEndpointsTest.php`, `ServiceEnquiryContractTest.php`, `CustomerOtpLoginTest`, `RateLimitingSecurityTest.php`, `Illuminate\Foundation\Testing\RefreshDatabase`, `NotificationsAndLogsTest.php`, `CabInventoryFoundationTest.php`, `Primary Abstractions (Identified by Graphify Degree Centrality)`, `AdminStaffWebController.php`, `Store`, `MultiGuardAuthenticationTest`, `SanctumTokenSecurityTest.php`, `TwoFactorEnforcementTest.php`, `ServiceBookingSeeder.php`, `AdminDispatchWebTest`, `NotificationStatus`, `RawSqlInjectionSecurityTest.php`?**
+  _High betweenness centrality (0.114) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `User` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`User` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `EMISSION_CERTIFICATE`, `INSURANCE`, `RC` to the rest of the system?**
   _72 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Carbon\Carbon` be split into smaller, more focused modules?**
-  _Cohesion score 0.04265593561368209 - nodes in this community are weakly interconnected._
-- **Why does `Store` connect `Store` to `Carbon\Carbon`, `Illuminate\Foundation\Testing\RefreshDatabase`, `ArchTech\Enums\InvokableCases`, `Illuminate\Database\Seeder`, `AdminBookingsEndpointsTest.php`, `BranchAccessIsolationTest.php`, `AdminPricingRuleWebController.php`, `CabDispatchFlowTest.php`, `ServiceAvailabilityService.php`, `Illuminate\Database\Eloquent\Model`, `IdorTest.php`, `Inertia\Response`, `BikeModelBookingAllocationTest.php`, `Illuminate\Http\Request`, `ServiceBookingApprovalTest.php`, `AdminBookingsWebTest.php`, `AdminBikeWebController.php`, `UserRole`, `Illuminate\Support\Facades\DB`, `AvailabilityServiceTest.php`, `RefundServiceTest.php`, `AdminServiceItemDocumentsTest.php`, `BookingLifecycleReplayProtectionTest.php`, `AdminServiceEnquiryWebController.php`, `AdminGroundCheckInTest`, `ActivityLog`, `BranchAdminOperationalTest`, `BookingStatus`, `Laravel\Sanctum\Sanctum`, `ServiceResource`, `AdminBookingWebController.php`, `UserStatus`, `CabDriver`, `AdminDashboardController.php`, `BikeModelPublicWebTest.php`, `CustomerServiceBookingSecurityTest.php`, `.stores`, `Inertia\Testing\AssertableInertia`, `AdminBikesWebTest.php`, `BikeBookingPickupPointsTest.php`, `WhizWheelV2StandardizationTest.php`, `ServiceItemAndBookingApiTest.php`, `CabFareQuoteEngineTest.php`, `NotificationsAndLogsTest.php`, `Illuminate\Http\Resources\Json\JsonResource`, `CabInventoryFoundationTest.php`, `AdminAuthAndPanelTest.php`, `ServiceBookingConfirmedNotification`, `.isSuperAdmin`, `ServiceRoleBasedAccessTest.php`, `ServiceItemController.php`, `AdminStaffWebTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `AdminPricingWebTest.php`, `BikeFrontendPagesTest.php`, `AdminStaffWebController.php`, `BikeRelocationResolutionTest.php`, `AdminReportsWebTest.php`, `Bike`, `CabMySqlConcurrencyTest.php`, `AdminServiceCategoryTest.php`, `BikeDirectionalPickupReturnFeeTest.php`, `BranchServiceLandingWebController.php`, `CabCustomerEnquiryTest.php`?**
-  _High betweenness centrality (0.060) - this node is a cross-community bridge._
+- **Should `TestCase` be split into smaller, more focused modules?**
+  _Cohesion score 0.07130124777183601 - nodes in this community are weakly interconnected._
+- **Why does `UserRole` connect `UserRole` to `TestCase`, `ArchTech\Enums\InvokableCases`, `Illuminate\Database\Seeder`, `Illuminate\Http\RedirectResponse`, `CabDispatchFlowTest.php`, `BikeCategory`, `User`, `UserStatus`, `Staff/BookingController.php`, `BikeModelBookingAllocationTest.php`, `ServiceBookingApprovalTest.php`, `TwoFactorService`, `AdminBikeWebController.php`, `RefundServiceTest.php`, `BookingLifecycleReplayProtectionTest.php`, `AdminServiceEnquiryWebController.php`, `Booking`, `BookingStatus`, `Laravel\Sanctum\Sanctum`, `AdminBookingWebController.php`, `PublicBikesEndpointsTest.php`, `ServiceBooking`, `Illuminate\Foundation\Http\FormRequest`, `AdminDashboardController.php`, `.stores`, `CustomerAccountWebTest.php`, `Illuminate\Console\Command`, `Inertia\Testing\AssertableInertia`, `BikeBookingPickupPointsTest.php`, `PhonePeWebhookController.php`, `WhizWheelV2StandardizationTest.php`, `.isAdmin`, `ServiceItemAndBookingApiTest.php`, `CabFareQuoteEngineTest.php`, `ServiceBookingConfirmedNotification`, `.isSuperAdmin`, `ServiceRoleBasedAccessTest.php`, `PublicBikeModelAvailabilityTest.php`, `IdorTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `ServiceLifecycleTransitionsTest.php`, `ActivityLog`, `AdminPricingWebTest.php`, `BikeRelocationController.php`, `BikeRelocationResolutionTest.php`, `Bike`, `AdminServiceCategoryTest.php`, `ServicePaymentEligibilityTest.php`, `AuthEndpointsTest.php`, `AdminCouponsWebTest.php`, `SensitiveDataLoggingAuditTest.php`, `CustomerAdminStaffRouteAccessDenialTest.php`, `ServiceQuoteSnapshotTest.php`, `Illuminate\Http\JsonResponse`, `CabCustomerEnquiryTest.php`, `SchemaMigrationsTest.php`, `UserSeeder.php`, `BranchAccessIsolationTest.php`, `DynamicServicePricingTest.php`, `Illuminate\Http\Request`, `AvailabilityServiceTest.php`, `Controller`, `AdminServiceItemDocumentsTest.php`, `AdminCouponsEndpointsTest.php`, `ServiceEnquiryContractTest.php`, `ServiceItemController`, `HandoverBookingRequest`, `Illuminate\Foundation\Testing\RefreshDatabase`, `NotificationsAndLogsTest.php`, `CabInventoryFoundationTest.php`, `Primary Abstractions (Identified by Graphify Degree Centrality)`, `AdminStaffWebController.php`, `Store`, `StoreCustomerRequest.php`, `SanctumTokenSecurityTest.php`, `AdminDispatchWebController.php`, `TwoFactorEnforcementTest.php`, `ReturnBookingRequest`, `RawSqlInjectionSecurityTest.php`, `UpdateBookingOverrideRequest`, `ToggleBikeMaintenanceRequest`?**
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Store` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`Store` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **Should `Illuminate\Foundation\Testing\RefreshDatabase` be split into smaller, more focused modules?**
-  _Cohesion score 0.03223443223443224 - nodes in this community are weakly interconnected._
+- **Should `ArchTech\Enums\InvokableCases` be split into smaller, more focused modules?**
+  _Cohesion score 0.06648575305291723 - nodes in this community are weakly interconnected._
