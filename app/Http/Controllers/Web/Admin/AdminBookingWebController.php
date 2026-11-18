@@ -904,4 +904,3 @@ class AdminBookingWebController extends Controller
         return back()->with('success', 'Customer KYC document rejected.');
     }
 }
-

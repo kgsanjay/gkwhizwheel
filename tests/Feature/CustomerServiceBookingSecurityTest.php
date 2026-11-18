@@ -12,6 +12,7 @@ use App\Models\ServiceItem;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
@@ -112,8 +113,8 @@ test('same gateway payment reference cannot be credited twice', function (): voi
 
     gkwAllocatePaymentFixture($booking);
     $merchantTxnId = "TXN_SRV_{$booking->id}_replay123";
-    \Illuminate\Support\Facades\Http::fake([
-        '*/pg/v1/status/*' => \Illuminate\Support\Facades\Http::response([
+    Http::fake([
+        '*/pg/v1/status/*' => Http::response([
             'success' => true,
             'code' => 'PAYMENT_SUCCESS',
             'data' => [

@@ -157,8 +157,8 @@ class AdminServiceEnquiryWebController extends Controller
                             ->orWhere(function ($holds): void {
                                 $holds->where('status', 'held')
                                     ->where(function ($expiry): void {
-                                    $expiry->whereNull('held_until')->orWhere('held_until', '>', now());
-                                });
+                                        $expiry->whereNull('held_until')->orWhere('held_until', '>', now());
+                                    });
                             });
                     })->exists()) {
                 throw ValidationException::withMessages([

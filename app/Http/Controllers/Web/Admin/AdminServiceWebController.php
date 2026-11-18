@@ -11,14 +11,11 @@ use App\Models\ServiceItem;
 use App\Models\ServiceItemCategory;
 use App\Models\ServiceItemDocument;
 use App\Models\ServiceItemImage;
-use App\Models\User;
-use App\Notifications\ServiceBookingConfirmedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -26,7 +23,6 @@ use Inertia\Response;
 
 class AdminServiceWebController extends Controller
 {
-
     /**
      * Non-superadmins may access only records explicitly owned by assigned branches.
      * Legacy records without store_id remain accessible solely to headquarters.
@@ -922,7 +918,10 @@ class AdminServiceWebController extends Controller
             'admin_notes' => ['nullable', 'string', 'max:1200'],
         ]);
         app(\App\Services\ServiceBookingApproval::class)->transition(
-            $id, $request->user(), $data['status'], $data['admin_notes'] ?? null
+            $id,
+            $request->user(),
+            $data['status'],
+            $data['admin_notes'] ?? null
         );
         return back()->with('success', 'Service booking state updated.');
     }

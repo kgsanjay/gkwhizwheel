@@ -108,14 +108,20 @@ class BookingController extends Controller
         // and web nodes sharing the same database. Keep the lock through the
         // gateway request so no second request can issue a parallel order.
         return DB::transaction(function () use (
-            $id, $request, $bookingService, $phonePeService
+            $id,
+            $request,
+            $bookingService,
+            $phonePeService
         ): JsonResponse {
             Booking::where('user_id', $request->user()->id)
                 ->lockForUpdate()
                 ->findOrFail($id);
 
             return $this->checkoutWithLockedBooking(
-                $id, $request, $bookingService, $phonePeService
+                $id,
+                $request,
+                $bookingService,
+                $phonePeService
             );
         }, 3);
     }

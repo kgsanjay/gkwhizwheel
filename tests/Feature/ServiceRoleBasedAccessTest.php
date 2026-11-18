@@ -10,8 +10,10 @@ use App\Enums\UserStatus;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+
+use function gkwAllocatePaymentFixture;
+use function gkwPaymentQuoteContext;
 
 uses(RefreshDatabase::class);
 
@@ -234,8 +236,11 @@ test('dashboard provides role-scoped service_metrics and recent_service_bookings
                 // The dashboard includes a zero-valued card for each assigned
                 // service, even when all branch-owned rows are absent.
                 ->has('service_metrics', 2)
-                ->where('service_metrics', fn ($metrics) =>
-                    collect($metrics)->every(fn ($metric) =>
+                ->where(
+                    'service_metrics',
+                    fn ($metrics) =>
+                    collect($metrics)->every(
+                        fn ($metric) =>
                         (int) $metric['items_count'] === 0
                         && (int) $metric['active_bookings'] === 0
                     )
@@ -408,4 +413,3 @@ test('customer can initiate and verify online payment for service booking', func
     expect($booking->payment_status)->toBe('paid');
     expect($booking->payment_method)->toBe('online');
 });
-

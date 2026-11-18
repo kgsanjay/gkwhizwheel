@@ -246,7 +246,11 @@ class AvailabilityService
             // A future booking may change the bike's branch before this pickup.
             // Also reject a new route that would strand an existing later booking.
             if (! $this->bikeLocationSchedule->canReserve(
-                $bike, $start, $end, $pickupStoreId, $returnStoreId
+                $bike,
+                $start,
+                $end,
+                $pickupStoreId,
+                $returnStoreId
             )) {
                 throw new BikeNotAvailableException(
                     'Bike is not available at the requested pickup branch for these dates.'
@@ -622,4 +626,3 @@ class AvailabilityService
         return app(ServiceAvailabilityService::class)->releaseExpiredServiceHolds();
     }
 }
-

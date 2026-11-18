@@ -64,8 +64,10 @@ class BikeRelocationController extends Controller
 
         if (! $request->expectsJson()) {
             $stores = Store::where('status', StoreStatus::ACTIVE)
-                ->when($user->role !== UserRole::SUPER_ADMIN,
-                    fn ($query) => $query->whereIn('id', $user->accessibleStoreIds()))
+                ->when(
+                    $user->role !== UserRole::SUPER_ADMIN,
+                    fn ($query) => $query->whereIn('id', $user->accessibleStoreIds())
+                )
                 ->orderBy('name')->get(['id', 'name', 'city']);
             return Inertia::render('Admin/Relocations/Index', [
                 'tasks' => [

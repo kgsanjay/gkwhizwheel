@@ -19,10 +19,12 @@ use App\Notifications\ServiceBookingConfirmedNotification;
 use App\Notifications\ServiceManagerBookingAlertNotification;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+
+use function gkwAllocatePaymentFixture;
+use function gkwPaymentQuoteContext;
 
 uses(RefreshDatabase::class);
 

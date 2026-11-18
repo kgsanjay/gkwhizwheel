@@ -31,7 +31,6 @@ use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
-
     /**
      * Ensure staff member is authorized for a specific store ID or booking.
      * Logs an audit record if an explicit cross-store permission was used.

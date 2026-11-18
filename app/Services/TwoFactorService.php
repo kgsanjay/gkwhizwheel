@@ -88,7 +88,11 @@ class TwoFactorService
     public function verifyAndConsumeRecoveryCode(User $user, string $code): bool
     {
         $cleanCode = Str::lower(trim($code));
-        $codes = $user->two_factor_recovery_codes ?? [];
+        try {
+            $codes = $user->two_factor_recovery_codes ?? [];
+        } catch (\Throwable) {
+            return false;
+        }
 
         if (! is_array($codes) || empty($codes)) {
             return false;

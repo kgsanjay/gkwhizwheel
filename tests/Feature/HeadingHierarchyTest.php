@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
 use Tests\TestCase;
 
 class HeadingHierarchyTest extends TestCase
@@ -29,7 +33,7 @@ class HeadingHierarchyTest extends TestCase
             // Match component="h1" or <h1
             $h1ComponentMatches = [];
             preg_match_all('/component=["\']h1["\']/', $content, $h1ComponentMatches);
-            
+
             $h1TagMatches = [];
             preg_match_all('/<h1(\s|>)/', $content, $h1TagMatches);
 
@@ -39,7 +43,7 @@ class HeadingHierarchyTest extends TestCase
             // Check if variant="h1" is present without component="h1" (already counted if component="h1")
             $variantH1Matches = [];
             preg_match_all('/<Typography[^>]*variant=["\']h1["\'][^>]*>/s', $content, $variantH1Matches);
-            
+
             // For variant="h1" tags that do not have component="h1", they still render h1
             $extraH1s = 0;
             foreach ($variantH1Matches[0] as $match) {

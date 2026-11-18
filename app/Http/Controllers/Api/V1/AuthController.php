@@ -16,13 +16,18 @@ use App\Http\Resources\UserResource;
 use App\Models\Store;
 use App\Models\User;
 use App\Notifications\OtpNotification;
+use App\Services\TwoFactorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -61,8 +66,8 @@ class AuthController extends Controller
         $identifier = (string) ($request->validated('email') ?? $request->validated('phone') ?? $request->validated('login'));
         $throttleKey = 'api.login.account:'.Str::transliterate(Str::lower(trim($identifier)));
 
-        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($throttleKey);
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
 
             return response()->json([
                 'success' => false,
@@ -77,7 +82,7 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! $user->password || ! Hash::check((string) $request->validated('password'), $user->password)) {
-            \Illuminate\Support\Facades\RateLimiter::hit($throttleKey, 300);
+            RateLimiter::hit($throttleKey, 300);
 
             return response()->json([
                 'success' => false,
@@ -100,7 +105,7 @@ class AuthController extends Controller
 
         // Enforce TOTP 2FA on API login whenever 2FA is active on the account
         if ($user->hasTwoFactorEnabled()) {
-            $twoFactorService = app(\App\Services\TwoFactorService::class);
+            $twoFactorService = app(TwoFactorService::class);
             $code = (string) $request->input('two_factor_code', '');
             $recoveryCode = (string) $request->input('recovery_code', '');
             $verified2fa = false;
@@ -112,7 +117,7 @@ class AuthController extends Controller
             }
 
             if (! $verified2fa) {
-                \Illuminate\Support\Facades\RateLimiter::hit($throttleKey, 300);
+                RateLimiter::hit($throttleKey, 300);
 
                 return response()->json([
                     'success' => false,
@@ -125,7 +130,7 @@ class AuthController extends Controller
             }
         }
 
-        \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
+        RateLimiter::clear($throttleKey);
         $this->loadUserStores($user);
         $token = $this->issueToken($user);
 
@@ -260,7 +265,7 @@ class AuthController extends Controller
         }
 
         if ($user->email_verified_at === null) {
-            $user->update(['email_verified_at' => now()]);
+            $user->forceFill(['email_verified_at' => now()])->save();
         }
 
         $this->loadUserStores($user);
@@ -281,7 +286,10 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()?->currentAccessToken()?->delete();
+        $token = $request->user()?->currentAccessToken();
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
 
         return response()->json([
             'success' => true,
@@ -450,12 +458,12 @@ class AuthController extends Controller
             if ($pendingUpdates !== []) {
                 Cache::put("checkout_otp_pending:{$existing->id}", $pendingUpdates, now()->addMinutes(10));
             }
-            \Illuminate\Support\Facades\Log::info('Checkout OTP generated', ['user_id' => $existing->id]);
+            Log::info('Checkout OTP generated', ['user_id' => $existing->id]);
 
             try {
                 $existing->notify(new OtpNotification($otp));
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning("Could not dispatch OTP notification for user {$existing->id}: " . $e->getMessage());
+            } catch (Throwable $e) {
+                Log::warning("Could not dispatch OTP notification for user {$existing->id}: ".$e->getMessage());
             }
 
             $existingPhone = (string) ($existing->phone ?? $cleanPhone);
@@ -495,19 +503,18 @@ class AuthController extends Controller
             'role' => UserRole::CUSTOMER,
             'status' => UserStatus::ACTIVE,
             'whatsapp_opt_in' => true,
-            'email_verified_at' => null,
         ]);
 
         if ($request->boolean('verify_phone')) {
             $otp = (string) random_int(100000, 999999);
             Cache::put("checkout_otp:{$newUser->id}", $otp, now()->addMinutes(10));
             Cache::forget("checkout_otp_attempts:{$newUser->id}");
-            \Illuminate\Support\Facades\Log::info('Checkout OTP generated for new user', ['user_id' => $newUser->id]);
+            Log::info('Checkout OTP generated for new user', ['user_id' => $newUser->id]);
 
             try {
                 $newUser->notify(new OtpNotification($otp));
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning("Could not dispatch OTP notification for new user {$newUser->id}: " . $e->getMessage());
+            } catch (Throwable $e) {
+                Log::warning("Could not dispatch OTP notification for new user {$newUser->id}: ".$e->getMessage());
             }
 
             $maskedPhone = substr($cleanPhone, 0, 2).'******'.substr($cleanPhone, -2);
@@ -582,7 +589,7 @@ class AuthController extends Controller
                 Cache::forget("checkout_otp:{$userId}");
                 Cache::forget("checkout_otp_pending:{$userId}");
             }
-            \Illuminate\Support\Facades\Log::warning('Checkout OTP mismatch', ['user_id' => $userId]);
+            Log::warning('Checkout OTP mismatch', ['user_id' => $userId]);
 
             return response()->json([
                 'success' => false,

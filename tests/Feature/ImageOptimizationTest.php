@@ -1,5 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Tests\TestCase;
 
 class ImageOptimizationTest extends TestCase
@@ -57,7 +64,7 @@ class ImageOptimizationTest extends TestCase
                     continue;
                 }
                 $ext = strtolower($file->getExtension());
-                if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+                if (in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
                     $originalCount++;
                     $webpPath = preg_replace('/\.(jpe?g|png)$/i', '.webp', $file->getPathname());
                     $this->assertFileExists(

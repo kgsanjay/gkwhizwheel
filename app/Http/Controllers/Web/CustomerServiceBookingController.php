@@ -72,8 +72,12 @@ class CustomerServiceBookingController extends Controller
         // prices. Client-provided totals, coupons and price adjustments are ignored.
         $quoteSnapshot = \App\Models\ServiceQuoteSnapshot::where('public_id', $validated['quote_id'])->firstOrFail();
         app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
-            $quoteSnapshot, $request->user()->id, $item,
-            $validated['start_datetime'], $quantity, $validated['end_datetime'] ?? null
+            $quoteSnapshot,
+            $request->user()->id,
+            $item,
+            $validated['start_datetime'],
+            $quantity,
+            $validated['end_datetime'] ?? null
         );
         $quote = $quoteSnapshot->breakdown_json;
         $baseAmount = (float) $quoteSnapshot->base_amount;
@@ -100,15 +104,30 @@ class CustomerServiceBookingController extends Controller
         $availabilityService = app(\App\Services\AvailabilityService::class);
         try {
             $booking = DB::transaction(function () use (
-                $validated, $request, $item, $availabilityService, $bookingNumber,
-                $quantity, $baseAmount, $totalAmount, $advancePaid, $balanceDue,
-                $paymentStatus, $customerNotes, $quoteSnapshot, $quote
+                $validated,
+                $request,
+                $item,
+                $availabilityService,
+                $bookingNumber,
+                $quantity,
+                $baseAmount,
+                $totalAmount,
+                $advancePaid,
+                $balanceDue,
+                $paymentStatus,
+                $customerNotes,
+                $quoteSnapshot,
+                $quote
             ): ServiceBooking {
                 $lockedQuote = \App\Models\ServiceQuoteSnapshot::whereKey($quoteSnapshot->id)
                     ->lockForUpdate()->firstOrFail();
                 app(\App\Services\ServiceQuoteSnapshots::class)->assertValidForBooking(
-                    $lockedQuote, $request->user()->id, $item,
-                    $validated['start_datetime'], $quantity, $validated['end_datetime'] ?? null
+                    $lockedQuote,
+                    $request->user()->id,
+                    $item,
+                    $validated['start_datetime'],
+                    $quantity,
+                    $validated['end_datetime'] ?? null
                 );
                 $booking = $availabilityService->createServiceBooking([
                 'booking_number' => $bookingNumber,
@@ -442,7 +461,9 @@ class CustomerServiceBookingController extends Controller
         // Notify only after the payment transaction commits. This is a receipt,
         // not another reservation confirmation. Never use a placeholder address.
         $receiptNotification = new ServicePaymentReceivedNotification(
-            $booking, $paymentId, $paidPaise
+            $booking,
+            $paymentId,
+            $paidPaise
         );
         if ($booking->user && filter_var($booking->user->email, FILTER_VALIDATE_EMAIL)) {
             $booking->user->notify($receiptNotification);
@@ -481,8 +502,11 @@ class CustomerServiceBookingController extends Controller
             ->findOrFail($validated['service_item_id']);
 
         $snapshot = app(\App\Services\ServiceQuoteSnapshots::class)->issue(
-            $request->user()->id, $item, $validated['start_datetime'],
-            (int) $validated['quantity'], $validated['end_datetime'] ?? null
+            $request->user()->id,
+            $item,
+            $validated['start_datetime'],
+            (int) $validated['quantity'],
+            $validated['end_datetime'] ?? null
         );
         $quote = $snapshot->breakdown_json;
 

@@ -88,8 +88,8 @@ test('initiation rejects arbitrary partial charges, permits only full outstandin
 test('verification rejects client amount below approved balance and accepts once', function (): void {
     $booking = payment51Booking($this, 'GKW-P51-REPLAY');
     $merchantTxnId = "TXN_SRV_{$booking->id}_verified51";
-    \Illuminate\Support\Facades\Http::fake([
-        '*/pg/v1/status/*' => \Illuminate\Support\Facades\Http::response([
+    Http::fake([
+        '*/pg/v1/status/*' => Http::response([
             'success' => true,
             'code' => 'PAYMENT_SUCCESS',
             'data' => [
@@ -115,8 +115,8 @@ test('verification rejects client amount below approved balance and accepts once
 test('one provider payment reference cannot settle another booking even with matching amount', function (): void {
     $first = payment51Booking($this, 'GKW-P51-ONE');
     $second = payment51Booking($this, 'GKW-P51-TWO');
-    \Illuminate\Support\Facades\Http::fake([
-        '*/pg/v1/status/*' => \Illuminate\Support\Facades\Http::response([
+    Http::fake([
+        '*/pg/v1/status/*' => Http::response([
             'success' => true,
             'code' => 'PAYMENT_SUCCESS',
             'data' => [
@@ -160,7 +160,8 @@ test('customer cannot pay another customers service booking', function (): void 
         'role' => UserRole::CUSTOMER, 'status' => UserStatus::ACTIVE,
     ]);
     $this->actingAs($other)->postJson(
-        '/services/bookings/'.$booking->booking_number.'/initiate-payment', ['amount' => 1000]
+        '/services/bookings/'.$booking->booking_number.'/initiate-payment',
+        ['amount' => 1000]
     )->assertForbidden();
 });
 

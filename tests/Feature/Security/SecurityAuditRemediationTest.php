@@ -25,7 +25,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -331,4 +330,28 @@ test('coupon max_uses_per_user and max_uses_total are recorded and enforced on h
     ]);
 
     expect((float) $second->discount_amount)->toBe(0.0);
+});
+
+test('email_verified_at persists on API OTP verify and clears when customer changes email', function (): void {
+    $this->customer->forceFill(['email_verified_at' => null])->save();
+    Cache::put("otp:{$this->customer->email}", '246810', now()->addMinutes(10));
+
+    $this->postJson('/api/v1/auth/otp/verify', [
+        'email' => $this->customer->email,
+        'otp' => '246810',
+    ])->assertOk();
+
+    $this->customer->refresh();
+    expect($this->customer->email_verified_at)->not->toBeNull();
+
+    $this->actingAs($this->customer)
+        ->post('/account/profile', [
+            'name' => $this->customer->name,
+            'email' => 'changed.customer@example.test',
+            'phone' => $this->customer->phone,
+        ])
+        ->assertRedirect();
+
+    expect($this->customer->fresh()->email)->toBe('changed.customer@example.test')
+        ->and($this->customer->fresh()->email_verified_at)->toBeNull();
 });

@@ -194,16 +194,16 @@ class AdminReportWebController extends Controller
             ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $accessible))
             ->get()
             ->map(function (Store $store) use ($startDate, $endDate): array {
-            $bookings = Booking::where('pickup_store_id', $store->id)
-                ->whereBetween('created_at', [$startDate, $endDate]);
+                $bookings = Booking::where('pickup_store_id', $store->id)
+                    ->whereBetween('created_at', [$startDate, $endDate]);
 
-            return [
-                'store' => $store->name,
-                'city' => $store->city,
-                'revenue' => round((float) $bookings->sum('total_amount'), 2),
-                'bookings_count' => $bookings->count(),
-            ];
-        });
+                return [
+                    'store' => $store->name,
+                    'city' => $store->city,
+                    'revenue' => round((float) $bookings->sum('total_amount'), 2),
+                    'bookings_count' => $bookings->count(),
+                ];
+            });
 
         // Booking Channel Split (Online vs Offline)
         $channelQuery = Booking::query()->whereBetween('created_at', [$startDate, $endDate]);

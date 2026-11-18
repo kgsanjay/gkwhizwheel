@@ -23,7 +23,6 @@ use App\Notifications\ServicePaymentReceivedNotification;
 use App\Services\BookingService;
 use App\Services\BikeBookingPayments;
 use App\Services\PhonePeService;
-use App\Services\ServicePaymentEligibility;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

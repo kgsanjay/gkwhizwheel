@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Enums\BookingStatus;
 use App\Enums\PaymentStatus;
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\CancelBookingRequest;
 use App\Http\Requests\Customer\ExtendBookingRequest;
@@ -497,8 +496,10 @@ class CustomerAccountWebController extends Controller
             'name' => $validated['name'],
             'email' => $newEmail,
             'phone' => $cleanPhone !== '' ? $cleanPhone : $validated['phone'],
-            ...($emailChanged ? ['email_verified_at' => null] : []),
         ]);
+        if ($emailChanged) {
+            $user->forceFill(['email_verified_at' => null])->save();
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

@@ -88,8 +88,10 @@ class GoogleAuthController extends Controller
                     $existingByEmail->update([
                         'google_id' => $googleId,
                         'avatar' => $avatar ?: $existingByEmail->avatar,
-                        'email_verified_at' => $existingByEmail->email_verified_at ?: now(),
                     ]);
+                    if ($existingByEmail->email_verified_at === null) {
+                        $existingByEmail->forceFill(['email_verified_at' => now()])->save();
+                    }
                     $user = $existingByEmail;
                 }
             }
@@ -104,8 +106,8 @@ class GoogleAuthController extends Controller
                     'role' => UserRole::CUSTOMER,
                     'status' => UserStatus::ACTIVE,
                     'whatsapp_opt_in' => true,
-                    'email_verified_at' => now(),
                 ]);
+                $user->forceFill(['email_verified_at' => now()])->save();
             }
 
             if ($user->role !== UserRole::CUSTOMER) {
