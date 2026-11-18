@@ -379,7 +379,18 @@ test('customer can initiate and verify online payment for service booking', func
     $txnId = $initResponse->json('merchant_transaction_id');
     expect($txnId)->not->toBeNull();
 
-    // 2. Verify payment callback
+    // 2. Verify payment callback (mock PhonePe server-to-server Check Status API)
+    \Illuminate\Support\Facades\Http::fake([
+        '*/pg/v1/status/*' => \Illuminate\Support\Facades\Http::response([
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'data' => [
+                'state' => 'COMPLETED',
+                'amount' => 150000,
+                'transactionId' => 'T_RBAC_SRV_1500',
+            ],
+        ], 200),
+    ]);
     $verifyResponse = $this->actingAs($customer)
         ->postJson("/services/bookings/{$booking->booking_number}/verify-payment", [
             'phonepe_transaction_id' => $txnId,

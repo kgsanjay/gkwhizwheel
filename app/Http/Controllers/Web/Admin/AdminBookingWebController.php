@@ -638,7 +638,7 @@ class AdminBookingWebController extends Controller
         if ($request->hasFile('condition_photos')) {
             foreach ($request->file('condition_photos') as $photoFile) {
                 if ($photoFile instanceof UploadedFile) {
-                    $photoPaths[] = $photoFile->store('condition/handover', 'public');
+                    $photoPaths[] = $photoFile->store('condition/handover', 'local');
                 }
             }
         }
@@ -646,18 +646,18 @@ class AdminBookingWebController extends Controller
         $signaturePath = null;
         if ($request->filled('signature')) {
             $sigData = (string) $request->input('signature');
-            if (str_starts_with($sigData, 'data:image')) {
+            if (preg_match('#^data:image/(png|jpeg|jpg|webp);base64,#i', $sigData)) {
                 $rawImage = preg_replace('#^data:image/\w+;base64,#i', '', $sigData);
-                $decoded = base64_decode($rawImage, true);
-                if ($decoded !== false) {
-                    $filename = 'signatures/bookings/sig_'.Str::random(20).'.png';
-                    Storage::disk('public')->put($filename, $decoded);
-                    $signaturePath = $filename;
+                $decoded = base64_decode((string) $rawImage, true);
+                if ($decoded !== false && strlen($decoded) <= 524288) {
+                    $imgInfo = @getimagesizefromstring($decoded);
+                    if ($imgInfo !== false && in_array($imgInfo['mime'] ?? '', ['image/png', 'image/jpeg', 'image/webp'], true)) {
+                        $ext = $imgInfo['mime'] === 'image/jpeg' ? 'jpg' : ($imgInfo['mime'] === 'image/webp' ? 'webp' : 'png');
+                        $filename = 'signatures/bookings/sig_'.Str::random(20).'.'.$ext;
+                        Storage::disk('local')->put($filename, $decoded);
+                        $signaturePath = $filename;
+                    }
                 }
-            } else {
-                $filename = 'signatures/bookings/sig_'.Str::random(20).'.png';
-                Storage::disk('public')->put($filename, $sigData);
-                $signaturePath = $filename;
             }
         }
 
@@ -758,7 +758,7 @@ class AdminBookingWebController extends Controller
         if ($request->hasFile('condition_photos')) {
             foreach ($request->file('condition_photos') as $photoFile) {
                 if ($photoFile instanceof UploadedFile) {
-                    $photoPaths[] = $photoFile->store('condition/return', 'public');
+                    $photoPaths[] = $photoFile->store('condition/return', 'local');
                 }
             }
         }
@@ -791,13 +791,6 @@ class AdminBookingWebController extends Controller
                 reason: 'Deposit refund after bike return inspection',
                 processedBy: $request->user()->id
             );
-
-            if ($request->filled('deposit_refund_amount')) {
-                $overrideRefundAmount = round(max(0.0, (float) $validated['deposit_refund_amount']), 2);
-                $refund->update([
-                    'amount' => $overrideRefundAmount,
-                ]);
-            }
         }
 
         ActivityLog::create([
@@ -833,11 +826,20 @@ class AdminBookingWebController extends Controller
         $user = $request->user();
         abort_unless($user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isManager()), 403);
 
+        $document = KycDocument::findOrFail($id);
+
         if (! $user->isSuperAdmin()) {
-            abort_if(count($user->accessibleStoreIds()) === 0, 403, 'Unassigned staff cannot verify KYC documents.');
+            $storeIds = $user->accessibleStoreIds();
+            abort_if(count($storeIds) === 0, 403, 'Unassigned staff cannot verify KYC documents.');
+            $hasBranchBooking = Booking::where('user_id', $document->user_id)
+                ->where(function ($q) use ($storeIds): void {
+                    $q->whereIn('pickup_store_id', $storeIds)
+                        ->orWhereIn('return_store_id', $storeIds);
+                })
+                ->exists();
+            abort_unless($hasBranchBooking, 403, 'You can only verify KYC documents for customers booked at your assigned branches.');
         }
 
-        $document = KycDocument::findOrFail($id);
         $document->update([
             'verified' => true,
             'verified_by' => $user->id,
@@ -867,11 +869,20 @@ class AdminBookingWebController extends Controller
         $user = $request->user();
         abort_unless($user && ($user->isSuperAdmin() || $user->isAdmin() || $user->isManager()), 403);
 
+        $document = KycDocument::findOrFail($id);
+
         if (! $user->isSuperAdmin()) {
-            abort_if(count($user->accessibleStoreIds()) === 0, 403, 'Unassigned staff cannot reject KYC documents.');
+            $storeIds = $user->accessibleStoreIds();
+            abort_if(count($storeIds) === 0, 403, 'Unassigned staff cannot reject KYC documents.');
+            $hasBranchBooking = Booking::where('user_id', $document->user_id)
+                ->where(function ($q) use ($storeIds): void {
+                    $q->whereIn('pickup_store_id', $storeIds)
+                        ->orWhereIn('return_store_id', $storeIds);
+                })
+                ->exists();
+            abort_unless($hasBranchBooking, 403, 'You can only reject KYC documents for customers booked at your assigned branches.');
         }
 
-        $document = KycDocument::findOrFail($id);
         $document->update([
             'verified' => false,
             'verified_by' => $user->id,

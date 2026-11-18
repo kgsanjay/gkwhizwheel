@@ -32,10 +32,13 @@ class UpdateBookingAdminRequest extends FormRequest
      */
     public function rules(): array
     {
+        $allowedStores = $this->user()?->getAuthorizedStoreIds();
+        $pickupStoreConstraint = $allowedStores === null ? [] : [\Illuminate\Validation\Rule::in($allowedStores)];
+
         return [
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'pickup_store_id' => ['required', 'integer', 'exists:stores,id'],
+            'pickup_store_id' => ['required', 'integer', 'exists:stores,id', ...$pickupStoreConstraint],
             'return_store_id' => ['required', 'integer', 'exists:stores,id'],
             'status' => ['required', new Enum(BookingStatus::class)],
             'late_fee_amount' => ['nullable', 'numeric', 'min:0'],

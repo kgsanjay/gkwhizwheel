@@ -246,6 +246,10 @@ class BikeRelocationController extends Controller
             $targetStatus = 'resolved';
         }
 
+        if ($targetStatus === 'resolved' && $user->role !== UserRole::SUPER_ADMIN) {
+            abort(403, 'Only SuperAdmin can confirm receipt and relocate a bike to the destination branch.');
+        }
+
         return DB::transaction(function () use ($id, $user, $targetStatus, $request): JsonResponse|RedirectResponse {
             $task = BikeRelocationTask::whereKey($id)->lockForUpdate()->firstOrFail();
 

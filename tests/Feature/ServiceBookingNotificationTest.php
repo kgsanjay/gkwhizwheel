@@ -239,10 +239,23 @@ test('admin offline counter booking creates an unpaid hold without customer conf
 });
 
 test('customer payment verification sends a payment receipt without repeating booking confirmation', function (): void {
+    $merchantTxnId = "TXN_SRV_{$this->serviceBooking->id}_notif01";
+    Http::fake([
+        '*/pg/v1/status/*' => Http::response([
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'data' => [
+                'state' => 'COMPLETED',
+                'amount' => 105000,
+                'transactionId' => 'pay_test_service_full_settle',
+            ],
+        ], 200),
+    ]);
+
     $response = $this->actingAs($this->customer)->postJson(
         route('services.booking.verify-payment', $this->serviceBooking->booking_number),
         [
-            'razorpay_payment_id' => 'pay_test_service_full_settle',
+            'phonepe_transaction_id' => $merchantTxnId,
             'amount' => 1050.00,
         ]
     );
@@ -270,9 +283,22 @@ test('customer payment verification sends a payment receipt without repeating bo
 
 
 test('replayed service payment reference does not create another receipt or credit', function (): void {
+    $merchantTxnId = "TXN_SRV_{$this->serviceBooking->id}_replay02";
+    Http::fake([
+        '*/pg/v1/status/*' => Http::response([
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'data' => [
+                'state' => 'COMPLETED',
+                'amount' => 105000,
+                'transactionId' => 'pay_test_service_replay_receipt',
+            ],
+        ], 200),
+    ]);
+
     $endpoint = route('services.booking.verify-payment', $this->serviceBooking->booking_number);
     $payload = [
-        'razorpay_payment_id' => 'pay_test_service_replay_receipt',
+        'phonepe_transaction_id' => $merchantTxnId,
         'amount' => 1050.00,
     ];
 

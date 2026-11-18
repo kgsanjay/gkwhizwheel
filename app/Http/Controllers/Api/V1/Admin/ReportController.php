@@ -39,10 +39,20 @@ class ReportController extends Controller
             $groupBy = 'store';
         }
 
+        $authorizedStoreIds = $request->user()?->getAuthorizedStoreIds();
+
         $baseQuery = Booking::query()
             ->whereNotIn('status', [BookingStatus::CANCELLED, BookingStatus::EXPIRED])
             ->whereDate('start_date', '>=', $startDate)
             ->whereDate('start_date', '<=', $endDate);
+
+        if ($authorizedStoreIds !== null) {
+            if ($authorizedStoreIds === []) {
+                $baseQuery->whereRaw('1 = 0');
+            } else {
+                $baseQuery->whereIn('pickup_store_id', $authorizedStoreIds);
+            }
+        }
 
         $totalRevenue = (float) (clone $baseQuery)->sum('total_amount');
         $totalBookings = (int) (clone $baseQuery)->count();
@@ -148,7 +158,19 @@ class ReportController extends Controller
         $end = Carbon::parse($endDate)->startOfDay();
         $totalDays = max(1, (int) $start->diffInDays($end) + 1);
 
+        $authorizedStoreIds = $request->user()?->getAuthorizedStoreIds();
         $bikeQuery = Bike::query()->with('currentStore');
+
+        if ($authorizedStoreIds !== null) {
+            if ($request->filled('store_id') && ! in_array((int) $request->query('store_id'), $authorizedStoreIds, true)) {
+                abort(403, 'Unauthorized store report access.');
+            }
+            if ($authorizedStoreIds === []) {
+                $bikeQuery->whereRaw('1 = 0');
+            } else {
+                $bikeQuery->whereIn('current_store_id', $authorizedStoreIds);
+            }
+        }
 
         if ($request->filled('store_id')) {
             $bikeQuery->where('current_store_id', (int) $request->query('store_id'));

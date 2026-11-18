@@ -34,6 +34,19 @@ class EnsureRole
             return redirect()->guest(route('admin.login'));
         }
 
+        if ($user->status === \App\Enums\UserStatus::BLACKLISTED) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'message' => 'This account has been suspended or deactivated.',
+                    'errors' => null,
+                ], 403);
+            }
+
+            abort(403, 'This account has been suspended or deactivated.');
+        }
+
         $normalizedRoles = [];
         foreach ($roles as $r) {
             $normalizedRoles[] = $r;

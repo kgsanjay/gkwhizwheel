@@ -41,7 +41,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         \Illuminate\Support\Facades\RateLimiter::for('otp', function (\Illuminate\Http\Request $request) {
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by($request->input('email') ?: ($request->ip() ?: 'global'));
+            $email = strtolower(trim((string) $request->input('email', '')));
+
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by($email !== '' ? $email : ($request->ip() ?: 'global'));
         });
 
         \Illuminate\Support\Facades\RateLimiter::for('contact', function (\Illuminate\Http\Request $request) {

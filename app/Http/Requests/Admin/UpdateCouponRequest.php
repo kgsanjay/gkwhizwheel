@@ -28,8 +28,8 @@ class UpdateCouponRequest extends FormRequest
         if ($user->isAdmin()) {
             if ($this->has('store_id')) {
                 $storeId = $this->input('store_id');
-                if ($storeId !== null && ! in_array((int) $storeId, $user->accessibleStoreIds(), true)) {
-                    abort(403, 'Branch Admin cannot reassign coupon to an unassigned branch.');
+                if ($storeId === null || $storeId === '' || ! in_array((int) $storeId, $user->accessibleStoreIds(), true)) {
+                    abort(403, 'Branch Admin cannot promote a coupon to global scope or assign it to an unassigned branch.');
                 }
             }
 

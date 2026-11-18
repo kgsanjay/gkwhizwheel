@@ -289,7 +289,7 @@ Route::post('/account/bookings/{id}/pay', [\App\Http\Controllers\Web\CustomerAcc
 Route::post('/account/bookings/{id}/cancel', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'cancelBooking'])->middleware('auth')->name('account.bookings.cancel');
 Route::post('/account/bookings/{id}/extend', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'extendBooking'])->middleware('auth')->name('account.bookings.extend');
 Route::post('/account/bookings/{id}/review', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'reviewBooking'])->middleware('auth')->name('account.bookings.review');
-Route::post('/account/profile', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'updateProfile'])->middleware('auth')->name('account.profile.update');
+Route::post('/account/profile', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'updateProfile'])->middleware(['auth', 'throttle:auth'])->name('account.profile.update');
 Route::get('/account/kyc', [\App\Http\Controllers\Web\CustomerAccountWebController::class, 'kyc'])->name('account.kyc');
 Route::post('/account/kyc/upload', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'store'])->middleware(['auth', 'throttle:uploads'])->name('account.kyc.upload');
 Route::get('/account/kyc/{id}/download', [\App\Http\Controllers\Api\V1\Customer\CustomerKycController::class, 'download'])->middleware('auth')->name('account.kyc.download');
@@ -302,8 +302,8 @@ Route::post('/login/otp/verify', [\App\Http\Controllers\Web\Admin\AdminAuthContr
 Route::get('/signup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister'])->name('register');
 Route::get('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'createRegister']);
 Route::post('/register', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeRegister'])->middleware('throttle:auth')->name('register.store');
-Route::get('/auth/google', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('/auth/google/callback', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+Route::get('/auth/google', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'redirectToGoogle'])->middleware('throttle:auth')->name('auth.google');
+Route::get('/auth/google/callback', [\App\Http\Controllers\Web\Auth\GoogleAuthController::class, 'handleGoogleCallback'])->middleware('throttle:auth')->name('auth.google.callback');
 Route::get('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'create'])->name('admin.login');
 Route::post('/admin/login', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'storeAdmin'])->middleware('throttle:auth')->name('admin.login.store');
 Route::post('/logout', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'destroy'])->name('logout');
@@ -314,7 +314,7 @@ Route::get('/admin/2fa/challenge', [\App\Http\Controllers\Web\Admin\AdminAuthCon
 Route::post('/admin/2fa/challenge', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorAuthenticate'])->middleware('throttle:auth')->name('admin.2fa.verify');
 Route::get('/admin/2fa/setup', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorSetup'])->name('admin.2fa.setup');
 Route::post('/admin/2fa/confirm', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorConfirm'])->middleware('throttle:auth')->name('admin.2fa.confirm');
-Route::get('/admin/2fa/recovery-codes', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorRecoveryCodes'])->name('admin.2fa.recovery-codes');
+Route::get('/admin/2fa/recovery-codes', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorRecoveryCodes'])->middleware('auth:admin')->name('admin.2fa.recovery-codes');
 Route::post('/admin/2fa/disable', [\App\Http\Controllers\Web\Admin\AdminAuthController::class, 'twoFactorDisable'])->middleware('auth:admin')->name('admin.2fa.disable');
 
 // Admin & Staff Portal Shell
@@ -471,12 +471,14 @@ Route::middleware(['admin.timeout', 'admin.auth', 'auth:admin'])->prefix('admin'
     Route::post('/bookings/{id}/return', [\App\Http\Controllers\Web\Admin\AdminBookingWebController::class, 'processReturn'])->name('admin.bookings.return');
 
 
-    // Service Categories CRUD
+    // Service Categories CRUD (read for staff/admins; mutations restricted to Super Admin)
     Route::prefix('services/categories')->group(function (): void {
         Route::get('/', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'index'])->name('admin.services.categories.index');
-        Route::post('/', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'store'])->name('admin.services.categories.store');
-        Route::match(['post', 'put'], '/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'update'])->name('admin.services.categories.update');
-        Route::delete('/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'destroy'])->name('admin.services.categories.destroy');
+        Route::middleware('role:super_admin')->group(function (): void {
+            Route::post('/', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'store'])->name('admin.services.categories.store');
+            Route::match(['post', 'put'], '/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'update'])->name('admin.services.categories.update');
+            Route::delete('/{id}', [\App\Http\Controllers\Web\Admin\AdminServiceCategoryWebController::class, 'destroy'])->name('admin.services.categories.destroy');
+        });
     });
     Route::get('/services/{serviceType}/categories', function (string $serviceType) {
         return redirect()->route('admin.services.categories.index', ['service_type' => $serviceType]);

@@ -34,7 +34,11 @@ class GoogleAuthController extends Controller
 
         // Preserve customer's current booking/page URL so OAuth returns them right back to checkout
         $redirect = $request->query('redirect');
-        if (is_string($redirect) && str_starts_with($redirect, '/') && ! str_starts_with($redirect, '//')) {
+        if (is_string($redirect)
+            && str_starts_with($redirect, '/')
+            && ! str_starts_with($redirect, '//')
+            && ! str_starts_with($redirect, '/\\')
+            && ! str_starts_with($redirect, '/admin')) {
             $request->session()->put('url.intended', url($redirect));
         }
 
@@ -54,19 +58,39 @@ class GoogleAuthController extends Controller
             $googleId = $googleUser->getId();
             $avatar = $googleUser->getAvatar();
             $name = $googleUser->getName() ?: 'Honnavar Explorer';
+            $rawUser = is_array($googleUser->user) ? $googleUser->user : [];
+            $emailVerified = (bool) ($rawUser['email_verified'] ?? $rawUser['verified_email'] ?? false);
+
+            if (! $email || ! $emailVerified) {
+                return redirect()->route('login')->withErrors([
+                    'login' => 'Your Google account email must be verified to sign in.',
+                ]);
+            }
 
             // 1. Look for existing user by google_id
             $user = User::where('google_id', $googleId)->first();
 
-            // 2. If not found by google_id, check by email
-            if (! $user && $email) {
-                $user = User::where('email', $email)->first();
-                if ($user) {
-                    $user->update([
+            // 2. If not found by google_id, check by verified email (customers only)
+            if (! $user) {
+                $existingByEmail = User::where('email', strtolower($email))->first();
+                if ($existingByEmail) {
+                    if ($existingByEmail->role !== UserRole::CUSTOMER) {
+                        return redirect()->route('login')->withErrors([
+                            'login' => 'Staff and Admin accounts must sign in through the Staff Portal with password and 2FA.',
+                        ]);
+                    }
+                    // Prevent pre-hijacking of an unverified password-protected account
+                    if ($existingByEmail->email_verified_at === null && ! empty($existingByEmail->password)) {
+                        return redirect()->route('login')->withErrors([
+                            'login' => 'An account with this email already exists. Please sign in with your password or OTP to verify your email first.',
+                        ]);
+                    }
+                    $existingByEmail->update([
                         'google_id' => $googleId,
-                        'avatar' => $avatar ?: $user->avatar,
-                        'email_verified_at' => $user->email_verified_at ?: now(),
+                        'avatar' => $avatar ?: $existingByEmail->avatar,
+                        'email_verified_at' => $existingByEmail->email_verified_at ?: now(),
                     ]);
+                    $user = $existingByEmail;
                 }
             }
 
@@ -74,13 +98,19 @@ class GoogleAuthController extends Controller
             if (! $user) {
                 $user = User::create([
                     'name' => $name,
-                    'email' => $email,
+                    'email' => strtolower($email),
                     'google_id' => $googleId,
                     'avatar' => $avatar,
                     'role' => UserRole::CUSTOMER,
                     'status' => UserStatus::ACTIVE,
                     'whatsapp_opt_in' => true,
                     'email_verified_at' => now(),
+                ]);
+            }
+
+            if ($user->role !== UserRole::CUSTOMER) {
+                return redirect()->route('login')->withErrors([
+                    'login' => 'Staff and Admin accounts must sign in through the Staff Portal with password and 2FA.',
                 ]);
             }
 
@@ -94,11 +124,7 @@ class GoogleAuthController extends Controller
             Auth::guard('web')->login($user);
             $request->session()->regenerate();
 
-            if ($user->role === UserRole::CUSTOMER) {
-                return redirect()->intended(route('account.index'))->with('success', 'Welcome, ' . $user->name . '! Signed in via Google.');
-            }
-
-            return redirect()->intended(route('admin.dashboard'));
+            return redirect()->intended(route('account.index'))->with('success', 'Welcome, ' . $user->name . '! Signed in via Google.');
         } catch (Throwable $e) {
             Log::error('Google OAuth callback failed: ' . $e->getMessage());
 

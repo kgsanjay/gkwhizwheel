@@ -74,6 +74,9 @@ beforeEach(function (): void {
         'phone' => '+919876500001',
     ]);
 
+    $this->staff->stores()->attach($this->store->id);
+    $this->storeManager->stores()->attach($this->store->id);
+
     $this->category = BikeCategory::create([
         'name' => 'Scooter',
         'base_daily_rate' => 500.00,

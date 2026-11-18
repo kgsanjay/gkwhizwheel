@@ -225,6 +225,24 @@ test('branch manager is strictly forbidden from pricing changes and bike deletio
 });
 
 test('branch manager can verify and reject customer KYC documents', function (): void {
+    // Customer must have a booking at the manager's branch for KYC verification access
+    Booking::create([
+        'booking_reference' => 'BK-KYC-MGR-001',
+        'user_id' => $this->customer->id,
+        'bike_id' => $this->honnavarBike->id,
+        'pickup_store_id' => $this->honnavarStore->id,
+        'return_store_id' => $this->honnavarStore->id,
+        'channel' => \App\Enums\BookingChannel::ONLINE,
+        'status' => BookingStatus::CONFIRMED,
+        'start_date' => now()->toDateString(),
+        'end_date' => now()->addDay()->toDateString(),
+        'base_amount' => 450,
+        'deposit_amount' => 0,
+        'total_amount' => 450,
+        'price_breakdown_json' => [],
+        'idempotency_key' => 'kyc-mgr-001',
+    ]);
+
     $kycDoc = KycDocument::create([
         'user_id' => $this->customer->id,
         'document_type' => \App\Enums\KycDocumentType::DRIVING_LICENSE,
@@ -399,16 +417,15 @@ test('branch manager can manage bike relocations involving their store but not u
 
     expect($task->fresh()->status)->toBe('in_transit');
 
-    // Manager can complete transit (which moves bike to destination store)
+    // Manager cannot bypass SuperAdmin confirm-receipt by marking status completed/resolved
     $this->actingAs($this->honnavarManager)
         ->postJson("/admin/relocations/{$task->id}/status", [
             'status' => 'completed',
         ])
-        ->assertOk()
-        ->assertJsonPath('data.status', 'resolved');
+        ->assertForbidden();
 
-    expect($task->fresh()->status)->toBe('resolved')
-        ->and($this->honnavarBike->fresh()->current_store_id)->toBe($this->murudeshwarStore->id);
+    expect($task->fresh()->status)->toBe('in_transit')
+        ->and($this->honnavarBike->fresh()->current_store_id)->toBe($this->honnavarStore->id);
 
     // Manager cannot confirm receipt or dismiss (superadmin only)
     $this->actingAs($this->honnavarManager)

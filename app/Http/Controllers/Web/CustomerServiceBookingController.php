@@ -285,6 +285,15 @@ class CustomerServiceBookingController extends Controller
                 route('payment.phonepe.callback')
             );
 
+            \Illuminate\Support\Facades\Cache::put(
+                "service_phonepe_txn:{$booking->id}",
+                [
+                    'merchant_transaction_id' => $paymentData['merchant_transaction_id'],
+                    'amount_paise' => $paymentData['amount_paise'],
+                ],
+                now()->addHours(2)
+            );
+
             return response()->json([
                 'success' => true,
                 'gateway' => 'phonepe',
@@ -302,7 +311,7 @@ class CustomerServiceBookingController extends Controller
     }
 
     /**
-     * Verify payment completion and settle booking balance
+     * Verify payment completion server-to-server with PhonePe and settle booking balance.
      */
     public function verifyPayment(
         string $bookingNumber,
@@ -316,9 +325,9 @@ class CustomerServiceBookingController extends Controller
         $this->authorizeBookingAccess($request->user(), $booking);
 
         $validated = $request->validate([
-            'payment_id' => ['nullable', 'string'],
-            'razorpay_payment_id' => ['nullable', 'string'],
-            'phonepe_transaction_id' => ['nullable', 'string'],
+            'payment_id' => ['nullable', 'string', 'max:120'],
+            'razorpay_payment_id' => ['nullable', 'string', 'max:120'],
+            'phonepe_transaction_id' => ['nullable', 'string', 'max:120'],
             'amount' => ['required', 'numeric', 'min:1'],
         ]);
 
@@ -336,7 +345,39 @@ class CustomerServiceBookingController extends Controller
             ], 422);
         }
 
-        $paymentId = (string) ($validated['payment_id'] ?? $validated['phonepe_transaction_id'] ?? $validated['razorpay_payment_id'] ?? ('pay_ph_'.bin2hex(random_bytes(6))));
+        // Server-to-server gateway verification is mandatory: never trust a client-supplied
+        // payment_id or amount without confirming settlement with PhonePe Check Status API.
+        $phonePeService ??= app(\App\Services\PhonePeService::class);
+        $cachedInitiation = \Illuminate\Support\Facades\Cache::get("service_phonepe_txn:{$booking->id}");
+        $merchantTxnId = (string) ($validated['phonepe_transaction_id']
+            ?? (is_array($cachedInitiation) ? ($cachedInitiation['merchant_transaction_id'] ?? '') : ''));
+
+        if ($merchantTxnId === ''
+            || (is_array($cachedInitiation)
+                && ! empty($cachedInitiation['merchant_transaction_id'])
+                && ! hash_equals((string) $cachedInitiation['merchant_transaction_id'], $merchantTxnId))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No matching initiated PhonePe transaction found for this booking.',
+            ], 422);
+        }
+
+        if (! preg_match('/^TXN_SRV_'.$booking->id.'_/', $merchantTxnId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment transaction does not belong to this booking.',
+            ], 422);
+        }
+
+        $gatewayStatus = $phonePeService->checkPaymentStatus($merchantTxnId);
+        if (! $gatewayStatus['verified'] || $gatewayStatus['amount_paise'] !== $paidPaise) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment could not be verified with PhonePe gateway.',
+            ], 422);
+        }
+
+        $paymentId = $gatewayStatus['transaction_id'] !== '' ? $gatewayStatus['transaction_id'] : $merchantTxnId;
 
         // Lock the booking while applying the payment so duplicate callbacks
         // cannot credit the same gateway payment twice.

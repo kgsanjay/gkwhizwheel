@@ -28,8 +28,8 @@ class UpdatePricingRuleRequest extends FormRequest
         if ($user->isAdmin()) {
             if ($this->has('store_id') || $this->has('from_store_id')) {
                 $storeId = $this->input('store_id') ?? $this->input('from_store_id');
-                if ($storeId !== null && ! in_array((int) $storeId, $user->accessibleStoreIds(), true)) {
-                    abort(403, 'Branch Admin cannot reassign pricing rule to an unassigned branch.');
+                if ($storeId === null || $storeId === '' || ! in_array((int) $storeId, $user->accessibleStoreIds(), true)) {
+                    abort(403, 'Branch Admin cannot promote a pricing rule to global scope or assign it to an unassigned branch.');
                 }
             }
 

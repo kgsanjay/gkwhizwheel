@@ -66,6 +66,9 @@ class AdminGroundCheckInTest extends TestCase
             'status' => StoreStatus::ACTIVE,
         ]);
 
+        $this->staff->stores()->attach($this->store->id);
+        $this->staff->syncAssignedServices(['two_wheelers', 'boating']);
+
         $this->category = BikeCategory::create([
             'name' => 'Scooter',
             'base_daily_rate' => 450.00,
@@ -95,6 +98,7 @@ class AdminGroundCheckInTest extends TestCase
         ]);
 
         $this->serviceBooking = ServiceBooking::create([
+            'store_id' => $this->store->id,
             'booking_number' => 'GKW-BT-260910-JETTY',
             'service_type' => 'boating',
             'service_item_id' => $this->serviceItem->id,

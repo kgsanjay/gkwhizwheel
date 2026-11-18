@@ -285,6 +285,28 @@ class AvailabilityService
                 $quote = BikeBookingPayments::waiveDeposit($quote);
             }
 
+            // Lock and re-verify coupon usage caps before committing discount
+            $lockedCoupon = null;
+            if (! empty($couponCode) && (float) ($quote['discount_amount'] ?? 0) > 0) {
+                $lockedCoupon = \App\Models\Coupon::where('code', strtoupper(trim((string) $couponCode)))
+                    ->lockForUpdate()
+                    ->first();
+                if ($lockedCoupon !== null) {
+                    if ($lockedCoupon->max_uses_total !== null
+                        && $lockedCoupon->usages()->count() >= $lockedCoupon->max_uses_total) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'coupon_code' => 'This coupon has reached its maximum usage limit.',
+                        ]);
+                    }
+                    if ($lockedCoupon->max_uses_per_user !== null
+                        && $lockedCoupon->usages()->where('user_id', $userId)->count() >= $lockedCoupon->max_uses_per_user) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'coupon_code' => 'You have already reached the usage limit for this coupon.',
+                        ]);
+                    }
+                }
+            }
+
             // 4. Create the 'held' booking with held_until = 10 minutes from now
             $booking = Booking::create([
                 'booking_reference' => $this->generateBookingReference(),
@@ -310,6 +332,14 @@ class AvailabilityService
                 'created_by' => $createdBy,
                 'idempotency_key' => $idempotencyKey,
             ]);
+
+            if ($lockedCoupon !== null) {
+                \App\Models\CouponUsage::create([
+                    'coupon_id' => $lockedCoupon->id,
+                    'user_id' => $userId,
+                    'booking_id' => $booking->id,
+                ]);
+            }
 
             // 5. Store addons if any
             foreach ($addons as $addon) {

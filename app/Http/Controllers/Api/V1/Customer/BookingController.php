@@ -269,7 +269,8 @@ class BookingController extends Controller
             ]);
         }
 
-        $paymentData = $phonePeService->createPayment($booking, $validated['redirect_url'] ?? null);
+        // Always use the server-configured callback route; never trust a client-supplied redirect_url.
+        $paymentData = $phonePeService->createPayment($booking, null);
 
         $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
         $breakdown['phonepe_transaction_id'] = $paymentData['merchant_transaction_id'];

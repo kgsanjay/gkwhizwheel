@@ -24,16 +24,28 @@ class AdminCheckInWebController extends Controller
      */
     public function index(Request $request): Response
     {
+        $user = $request->user();
         $code = trim((string) $request->query('code', $request->query('booking_number', '')));
         $initialBooking = null;
 
         if ($code !== '') {
-            $initialBooking = $this->findBooking($code);
+            $initialBooking = $this->findBooking($code, $user);
         }
 
-        $recentLogs = ActivityLog::whereIn('action', ['ground_checkin.processed', 'ground_checkin.offline_synced'])
+        $recentLogsQuery = ActivityLog::whereIn('action', ['ground_checkin.processed', 'ground_checkin.offline_synced'])
             ->with('user')
-            ->latest()
+            ->latest();
+
+        $authorizedStoreIds = $user?->getAuthorizedStoreIds();
+        if ($authorizedStoreIds !== null) {
+            if ($authorizedStoreIds === []) {
+                $recentLogsQuery->whereRaw('1 = 0');
+            } else {
+                $recentLogsQuery->whereIn('store_id', $authorizedStoreIds);
+            }
+        }
+
+        $recentLogs = $recentLogsQuery
             ->take(6)
             ->get()
             ->map(function ($log) {
@@ -63,7 +75,7 @@ class AdminCheckInWebController extends Controller
             'code' => ['required', 'string', 'min:2', 'max:255'],
         ]);
 
-        $booking = $this->findBooking($validated['code']);
+        $booking = $this->findBooking($validated['code'], $request->user());
 
         if (! $booking) {
             return response()->json([
@@ -188,6 +200,7 @@ class AdminCheckInWebController extends Controller
 
         if ($type === 'service') {
             $booking = ServiceBooking::with(['serviceItem'])->findOrFail($id);
+            $this->assertServiceBookingAccess($user, $booking);
 
             $newAdvance = (float) $booking->advance_paid;
             $newBalance = (float) $booking->balance_due;
@@ -232,6 +245,7 @@ class AdminCheckInWebController extends Controller
 
             ActivityLog::create([
                 'user_id' => $user?->id,
+                'store_id' => $booking->store_id,
                 'action' => $queuedAt ? 'ground_checkin.offline_synced' : 'ground_checkin.processed',
                 'subject_type' => ServiceBooking::class,
                 'subject_id' => (int) $booking->id,
@@ -258,12 +272,7 @@ class AdminCheckInWebController extends Controller
 
         if ($type === 'bike') {
             $booking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'user'])->findOrFail($id);
-            if ($user && in_array($user->role, [UserRole::STORE_MANAGER, UserRole::STAFF])) {
-                $userStoreIds = $user->stores()->pluck('stores.id')->toArray();
-                if (! empty($userStoreIds) && ! in_array($booking->pickup_store_id, $userStoreIds) && ! in_array($booking->return_store_id, $userStoreIds)) {
-                    abort(403, 'Unauthorized store check-in.');
-                }
-            }
+            $this->assertBikeBookingAccess($user, $booking);
 
             $newStatus = match ($action) {
                 'complete' => BookingStatus::COMPLETED,
@@ -277,6 +286,7 @@ class AdminCheckInWebController extends Controller
 
             ActivityLog::create([
                 'user_id' => $user?->id,
+                'store_id' => $booking->pickup_store_id,
                 'action' => $queuedAt ? 'ground_checkin.offline_synced' : 'ground_checkin.processed',
                 'subject_type' => Booking::class,
                 'subject_id' => (int) $booking->id,
@@ -302,9 +312,9 @@ class AdminCheckInWebController extends Controller
     }
 
     /**
-     * Search across ServiceBookings and Fleet Bookings.
+     * Search across ServiceBookings and Fleet Bookings, scoped to the staff member's branches & verticals.
      */
-    protected function findBooking(string $rawCode): ?array
+    protected function findBooking(string $rawCode, ?User $user = null): ?array
     {
         $code = trim($rawCode);
 
@@ -313,10 +323,12 @@ class AdminCheckInWebController extends Controller
             $code = $matches[1];
         }
 
-        // 1. Check ServiceBooking by booking_number (case-insensitive)
+        // 1. Check ServiceBooking by booking_number
         $serviceBooking = ServiceBooking::with(['serviceItem'])
-            ->where('booking_number', $code)
-            ->orWhere('booking_number', 'like', "%{$code}%")
+            ->where(function ($q) use ($code): void {
+                $q->where('booking_number', $code)
+                    ->orWhere('booking_number', 'like', "%{$code}%");
+            })
             ->first();
 
         // 2. Or search by customer phone if code is numeric
@@ -327,28 +339,75 @@ class AdminCheckInWebController extends Controller
                 ->first();
         }
 
-        if ($serviceBooking) {
+        if ($serviceBooking && $this->canAccessServiceBooking($user, $serviceBooking)) {
             return $this->formatServiceBooking($serviceBooking);
         }
 
         // 3. Check Two-Wheeler Booking by reference or id or phone
         $bikeQuery = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'user']);
-        $bikeBooking = $bikeQuery->where('booking_reference', $code)
-            ->orWhere('id', is_numeric($code) ? (int) $code : 0)
-            ->first();
+        $bikeBooking = $bikeQuery->where(function ($q) use ($code): void {
+            $q->where('booking_reference', $code);
+            if (is_numeric($code)) {
+                $q->orWhere('id', (int) $code);
+            }
+        })->first();
 
         if (! $bikeBooking && preg_match('/^\d{10}$/', $code)) {
             $bikeBooking = Booking::with(['bike.category', 'pickupStore', 'returnStore', 'user'])
-                ->where('customer_phone', $code)
+                ->whereHas('user', fn ($q) => $q->where('phone', $code))
                 ->latest()
                 ->first();
         }
 
-        if ($bikeBooking) {
+        if ($bikeBooking && $this->canAccessBikeBooking($user, $bikeBooking)) {
             return $this->formatBikeBooking($bikeBooking);
         }
 
         return null;
+    }
+
+    protected function canAccessServiceBooking(?User $user, ServiceBooking $booking): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+        $authorizedStores = $user->getAuthorizedStoreIds();
+        if ($authorizedStores === [] || $booking->store_id === null || ! in_array((int) $booking->store_id, $authorizedStores ?? [], true)) {
+            return false;
+        }
+
+        return $user->canManageService((string) $booking->service_type);
+    }
+
+    protected function assertServiceBookingAccess(?User $user, ServiceBooking $booking): void
+    {
+        abort_unless($this->canAccessServiceBooking($user, $booking), 403, 'Unauthorized branch or service vertical for check-in.');
+    }
+
+    protected function canAccessBikeBooking(?User $user, Booking $booking): bool
+    {
+        if ($user === null) {
+            return false;
+        }
+        if ($user->role === UserRole::SUPER_ADMIN) {
+            return true;
+        }
+        $authorizedStores = $user->getAuthorizedStoreIds();
+        if ($authorizedStores === []) {
+            return false;
+        }
+
+        return ($authorizedStores === null
+            || in_array((int) $booking->pickup_store_id, $authorizedStores, true)
+            || in_array((int) $booking->return_store_id, $authorizedStores, true));
+    }
+
+    protected function assertBikeBookingAccess(?User $user, Booking $booking): void
+    {
+        abort_unless($this->canAccessBikeBooking($user, $booking), 403, 'Unauthorized store check-in.');
     }
 
     /**

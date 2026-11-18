@@ -118,9 +118,17 @@ class AdminServiceEnquiryWebController extends Controller
             $enquiry = ServiceEnquiry::whereKey($id)->lockForUpdate()->firstOrFail();
             if (! $user->isSuperAdmin()) {
                 $accessibleStores = $user->accessibleStoreIds();
+                abort_if($accessibleStores === [], 403, 'Unassigned staff cannot manage service enquiries.');
+                abort_unless($user->canManageService((string) $enquiry->service_type), 403, 'Unauthorized service vertical for this enquiry.');
                 $proposal = ServiceBooking::where('service_enquiry_id', $enquiry->id)->first();
                 if ($proposal && ! in_array((int) $proposal->store_id, $accessibleStores, true)) {
                     abort(403, 'Unauthorized store enquiry.');
+                }
+                if ($enquiry->service_type === 'taxi') {
+                    $cabDetail = \App\Models\CabEnquiryDetail::where('service_enquiry_id', $enquiry->id)->first();
+                    if ($cabDetail && $cabDetail->store_id !== null && ! in_array((int) $cabDetail->store_id, $accessibleStores, true)) {
+                        abort(403, 'Unauthorized branch cab enquiry.');
+                    }
                 }
             }
 
@@ -186,12 +194,20 @@ class AdminServiceEnquiryWebController extends Controller
 
         if (! $user->isSuperAdmin()) {
             $accessibleStores = $user->accessibleStoreIds();
-            $proposalQuery->whereIn('store_id', $accessibleStores);
+            $allowedServices = $user->assignedServicesList();
+            if ($accessibleStores === [] || $allowedServices === []) {
+                $proposalQuery->whereRaw('1 = 0');
+                $enquiryQuery->whereRaw('1 = 0');
+            } else {
+                $proposalQuery->whereIn('store_id', $accessibleStores)
+                    ->whereIn('service_type', $allowedServices);
 
-            $enquiryQuery->where(function ($q) use ($accessibleStores) {
-                $q->whereHas('proposal', fn ($pq) => $pq->whereIn('store_id', $accessibleStores))
-                  ->orWhereDoesntHave('proposal');
-            });
+                $enquiryQuery->whereIn('service_type', $allowedServices)
+                    ->where(function ($q) use ($accessibleStores): void {
+                        $q->whereHas('proposal', fn ($pq) => $pq->whereIn('store_id', $accessibleStores))
+                            ->orWhereDoesntHave('proposal');
+                    });
+            }
         }
 
         return Inertia::render('Admin/ServiceEnquiries/Index', [

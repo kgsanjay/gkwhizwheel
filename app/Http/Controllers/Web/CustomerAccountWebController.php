@@ -69,17 +69,9 @@ class CustomerAccountWebController extends Controller
             return $sb;
         });
 
-        // Enquiries belonging to the customer's user_id or matching phone/email
+        // Enquiries strictly owned by the authenticated customer
         $serviceEnquiries = ServiceEnquiry::query()
-            ->where(function ($q) use ($user): void {
-                $q->where('user_id', $user->id);
-                if (! empty($user->phone)) {
-                    $q->orWhere('customer_phone', $user->phone);
-                }
-                if (! empty($user->email)) {
-                    $q->orWhere('customer_email', $user->email);
-                }
-            })
+            ->where('user_id', $user->id)
             ->latest()
             ->get([
                 'id', 'reference', 'service_type', 'start_datetime',
@@ -166,9 +158,8 @@ class CustomerAccountWebController extends Controller
         ])->findOrFail($id);
 
         $isOwner = $currentUser->id === $booking->user_id;
-        $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
 
-        if (! $isOwner && ! $isStaffOrAdmin) {
+        if (! $isOwner && ! $currentUser->can('view', $booking)) {
             abort(403, 'You are not authorized to view this booking.');
         }
 
@@ -210,47 +201,77 @@ class CustomerAccountWebController extends Controller
 
         // Flow 1: Resume / complete initial payment on HELD or PENDING_PAYMENT booking
         if (in_array($booking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true)) {
-            if ($booking->held_until !== null && $booking->held_until->lte(now())) {
-                $stillAvailable = $booking->bike !== null && $availabilityService->checkAvailability(
-                    bike: $booking->bike,
-                    startDate: $booking->start_date,
-                    endDate: $booking->end_date,
-                    excludeBookingId: $booking->id,
-                    pickupStoreId: $booking->pickup_store_id,
-                    returnStoreId: $booking->return_store_id,
-                );
+            $revival = \Illuminate\Support\Facades\DB::transaction(function () use (
+                $booking,
+                $validated,
+                $bookingService,
+                $availabilityService
+            ) {
+                $lockedBike = $booking->bike_id
+                    ? \App\Models\Bike::whereKey($booking->bike_id)->lockForUpdate()->first()
+                    : null;
+                $lockedBooking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
 
-                if (! $stillAvailable) {
+                if (! in_array($lockedBooking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'This reservation hold expired and the vehicle is no longer available for those dates. Please book another available bike.',
+                        'message' => 'This booking is no longer awaiting initial payment.',
                     ], 422);
                 }
 
-                $booking->held_until = now()->addMinutes(15);
-                $booking->save();
+                if ($lockedBooking->held_until !== null && $lockedBooking->held_until->lte(now())) {
+                    $stillAvailable = $lockedBike !== null
+                        && $lockedBike->status === \App\Enums\BikeStatus::AVAILABLE
+                        && $availabilityService->checkAvailability(
+                            bike: $lockedBike,
+                            startDate: $lockedBooking->start_date,
+                            endDate: $lockedBooking->end_date,
+                            excludeBookingId: $lockedBooking->id,
+                            pickupStoreId: $lockedBooking->pickup_store_id,
+                            returnStoreId: $lockedBooking->return_store_id,
+                        );
+
+                    if (! $stillAvailable) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'This reservation hold expired and the vehicle is no longer available for those dates. Please book another available bike.',
+                        ], 422);
+                    }
+
+                    $lockedBooking->held_until = now()->addMinutes(15);
+                    $lockedBooking->save();
+                }
+
+                $breakdown = is_array($lockedBooking->price_breakdown_json) ? $lockedBooking->price_breakdown_json : [];
+                $option = (string) ($breakdown['checkout_payment_option'] ?? (($validated['payment_option'] ?? null) === 'full' ? 'full' : 'advance'));
+                $amount = isset($breakdown['checkout_amount'])
+                    ? (float) $breakdown['checkout_amount']
+                    : \App\Services\BikeBookingPayments::amountFor($lockedBooking, $option);
+
+                if ($amount <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No payable amount found for this reservation.',
+                    ], 422);
+                }
+
+                $breakdown['checkout_payment_option'] = $option;
+                $breakdown['checkout_gateway'] = 'phonepe';
+                $breakdown['checkout_amount'] = $amount;
+                $breakdown['balance_due_on_pickup'] = round(max(0, (float) $lockedBooking->total_amount - $amount), 2);
+                if ($lockedBooking->status === BookingStatus::HELD) {
+                    $lockedBooking = $bookingService->markPendingPayment($lockedBooking);
+                }
+                $lockedBooking->update(['price_breakdown_json' => $breakdown]);
+
+                return [$lockedBooking, $breakdown, $amount];
+            });
+
+            if ($revival instanceof \Illuminate\Http\JsonResponse) {
+                return $revival;
             }
 
-            $option = (string) ($breakdown['checkout_payment_option'] ?? ($validated['payment_option'] === 'full' ? 'full' : 'advance'));
-            $amount = isset($breakdown['checkout_amount'])
-                ? (float) $breakdown['checkout_amount']
-                : \App\Services\BikeBookingPayments::amountFor($booking, $option);
-
-            if ($amount <= 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No payable amount found for this reservation.',
-                ], 422);
-            }
-
-            $breakdown['checkout_payment_option'] = $option;
-            $breakdown['checkout_gateway'] = 'phonepe';
-            $breakdown['checkout_amount'] = $amount;
-            $breakdown['balance_due_on_pickup'] = round(max(0, (float) $booking->total_amount - $amount), 2);
-            if ($booking->status === BookingStatus::HELD) {
-                $booking = $bookingService->markPendingPayment($booking);
-            }
-            $booking->update(['price_breakdown_json' => $breakdown]);
+            [$booking, $breakdown, $amount] = $revival;
 
             $paymentData = $phonePeService->createPayment($booking, null, $amount);
 
@@ -457,7 +478,27 @@ class CustomerAccountWebController extends Controller
             'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)],
         ]);
 
-        $user->update($validated);
+        $cleanPhone = preg_replace('/\D+/', '', (string) $validated['phone']) ?? '';
+        if (strlen($cleanPhone) === 12 && str_starts_with($cleanPhone, '91')) {
+            $cleanPhone = substr($cleanPhone, 2);
+        } elseif (strlen($cleanPhone) === 11 && str_starts_with($cleanPhone, '0')) {
+            $cleanPhone = substr($cleanPhone, 1);
+        }
+
+        if ($cleanPhone !== '' && \App\Models\User::where('id', '!=', $user->id)
+            ->where(fn ($q) => $q->where('phone', $cleanPhone)->orWhere('phone', '91'.$cleanPhone)->orWhere('phone', '+91'.$cleanPhone))
+            ->exists()) {
+            return back()->withErrors(['phone' => 'This phone number is already registered with another account.']);
+        }
+
+        $newEmail = strtolower(trim($validated['email']));
+        $emailChanged = strtolower((string) $user->email) !== $newEmail;
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $newEmail,
+            'phone' => $cleanPhone !== '' ? $cleanPhone : $validated['phone'],
+            ...($emailChanged ? ['email_verified_at' => null] : []),
+        ]);
 
         if ($request->wantsJson()) {
             return response()->json([

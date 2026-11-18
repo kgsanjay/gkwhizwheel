@@ -60,10 +60,14 @@ class PhonePeService
         string $mobileNumber,
         ?string $redirectUrl = null
     ): array {
-        $merchantId = (string) config('services.phonepe.merchant_id', 'PGTESTPAYUAT');
-        $saltKey = (string) config('services.phonepe.salt_key', 'test_phonepe_salt_key');
+        $merchantId = (string) config('services.phonepe.merchant_id', '');
+        $saltKey = (string) config('services.phonepe.salt_key', '');
         $saltIndex = (string) config('services.phonepe.salt_index', '1');
         $baseUrl = (string) config('services.phonepe.base_url', 'https://api-preprod.phonepe.com/apis/pg-sandbox');
+
+        if ($merchantId === '' || $saltKey === '') {
+            throw new \RuntimeException('PhonePe payment gateway credentials are not configured.');
+        }
         $callbackUrl = (string) config('services.phonepe.callback_url', url('/webhooks/phonepe'));
         $finalRedirectUrl = $redirectUrl ?? (string) config('services.phonepe.redirect_url', url('/payment/phonepe/callback'));
 
@@ -252,10 +256,14 @@ class PhonePeService
      */
     public function createRefund(string $originalTransactionId, float $amount, string $userId = '1', ?string $callbackUrl = null): array
     {
-        $merchantId = (string) config('services.phonepe.merchant_id', 'PGTESTPAYUAT');
-        $saltKey = (string) config('services.phonepe.salt_key', 'test_phonepe_salt_key');
+        $merchantId = (string) config('services.phonepe.merchant_id', '');
+        $saltKey = (string) config('services.phonepe.salt_key', '');
         $saltIndex = (string) config('services.phonepe.salt_index', '1');
         $baseUrl = (string) config('services.phonepe.base_url', 'https://api-preprod.phonepe.com/apis/pg-sandbox');
+
+        if ($merchantId === '' || $saltKey === '') {
+            throw new \RuntimeException('PhonePe payment gateway credentials are not configured.');
+        }
         $cbUrl = $callbackUrl ?? (string) config('services.phonepe.callback_url', url('/webhooks/phonepe'));
 
         $amountPaise = (int) round($amount * 100);

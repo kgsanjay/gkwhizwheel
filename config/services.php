@@ -38,11 +38,11 @@ return [
     ],
 
     'phonepe' => [
-        'merchant_id' => env('PHONEPE_MERCHANT_ID', 'PGTESTPAYUAT86'),
-        'salt_key' => env('PHONEPE_SALT_KEY', '96434309-7796-489d-8924-ab56988a6076'),
+        'merchant_id' => env('PHONEPE_MERCHANT_ID', env('APP_ENV', 'production') === 'production' ? '' : 'PGTESTPAYUAT86'),
+        'salt_key' => env('PHONEPE_SALT_KEY', env('APP_ENV', 'production') === 'production' ? '' : '96434309-7796-489d-8924-ab56988a6076'),
         'salt_index' => env('PHONEPE_SALT_INDEX', '1'),
         'env' => env('PHONEPE_ENV', 'UAT'),
-        'base_url' => env('PHONEPE_BASE_URL', 'https://api-preprod.phonepe.com/apis/pg-sandbox'),
+        'base_url' => env('PHONEPE_BASE_URL', env('APP_ENV', 'production') === 'production' ? 'https://api.phonepe.com/apis/hermes' : 'https://api-preprod.phonepe.com/apis/pg-sandbox'),
         'callback_url' => env('PHONEPE_CALLBACK_URL', rtrim((string) env('APP_URL', 'http://127.0.0.1:8000'), '/').'/webhooks/phonepe'),
         'redirect_url' => env('PHONEPE_REDIRECT_URL', rtrim((string) env('APP_URL', 'http://127.0.0.1:8000'), '/').'/payment/phonepe/callback'),
     ],

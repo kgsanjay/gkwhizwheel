@@ -48,9 +48,9 @@ class BookingWebController extends Controller
         }
 
         $isOwner = $currentUser->id === $booking->user_id;
-        $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+        $isAuthorizedStaff = $currentUser->can('view', $booking);
 
-        if (! $isOwner && ! $isStaffOrAdmin) {
+        if (! $isOwner && ! $isAuthorizedStaff) {
             abort(403, 'You are not authorized to view this booking confirmation.');
         }
 
@@ -155,13 +155,9 @@ class BookingWebController extends Controller
         if ($currentUser === null) {
             abort(401, 'Sign in to access your booking documents.');
         }
-        {
-            $isOwner = $currentUser->id === $booking->user_id;
-            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
-
-            if (! $isOwner && ! $isStaffOrAdmin) {
-                abort(403, 'You are not authorized to download this booking voucher.');
-            }
+        $isOwner = $currentUser->id === $booking->user_id;
+        if (! $isOwner && ! $currentUser->can('view', $booking)) {
+            abort(403, 'You are not authorized to download this booking voucher.');
         }
 
         if (! in_array($booking->status, [
@@ -193,13 +189,8 @@ class BookingWebController extends Controller
             ->findOrFail($id);
 
         $isOwner = $currentUser->id === $booking->user_id;
-        $isStaffOrAdmin = in_array($currentUser->role, [
-            UserRole::SUPER_ADMIN,
-            UserRole::STORE_MANAGER,
-            UserRole::STAFF,
-        ], true);
 
-        if (! $isOwner && ! $isStaffOrAdmin) {
+        if (! $isOwner && ! $currentUser->can('view', $booking)) {
             abort(403, 'You are not authorized to download this billing statement.');
         }
 
@@ -225,14 +216,8 @@ class BookingWebController extends Controller
             $booking = Booking::with('user')->find($bookingId);
 
             if ($booking && $booking->user) {
-                // Ensure customer is authenticated in the web session
-                if (\Illuminate\Support\Facades\Auth::guest()) {
-                    \Illuminate\Support\Facades\Auth::guard('web')->login($booking->user);
-                    if ($request->hasSession()) {
-                        $request->session()->regenerate();
-                    }
-                }
-
+                // Never authenticate a caller from an unverified gateway callback parameter.
+                // Top-level browser redirects retain the existing SameSite=Lax web session.
                 $breakdown = is_array($booking->price_breakdown_json) ? $booking->price_breakdown_json : [];
                 $isBalanceTxn = ! empty($breakdown['balance_phonepe_transaction_id'])
                     && hash_equals((string) $breakdown['balance_phonepe_transaction_id'], $txnId);
@@ -375,13 +360,7 @@ class BookingWebController extends Controller
         if (preg_match('/^TXN_SRV_(\d+)_/', $txnId, $m)) {
             $srvBooking = \App\Models\ServiceBooking::with('user')->find((int) $m[1]);
             if ($srvBooking) {
-                if ($srvBooking->user && \Illuminate\Support\Facades\Auth::guest()) {
-                    \Illuminate\Support\Facades\Auth::guard('web')->login($srvBooking->user);
-                    if ($request->hasSession()) {
-                        $request->session()->regenerate();
-                    }
-                }
-
+                // Never auto-login from an unverified callback parameter.
                 return redirect()->route('services.booking.confirmation', $srvBooking->booking_number)
                     ->with('success', 'PhonePe payment processed. Review your service booking details below.');
             }
@@ -409,13 +388,9 @@ class BookingWebController extends Controller
         if ($currentUser === null) {
             abort(401, 'Sign in to access your booking documents.');
         }
-        {
-            $isOwner = $currentUser->id === $booking->user_id;
-            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
-
-            if (! $isOwner && ! $isStaffOrAdmin) {
-                abort(403, 'You are not authorized to view this booking voucher.');
-            }
+        $isOwner = $currentUser->id === $booking->user_id;
+        if (! $isOwner && ! $currentUser->can('view', $booking)) {
+            abort(403, 'You are not authorized to view this booking voucher.');
         }
 
         if (! in_array($booking->status, [
@@ -444,13 +419,13 @@ class BookingWebController extends Controller
         })->firstOrFail();
 
         $currentUser = $request->user();
-        if ($currentUser !== null) {
-            $isOwner = $currentUser->id === $booking->user_id;
-            $isStaffOrAdmin = in_array($currentUser->role, [UserRole::SUPER_ADMIN, UserRole::STORE_MANAGER, UserRole::STAFF], true);
+        if ($currentUser === null) {
+            abort(401, 'Sign in to access your check-in pass.');
+        }
 
-            if (! $isOwner && ! $isStaffOrAdmin) {
-                abort(403, 'You are not authorized to view this check-in pass.');
-            }
+        $isOwner = $currentUser->id === $booking->user_id;
+        if (! $isOwner && ! $currentUser->can('view', $booking)) {
+            abort(403, 'You are not authorized to view this check-in pass.');
         }
 
         $verificationUrl = route('bookings.confirmation', $booking->id);

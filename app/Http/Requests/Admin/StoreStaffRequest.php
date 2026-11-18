@@ -43,6 +43,14 @@ class StoreStaffRequest extends FormRequest
                 }
             }
 
+            $requestedServices = (array) $this->input('services', []);
+            if (! empty($requestedServices)) {
+                $allowedServices = $user->assignedServicesList();
+                if (array_diff($requestedServices, $allowedServices) !== []) {
+                    abort(403, 'Branch Admin cannot assign services outside their authorized verticals.');
+                }
+            }
+
             return true;
         }
 

@@ -87,13 +87,25 @@ test('initiation rejects arbitrary partial charges, permits only full outstandin
 
 test('verification rejects client amount below approved balance and accepts once', function (): void {
     $booking = payment51Booking($this, 'GKW-P51-REPLAY');
+    $merchantTxnId = "TXN_SRV_{$booking->id}_verified51";
+    \Illuminate\Support\Facades\Http::fake([
+        '*/pg/v1/status/*' => \Illuminate\Support\Facades\Http::response([
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'data' => [
+                'state' => 'COMPLETED',
+                'amount' => 100000,
+                'transactionId' => 'pay51_test_verified',
+            ],
+        ], 200),
+    ]);
     $url = '/services/bookings/'.$booking->booking_number.'/verify-payment';
     $this->actingAs($this->paymentCustomer)
-        ->postJson($url, ['razorpay_payment_id' => 'pay51_test_verified', 'amount' => 1])
+        ->postJson($url, ['phonepe_transaction_id' => $merchantTxnId, 'amount' => 1])
         ->assertUnprocessable();
-    $this->postJson($url, ['razorpay_payment_id' => 'pay51_test_verified', 'amount' => 1000])
+    $this->postJson($url, ['phonepe_transaction_id' => $merchantTxnId, 'amount' => 1000])
         ->assertOk()->assertJsonPath('success', true);
-    $this->postJson($url, ['razorpay_payment_id' => 'pay51_test_verified', 'amount' => 1000])
+    $this->postJson($url, ['phonepe_transaction_id' => $merchantTxnId, 'amount' => 1000])
         ->assertUnprocessable();
     expect(ServicePaymentReceipt::count())->toBe(1)
         ->and((int) ServicePaymentReceipt::first()->amount_paise)->toBe(100000)
@@ -103,12 +115,26 @@ test('verification rejects client amount below approved balance and accepts once
 test('one provider payment reference cannot settle another booking even with matching amount', function (): void {
     $first = payment51Booking($this, 'GKW-P51-ONE');
     $second = payment51Booking($this, 'GKW-P51-TWO');
+    \Illuminate\Support\Facades\Http::fake([
+        '*/pg/v1/status/*' => \Illuminate\Support\Facades\Http::response([
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'data' => [
+                'state' => 'COMPLETED',
+                'amount' => 100000,
+                'transactionId' => 'pay51_global_unique',
+            ],
+        ], 200),
+    ]);
     $this->actingAs($this->paymentCustomer);
-    $payload = ['razorpay_payment_id' => 'pay51_global_unique', 'amount' => 1000];
-    $this->postJson('/services/bookings/'.$first->booking_number.'/verify-payment', $payload)
-        ->assertOk();
-    $this->postJson('/services/bookings/'.$second->booking_number.'/verify-payment', $payload)
-        ->assertUnprocessable();
+    $this->postJson('/services/bookings/'.$first->booking_number.'/verify-payment', [
+        'phonepe_transaction_id' => "TXN_SRV_{$first->id}_one",
+        'amount' => 1000,
+    ])->assertOk();
+    $this->postJson('/services/bookings/'.$second->booking_number.'/verify-payment', [
+        'phonepe_transaction_id' => "TXN_SRV_{$second->id}_two",
+        'amount' => 1000,
+    ])->assertUnprocessable();
     expect(ServicePaymentReceipt::count())->toBe(1)
         ->and((float) $second->fresh()->balance_due)->toBe(1000.0);
 });

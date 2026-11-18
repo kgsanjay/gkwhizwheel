@@ -53,6 +53,25 @@ class EnsureAdminOrStaff
             return redirect()->guest(route('admin.login'));
         }
 
+        if ($user->status === \App\Enums\UserStatus::BLACKLISTED) {
+            Auth::guard('admin')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'message' => 'This account has been suspended or deactivated.',
+                    'errors' => null,
+                ], 403);
+            }
+
+            abort(403, 'This account has been suspended or deactivated.');
+        }
+
         if (! $user->isStaffOrAdmin()) {
             if ($request->is('api/*') || ($request->expectsJson() && ! $request->header('X-Inertia'))) {
                 return response()->json([

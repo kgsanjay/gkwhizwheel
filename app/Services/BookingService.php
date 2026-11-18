@@ -159,9 +159,11 @@ class BookingService
             $booking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
             $this->ensureCurrentStatus($booking, [BookingStatus::CONFIRMED], BookingStatus::HANDED_OVER);
 
-            // A paid ₹100 advance does not settle the remaining balance.
-            // Check inside the same transaction as the physical handover.
-            if (($booking->price_breakdown_json['checkout_payment_option'] ?? null) === 'advance'
+            // A paid ₹100 advance or an unpaid booking extension does not settle the
+            // remaining balance. Check inside the same transaction as physical handover.
+            $option = $booking->price_breakdown_json['checkout_payment_option'] ?? null;
+            $hasExtensions = ! empty($booking->price_breakdown_json['extensions']);
+            if (($option === 'advance' || $hasExtensions)
                 && BikeBookingPayments::remainder($booking) > 0) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'payment' => 'Collect the remaining rental balance before handing over this bike.',
@@ -371,6 +373,11 @@ class BookingService
             'status' => BookingStatus::CANCELLED,
         ]);
 
+        // Release coupon usage if the booking was never confirmed/paid
+        if ($booking->payments()->where('status', \App\Enums\PaymentStatus::SUCCESS)->doesntExist()) {
+            \App\Models\CouponUsage::where('booking_id', $booking->id)->delete();
+        }
+
         return $booking->refresh();
     }
 
@@ -388,6 +395,8 @@ class BookingService
         $booking->update([
             'status' => BookingStatus::EXPIRED,
         ]);
+
+        \App\Models\CouponUsage::where('booking_id', $booking->id)->delete();
 
         return $booking->refresh();
     }

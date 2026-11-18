@@ -111,8 +111,20 @@ test('same gateway payment reference cannot be credited twice', function (): voi
     ]);
 
     gkwAllocatePaymentFixture($booking);
+    $merchantTxnId = "TXN_SRV_{$booking->id}_replay123";
+    \Illuminate\Support\Facades\Http::fake([
+        '*/pg/v1/status/*' => \Illuminate\Support\Facades\Http::response([
+            'success' => true,
+            'code' => 'PAYMENT_SUCCESS',
+            'data' => [
+                'state' => 'COMPLETED',
+                'amount' => 300000,
+                'transactionId' => 'pay_replay_fixture_123',
+            ],
+        ], 200),
+    ]);
     $payload = [
-        'razorpay_payment_id' => 'pay_replay_fixture_123',
+        'phonepe_transaction_id' => $merchantTxnId,
         'amount' => 3000,
     ];
 

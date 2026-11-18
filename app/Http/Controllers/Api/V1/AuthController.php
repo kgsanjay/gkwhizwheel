@@ -58,13 +58,27 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $identifier = $request->validated('email') ?? $request->validated('phone') ?? $request->validated('login');
+        $identifier = (string) ($request->validated('email') ?? $request->validated('phone') ?? $request->validated('login'));
+        $throttleKey = 'api.login.account:'.Str::transliterate(Str::lower(trim($identifier)));
+
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($throttleKey);
+
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'message' => "Too many login attempts. Please try again in {$seconds} seconds.",
+                'errors' => ['login' => ["Too many login attempts. Please try again in {$seconds} seconds."]],
+            ], 429);
+        }
 
         $user = User::where('email', $identifier)
             ->orWhere('phone', $identifier)
             ->first();
 
         if (! $user || ! $user->password || ! Hash::check((string) $request->validated('password'), $user->password)) {
+            \Illuminate\Support\Facades\RateLimiter::hit($throttleKey, 300);
+
             return response()->json([
                 'success' => false,
                 'data' => null,
@@ -84,6 +98,34 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Enforce TOTP 2FA on API login whenever 2FA is active on the account
+        if ($user->hasTwoFactorEnabled()) {
+            $twoFactorService = app(\App\Services\TwoFactorService::class);
+            $code = (string) $request->input('two_factor_code', '');
+            $recoveryCode = (string) $request->input('recovery_code', '');
+            $verified2fa = false;
+
+            if ($code !== '' && ! empty($user->two_factor_secret)) {
+                $verified2fa = $twoFactorService->verify((string) $user->two_factor_secret, $code);
+            } elseif ($recoveryCode !== '') {
+                $verified2fa = $twoFactorService->verifyAndConsumeRecoveryCode($user, $recoveryCode);
+            }
+
+            if (! $verified2fa) {
+                \Illuminate\Support\Facades\RateLimiter::hit($throttleKey, 300);
+
+                return response()->json([
+                    'success' => false,
+                    'data' => ['two_factor_required' => true],
+                    'message' => 'Two-factor authentication code is required.',
+                    'errors' => [
+                        'two_factor_code' => ['A valid two-factor authentication code is required.'],
+                    ],
+                ], 422);
+            }
+        }
+
+        \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
         $this->loadUserStores($user);
         $token = $this->issueToken($user);
 
@@ -102,9 +144,11 @@ class AuthController extends Controller
      */
     public function requestOtp(OtpRequestRequest $request): JsonResponse
     {
-        $email = $request->validated('email');
+        $email = strtolower(trim((string) $request->validated('email')));
 
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)
+            ->where('role', UserRole::CUSTOMER)
+            ->first();
 
         if (! $user) {
             return response()->json([
@@ -129,6 +173,7 @@ class AuthController extends Controller
         $otp = (string) random_int(100000, 999999);
 
         Cache::put("otp:{$email}", $otp, now()->addMinutes(10));
+        Cache::forget("otp_attempts:{$email}");
 
         Notification::route('mail', $email)->notify(new OtpNotification($otp));
 
@@ -144,11 +189,31 @@ class AuthController extends Controller
      */
     public function verifyOtp(OtpVerifyRequest $request): JsonResponse
     {
-        $email = $request->validated('email');
-        $otp = $request->validated('otp');
+        $email = strtolower(trim((string) $request->validated('email')));
+        $otp = trim((string) $request->validated('otp'));
+        $attemptKey = "otp_attempts:{$email}";
+        $attempts = (int) Cache::get($attemptKey, 0);
+
+        if ($attempts >= 5) {
+            Cache::forget("otp:{$email}");
+
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'message' => 'Too many invalid OTP attempts. Please request a new code.',
+                'errors' => ['otp' => ['Too many invalid OTP attempts. Please request a new code.']],
+            ], 429);
+        }
+
         $cachedOtp = Cache::get("otp:{$email}");
 
-        if (! $cachedOtp || (string) $cachedOtp !== (string) $otp) {
+        if (! is_string($cachedOtp) || $cachedOtp === '' || ! hash_equals($cachedOtp, $otp)) {
+            $nextAttempts = $attempts + 1;
+            Cache::put($attemptKey, $nextAttempts, now()->addMinutes(10));
+            if ($nextAttempts >= 5) {
+                Cache::forget("otp:{$email}");
+            }
+
             return response()->json([
                 'success' => false,
                 'data' => null,
@@ -159,9 +224,20 @@ class AuthController extends Controller
             ], 422);
         }
 
-        Cache::forget("otp:{$email}");
+        $consumed = Cache::pull("otp:{$email}");
+        Cache::forget($attemptKey);
+        if (! is_string($consumed) || ! hash_equals($consumed, $otp)) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'message' => 'Invalid or expired OTP.',
+                'errors' => ['otp' => ['Invalid or expired OTP.']],
+            ], 422);
+        }
 
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)
+            ->where('role', UserRole::CUSTOMER)
+            ->first();
 
         if (! $user) {
             return response()->json([
@@ -253,6 +329,27 @@ class AuthController extends Controller
             'whatsapp_opt_in' => ['sometimes', 'boolean'],
         ]);
 
+        if (isset($validated['phone'])) {
+            $cleanPhone = preg_replace('/\D+/', '', (string) $validated['phone']) ?? '';
+            if (strlen($cleanPhone) === 12 && str_starts_with($cleanPhone, '91')) {
+                $cleanPhone = substr($cleanPhone, 2);
+            } elseif (strlen($cleanPhone) === 11 && str_starts_with($cleanPhone, '0')) {
+                $cleanPhone = substr($cleanPhone, 1);
+            }
+            $taken = User::where('id', '!=', $user->id)
+                ->where(fn ($q) => $q->where('phone', $cleanPhone)->orWhere('phone', '91'.$cleanPhone)->orWhere('phone', '+91'.$cleanPhone))
+                ->exists();
+            if ($taken) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'message' => 'This phone number is already registered with another account.',
+                    'errors' => ['phone' => ['This phone number is already registered with another account.']],
+                ], 422);
+            }
+            $validated['phone'] = $cleanPhone;
+        }
+
         $user->update($validated);
 
         $this->loadUserStores($user);
@@ -309,30 +406,23 @@ class AuthController extends Controller
         $cleanPhone = preg_replace('/\D+/', '', $validated['phone']) ?? '';
         $email = ! empty($validated['email']) ? strtolower(trim($validated['email'])) : null;
 
-        // 1. Search for existing user by phone or email
-        $existing = User::withTrashed()->where(function ($q) use ($cleanPhone): void {
-                $q->where('phone', $cleanPhone)
-                    ->orWhere('phone', '91'.$cleanPhone)
-                    ->orWhere('phone', '+91'.$cleanPhone);
-            })
-            ->orWhere(function ($q) use ($email): void {
-                if ($email !== null) {
-                    $q->where('email', $email);
-                }
-            })
-            ->first();
+        // 1. Search for existing active user by phone or email (never resurrect soft-deleted accounts)
+        $existing = User::where(function ($q) use ($cleanPhone, $email): void {
+            $q->where('phone', $cleanPhone)
+                ->orWhere('phone', '91'.$cleanPhone)
+                ->orWhere('phone', '+91'.$cleanPhone);
+            if ($email !== null) {
+                $q->orWhere('email', $email);
+            }
+        })->first();
 
         if ($existing) {
-            if ($existing->trashed()) {
-                $existing->restore();
-            }
-
-            if (! empty($validated['name']) && (empty($existing->name) || str_starts_with($existing->name, 'Customer '))) {
-                $existing->update(['name' => $validated['name']]);
-            }
-
-            if (! empty($email) && (empty($existing->email) || str_ends_with($existing->email, '@whizwheels.local'))) {
-                $existing->update(['email' => $email]);
+            if ($existing->role !== UserRole::CUSTOMER) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'staff_account',
+                    'message' => 'Staff and Admin accounts cannot use guest checkout OTP. Please sign in through the Staff Portal.',
+                ], 403);
             }
 
             if ($existing->status === UserStatus::BLACKLISTED) {
@@ -343,10 +433,24 @@ class AuthController extends Controller
                 ], 403);
             }
 
+            // Never mutate $existing->email or $existing->name before OTP verification;
+            // hold safe pending updates in cache and apply only after OTP succeeds.
+            $pendingUpdates = [];
+            if (! empty($validated['name']) && (empty($existing->name) || str_starts_with($existing->name, 'Customer '))) {
+                $pendingUpdates['name'] = $validated['name'];
+            }
+            if (! empty($email) && (empty($existing->email) || str_ends_with($existing->email, '@whizwheels.local'))) {
+                $pendingUpdates['email'] = $email;
+            }
+
             // Generate 6-digit OTP cached for 10 minutes
             $otp = (string) random_int(100000, 999999);
             Cache::put("checkout_otp:{$existing->id}", $otp, now()->addMinutes(10));
-            \Illuminate\Support\Facades\Log::info("Checkout OTP generated for user {$existing->id} ({$cleanPhone}): {$otp}");
+            Cache::forget("checkout_otp_attempts:{$existing->id}");
+            if ($pendingUpdates !== []) {
+                Cache::put("checkout_otp_pending:{$existing->id}", $pendingUpdates, now()->addMinutes(10));
+            }
+            \Illuminate\Support\Facades\Log::info('Checkout OTP generated', ['user_id' => $existing->id]);
 
             try {
                 $existing->notify(new OtpNotification($otp));
@@ -354,11 +458,16 @@ class AuthController extends Controller
                 \Illuminate\Support\Facades\Log::warning("Could not dispatch OTP notification for user {$existing->id}: " . $e->getMessage());
             }
 
-            $maskedPhone = substr($existing->phone ?? $cleanPhone, 0, 2).'******'.substr($existing->phone ?? $cleanPhone, -2);
-            $effectiveEmail = (! empty($existing->email) && ! str_ends_with($existing->email, '@whizwheels.local')) ? $existing->email : $email;
+            $existingPhone = (string) ($existing->phone ?? $cleanPhone);
+            $maskedPhone = strlen($existingPhone) >= 4
+                ? substr($existingPhone, 0, 2).'******'.substr($existingPhone, -2)
+                : '******';
+            $existingRealEmail = (! empty($existing->email) && ! str_ends_with($existing->email, '@whizwheels.local'))
+                ? $existing->email
+                : null;
             $maskedEmail = null;
-            if ($effectiveEmail && ! str_ends_with($effectiveEmail, '@whizwheels.local')) {
-                $parts = explode('@', $effectiveEmail);
+            if ($existingRealEmail) {
+                $parts = explode('@', $existingRealEmail);
                 $maskedEmail = substr($parts[0], 0, 2).'***@'.($parts[1] ?? '');
             }
 
@@ -369,12 +478,10 @@ class AuthController extends Controller
                 'status' => 'otp_required',
                 'user_id' => $existing->id,
                 'is_new_user' => false,
-                'phone' => $existing->phone ?? $cleanPhone,
-                'email' => $effectiveEmail,
                 'masked_phone' => $maskedPhone,
                 'masked_email' => $maskedEmail,
                 'debug_otp' => $exposeDebugOtp ? $otp : null,
-                'message' => 'Please enter the 6-digit verification code sent to your WhatsApp or Email.',
+                'message' => 'Please enter the 6-digit verification code sent to your registered WhatsApp or Email.',
             ]);
         }
 
@@ -388,13 +495,14 @@ class AuthController extends Controller
             'role' => UserRole::CUSTOMER,
             'status' => UserStatus::ACTIVE,
             'whatsapp_opt_in' => true,
-            'email_verified_at' => $email ? now() : null,
+            'email_verified_at' => null,
         ]);
 
         if ($request->boolean('verify_phone')) {
             $otp = (string) random_int(100000, 999999);
             Cache::put("checkout_otp:{$newUser->id}", $otp, now()->addMinutes(10));
-            \Illuminate\Support\Facades\Log::info("Checkout OTP generated for new user {$newUser->id} ({$cleanPhone}): {$otp}");
+            Cache::forget("checkout_otp_attempts:{$newUser->id}");
+            \Illuminate\Support\Facades\Log::info('Checkout OTP generated for new user', ['user_id' => $newUser->id]);
 
             try {
                 $newUser->notify(new OtpNotification($otp));
@@ -412,8 +520,6 @@ class AuthController extends Controller
                 'status' => 'otp_required',
                 'user_id' => $newUser->id,
                 'is_new_user' => true,
-                'phone' => $cleanPhone,
-                'email' => $effectiveEmail,
                 'masked_phone' => $maskedPhone,
                 'masked_email' => $maskedEmail,
                 'debug_otp' => $exposeDebugOtp ? $otp : null,
@@ -451,10 +557,32 @@ class AuthController extends Controller
 
         $userId = (int) $validated['user_id'];
         $otp = trim((string) $validated['otp']);
+        $attemptKey = "checkout_otp_attempts:{$userId}";
+        $attempts = (int) Cache::get($attemptKey, 0);
+
+        if ($attempts >= 5) {
+            Cache::forget("checkout_otp:{$userId}");
+            Cache::forget("checkout_otp_pending:{$userId}");
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many invalid verification attempts. Please request a new code.',
+                'errors' => [
+                    'otp' => ['Too many invalid verification attempts. Please request a new code.'],
+                ],
+            ], 429);
+        }
+
         $cachedOtp = Cache::get("checkout_otp:{$userId}");
 
-        if (! $cachedOtp || (string) $cachedOtp !== (string) $otp) {
-            \Illuminate\Support\Facades\Log::warning("Checkout OTP mismatch for user {$userId}: provided={$otp}, cached=" . ($cachedOtp ?? 'null'));
+        if (! is_string($cachedOtp) || $cachedOtp === '' || ! hash_equals($cachedOtp, $otp)) {
+            $nextAttempts = $attempts + 1;
+            Cache::put($attemptKey, $nextAttempts, now()->addMinutes(10));
+            if ($nextAttempts >= 5) {
+                Cache::forget("checkout_otp:{$userId}");
+                Cache::forget("checkout_otp_pending:{$userId}");
+            }
+            \Illuminate\Support\Facades\Log::warning('Checkout OTP mismatch', ['user_id' => $userId]);
 
             return response()->json([
                 'success' => false,
@@ -465,14 +593,38 @@ class AuthController extends Controller
             ], 422);
         }
 
-        Cache::forget("checkout_otp:{$userId}");
+        $consumed = Cache::pull("checkout_otp:{$userId}");
+        Cache::forget($attemptKey);
+        if (! is_string($consumed) || ! hash_equals($consumed, $otp)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired verification code.',
+                'errors' => ['otp' => ['Invalid or expired verification code.']],
+            ], 422);
+        }
 
-        $user = User::findOrFail($userId);
+        $user = User::where('role', UserRole::CUSTOMER)->findOrFail($userId);
         if ($user->status === UserStatus::BLACKLISTED) {
             return response()->json([
                 'success' => false,
                 'message' => 'This account has been suspended or deactivated.',
             ], 403);
+        }
+
+        $pending = Cache::pull("checkout_otp_pending:{$userId}");
+        if (is_array($pending)) {
+            $safeUpdates = [];
+            if (! empty($pending['name']) && (empty($user->name) || str_starts_with($user->name, 'Customer '))) {
+                $safeUpdates['name'] = $pending['name'];
+            }
+            if (! empty($pending['email'])
+                && (empty($user->email) || str_ends_with($user->email, '@whizwheels.local'))
+                && ! User::where('id', '!=', $user->id)->where('email', $pending['email'])->exists()) {
+                $safeUpdates['email'] = $pending['email'];
+            }
+            if ($safeUpdates !== []) {
+                $user->update($safeUpdates);
+            }
         }
 
         if ($request->hasSession()) {

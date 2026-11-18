@@ -37,7 +37,10 @@ class CustomerController extends Controller
         $digitsOnly = preg_replace('/[^0-9]/', '', $cleanPhone);
         $last10 = substr($digitsOnly, -10);
 
+        $authorizedStoreIds = $request->user()?->getAuthorizedStoreIds();
+
         $customer = User::query()
+            ->where('role', UserRole::CUSTOMER)
             ->where(function ($query) use ($cleanPhone, $digitsOnly, $last10) {
                 $query->where('phone', $cleanPhone)
                     ->orWhere('phone', '+'.ltrim($cleanPhone, '+'))
@@ -52,7 +55,21 @@ class CustomerController extends Controller
                     $query->orWhere('phone', 'like', "%{$last10}");
                 }
             })
-            ->with(['kycDocuments', 'bookings'])
+            ->with([
+                'kycDocuments',
+                'bookings' => function ($q) use ($authorizedStoreIds): void {
+                    if ($authorizedStoreIds !== null) {
+                        if ($authorizedStoreIds === []) {
+                            $q->whereRaw('1 = 0');
+                        } else {
+                            $q->where(function ($sq) use ($authorizedStoreIds): void {
+                                $sq->whereIn('pickup_store_id', $authorizedStoreIds)
+                                    ->orWhereIn('return_store_id', $authorizedStoreIds);
+                            });
+                        }
+                    }
+                },
+            ])
             ->first();
 
         if ($customer === null) {

@@ -124,82 +124,101 @@ class BookingController extends Controller
         CollectStaffPaymentRequest $request,
         BookingService $bookingService
     ): JsonResponse {
-        $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'addons', 'payments'])->findOrFail($id);
-
-        $authorizedStoreIds = $request->user()->getAuthorizedStoreIds();
-        if ($authorizedStoreIds !== null
-            && ! in_array($booking->pickup_store_id, $authorizedStoreIds, true)
-            && ! in_array($booking->return_store_id, $authorizedStoreIds, true)) {
-            abort(403, "Unauthorized. You are not assigned to store for booking {$booking->booking_reference}.");
-        }
-
-        if (! in_array($booking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT, BookingStatus::CONFIRMED], true)) {
-            return response()->json([
-                'success' => false,
-                'data' => null,
-                'message' => "Cannot collect payment for booking with status '{$booking->status->value}'.",
-                'errors' => null,
-            ], 422);
-        }
-
-        // Server-side outstanding balance validation
-        $totalPaid = (float) $booking->payments->where('status', PaymentStatus::SUCCESS)->sum('amount');
-        $outstandingBalance = max(0.0, round((float) $booking->total_amount - $totalPaid, 2));
-
-        $amount = $request->filled('amount')
-            ? (float) $request->validated('amount')
-            : $outstandingBalance;
-
-        if ($amount <= 0.0) {
-            return response()->json([
-                'success' => false,
-                'data' => null,
-                'message' => 'Payment amount must be greater than zero.',
-                'errors' => ['amount' => ['Payment amount must be greater than zero.']],
-            ], 422);
-        }
-
-        if ($amount > $outstandingBalance + 0.01) {
-            return response()->json([
-                'success' => false,
-                'data' => null,
-                'message' => "Submitted payment amount of ₹{$amount} exceeds remaining outstanding balance of ₹{$outstandingBalance}.",
-                'errors' => ['amount' => ["Amount exceeds outstanding balance of ₹{$outstandingBalance}."]],
-            ], 422);
-        }
-
         $method = PaymentMethod::from((string) $request->validated('payment_method'));
         $gatewayRef = $request->validated('gateway_reference');
 
-        $payment = Payment::create([
-            'booking_id' => $booking->id,
-            'type' => PaymentType::ADVANCE,
-            'amount' => $amount,
-            'method' => $method,
-            'gateway_reference' => $gatewayRef,
-            'status' => PaymentStatus::SUCCESS,
-            'collected_by' => $request->user()->id,
-            'notes' => $request->validated('notes'),
-        ]);
+        $result = \Illuminate\Support\Facades\DB::transaction(function () use (
+            $id,
+            $request,
+            $bookingService,
+            $method,
+            $gatewayRef
+        ) {
+            $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'addons', 'payments'])
+                ->whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($booking->status !== BookingStatus::CONFIRMED) {
-            $bookingService->confirmPayment($booking, $gatewayRef, $request->user()->id);
+            $authorizedStoreIds = $request->user()->getAuthorizedStoreIds();
+            if ($authorizedStoreIds !== null
+                && ! in_array($booking->pickup_store_id, $authorizedStoreIds, true)
+                && ! in_array($booking->return_store_id, $authorizedStoreIds, true)) {
+                abort(403, "Unauthorized. You are not assigned to store for booking {$booking->booking_reference}.");
+            }
+
+            if (! in_array($booking->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT, BookingStatus::CONFIRMED], true)) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'message' => "Cannot collect payment for booking with status '{$booking->status->value}'.",
+                    'errors' => null,
+                ], 422);
+            }
+
+            $totalPaid = (float) Payment::where('booking_id', $booking->id)
+                ->where('status', PaymentStatus::SUCCESS)
+                ->sum('amount');
+            $outstandingBalance = max(0.0, round((float) $booking->total_amount - $totalPaid, 2));
+
+            $amount = $request->filled('amount')
+                ? (float) $request->validated('amount')
+                : $outstandingBalance;
+
+            if ($amount <= 0.0) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'message' => 'Payment amount must be greater than zero.',
+                    'errors' => ['amount' => ['Payment amount must be greater than zero.']],
+                ], 422);
+            }
+
+            if ($amount > $outstandingBalance + 0.01) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'message' => "Submitted payment amount of ₹{$amount} exceeds remaining outstanding balance of ₹{$outstandingBalance}.",
+                    'errors' => ['amount' => ["Amount exceeds outstanding balance of ₹{$outstandingBalance}."]],
+                ], 422);
+            }
+
+            $payment = Payment::create([
+                'booking_id' => $booking->id,
+                'type' => PaymentType::ADVANCE,
+                'amount' => $amount,
+                'method' => $method,
+                'gateway_reference' => $gatewayRef,
+                'status' => PaymentStatus::SUCCESS,
+                'collected_by' => $request->user()->id,
+                'notes' => $request->validated('notes'),
+            ]);
+
+            if ($booking->status !== BookingStatus::CONFIRMED) {
+                $bookingService->confirmPayment($booking, $gatewayRef, $request->user()->id);
+            }
+
+            ActivityLog::create([
+                'user_id' => $request->user()->id,
+                'store_id' => $booking->pickup_store_id,
+                'action' => 'payment_collected_offline',
+                'subject_type' => Booking::class,
+                'subject_id' => $booking->id,
+                'new_values' => [
+                    'payment_id' => $payment->id,
+                    'amount' => $amount,
+                    'method' => $method->value,
+                    'status' => 'confirmed',
+                ],
+            ]);
+
+            return $booking;
+        });
+
+        if ($result instanceof JsonResponse) {
+            return $result;
         }
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'store_id' => $booking->pickup_store_id,
-            'action' => 'payment_collected_offline',
-            'subject_type' => Booking::class,
-            'subject_id' => $booking->id,
-            'new_values' => [
-                'payment_id' => $payment->id,
-                'amount' => $amount,
-                'method' => $method->value,
-                'status' => 'confirmed',
-            ],
-        ]);
-
+        $booking = $result;
         $booking->load(['bike.images', 'pickupStore', 'returnStore', 'addons', 'payments', 'refunds', 'user']);
 
         return response()->json([
@@ -364,6 +383,8 @@ class BookingController extends Controller
         RefundService $refundService
     ): JsonResponse {
         $booking = Booking::with(['bike', 'pickupStore', 'returnStore', 'user'])->findOrFail($id);
+
+        \Illuminate\Support\Facades\Gate::authorize('processReturn', $booking);
 
         $returnStoreId = $request->filled('return_store_id')
             ? (int) $request->validated('return_store_id')

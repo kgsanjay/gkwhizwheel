@@ -267,6 +267,28 @@ class PhonePeWebhookController extends Controller
                     ]);
                 }
 
+                $cachedInitiation = \Illuminate\Support\Facades\Cache::get("service_phonepe_txn:{$booking->id}");
+                if (is_array($cachedInitiation)
+                    && ! empty($cachedInitiation['merchant_transaction_id'])
+                    && ! hash_equals((string) $cachedInitiation['merchant_transaction_id'], $merchantTransactionId)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Webhook transaction does not match the initiated payment for this booking.',
+                    ], 422);
+                }
+
+                $balancePaise = (int) round((float) $booking->balance_due * 100);
+                if ($amountPaise <= 0
+                    || in_array($booking->status, ['cancelled', 'expired', 'completed'], true)
+                    || $booking->payment_status === 'paid'
+                    || $balancePaise <= 0
+                    || $amountPaise > $balancePaise) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Booking is not eligible for this payment amount.',
+                    ], 422);
+                }
+
                 ServicePaymentReceipt::create([
                     'service_booking_id' => $booking->id,
                     'provider' => 'phonepe',

@@ -44,7 +44,7 @@ class AdminSettingsWebController extends Controller
             'google_rating_value' => ['nullable', 'string', 'max:10'],
             'google_reviews_count' => ['nullable', 'string', 'max:20'],
             'google_rating_label' => ['nullable', 'string', 'max:100'],
-            'google_maps_reviews_url' => ['nullable', 'url', 'max:500'],
+            'google_maps_reviews_url' => ['nullable', 'url:http,https', 'max:500'],
         ]);
 
         if (! empty($validated['google_rating_score']) && empty($validated['google_rating_value'])) {

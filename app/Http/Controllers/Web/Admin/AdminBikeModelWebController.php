@@ -42,15 +42,19 @@ class AdminBikeModelWebController extends Controller
 
         $allBikes = Bike::query()
             ->whereNotNull('bike_model_id')
+            ->when(! $isSuperAdmin, fn ($q) => $accessible === [] ? $q->whereRaw('1 = 0') : $q->whereIn('current_store_id', $accessible))
             ->get(['id', 'bike_model_id', 'registration_number', 'status', 'current_store_id', 'home_store_id']);
         $byModel = $allBikes->groupBy('bike_model_id');
         $stores = Store::query()
-            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $accessible))
+            ->when(! $isSuperAdmin, fn ($q) => $accessible === [] ? $q->whereRaw('1 = 0') : $q->whereIn('id', $accessible))
             ->orderBy('name')->get(['id', 'name', 'city']);
 
         return Inertia::render('Admin/BikeModels/Index', [
-            'models' => $models->map(function (BikeModel $model) use ($byModel, $stores): array {
+            'models' => $models->map(function (BikeModel $model) use ($byModel, $stores, $isSuperAdmin, $accessible): array {
                 $units = $byModel->get($model->id, collect());
+                $scopedBranchPrices = $isSuperAdmin
+                    ? $model->branchPrices
+                    : $model->branchPrices->whereIn('store_id', $accessible);
 
                 return [
                     'id' => $model->id,
@@ -64,7 +68,7 @@ class AdminBikeModelWebController extends Controller
                     'primary_image_path' => $model->primary_image_path,
                     'is_active' => (bool) $model->is_active,
                     'total_units' => $units->count(),
-                    'branch_prices' => $model->branchPrices->map(fn (BranchBikeModelPrice $price): array => [
+                    'branch_prices' => $scopedBranchPrices->map(fn (BranchBikeModelPrice $price): array => [
                         'store_id' => $price->store_id,
                         'weekday_rate' => (float) $price->weekday_rate,
                         'weekend_rate' => (float) $price->weekend_rate,
@@ -92,7 +96,10 @@ class AdminBikeModelWebController extends Controller
             })->values()->all(),
             'categories' => BikeCategory::query()->orderBy('name')->get(['id', 'name']),
             'stores' => $stores,
-            'unlinked_units' => Bike::query()->whereNull('bike_model_id')->count(),
+            'unlinked_units' => Bike::query()
+                ->whereNull('bike_model_id')
+                ->when(! $isSuperAdmin, fn ($q) => $accessible === [] ? $q->whereRaw('1 = 0') : $q->whereIn('current_store_id', $accessible))
+                ->count(),
         ]);
     }
 

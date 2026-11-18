@@ -308,17 +308,19 @@ class AdminAuthController extends Controller
             ], 429);
         }
 
-        // Search user by phone or email
-        $user = User::withTrashed()->where(function ($q) use ($isPhone, $cleanPhone, $isEmail, $input): void {
-            if ($isPhone) {
-                $q->where('phone', $cleanPhone)
-                    ->orWhere('phone', '91' . $cleanPhone)
-                    ->orWhere('phone', '+91' . $cleanPhone);
-            }
-            if ($isEmail) {
-                $q->orWhere('email', strtolower($input));
-            }
-        })->first();
+        // Search active customer user by phone or email (never resurrect soft-deleted accounts
+        // and never permit staff/admin accounts to bypass password + 2FA via customer OTP).
+        $user = User::where('role', UserRole::CUSTOMER)
+            ->where(function ($q) use ($isPhone, $cleanPhone, $isEmail, $input): void {
+                if ($isPhone) {
+                    $q->where('phone', $cleanPhone)
+                        ->orWhere('phone', '91' . $cleanPhone)
+                        ->orWhere('phone', '+91' . $cleanPhone);
+                }
+                if ($isEmail) {
+                    $q->orWhere('email', strtolower($input));
+                }
+            })->first();
 
         if (! $user) {
             return response()->json([
@@ -329,10 +331,6 @@ class AdminAuthController extends Controller
                     'login' => ['No customer account found with this mobile number or email.'],
                 ],
             ], 422);
-        }
-
-        if ($user->trashed()) {
-            $user->restore();
         }
 
         if ($user->status === UserStatus::BLACKLISTED) {
@@ -347,7 +345,8 @@ class AdminAuthController extends Controller
         // Generate 6-digit OTP cached for 10 minutes
         $otp = (string) random_int(100000, 999999);
         Cache::put("login_otp:{$user->id}", $otp, now()->addMinutes(10));
-        Log::info("Customer Login OTP generated for user {$user->id} ({$user->phone}): {$otp}");
+        Cache::forget("login_otp_attempts:{$user->id}");
+        Log::info('Customer Login OTP generated', ['user_id' => $user->id]);
 
         try {
             $user->notify(new OtpNotification($otp));
@@ -401,10 +400,30 @@ class AdminAuthController extends Controller
 
         $userId = (int) $validated['user_id'];
         $otp = trim((string) $validated['otp']);
+        $attemptKey = "login_otp_attempts:{$userId}";
+        $attempts = (int) Cache::get($attemptKey, 0);
+
+        if ($attempts >= 5) {
+            Cache::forget("login_otp:{$userId}");
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many invalid verification attempts. Please request a new code.',
+                'errors' => [
+                    'otp' => ['Too many invalid verification attempts. Please request a new code.'],
+                ],
+            ], 429);
+        }
+
         $cachedOtp = Cache::get("login_otp:{$userId}");
 
-        if (! $cachedOtp || (string) $cachedOtp !== (string) $otp) {
-            Log::warning("Customer Login OTP mismatch for user {$userId}: provided={$otp}, cached=" . ($cachedOtp ?? 'null'));
+        if (! is_string($cachedOtp) || $cachedOtp === '' || ! hash_equals($cachedOtp, $otp)) {
+            $nextAttempts = $attempts + 1;
+            Cache::put($attemptKey, $nextAttempts, now()->addMinutes(10));
+            if ($nextAttempts >= 5) {
+                Cache::forget("login_otp:{$userId}");
+            }
+            Log::warning('Customer Login OTP mismatch', ['user_id' => $userId]);
 
             return response()->json([
                 'success' => false,
@@ -415,9 +434,17 @@ class AdminAuthController extends Controller
             ], 422);
         }
 
-        Cache::forget("login_otp:{$userId}");
+        $consumed = Cache::pull("login_otp:{$userId}");
+        Cache::forget($attemptKey);
+        if (! is_string($consumed) || ! hash_equals($consumed, $otp)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired verification code.',
+                'errors' => ['otp' => ['Invalid or expired verification code.']],
+            ], 422);
+        }
 
-        $user = User::findOrFail($userId);
+        $user = User::where('role', UserRole::CUSTOMER)->findOrFail($userId);
         if ($user->status === UserStatus::BLACKLISTED) {
             return response()->json([
                 'success' => false,
@@ -535,17 +562,37 @@ class AdminAuthController extends Controller
      */
     public function twoFactorSetup(Request $request, TwoFactorService $twoFactorService): Response|RedirectResponse
     {
-        $user = Auth::guard('admin')->user() ?? $request->user();
+        $adminUser = Auth::guard('admin')->user();
+        $user = ($adminUser !== null && $adminUser->isStaffOrAdmin()) ? $adminUser : null;
 
         if (! $user) {
             $userId = $request->session()->get('login.2fa.user_id');
+            $setupRequired = (bool) $request->session()->get('login.2fa.setup_required', false);
             if ($userId) {
-                $user = User::find($userId);
+                $pendingUser = User::find($userId);
+                if ($pendingUser && $pendingUser->hasTwoFactorEnabled()) {
+                    // Never allow bypassing an active 2FA challenge by visiting /admin/2fa/setup
+                    return redirect()->route('admin.2fa.challenge');
+                }
+                if ($pendingUser && $setupRequired && $pendingUser->isStaffOrAdmin()) {
+                    $user = $pendingUser;
+                }
             }
         }
 
         if (! $user) {
             return redirect()->route('admin.login');
+        }
+
+        // Never re-expose an already-confirmed TOTP secret key
+        if ($user->hasTwoFactorEnabled()) {
+            return Inertia::render('Admin/TwoFactorSetup', [
+                'qrCode' => null,
+                'secretKey' => null,
+                'isRequired' => $user->requiresTwoFactor(),
+                'isConfirmed' => true,
+                'userRole' => $user->role instanceof UserRole ? $user->role->value : (string) $user->role,
+            ]);
         }
 
         // Generate or retrieve unconfirmed secret key
@@ -566,7 +613,7 @@ class AdminAuthController extends Controller
             'qrCode' => $qrCode,
             'secretKey' => $secret,
             'isRequired' => $user->requiresTwoFactor(),
-            'isConfirmed' => $user->hasTwoFactorEnabled(),
+            'isConfirmed' => false,
             'userRole' => $user->role instanceof UserRole ? $user->role->value : (string) $user->role,
         ]);
     }
@@ -576,12 +623,22 @@ class AdminAuthController extends Controller
      */
     public function twoFactorConfirm(Request $request, TwoFactorService $twoFactorService): RedirectResponse
     {
-        $user = Auth::guard('admin')->user() ?? $request->user();
+        $adminUser = Auth::guard('admin')->user();
+        $user = ($adminUser !== null && $adminUser->isStaffOrAdmin()) ? $adminUser : null;
+        $isPendingSetup = false;
 
         if (! $user) {
             $userId = $request->session()->get('login.2fa.user_id');
+            $setupRequired = (bool) $request->session()->get('login.2fa.setup_required', false);
             if ($userId) {
-                $user = User::find($userId);
+                $pendingUser = User::find($userId);
+                if ($pendingUser && $pendingUser->hasTwoFactorEnabled()) {
+                    return redirect()->route('admin.2fa.challenge');
+                }
+                if ($pendingUser && $setupRequired && $pendingUser->isStaffOrAdmin()) {
+                    $user = $pendingUser;
+                    $isPendingSetup = true;
+                }
             }
         }
 
@@ -589,16 +646,32 @@ class AdminAuthController extends Controller
             return redirect()->route('admin.login');
         }
 
+        if ($user->hasTwoFactorEnabled()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        $throttleKey = '2fa.account:' . $user->id;
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            return back()->withErrors([
+                'code' => "Too many invalid 2FA attempts. Please try again in {$seconds} seconds.",
+            ]);
+        }
+
         $validated = $request->validate([
             'code' => ['required', 'string'],
         ]);
 
         if (! $twoFactorService->verify((string) $user->two_factor_secret, $validated['code'])) {
+            RateLimiter::hit($throttleKey, 300);
+
             return back()->withErrors([
                 'code' => 'The provided two-factor authentication code is invalid. Please check your authenticator app and try again.',
             ]);
         }
 
+        RateLimiter::clear($throttleKey);
         $recoveryCodes = $twoFactorService->generateRecoveryCodes();
 
         $user->forceFill([
@@ -606,13 +679,12 @@ class AdminAuthController extends Controller
             'two_factor_recovery_codes' => $recoveryCodes,
         ])->save();
 
-        $guard = $request->session()->get('login.2fa.guard', 'admin');
-        if (! Auth::guard($guard)->check()) {
+        if ($isPendingSetup && ! Auth::guard('admin')->check()) {
             $remember = (bool) $request->session()->get('login.2fa.remember', false);
-            Auth::guard($guard)->login($user, $remember);
+            Auth::guard('admin')->login($user, $remember);
             $request->session()->forget(['login.2fa.user_id', 'login.2fa.remember', 'login.2fa.setup_required', 'login.2fa.guard']);
             $request->session()->put('admin.last_activity_time', time());
-        $request->session()->regenerate();
+            $request->session()->regenerate();
         }
 
         $request->session()->put('admin.2fa.new_recovery_codes', $recoveryCodes);
@@ -625,13 +697,13 @@ class AdminAuthController extends Controller
      */
     public function twoFactorRecoveryCodes(Request $request): Response|RedirectResponse
     {
-        $user = Auth::guard('admin')->user() ?? $request->user();
+        $user = Auth::guard('admin')->user();
 
-        if (! $user) {
+        if (! $user || ! $user->isStaffOrAdmin()) {
             return redirect()->route('admin.login');
         }
 
-        $codes = session('admin.2fa.new_recovery_codes') ?? $user->two_factor_recovery_codes ?? [];
+        $codes = $request->session()->pull('admin.2fa.new_recovery_codes') ?? [];
 
         return Inertia::render('Admin/TwoFactorRecoveryCodes', [
             'recoveryCodes' => $codes,
@@ -643,9 +715,9 @@ class AdminAuthController extends Controller
      */
     public function twoFactorDisable(Request $request): RedirectResponse
     {
-        $user = Auth::guard('admin')->user() ?? $request->user();
+        $user = Auth::guard('admin')->user();
 
-        if (! $user) {
+        if (! $user || ! $user->isStaffOrAdmin()) {
             return redirect()->route('admin.login');
         }
 

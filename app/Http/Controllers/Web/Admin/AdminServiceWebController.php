@@ -277,7 +277,7 @@ class AdminServiceWebController extends Controller
             'price_base' => ['required', 'numeric', 'min:0'],
             'price_unit' => ['required', 'string', 'max:50'],
             'capacity' => ['nullable', 'string', 'max:50'],
-            'image_url' => ['nullable', 'url', 'max:500'],
+            'image_url' => ['nullable', 'url:http,https', 'max:500'],
             'primary_image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
             'images' => ['nullable', 'array'],
             'images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
@@ -417,7 +417,7 @@ class AdminServiceWebController extends Controller
             'price_base' => ['required', 'numeric', 'min:0'],
             'price_unit' => ['required', 'string', 'max:50'],
             'capacity' => ['nullable', 'string', 'max:50'],
-            'image_url' => ['nullable', 'url', 'max:500'],
+            'image_url' => ['nullable', 'url:http,https', 'max:500'],
             'primary_image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
             'images' => ['nullable', 'array'],
             'images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:5120'],
@@ -643,6 +643,7 @@ class AdminServiceWebController extends Controller
      */
     public function destroyItem(Request $request, string $serviceType, int $id): RedirectResponse
     {
+        abort_if($request->user()?->isManager(), 403, 'Ground staff cannot delete service items.');
         $config = $this->getServiceConfig($serviceType);
         $item = ServiceItem::where('service_type', $serviceType)
             ->with(['images', 'documents'])
@@ -691,6 +692,7 @@ class AdminServiceWebController extends Controller
      */
     public function destroyDocument(Request $request, string $serviceType, int $itemId, int $documentId): RedirectResponse
     {
+        abort_if($request->user()?->isManager(), 403, 'Ground staff cannot delete compliance documents.');
         $item = ServiceItem::where('service_type', $serviceType)->findOrFail($itemId);
         $this->assertServiceRecordAccess($item->store_id);
         $doc = ServiceItemDocument::where('service_item_id', $item->id)->findOrFail($documentId);

@@ -28,17 +28,22 @@ class AdminDispatchWebController extends Controller
         $user = $request->user();
         $isSuperAdmin = $user->role === UserRole::SUPER_ADMIN;
 
-        // Stores context
-        $stores = Store::where('status', \App\Enums\StoreStatus::ACTIVE)->get();
-        $assignedStore = null;
+        // Stores context (strictly fail-closed for non-super-admins)
+        $authorizedStoreIds = $user->getAuthorizedStoreIds();
+        $stores = Store::where('status', \App\Enums\StoreStatus::ACTIVE)
+            ->when($authorizedStoreIds !== null, fn ($q) => $authorizedStoreIds === [] ? $q->whereRaw('1 = 0') : $q->whereIn('id', $authorizedStoreIds))
+            ->get();
 
+        $requestedStoreId = $request->query('store_id') ? (int) $request->query('store_id') : null;
         if (! $isSuperAdmin) {
-            $assignedStore = $user->stores()->first() ?? $stores->first();
+            if ($requestedStoreId !== null && ! in_array($requestedStoreId, $authorizedStoreIds ?? [], true)) {
+                abort(403, 'Unauthorized branch dispatch view.');
+            }
+            $storeId = $requestedStoreId ?? ($authorizedStoreIds[0] ?? 0);
+        } else {
+            $storeId = $requestedStoreId;
         }
-
-        $storeId = $request->query('store_id')
-            ? (int) $request->query('store_id')
-            : ($assignedStore?->id);
+        $assignedStore = $storeId ? $stores->firstWhere('id', $storeId) : null;
 
         // View mode: 'timeline' (7-day Gantt resource lanes) or 'month' (calendar grid)
         $viewMode = $request->query('view_mode', 'timeline');
@@ -71,7 +76,9 @@ class AdminDispatchWebController extends Controller
         // 1. Two-Wheeler Bikes (if allowed)
         if (in_array('two_wheelers', $userAllowedServices, true) && ($selectedService === 'all' || $selectedService === 'two_wheelers')) {
             $bikeQuery = Bike::with('currentStore');
-            if ($storeId && ! $isSuperAdmin) {
+            if (! $isSuperAdmin) {
+                $bikeQuery->where('current_store_id', $storeId);
+            } elseif ($storeId) {
                 $bikeQuery->where('current_store_id', $storeId);
             }
             $bikes = $bikeQuery->get();
@@ -97,8 +104,14 @@ class AdminDispatchWebController extends Controller
         }
 
         if (! empty($serviceTypesToQuery)) {
-            $serviceItems = ServiceItem::whereIn('service_type', $serviceTypesToQuery)
-                ->where('status', '!=', 'inactive')
+            $serviceItemsQuery = ServiceItem::whereIn('service_type', $serviceTypesToQuery)
+                ->where('status', '!=', 'inactive');
+            if (! $isSuperAdmin) {
+                $serviceItemsQuery->where('store_id', $storeId);
+            } elseif ($storeId) {
+                $serviceItemsQuery->where('store_id', $storeId);
+            }
+            $serviceItems = $serviceItemsQuery
                 ->orderBy('service_type')
                 ->orderBy('name')
                 ->get();
@@ -136,7 +149,12 @@ class AdminDispatchWebController extends Controller
                 ->where('end_date', '>=', $startDateStr)
                 ->whereNotIn('status', [BookingStatus::CANCELLED, BookingStatus::EXPIRED]);
 
-            if ($storeId && ! $isSuperAdmin) {
+            if (! $isSuperAdmin) {
+                $bookingQuery->where(function ($q) use ($storeId): void {
+                    $q->where('pickup_store_id', $storeId)
+                        ->orWhere('return_store_id', $storeId);
+                });
+            } elseif ($storeId) {
                 $bookingQuery->where(function ($q) use ($storeId): void {
                     $q->where('pickup_store_id', $storeId)
                         ->orWhere('return_store_id', $storeId);
@@ -173,6 +191,12 @@ class AdminDispatchWebController extends Controller
                 ->whereDate('start_datetime', '<=', $endDateStr)
                 ->whereDate('end_datetime', '>=', $startDateStr)
                 ->whereNotIn('status', ['cancelled']);
+
+            if (! $isSuperAdmin) {
+                $serviceBookingQuery->where('store_id', $storeId);
+            } elseif ($storeId) {
+                $serviceBookingQuery->where('store_id', $storeId);
+            }
 
             $serviceBookings = $serviceBookingQuery->get();
 

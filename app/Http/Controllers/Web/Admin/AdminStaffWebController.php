@@ -195,6 +195,12 @@ class AdminStaffWebController extends Controller
                     }
                 }
             }
+            if ($request->has('services')) {
+                $requestedServices = (array) $request->input('services', []);
+                if (array_diff($requestedServices, $user->assignedServicesList()) !== []) {
+                    abort(403, 'Branch Admin cannot assign services outside their authorized verticals.');
+                }
+            }
         }
 
         $validated = $request->validate([
@@ -227,6 +233,10 @@ class AdminStaffWebController extends Controller
         }
 
         $staff->update($updateData);
+
+        if (($updateData['status'] ?? null) === UserStatus::BLACKLISTED) {
+            $this->revokeSessionsAndTokens($staff);
+        }
 
         if (isset($validated['store_ids']) && is_array($validated['store_ids'])) {
             $staff->stores()->sync($validated['store_ids']);
@@ -269,6 +279,10 @@ class AdminStaffWebController extends Controller
 
         $newStatus = $staff->status === UserStatus::ACTIVE ? UserStatus::BLACKLISTED : UserStatus::ACTIVE;
         $staff->update(['status' => $newStatus]);
+
+        if ($newStatus === UserStatus::BLACKLISTED) {
+            $this->revokeSessionsAndTokens($staff);
+        }
 
         $statusLabel = $newStatus === UserStatus::ACTIVE ? 'activated' : 'suspended';
 
@@ -325,9 +339,29 @@ class AdminStaffWebController extends Controller
         }
 
         $name = $staff->name;
+        $staff->update(['status' => UserStatus::BLACKLISTED]);
+        $this->revokeSessionsAndTokens($staff);
         $staff->delete();
 
         return redirect()->route('admin.staff.index')
             ->with('success', "Staff account for '{$name}' removed successfully.");
+    }
+
+    /**
+     * Immediately invalidate API tokens and persisted web/admin sessions for a revoked staff member.
+     */
+    private function revokeSessionsAndTokens(User $staff): void
+    {
+        $staff->tokens()->delete();
+
+        if (config('session.driver') === 'database') {
+            try {
+                \Illuminate\Support\Facades\DB::table(config('session.table', 'sessions'))
+                    ->where('user_id', $staff->id)
+                    ->delete();
+            } catch (\Throwable) {
+                // Ignore if sessions table is absent in minimal test databases
+            }
+        }
     }
 }

@@ -168,6 +168,7 @@ class BookingController extends Controller
         RefundService $refundService
     ): JsonResponse {
         $booking = Booking::findOrFail($id);
+        \Illuminate\Support\Facades\Gate::authorize('processRefund', $booking);
         $validated = $request->validated();
 
         $amount = isset($validated['amount'])

@@ -74,6 +74,15 @@ class ProductionReadinessCheck extends Command
             $warn($missing, strtoupper($gateway).' missing credentials; its payment integration must remain disabled');
         }
 
+        if ($production) {
+            $phonepeKey = (string) config('services.phonepe.salt_key', '');
+            $phonepeBase = (string) config('services.phonepe.base_url', '');
+            $check(
+                $phonepeKey !== '96434309-7796-489d-8924-ab56988a6076' && ! str_contains($phonepeBase, 'pg-sandbox'),
+                'PhonePe is not using public sandbox credentials/URL in production'
+            );
+        }
+
         $this->newLine();
         $this->line("Summary: {$failed} failure(s), {$warnings} warning(s).");
         $this->line('Not checked: actual DB connectivity, real gateway callbacks, scheduler/cron, SSL certificate, or backup restore.');

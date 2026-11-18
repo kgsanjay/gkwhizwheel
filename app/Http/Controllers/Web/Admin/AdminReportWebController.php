@@ -59,8 +59,9 @@ class AdminReportWebController extends Controller
 
         $storeId = $request->query('store_id') ? (int) $request->query('store_id') : null;
         if (! $isSuperAdmin) {
+            abort_if($accessible === [], 403, 'No assigned branches for report access.');
             if ($storeId === null || ! in_array($storeId, $accessible, true)) {
-                $storeId = $accessible[0] ?? null;
+                $storeId = $accessible[0];
             }
         }
 
@@ -187,8 +188,12 @@ class AdminReportWebController extends Controller
             ];
         })->filter(fn ($c) => $c['revenue'] > 0 || $c['bookings_count'] > 0)->values();
 
-        // Revenue by Store Hub
-        $storeRevenue = Store::query()->where('status', StoreStatus::ACTIVE)->get()->map(function (Store $store) use ($startDate, $endDate): array {
+        // Revenue by Store Hub (scoped to authorized branches for non-super-admins)
+        $storeRevenue = Store::query()
+            ->where('status', StoreStatus::ACTIVE)
+            ->when(! $isSuperAdmin, fn ($q) => $q->whereIn('id', $accessible))
+            ->get()
+            ->map(function (Store $store) use ($startDate, $endDate): array {
             $bookings = Booking::where('pickup_store_id', $store->id)
                 ->whereBetween('created_at', [$startDate, $endDate]);
 
