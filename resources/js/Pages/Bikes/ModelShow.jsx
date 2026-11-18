@@ -214,6 +214,11 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
     const estimatedRental = weekdayRate !== null ? weekdayRate * rentalSlot.days + locationSurcharge : null;
 
     const canonical = `https://whizwheels.in${model.canonical_path}`;
+    const branchSlug = pickupStore?.slug || (pickupStore?.city || pickupStore?.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const backToBikesUrl = branchSlug ? `/${branchSlug}/services/bikes` : '/services/bikes';
+    const backToBikesLabel = pickupStore?.city
+        ? `Back to ${pickupStore.city} bike rentals`
+        : 'Back to bike rentals';
     const title = `${model.brand} ${model.name} Bike Rental | GK WhizWheel`;
     const description =
         model.description ||
@@ -330,19 +335,19 @@ export default function ModelShow({ model, stores = [], initialFilters = {} }) {
                 >
                     <Button
                         component={Link}
-                        href="/services/bikes"
+                        href={backToBikesUrl}
                         startIcon={<ArrowBackIcon />}
                         size="small"
                         sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2, color: 'text.primary' }}
                     >
-                        Back to bike rentals
+                        {backToBikesLabel}
                     </Button>
                     <Breadcrumbs aria-label="breadcrumb" sx={{ fontSize: '0.82rem' }}>
                         <Link href="/" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.72 }}>
                             Home
                         </Link>
-                        <Link href="/services/bikes" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.72 }}>
-                            Bike Rentals
+                        <Link href={backToBikesUrl} style={{ color: 'inherit', textDecoration: 'none', opacity: 0.72 }}>
+                            {pickupStore?.city ? `${pickupStore.city} Bike Rentals` : 'Bike Rentals'}
                         </Link>
                         <Typography variant="body2" fontWeight={700} color="text.primary">
                             {model.brand} {model.name}

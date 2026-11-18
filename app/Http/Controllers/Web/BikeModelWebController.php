@@ -92,6 +92,7 @@ class BikeModelWebController extends Controller
                 'id' => $store->id,
                 'name' => $store->name,
                 'city' => $store->city,
+                'slug' => Str::slug($store->city ?: $store->name),
                 'address_line' => $store->address_line,
                 'phone' => $store->phone,
                 'pickup_points' => $store->pickupPoints->map(fn ($point): array => [

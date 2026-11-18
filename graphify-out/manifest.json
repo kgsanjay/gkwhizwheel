@@ -546,9 +546,9 @@
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BikeModelWebController.php": {
-    "mtime": 1795013785.9290547,
-    "seen": 1795013917.183983,
-    "ast_hash": "1c95c70bdb069ba38c1e093f6e37b2c1",
+    "mtime": 1795014886.392954,
+    "seen": 1795014899.836385,
+    "ast_hash": "0ee8c2de2a6ad39ef49c028f0f31c4d2",
     "semantic_hash": ""
   },
   "app/Http/Controllers/Web/BikeWebController.php": {
@@ -2604,9 +2604,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/ModelShow.jsx": {
-    "mtime": 1795014030.4489603,
-    "seen": 1795014382.598885,
-    "ast_hash": "5ca9c4189a0593e9f79cd1bbdb79f836",
+    "mtime": 1795014886.513853,
+    "seen": 1795014899.836629,
+    "ast_hash": "f5f237a35167c0a9cc73a84f2a01ebf4",
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/Show.jsx": {
@@ -2706,8 +2706,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Services/BranchServiceLanding.jsx": {
-    "mtime": 1795014365.055137,
-    "seen": 1795014382.598897,
+    "mtime": 1795014454.9563224,
+    "seen": 1795014899.836641,
     "ast_hash": "8f0c3e8c5ce752d7437b137241b035f6",
     "semantic_hash": ""
   },

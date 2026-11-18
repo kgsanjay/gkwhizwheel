@@ -1,7 +1,7 @@
 # Graph Report - gkwhizwheel  (2026-11-18)
 
 ## Corpus Check
-- 676 files · ~542,759 words
+- 676 files · ~542,802 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 26 file(s) not represented in the graph (top: (none) 18, .ico 3, .xml 2)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7493db00`
+- Built from commit: `c6f47917`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -968,7 +968,7 @@ Nodes (6): 5.1 Concurrency Safety & Availability Engine, 5.2 Progressive Web App
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `User` connect `User` to `UserRole`, `Illuminate\Foundation\Testing\RefreshDatabase`, `Inertia\Testing\AssertableInertia`, `FuelType`, `CabDispatchFlowTest.php`, `Payment`, `User`, `AdminAuthAndPanelTest.php`, `AdminDashboardController.php`, `BikeModelBookingAllocationTest.php`, `AdminCheckInWebController`, `ServiceBookingApprovalTest.php`, `Store`, `RefundServiceTest.php`, `CabDispatch`, `AdminServiceEnquiryWebController.php`, `HandleInertiaRequests.php`, `BranchAdminOperationalTest`, `BookingStatus`, `UserStatus`, `ServiceResource`, `PublicBikesEndpointsTest.php`, `ServiceBooking`, `CabDriver`, `BikeAndPricingMigrationsTest.php`, `BikeModelAdminWebTest.php`, `Bike`, `.isSuperAdmin`, `AdminBookingHandoverReturnWebTest.php`, `AdminStaffWebTest.php`, `AdminBikesWebTest.php`, `Illuminate\Database\Eloquent\Model`, `AdminServiceWebController.php`, `ServiceItemAndBookingApiTest.php`, `CabFareQuoteEngineTest.php`, `AdminStaffWebController.php`, `AdminBookingsWebTest.php`, `ServiceCrossBranchAuthorizationTest.php`, `ServiceAvailabilityService.php`, `ServiceAvailabilityServiceTest.php`, `AdminPricingWebTest.php`, `Inertia\Inertia`, `CustomerServiceEnquiryAccountTest.php`, `BikeRelocationResolutionTest.php`, `CustomerAccountWebTest.php`, `Illuminate\Console\Command`, `AdminStoresWebTest.php`, `AdminServiceItemDocumentsTest.php`, `AdminServiceCategoryTest.php`, `ServiceBookingNotificationTest.php`, `AuthEndpointsTest.php`, `AdminCouponsWebTest.php`, `SensitiveDataLoggingAuditTest.php`, `.isAdmin`, `CustomerAdminStaffRouteAccessDenialTest.php`, `ServiceQuoteSnapshotTest.php`, `SchemaMigrationsTest.php`, `BranchAccessIsolationTest.php`, `BikeBookingPickupPointsTest.php`, `ServiceBookingCancelledNotification`, `AdminReportWebController.php`, `AdminGroundCheckInTest`, `ServiceBookingConcurrencyTest.php`, `AvailabilityServiceTest.php`, `Illuminate\Http\RedirectResponse`, `CouponPolicy`, `AdminCouponsEndpointsTest.php`, `BookingFlowWebTest.php`, `StaffPolicy`, `NotificationsAndLogsTest.php`, `NotificationStatus`, `AdminPricingRulesEndpointsTest.php`, `CustomerOtpLoginTest`, `HtmlEscapingAndXssAuditTest`, `MultiGuardAuthenticationTest`, `TwoFactorEnforcementTest.php`, `.stores`, `ServiceBookingAlertRecipients.php`, `ServiceBookingSeeder.php`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+  _High betweenness centrality (0.099) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `User` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`User` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `DRIVING_LICENSE`, `NATIONAL_ID`, `PASSPORT` to the rest of the system?**
@@ -976,7 +976,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `UserRole` be split into smaller, more focused modules?**
   _Cohesion score 0.047058823529411764 - nodes in this community are weakly interconnected._
 - **Why does `Booking` connect `BookingStatus` to `UserRole`, `Illuminate\Foundation\Testing\RefreshDatabase`, `PickupReminderNotification`, `FuelType`, `BikeBookingPickupPointsTest.php`, `Payment`, `User`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `AdminAuthAndPanelTest.php`, `AdminDashboardController.php`, `AdminGroundCheckInTest`, `AdminCheckInWebController`, `BikeModelBookingAllocationTest.php`, `Store`, `App\Http\Resources\BookingResource`, `AvailabilityServiceTest.php`, `Illuminate\Http\RedirectResponse`, `RefundServiceTest.php`, `AdminServiceEnquiryWebController.php`, `Illuminate\Bus\Queueable`, `PickupReminderNotification`, `Illuminate\Foundation\Http\FormRequest`, `AuditFleetRelocations.php`, `PaymentReceiptNotification`, `BookingFlowWebTest.php`, `UserStatus`, `AdminBookingWebController.php`, `PublicBikesEndpointsTest.php`, `Bike`, `.isSuperAdmin`, `VoucherService`, `AdminBookingHandoverReturnWebTest.php`, `BikeDirectionalPickupReturnFeeTest.php`, `Illuminate\Database\Eloquent\Model`, `AdminBikeModelWebController.php`, `NotificationsAndLogsTest.php`, `AdminStoreWebController.php`, `BookingWebController.php`, `AdminBookingsWebTest.php`, `Illuminate\Http\JsonResponse`, `Inertia\Inertia`, `AvailabilityService`, `BikeRelocationResolutionTest.php`, `CustomerAccountWebTest.php`, `LogsNotification`, `App\Services\RefundService`, `BookingPickupPoints.php`, `Controller`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+  _High betweenness centrality (0.061) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Store` (e.g. with `Primary Abstractions (Identified by Graphify Degree Centrality)` and `Relationship Summary (for ORM setup)`) actually correct?**
   _`Store` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Illuminate\Foundation\Testing\RefreshDatabase` be split into smaller, more focused modules?**
