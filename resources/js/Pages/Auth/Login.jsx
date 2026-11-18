@@ -151,10 +151,8 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                     setOtpChannel(overrideChannel);
                 }
                 setOtpStep('verify');
+                setOtpValue('');
                 setResendTimer(30);
-                if (res.data.debug_otp) {
-                    setOtpValue(res.data.debug_otp);
-                }
             } else {
                 setOtpError(res.data?.message || 'Failed to send verification code.');
             }
@@ -1296,34 +1294,6 @@ export default function CustomerLogin({ status = null, initialTab = 0 }) {
                                             )}
                                         </Box>
                                     </Box>
-
-                                    {/* Staging / Test OTP Auto-Fill Chip */}
-                                    {otpData?.debug_otp && (
-                                        <Box sx={{ mb: 2, textAlign: 'center' }}>
-                                            <Box
-                                                onClick={() => setOtpValue(otpData.debug_otp)}
-                                                sx={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: 1,
-                                                    py: 0.6,
-                                                    px: 1.5,
-                                                    borderRadius: 99,
-                                                    bgcolor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
-                                                    border: '1px dashed #F59E0B',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s',
-                                                    '&:hover': {
-                                                        bgcolor: 'rgba(245, 158, 11, 0.25)',
-                                                    },
-                                                }}
-                                            >
-                                                <Typography variant="caption" sx={{ fontWeight: 700, color: '#F59E0B' }}>
-                                                    Staging Test Code: <strong>{otpData.debug_otp}</strong> (Click to Auto-Fill)
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    )}
 
                                     {/* 6-digit OTP Field */}
                                     <Box sx={{ mb: 2.5 }}>

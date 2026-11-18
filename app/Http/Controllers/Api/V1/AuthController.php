@@ -362,10 +362,7 @@ class AuthController extends Controller
                 $maskedEmail = substr($parts[0], 0, 2).'***@'.($parts[1] ?? '');
             }
 
-            $exposeDebugOtp = app()->environment('local', 'testing')
-                || config('app.debug')
-                || empty(config('services.whatsapp.token'))
-                || str_contains($request->getHost(), 'staging');
+            $exposeDebugOtp = app()->environment('testing');
 
             return response()->json([
                 'success' => true,
@@ -408,10 +405,7 @@ class AuthController extends Controller
             $maskedPhone = substr($cleanPhone, 0, 2).'******'.substr($cleanPhone, -2);
             $effectiveEmail = $email && ! str_ends_with($email, '@whizwheels.local') ? $email : null;
             $maskedEmail = $effectiveEmail ? substr(explode('@', $effectiveEmail)[0], 0, 2).'***@'.(explode('@', $effectiveEmail)[1] ?? '') : null;
-            $exposeDebugOtp = app()->environment('local', 'testing')
-                || config('app.debug')
-                || empty(config('services.whatsapp.token'))
-                || str_contains($request->getHost(), 'staging');
+            $exposeDebugOtp = app()->environment('testing');
 
             return response()->json([
                 'success' => true,

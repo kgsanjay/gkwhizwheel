@@ -1400,44 +1400,6 @@ export default function CheckoutModal({
                     </Typography>
                 </Box>
 
-                {otpChallenge?.debug_otp && (
-                    <Alert
-                        severity="info"
-                        icon={<SecurityIcon fontSize="inherit" />}
-                        sx={{
-                            mb: 2,
-                            borderRadius: 2,
-                            bgcolor: isDark ? 'rgba(13, 148, 136, 0.15)' : '#F0FDFA',
-                            borderColor: isDark ? 'rgba(45, 212, 191, 0.35)' : '#99F6E4',
-                            border: 1,
-                            '& .MuiAlert-message': { width: '100%' },
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                            <Typography variant="caption" sx={{ color: isDark ? '#5EEAD4' : '#0F766E', fontWeight: 600 }}>
-                                Test Mode OTP: <strong>{otpChallenge.debug_otp}</strong>
-                            </Typography>
-                            <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() => setOtpCode(String(otpChallenge.debug_otp))}
-                                sx={{
-                                    py: 0.2,
-                                    px: 1,
-                                    fontSize: '0.75rem',
-                                    fontWeight: 750,
-                                    borderColor: isDark ? '#2DD4BF' : '#0D9488',
-                                    color: isDark ? '#2DD4BF' : '#0D9488',
-                                    minWidth: 'auto',
-                                    textTransform: 'none',
-                                }}
-                            >
-                                Auto-fill
-                            </Button>
-                        </Box>
-                    </Alert>
-                )}
-
                 {errorMessage && (
                     <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
                         {errorMessage}

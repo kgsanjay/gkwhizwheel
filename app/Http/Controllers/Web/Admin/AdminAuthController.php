@@ -370,10 +370,7 @@ class AdminAuthController extends Controller
             $maskedEmail = substr($parts[0], 0, 2) . '***@' . ($parts[1] ?? '');
         }
 
-        $exposeDebugOtp = app()->environment('local', 'testing')
-            || config('app.debug')
-            || empty(config('services.whatsapp.token'))
-            || str_contains($request->getHost(), 'staging');
+        $exposeDebugOtp = app()->environment('testing');
 
         $requestedChannel = $validated['channel'] ?? ($isPhone ? 'whatsapp' : 'email');
         $message = $requestedChannel === 'whatsapp'
