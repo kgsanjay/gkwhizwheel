@@ -324,6 +324,29 @@ export default function BranchServiceLanding({
         }
     };
 
+    const buildModelDetailUrl = (model) => {
+        const minToday = getIstDate(0);
+        const safeStartDate = pickupDate && pickupDate >= minToday ? pickupDate : minToday;
+        const safeEndDate = returnDate && returnDate >= safeStartDate ? returnDate : getIstDate(1);
+        const slug =
+            model.slug ||
+            `${model.brand || ''} ${model.name || ''}`
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+        const queryParams = new URLSearchParams({
+            pickup_store_id: branch.id,
+            return_store_id: branch.id,
+            start_date: safeStartDate,
+            end_date: safeEndDate,
+            pickup_time: pickupTime,
+            return_time: returnTime,
+        });
+        if (selectedPickupPointId) queryParams.set('pickup_point_id', selectedPickupPointId);
+        if (selectedReturnPointId) queryParams.set('return_point_id', selectedReturnPointId);
+        return `/services/bikes/models/${model.id}/${slug}?${queryParams.toString()}`;
+    };
+
     const handleProceedToCheckout = (model) => {
         const minToday = getIstDate(0);
         const safeStartDate = pickupDate && pickupDate >= minToday ? pickupDate : minToday;
@@ -1302,8 +1325,10 @@ export default function BranchServiceLanding({
                                         >
                                             {/* Card Media Container (Showroom Showcase) */}
                                             <Box
-                                                onClick={() => setSelectedModelForModal(item)}
+                                                component={Link}
+                                                href={buildModelDetailUrl(item)}
                                                 sx={{
+                                                    textDecoration: 'none',
                                                     position: 'relative',
                                                     height: { xs: 210, sm: 225 },
                                                     overflow: 'hidden',
@@ -1449,9 +1474,11 @@ export default function BranchServiceLanding({
                                                     {/* Model Name */}
                                                     <Typography
                                                         variant="h5"
-                                                        component="h3"
-                                                        onClick={() => setSelectedModelForModal(item)}
+                                                        component={Link}
+                                                        href={buildModelDetailUrl(item)}
                                                         sx={{
+                                                            display: 'block',
+                                                            textDecoration: 'none',
                                                             fontWeight: 850,
                                                             fontSize: '1.28rem',
                                                             color: isDark ? '#F8FAFC' : '#0F172A',
@@ -1696,9 +1723,10 @@ export default function BranchServiceLanding({
 
                                                         <Button
                                                             fullWidth
+                                                            component={Link}
+                                                            href={buildModelDetailUrl(item)}
                                                             variant="text"
                                                             size="small"
-                                                            onClick={() => setSelectedModelForModal(item)}
                                                             startIcon={<InfoOutlinedIcon sx={{ fontSize: '0.95rem !important' }} />}
                                                             sx={{
                                                                 py: 0.5,
@@ -1713,7 +1741,7 @@ export default function BranchServiceLanding({
                                                                 },
                                                             }}
                                                         >
-                                                            View Specs & Gallery
+                                                            View Details &amp; Schedule
                                                         </Button>
                                                     </Box>
                                                 </Box>

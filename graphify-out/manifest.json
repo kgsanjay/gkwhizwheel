@@ -2604,8 +2604,8 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Bikes/ModelShow.jsx": {
-    "mtime": 1795013898.3299131,
-    "seen": 1795013917.184225,
+    "mtime": 1795014030.4489603,
+    "seen": 1795014382.598885,
     "ast_hash": "5ca9c4189a0593e9f79cd1bbdb79f836",
     "semantic_hash": ""
   },
@@ -2706,9 +2706,9 @@
     "semantic_hash": ""
   },
   "resources/js/Pages/Services/BranchServiceLanding.jsx": {
-    "mtime": 1794968182.046817,
-    "seen": 1794970484.766699,
-    "ast_hash": "c6f555c9b517f0168684392664902072",
+    "mtime": 1795014365.055137,
+    "seen": 1795014382.598897,
+    "ast_hash": "8f0c3e8c5ce752d7437b137241b035f6",
     "semantic_hash": ""
   },
   "resources/js/Pages/Terms.jsx": {
