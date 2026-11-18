@@ -83,3 +83,38 @@ test('model page uses only active pickup locations', function (): void {
         ->assertOk()->assertInertia(fn (Assert $page) => $page->has('stores', 1)
             ->where('stores.0.id', $this->honnavar->id));
 });
+
+test('model page preserves pickup and return times and pickup points from query string', function (): void {
+    $point = \App\Models\PickupPoint::create([
+        'store_id' => $this->honnavar->id,
+        'name' => 'Honnavar Bus Stand',
+        'slug' => 'honnavar-bus-stand',
+        'delivery_fee' => 50,
+        'pickup_fee' => 50,
+        'return_fee' => 50,
+        'supports_pickup' => true,
+        'supports_return' => true,
+        'is_active' => true,
+    ]);
+
+    $query = http_build_query([
+        'pickup_store_id' => $this->honnavar->id,
+        'return_store_id' => $this->honnavar->id,
+        'pickup_point_id' => $point->id,
+        'return_point_id' => $point->id,
+        'start_date' => '2026-11-18',
+        'end_date' => '2026-11-19',
+        'pickup_time' => '09:00',
+        'return_time' => '08:00',
+    ]);
+
+    $this->get('/services/bikes/models/'.$this->model->id.'/honda-activa-6g?'.$query)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Bikes/ModelShow')
+            ->where('initialFilters.pickup_time', '09:00')
+            ->where('initialFilters.return_time', '08:00')
+            ->where('initialFilters.pickup_point_id', (string) $point->id)
+            ->where('initialFilters.return_point_id', (string) $point->id)
+            ->where('stores.0.pickup_points.0.id', $point->id));
+});
